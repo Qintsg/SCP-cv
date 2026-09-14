@@ -59,6 +59,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\run-h
   -SafetyMode Hardware `
   -DataRoot 'D:\SCP-cv\.validation\t129-workstation' `
   -ListenUrls 'http://0.0.0.0:18443' `
+  -AllowedHosts 'localhost;127.0.0.1;192.168.5.192' `
   -AllowedOrigins 'http://192.168.5.192:5173,app://scp-cv,https://localhost' `
   -RuntimeRoot 'D:\SCP-cv\.validation\runtime-portable' `
   -SupervisorExecutable 'D:\SCP-cv\runtime-dotnet\src\ScpCv.Supervisor\bin\Debug\net10.0-windows10.0.19041.0\ScpCv.Supervisor.exe' `

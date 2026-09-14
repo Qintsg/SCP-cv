@@ -13,6 +13,7 @@ param(
     [string]$RuntimeRoot = '',
     [string]$DataRoot = '',
     [string]$ListenUrls = 'https://localhost:18443',
+    [string]$AllowedHosts = 'localhost;127.0.0.1',
     [string]$AllowedOrigins = 'https://localhost',
     [ValidateSet('Simulation', 'Hardware')][string]$SafetyMode = 'Simulation',
     [Nullable[bool]]$CrossSiteCookies = $null,
@@ -70,7 +71,7 @@ function Write-GeneratedPasswordFile {
     $parent = Split-Path -Parent $fullPath
     New-Item -ItemType Directory -Force -Path $parent | Out-Null
     [System.IO.File]::WriteAllText($fullPath, $Password + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))
-    $identity = "$env:USERDOMAIN\$env:USERNAME"
+    $identity = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
     & icacls.exe $fullPath /inheritance:r /grant:r "${identity}:(F)" 'SYSTEM:(F)' | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "无法为开发账号口令文件设置 ACL：$fullPath" }
     return $fullPath
@@ -88,6 +89,7 @@ function Get-ProbeBaseUrl {
 }
 
 $originList = Get-AllowedOriginList $AllowedOrigins
+if ([string]::IsNullOrWhiteSpace($AllowedHosts)) { throw '必须至少配置一个 -AllowedHosts。' }
 $listenBaseUrl = $ListenUrls.Split(';')[0].Trim().TrimEnd('/')
 if ([string]::IsNullOrWhiteSpace($listenBaseUrl)) { throw '必须至少配置一个 -ListenUrls。' }
 $probeBaseUrl = Get-ProbeBaseUrl $listenBaseUrl
@@ -185,6 +187,7 @@ if ($Detach) {
     $qRuntimeRoot = Escape-PowerShellSingleQuoted $RuntimeRoot
     $qDataRoot = Escape-PowerShellSingleQuoted $dataPath
     $qListenUrls = Escape-PowerShellSingleQuoted $ListenUrls
+    $qAllowedHosts = Escape-PowerShellSingleQuoted $AllowedHosts
     $qAllowedOrigins = Escape-PowerShellSingleQuoted $AllowedOrigins
     $qSafetyMode = Escape-PowerShellSingleQuoted $SafetyMode
     $qPasswordFile = Escape-PowerShellSingleQuoted $DevelopmentPasswordFile
@@ -197,6 +200,7 @@ if ($Detach) {
         ("    RuntimeRoot = '" + $qRuntimeRoot + "'")
         ("    DataRoot = '" + $qDataRoot + "'")
         ("    ListenUrls = '" + $qListenUrls + "'")
+        ("    AllowedHosts = '" + $qAllowedHosts + "'")
         ("    AllowedOrigins = '" + $qAllowedOrigins + "'")
         ("    SafetyMode = '" + $qSafetyMode + "'")
         ("    CrossSiteCookies = $" + $CrossSiteCookies.ToString().ToLowerInvariant())
@@ -260,6 +264,7 @@ $errLog = Join-Path $dataPath 'control-host.err.log'
 
 $arguments = @(
     '--urls=' + $ListenUrls
+    '--AllowedHosts=' + $AllowedHosts
     '--SafetyMode=' + $SafetyMode
     '--DataRoot=' + $dataPath
     '--Authentication:CrossSiteCookies=' + $CrossSiteCookies.ToString().ToLowerInvariant()
