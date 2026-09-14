@@ -41,3 +41,12 @@
 硬件结论必须取自交互会话内运行的 ControlHost。
 
 部署方式与命令见 `003-workstation-runbook.md`；上述探针只证明硬件可见，不代表四屏播放已通过。
+
+## 工作站 `d2` HTTP 控制面（2026-09-14）
+
+- 安装 .NET SDK 10.0.400 后，`ScpCv.sln` 在 D2 完成 locked restore 和 Debug build，0 警告、0 错误。
+- Hardware ControlHost 监听 `0.0.0.0:18443`，但 Host 白名单只包含 localhost、127.0.0.1 和工作站固定地址 `192.168.5.192`；防火墙仅允许 Private/LocalSubnet 的 TCP 18443。
+- 开发机通过 IP 请求 `/health/ready` 返回 200，`http://192.168.5.192:5173` 的凭据 CORS 预检返回 204。
+- 这次只启动 ControlHost，受管 Worker/MediaMTX 数为 0，没有创建播放窗口或执行任何设备写入。
+
+因此这一结果不改变 T116/T129 状态；真实画面与 60 分钟测试仍需用户在工作站交互桌面上明确开始。
