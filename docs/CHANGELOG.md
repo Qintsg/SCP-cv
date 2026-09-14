@@ -7,6 +7,8 @@
 - 建立 ASP.NET Core ControlHost、SQLite/EF Core、持久命令队列、Named Pipe、Supervisor、PlayerWorker、AudioWorker、PowerPointHost 和 MediaMTX 的 Windows x64 工程骨架与自动化测试。
 - 前端保持 Vue 3 + Vite + pnpm，接入 Tailwind CSS 4；网页、Electron Windows 控制端和 Capacitor Android 控制端共享页面、路由、Pinia store 与 REST/SSE 合同。
 - 补充 OpenAPI 路由覆盖、安全边界、开发数据隔离和客户端浏览器 QA 记录。真实 Electron/Android、四屏 Office 和性能长稳测试仍待执行；旧 Django/Python 运行时暂不删除。
+- 工作站 D2 增加用户级 .NET 10.0.400 SDK 与可复现的锁定还原；修复无 RID 项目被发布流程污染的 NuGet 锁文件。
+- 无头启动支持多 Origin 与 `0.0.0.0` 局域网 HTTP 监听，开发口令改由进程环境或 ACL 私有文件传递；D2 防火墙只允许私网 TCP 18443，且未启动 Worker。
 
 ## 2026-09-07
 

@@ -4,8 +4,7 @@
 
 ## 0.1 实际部署方式（2026-09-11，工作站 `d2` / 192.168.5.192）
 
-工作站上**没有安装 .NET SDK 或运行时**（`HKLM:\SOFTWARE\dotnet\Setup\InstalledVersions` 缺失、`Program Files\dotnet` 不存在、PATH 无 `dotnet`），
-因此不采用“在工作站构建”，而是从开发机做**自包含发布**再拷贝过去：
+2026-09-11 首次部署时工作站没有 .NET，因此从开发机做**自包含发布**再拷贝过去：
 
 ```powershell
 # 开发机
@@ -19,14 +18,27 @@ tar.exe -xf D:\SCP-cv\.validation\runtime-portable.tar -C D:\SCP-cv\.validation\
 
 产物约 1.1 GB / 3469 文件，局域网传输约 12 秒。运行目录 `.validation/runtime-portable` 不在版本控制内。
 
-若后续要直接在工作站构建，需要先安装 .NET 10 SDK；当前 `D:\SCP-cv` 只做了用户级发布产物部署。
+2026-09-14 已在 `D:\dotnet` 安装与 `global.json` 一致的 .NET SDK 10.0.400，并把
+`DOTNET_ROOT=D:\dotnet` 与该目录写入 `admin` 用户环境。NuGet 缓存使用 `D:\nuget\packages`。
+工作站现在可直接锁定还原和构建：
+
+```powershell
+$env:NUGET_PACKAGES = 'D:\nuget\packages'
+Set-Location D:\SCP-cv\runtime-dotnet
+dotnet restore ScpCv.sln --locked-mode
+dotnet build ScpCv.sln -c Debug --no-restore
+```
+
+自包含目录 `D:\SCP-cv\.validation\runtime-portable` 仍可用于不依赖 SDK 的运行验证；它不是源码或提交内容。
 
 ## 0.2 工作站环境要点
 
 - **PowerShell 5.1 + ANSI 代码页 936**：`*.ps1` 必须带 UTF-8 BOM，否则中文注释被按 GBK 解析、字符串未闭合导致 `ParserError`。仓库内 `runtime.ps1`、`run-headless.ps1`、`benchmark-commands.ps1` 已加 BOM。
 - PowerShell 5.1 的 .NET Framework 没有 `String.Contains(string, StringComparison)` 重载，脚本内统一用 `IndexOf(..., StringComparison)`。
 - `schtasks /tr` 上限 261 字符，所以无头启动先用 `-Detach` 生成 `headless-launch.ps1`，任务只指向该启动器。
-- `CrossSiteCookies=true` 会下发 `Secure` 会话 Cookie，HTTP 下不会被回传；`run-headless.ps1` 现在按监听协议自动选择（https→true，http→false）。
+- `CrossSiteCookies=true` 会下发 `Secure` 会话 Cookie，HTTP 下不会被回传；`run-headless.ps1` 现在按监听协议自动选择（https→true，http→false）。HTTP 仅用于同站点局域网 Web 调试；Electron/Capacitor 本地包仍使用受信 HTTPS。
+- `AllowedOrigins` 支持逗号或分号分隔的精确 Origin 列表，例如 Web、`app://scp-cv` 与 Capacitor 的 `https://localhost`，不支持通配符。
+- 开发账号口令应放在 `.validation` 下的 ACL 私有文件，或通过 `SCP_CV_DEVELOPMENT_PASSWORD` 进程环境提供。ControlHost 命令行和生成的 `headless-launch.ps1` 不再保存明文口令。
 - SSH 会话关闭会回收会话内的进程树，因此无头启动经一次性计划任务（`ScpCvHeadless-<hash>`）分离；重复触发由幂等守卫拦截。
 
 ## 0. 前置条件
@@ -37,7 +49,7 @@ tar.exe -xf D:\SCP-cv\.validation\runtime-portable.tar -C D:\SCP-cv\.validation\
 - 已准备真实素材：需要放映的 `.pptx`/`.pdf`、一段视频、一个 SRT/RTSP 流、一个网页源、一个音频文件。
 - 客户端证书已信任（Web/Electron 直接访问 `https://<host>:18443` 不报证书错误）。
 
-## 1. 启动 Hardware ControlHost
+## 1. 启动 Hardware ControlHost（仅控制面，不操作大屏）
 
 推荐用无头脚本启动（隐藏控制台窗口、日志落盘、可选一并编排 Worker）：
 
@@ -46,21 +58,33 @@ powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\run-h
   -Detach `
   -SafetyMode Hardware `
   -DataRoot 'D:\SCP-cv\.validation\t129-workstation' `
-  -ListenUrls 'https://localhost:18443' `
+  -ListenUrls 'http://0.0.0.0:18443' `
+  -AllowedOrigins 'http://192.168.5.192:5173,app://scp-cv,https://localhost' `
   -RuntimeRoot 'D:\SCP-cv\.validation\runtime-portable' `
   -SupervisorExecutable 'D:\SCP-cv\runtime-dotnet\src\ScpCv.Supervisor\bin\Debug\net10.0-windows10.0.19041.0\ScpCv.Supervisor.exe' `
   -MediaMtxPath 'D:\SCP-cv\tools\third_party\mediamtx\mediamtx.exe' `
-  -DevelopmentPassword '<开发账号口令>' `
-  -StartWorkers
+  -DevelopmentPasswordFile 'D:\SCP-cv\.validation\private\development-password.txt'
 ```
 
 说明：
 
 - `-Detach` 经一次性计划任务启动，SSH 关闭后 `ControlHost` 继续运行；不加 `-Detach` 则前台运行。
 - 停止（不需要口令）：`run-headless.ps1 -Stop -DataRoot 'D:\SCP-cv\.validation\t129-workstation'`，会结束 ControlHost 并清理计划任务。
-- `-StartWorkers` 会通过 `/api/system/restart/` 拉起 4 个 PlayerWorker / AudioWorker / PowerPointHost / MediaMTX。
+- 上面的安全冒烟命令**没有** `-StartWorkers`，只启动 ControlHost；读取健康、显示拓扑与 Core Audio 状态不会改变大屏或音量。
+- 真正执行 T115/T116/T129 时才添加 `-StartWorkers`。它会通过 `/api/system/restart/` 拉起 4 个 PlayerWorker / AudioWorker / PowerPointHost / MediaMTX。
   4 个播放窗口是无边框全屏窗口，**会覆盖四块屏幕**，请在真正开始实验时再加。
-- HTTPS 监听需要 Kestrel 证书；工作站上没有 .NET 开发证书，首次请先用 `-ListenUrls http://localhost:18443` 做冒烟，再配置正式证书。
+- HTTPS 监听需要为 Kestrel 配置并信任证书；首次可先用 HTTP 做局域网冒烟，再配置受信证书供 Electron/Capacitor 客户端使用。
+
+局域网 HTTP/IP 直连仅开放私网 TCP 18443。工作站当前使用下面的防火墙规则；不要改成任意端口或公网来源：
+
+```powershell
+New-NetFirewallRule `
+  -DisplayName 'SCP-cv ControlHost HTTP 18443 (LocalSubnet)' `
+  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 18443 `
+  -RemoteAddress LocalSubnet -Profile Private
+```
+
+从同一局域网验证：`Invoke-WebRequest http://192.168.5.192:18443/health/ready -UseBasicParsing`。
 
 ## 1.1 2026-09-11 工作站实测结果
 

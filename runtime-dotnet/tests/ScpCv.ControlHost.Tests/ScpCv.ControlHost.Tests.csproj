@@ -26,4 +26,10 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\scripts\run-headless.ps1"
+          Link="scripts\run-headless.ps1"
+          CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

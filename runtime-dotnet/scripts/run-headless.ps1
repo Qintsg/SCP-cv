@@ -21,12 +21,78 @@ param(
     [string]$SupervisorExecutable = '',
     [string]$DevelopmentUsername = 'qa-admin',
     [string]$DevelopmentPassword = '',
+    [string]$DevelopmentPasswordFile = '',
     [switch]$StartWorkers,
     [switch]$Detach,
     [int]$ReadyTimeoutSeconds = 60
 )
 
 $ErrorActionPreference = 'Stop'
+
+function Get-AllowedOriginList {
+    param([string]$Value)
+    $items = @($Value -split '[,;]' | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+    if ($items.Count -eq 0) { throw '必须至少配置一个 -AllowedOrigins。' }
+    return @($items | Select-Object -Unique)
+}
+
+function Resolve-DevelopmentPassword {
+    param(
+        [string]$Explicit,
+        [string]$FilePath
+    )
+    $value = ''
+    if (-not [string]::IsNullOrWhiteSpace($FilePath)) {
+        $resolved = [System.IO.Path]::GetFullPath($FilePath)
+        if (-not (Test-Path -LiteralPath $resolved -PathType Leaf)) {
+            throw "开发账号口令文件不存在：$resolved"
+        }
+        $value = [System.IO.File]::ReadAllText($resolved).TrimEnd("`r", "`n")
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($Explicit)) {
+        $value = $Explicit
+    }
+    else {
+        $value = [Environment]::GetEnvironmentVariable('SCP_CV_DEVELOPMENT_PASSWORD')
+    }
+    if ([string]::IsNullOrWhiteSpace($value)) {
+        throw '未提供开发账号口令：请使用 -DevelopmentPasswordFile，或设置 SCP_CV_DEVELOPMENT_PASSWORD。'
+    }
+    return $value
+}
+
+function Write-GeneratedPasswordFile {
+    param(
+        [string]$Path,
+        [string]$Password
+    )
+    $fullPath = [System.IO.Path]::GetFullPath($Path)
+    $parent = Split-Path -Parent $fullPath
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+    [System.IO.File]::WriteAllText($fullPath, $Password + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))
+    $identity = "$env:USERDOMAIN\$env:USERNAME"
+    & icacls.exe $fullPath /inheritance:r /grant:r "${identity}:(F)" 'SYSTEM:(F)' | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "无法为开发账号口令文件设置 ACL：$fullPath" }
+    return $fullPath
+}
+
+function Escape-PowerShellSingleQuoted {
+    param([string]$Value)
+    return $Value.Replace("'", "''")
+}
+
+function Get-ProbeBaseUrl {
+    param([string]$BaseUrl)
+    $value = $BaseUrl -replace '^(https?://)0\.0\.0\.0(?=[:/])', '${1}127.0.0.1'
+    return ($value -replace '^(https?://)(\[::\]|::)(?=[:/])', '${1}[::1]')
+}
+
+$originList = Get-AllowedOriginList $AllowedOrigins
+$listenBaseUrl = $ListenUrls.Split(';')[0].Trim().TrimEnd('/')
+if ([string]::IsNullOrWhiteSpace($listenBaseUrl)) { throw '必须至少配置一个 -ListenUrls。' }
+$probeBaseUrl = Get-ProbeBaseUrl $listenBaseUrl
+$httpOrigin = $originList | Where-Object { $_ -match '^https?://' } | Select-Object -First 1
+if ([string]::IsNullOrWhiteSpace($httpOrigin)) { $httpOrigin = $probeBaseUrl }
 
 # Windows PowerShell 5.1 没有 Invoke-WebRequest -SkipCertificateCheck；
 # 仅当目标是本机 https（自签证书）时放宽校验回调，避免脚本在旧版 PowerShell 上直接失败。
@@ -109,21 +175,37 @@ if ($Detach) {
     # schtasks /tr 上限 261 字符，且内层引号会被参数传递破坏；
     # 因此先落一个启动器脚本，任务只指向它。
     $launcher = Join-Path $dataPath 'headless-launch.ps1'
+    $detachedPassword = Resolve-DevelopmentPassword -Explicit $DevelopmentPassword -FilePath $DevelopmentPasswordFile
+    if ([string]::IsNullOrWhiteSpace($DevelopmentPasswordFile)) {
+        $DevelopmentPasswordFile = Write-GeneratedPasswordFile -Path (Join-Path $dataPath 'headless-secret.txt') -Password $detachedPassword
+    }
+    else {
+        $DevelopmentPasswordFile = [System.IO.Path]::GetFullPath($DevelopmentPasswordFile)
+    }
+    $qRuntimeRoot = Escape-PowerShellSingleQuoted $RuntimeRoot
+    $qDataRoot = Escape-PowerShellSingleQuoted $dataPath
+    $qListenUrls = Escape-PowerShellSingleQuoted $ListenUrls
+    $qAllowedOrigins = Escape-PowerShellSingleQuoted $AllowedOrigins
+    $qSafetyMode = Escape-PowerShellSingleQuoted $SafetyMode
+    $qPasswordFile = Escape-PowerShellSingleQuoted $DevelopmentPasswordFile
+    $qControlHostPath = Escape-PowerShellSingleQuoted $ControlHostPath
+    $qSupervisorExecutable = Escape-PowerShellSingleQuoted $SupervisorExecutable
+    $qMediaMtxPath = Escape-PowerShellSingleQuoted $MediaMtxPath
     # 用 splat 生成启动器：多行调用需要续行符，splat 更不易写坏。
     $lines = @(
         '$params = @{'
-        ("    RuntimeRoot = '" + $RuntimeRoot + "'")
-        ("    DataRoot = '" + $dataPath + "'")
-        ("    ListenUrls = '" + $ListenUrls + "'")
-        ("    AllowedOrigins = '" + $AllowedOrigins + "'")
-        ("    SafetyMode = '" + $SafetyMode + "'")
+        ("    RuntimeRoot = '" + $qRuntimeRoot + "'")
+        ("    DataRoot = '" + $qDataRoot + "'")
+        ("    ListenUrls = '" + $qListenUrls + "'")
+        ("    AllowedOrigins = '" + $qAllowedOrigins + "'")
+        ("    SafetyMode = '" + $qSafetyMode + "'")
         ("    CrossSiteCookies = $" + $CrossSiteCookies.ToString().ToLowerInvariant())
         ("    DevelopmentUsername = '" + $DevelopmentUsername + "'")
-        ("    DevelopmentPassword = '" + $DevelopmentPassword + "'")
+        ("    DevelopmentPasswordFile = '" + $qPasswordFile + "'")
     )
-    if (-not [string]::IsNullOrWhiteSpace($ControlHostPath)) { $lines += "    ControlHostPath = '" + $ControlHostPath + "'" }
-    if (-not [string]::IsNullOrWhiteSpace($SupervisorExecutable)) { $lines += "    SupervisorExecutable = '" + $SupervisorExecutable + "'" }
-    if (-not [string]::IsNullOrWhiteSpace($MediaMtxPath)) { $lines += "    MediaMtxPath = '" + $MediaMtxPath + "'" }
+    if (-not [string]::IsNullOrWhiteSpace($ControlHostPath)) { $lines += "    ControlHostPath = '" + $qControlHostPath + "'" }
+    if (-not [string]::IsNullOrWhiteSpace($SupervisorExecutable)) { $lines += "    SupervisorExecutable = '" + $qSupervisorExecutable + "'" }
+    if (-not [string]::IsNullOrWhiteSpace($MediaMtxPath)) { $lines += "    MediaMtxPath = '" + $qMediaMtxPath + "'" }
     if ($StartWorkers) { $lines += '    StartWorkers = $true' }
     $lines += "    ReadyTimeoutSeconds = $ReadyTimeoutSeconds"
     $lines += '}'
@@ -171,9 +253,7 @@ if ([string]::IsNullOrWhiteSpace($exe) -or -not (Test-Path -LiteralPath $exe)) {
     throw "未找到 ControlHost（RuntimeRoot=$RuntimeRoot）。先 dotnet build/publish，或用 -ControlHostPath 指定。"
 }
 $exe = [System.IO.Path]::GetFullPath($exe)
-if ([string]::IsNullOrWhiteSpace($DevelopmentPassword)) {
-    throw '必须传入 -DevelopmentPassword（或先在本机配置正式账号）。'
-}
+$DevelopmentPassword = Resolve-DevelopmentPassword -Explicit $DevelopmentPassword -FilePath $DevelopmentPasswordFile
 
 $outLog = Join-Path $dataPath 'control-host.out.log'
 $errLog = Join-Path $dataPath 'control-host.err.log'
@@ -182,13 +262,14 @@ $arguments = @(
     '--urls=' + $ListenUrls
     '--SafetyMode=' + $SafetyMode
     '--DataRoot=' + $dataPath
-    '--Authentication:AllowedOrigins:0=' + $AllowedOrigins
     '--Authentication:CrossSiteCookies=' + $CrossSiteCookies.ToString().ToLowerInvariant()
     '--Authentication:DevelopmentAccount:Username=' + $DevelopmentUsername
-    '--Authentication:DevelopmentAccount:Password=' + $DevelopmentPassword
     '--Authentication:DevelopmentAccount:IsStaff=true'
     '--Authentication:DevelopmentAccount:IsSuperuser=true'
 )
+for ($i = 0; $i -lt $originList.Count; $i++) {
+    $arguments += '--Authentication:AllowedOrigins:{0}={1}' -f $i, $originList[$i]
+}
 
 if (-not [string]::IsNullOrWhiteSpace($SupervisorExecutable)) {
     $arguments += '--Supervisor:ExecutablePath=' + ([System.IO.Path]::GetFullPath($SupervisorExecutable))
@@ -199,8 +280,21 @@ if (-not [string]::IsNullOrWhiteSpace($MediaMtxPath)) {
     $arguments += '--Supervisor:MediaMtxPath=' + ([System.IO.Path]::GetFullPath($MediaMtxPath))
 }
 
-$process = Start-Process -FilePath $exe -ArgumentList $arguments -WindowStyle Hidden -PassThru `
-    -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+$passwordEnvironmentName = 'Authentication__DevelopmentAccount__Password'
+$previousPasswordEnvironment = [Environment]::GetEnvironmentVariable($passwordEnvironmentName, 'Process')
+[Environment]::SetEnvironmentVariable($passwordEnvironmentName, $DevelopmentPassword, 'Process')
+try {
+    $process = Start-Process -FilePath $exe -ArgumentList $arguments -WindowStyle Hidden -PassThru `
+        -RedirectStandardOutput $outLog -RedirectStandardError $errLog
+}
+finally {
+    if ($null -eq $previousPasswordEnvironment) {
+        Remove-Item "Env:$passwordEnvironmentName" -ErrorAction SilentlyContinue
+    }
+    else {
+        [Environment]::SetEnvironmentVariable($passwordEnvironmentName, $previousPasswordEnvironment, 'Process')
+    }
+}
 Write-Log "ControlHost 已无头启动 pid=$($process.Id)"
 Write-Log "日志：$outLog"
 
@@ -209,7 +303,7 @@ $deadline = [DateTimeOffset]::UtcNow.AddSeconds($ReadyTimeoutSeconds)
 while ([DateTimeOffset]::UtcNow -lt $deadline) {
     if ($process.HasExited) { throw "ControlHost 提前退出，退出码 $($process.ExitCode)；见 $errLog" }
     try {
-        $response = Invoke-ScpCvWeb -Uri ($ListenUrls.Split(';')[0].TrimEnd('/') + '/health/ready')
+        $response = Invoke-ScpCvWeb -Uri ($probeBaseUrl + '/health/ready')
         if ($response.StatusCode -eq 200) { $ready = $true; break }
     }
     catch {
@@ -224,9 +318,9 @@ if (-not $StartWorkers) {
     return
 }
 
-$baseUrl = $ListenUrls.Split(';')[0].TrimEnd('/')
+$baseUrl = $probeBaseUrl
 $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
-$headers = @{ Origin = ([Uri]$baseUrl).GetLeftPart([System.UriPartial]::Authority) }
+$headers = @{ Origin = $httpOrigin }
 $csrf = (Invoke-ScpCvWeb -Uri "$baseUrl/api/auth/csrf/" -WebSession $session -Headers $headers).Content | ConvertFrom-Json | Select-Object -ExpandProperty csrfToken
 Invoke-ScpCvWeb -Method Post -Uri "$baseUrl/api/auth/login/" -WebSession $session -Headers $headers `
     -ContentType 'application/json' -Body (@{ username = $DevelopmentUsername; password = $DevelopmentPassword } | ConvertTo-Json) | Out-Null
