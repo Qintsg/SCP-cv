@@ -42,6 +42,43 @@
 
 部署方式与命令见 `003-workstation-runbook.md`；上述探针只证明硬件可见，不代表四屏播放已通过。
 
+## D4 部署与控制面验证（2026-09-17）
+
+`D4`（`192.168.5.194`，Windows 10 Pro 1909 / build 18363.1556）按用户批准的兼容性例外完成部署，未改变受支持基线：
+
+- `dotnet restore ScpCv.sln --locked-mode`：15 个项目全部还原成功。
+- `dotnet build ScpCv.sln -c Debug --no-restore`：**0 警告 0 错误**，含 `net10.0-windows10.0.19041.0` 的
+  PlayerWorker/PowerPointHost/Windows 测试工程。
+- `dotnet test ScpCv.sln -c Debug --no-build --filter "Category!=Physical"`：**191 项通过、0 失败**
+  （Domain 38、Windows 11、Infrastructure 19、Contracts 18、Integration 51、ControlHost 54）。
+- 前端：`pnpm test` 40 项通过；`pnpm run build:web` 成功（Vite 8.2 / rolldown）；`pnpm run dev:web` 在 `0.0.0.0:5173` 常驻。
+- Hardware ControlHost（**未启动任何 Worker**）监听 `0.0.0.0:18443`，本机 `/health/ready` 返回 200 `Healthy`；
+  本机 `csrf → login → me → logout` 全部 200。
+
+`/api/displays/` 返回的真实拓扑：
+
+| index | 设备 | 分辨率 | 坐标 | 主屏 |
+| --- | --- | --- | --- | --- |
+| 1 | `\\.\DISPLAY2` | 1920×1080 | (0,0) | 是 |
+| 2 | `\\.\DISPLAY3` | 1920×1080 | (1920,0) | 否 |
+| 3 | `\\.\DISPLAY4` | 1920×1080 | (3840,0) | 否 |
+| 4 | `\\.\DISPLAY5` | 1920×1080 | (5760,0) | 否 |
+| 5 | `\\.\DISPLAY1` | 1920×1200 | (7680,-6) | 否 |
+
+四块 1920×1080 横向排在 y=0，另有第五块 1920×1200 控制屏。SSH 会话（session 0）里的 `Screen.AllScreens` 只看到 1 块
+`WinDisc 1024×768`，硬件结论必须取自实际运行 ControlHost 的会话，与 D2 记录一致。
+
+从开发机（`192.168.1.109`，经 `192.168.5.1` 一跳跨网段）验证：
+
+- `/health/ready` → 200（约 10 ms）。
+- `Origin: http://192.168.5.194:5173` 的凭据 CORS 预检 → 204，精确回显 Origin 且 `Access-Control-Allow-Credentials: true`。
+- 白名单外的 `Host` 头 → 400。
+- `http://192.168.5.194:5173/` → 200，返回 SCP-cv 控制台 HTML。
+
+本轮没有启动 PlayerWorker/AudioWorker/PowerPointHost/MediaMTX，没有创建播放窗口、选择显示器、调整音量或写入任何设备；
+因此**不改变 T116/T129 状态**。D4 尚未安装 PowerPoint（用户后续安装），四屏实际播放、Office COM/HWND、VLC/SRT、
+真实音频与 60 分钟混合测试仍待执行。
+
 ## 已归档工作站 `D2` HTTP 控制面（2026-09-14）
 
 - 安装 .NET SDK 10.0.400 后，`ScpCv.sln` 在 D2 完成 locked restore 和 Debug build，0 警告、0 错误。

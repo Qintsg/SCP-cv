@@ -112,6 +112,34 @@
 
 该证据只收口 SDK、clean build 和受限 HTTP 控制面连通性。T115/T116/T129 所需真实 Worker、画面、Office/VLC/MediaMTX/音频及 60 分钟测试仍未执行，T118 继续阻塞。
 
+## D4 兼容性例外部署（2026-09-17）
+
+`D4`（`192.168.5.194`）为 Windows 10 Pro 1909 / build 18363.1556，低于项目 `net10.0-windows10.0.19041.0` 目标平台基线。
+用户批准按兼容性例外继续部署；本记录只描述该机器上的实测结果，不修改受支持平台声明（见 `research.md` R05）。
+
+安装与配置（`D:\dotnet` SDK 10.0.400、`D:\nodejs` Node v24.13.0 与 pnpm 11.22.0、`C:\Program Files\Git` Git 2.55.0.windows.5、
+`D:\nuget\packages` NuGet 缓存、`D:\SCP-cv` 克隆自 `git.bbt.sspu.edu.cn` 的 `refactor/003-dotnet-runtime@ed26f2d` 并拉取 LFS
+运行时资源）见 `docs/qa/003-workstation-runbook.md` 0.1 节。
+
+实测证据：
+
+- `dotnet restore ScpCv.sln --locked-mode`：exit 0，15 个项目。
+- `dotnet build ScpCv.sln -c Debug --no-restore`：0 警告 0 错误（30.5 s）。
+- `dotnet test ScpCv.sln -c Debug --no-build --filter "Category!=Physical"`：191 通过 / 0 失败。
+- 前端 `pnpm test` 40 通过；`pnpm run build:web` 成功。
+- Hardware ControlHost（无 Worker）`/health/ready` 200；本机 csrf/login/me/logout 均 200；`/api/displays/` 为
+  4×1920×1080 横排 + 1×1920×1200。
+- 开发机跨网段：`/health/ready` 200、凭据 CORS 预检 204、白名单外 Host 400、`http://192.168.5.194:5173/` 200。
+
+边界与残余风险：
+
+- `dotnet-install.ps1` 自身提示不校验 Windows 版本支持；1909 不在 .NET 10 支持矩阵内，兼容性例外存在未来补丁或运行时回归风险，
+  升级到受支持版本后应重跑本节。
+- D4 的 `以太网` 为 Public 配置文件，原有 `-Profile Private -RemoteAddress LocalSubnet` 规则不生效；已按源地址收窄新增规则，
+  未把网络类别改成 Private。
+- 本轮未启动任何 Worker，也未执行四屏/Office/VLC/MediaMTX/音频/60 分钟门禁；T115/T116/T129 仍未完成，T118 继续阻塞。
+- D4 未安装 PowerPoint，`Office 16 Click-to-Run Extensibility Component` 的存在不能当作 PowerPoint 可用。
+
 ## Spec Kit 一致性分析（T119）
 
 2026-09-08 对 `spec.md`、`plan.md`、`tasks.md`、项目宪章和实现路径进行只读交叉检查：

@@ -12,6 +12,65 @@ git clone --branch refactor/003-dotnet-runtime http://git.bbt.sspu.edu.cn/Qintsg
 
 `D4` 的 Windows 10 Pro 1909 / build 18363 低于项目 Windows 10 2004（build 19041）目标平台基线，且不属于 .NET 10 支持矩阵中的 Windows 10 版本。本机按用户批准执行**兼容性例外**：固定安装 .NET SDK 10.0.400，只有 locked restore、build 和无 Worker ControlHost 冒烟实际通过时才继续；这不改变项目受支持基线。PowerPoint 与 EasyTier 不属于本轮部署。
 
+### 0.1.1 已执行安装（2026-09-17 实测）
+
+工作站初始没有 Git/.NET/Node，且 `github.com` 不可达，安装源按可达性选择：
+
+| 组件 | 版本 | 位置 | 来源 |
+| --- | --- | --- | --- |
+| Git for Windows | 2.55.0.windows.5（含 git-lfs 3.7.1） | `C:\Program Files\Git` | 清华 TUNA 的 git-for-windows 镜像 |
+| .NET SDK | 10.0.400 | `D:\dotnet` | `dotnet-install.ps1`，直连 `builds.dotnet.microsoft.com` |
+| Node.js | v24.13.0 | `D:\nodejs` | `nodejs.org` 直链 |
+| pnpm | 11.22.0 | `D:\nodejs`（全局） | `mirrors.cernet.edu.cn/npm/` |
+
+安装后写入的环境变量（机器级与 `admin` 用户级）：`DOTNET_ROOT=D:\dotnet`、`NUGET_PACKAGES=D:\nuget\packages`，PATH 追加 `D:\dotnet` 与 `D:\nodejs`。另外把
+`HKLM\SOFTWARE\dotnet\Setup\InstalledVersions\x64\InstallLocation` 设为 `D:\dotnet`，否则由计划任务等新会话启动的框架依赖
+`ScpCv.ControlHost.exe` 找不到非默认位置运行时。
+
+`admin` 用户级 `C:\Users\admin\.npmrc` 必须与 `frontend/pnpm-lock.yaml` 的 tarball 来源一致，否则 pnpm 11 的供应链策略会以
+`ERR_PNPM_TARBALL_URL_MISMATCH` 拒绝安装（该 lockfile 全部指向校园镜像；开发机使用的也是同一镜像）：
+
+```text
+registry=https://mirrors.cernet.edu.cn/npm/
+```
+
+`frontend/.env` 未被版本控制，需按机器生成：
+
+```text
+VITE_FRONTEND_PORT=5173
+VITE_BACKEND_TARGET=http://192.168.5.194:18443
+```
+
+### 0.1.2 D4 防火墙与前端常驻
+
+`以太网` 在 D4 上属于 **Public** 配置文件，因此 `-Profile Private -RemoteAddress LocalSubnet` 规则不会生效；开发机位于
+`192.168.1.0/24`，经 `192.168.5.1` 一跳跨网段访问，源地址也不在 LocalSubnet。实测需要按源地址收窄的规则：
+
+```powershell
+New-NetFirewallRule -DisplayName 'SCP-cv ControlHost HTTP 18443 (D4 dev access)' `
+  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 18443 `
+  -RemoteAddress 'LocalSubnet','192.168.1.109' -Profile Any
+New-NetFirewallRule -DisplayName 'SCP-cv Vite 5173 (D4 dev access)' `
+  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5173 `
+  -RemoteAddress 'LocalSubnet','192.168.1.109' -Profile Any
+```
+
+SSH 关闭会回收会话进程树，前端开发服务需脱离会话常驻：
+
+```text
+# D:\SCP-cv\.validation\frontend-launch.cmd
+@echo off
+set PATH=D:\nodejs;D:\dotnet;C:\Program Files\Git\cmd;%PATH%
+cd /d D:\SCP-cv\frontend
+"D:\nodejs\pnpm.cmd" run dev:web > "D:\SCP-cv\.validation\frontend.log" 2>&1
+```
+
+### 0.1.3 开发机到 D4 的网络坑
+
+开发机默认路由被代理 TUN 网卡接管，且没有 `192.168.5.0/24` 的具体路由，表现为**任意端口都能三次握手、但没有任何数据**（这会把普通端口探测误判成“服务在跑”）。可用做法是绑定源地址：
+`ssh -o BindAddress=192.168.1.109 ...`、`curl --interface 192.168.1.109 ...`。本机 `.ssh/config` 已加入 `d4` 别名封装这些参数；
+GitHub 在 D4 上不可达时，也可用 `ssh -R 7890:127.0.0.1:7890 d4` 把开发机代理临时映射给 D4。
+
 ## 0.2 已归档 D2 部署记录（2026-09-11 至 2026-09-14）
 
 2026-09-11 首次部署时工作站没有 .NET，因此从开发机做**自包含发布**再拷贝过去：

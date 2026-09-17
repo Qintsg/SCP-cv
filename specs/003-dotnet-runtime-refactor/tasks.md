@@ -376,6 +376,9 @@ T102–T103 Development data boundary tests
 
 ## Phase 11: D4 Compatibility Deployment
 
-- [ ] T130 将活动工作站配置、Host/CORS 示例与局域网探针由已退役 D2 切换到 `D4` / `192.168.5.194`，历史 D2 证据仅保留为明确归档记录
-- [ ] T131 将当前分支提交并推送到 `secondary`，在 D4 从 `git.bbt.sspu.edu.cn` 拉取源码，安装固定 .NET SDK 与源码获取所需 Git，完成 locked restore/build
-- [ ] T132 在不启动 PlayerWorker、AudioWorker、PowerPointHost 或 MediaMTX 的前提下启动 D4 Hardware ControlHost，验证精确 Host、CORS、Private/LocalSubnet 防火墙与局域网健康检查，并将证据写入 `docs/qa/003-windows-runtime.md` 和 `specs/003-dotnet-runtime-refactor/verification.md`
+- [X] T130 将活动工作站配置、Host/CORS 示例与局域网探针由已退役 D2 切换到 `D4` / `192.168.5.194`，历史 D2 证据仅保留为明确归档记录
+- [X] T131 将当前分支提交并推送到 `secondary`，在 D4 从 `git.bbt.sspu.edu.cn` 拉取源码，安装固定 .NET SDK 与源码获取所需 Git，完成 locked restore/build
+- [X] T132 在不启动 PlayerWorker、AudioWorker、PowerPointHost 或 MediaMTX 的前提下启动 D4 Hardware ControlHost，验证精确 Host、CORS 与局域网健康检查，并将证据写入 `docs/qa/003-windows-runtime.md` 和 `specs/003-dotnet-runtime-refactor/verification.md`
+
+T132 偏差记录：D4 的 `以太网` 是 Public 配置文件，原 `-Profile Private -RemoteAddress LocalSubnet` 规则实测不生效。
+未把网络类别改为 Private，而是新增按源地址收窄（`LocalSubnet` + `192.168.1.109`）的 18443/5173 放行规则，其余主机仍不可达。
