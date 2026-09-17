@@ -102,13 +102,13 @@
 
 **这些只证明“真实运行时能被一次拉起”与“客户端文件链路可用”，不证明四屏画面、Office COM、VLC 解码或音频输出效果。**
 
-## D2 受限远程调试（2026-09-14）
+## 已归档 D2 受限远程调试（2026-09-14）
 
 - 在 `D:\dotnet` 安装与 `global.json` 一致的 .NET SDK 10.0.400，并配置 `admin` 用户级 `DOTNET_ROOT`/PATH；NuGet 缓存位于 `D:\nuget\packages`。
 - 全新锁定还原首次发现无 RID 项目的 `packages.lock.json` 被先前 `publish -r win-x64` 写入 RID，导致 clean machine 的 solution restore 无法同时满足应用与测试项目。重新生成 5 个无 RID 项目锁文件后，D2 执行 `dotnet restore ScpCv.sln --locked-mode` 与 `dotnet build ScpCv.sln -c Debug --no-restore` 通过，0 警告、0 错误。
 - `run-headless.ps1` 新增多 Origin、精确 `AllowedHosts`、通配监听的本机探测，以及口令文件/进程环境传递；真实进程命令行和生成的 `headless-launch.ps1` 均不含开发口令。对应静态安全测试与真实 ControlHost Host-header 集成测试通过。
-- D2 仅以 `SafetyMode=Hardware` 启动 ControlHost，监听 `0.0.0.0:18443`；Host 白名单为 `localhost;127.0.0.1;192.168.5.192`。Windows 防火墙仅在 Private profile 对 LocalSubnet 开放 TCP 18443。
-- 从开发机请求 `http://192.168.5.192:18443/health/ready` 返回 200；`Origin: http://192.168.5.192:5173` 的 CORS 预检返回 204，并精确回显 Origin 与 credentials。验证时 PlayerWorker、AudioWorker、PowerPointHost、MediaMTX 进程数为 0，没有执行播放、显示选择、音量或设备写入。
+- D2 仅以 `SafetyMode=Hardware` 启动 ControlHost，监听 `0.0.0.0:18443`；Host 白名单包含 localhost、127.0.0.1 和当时的 D2 固定地址。Windows 防火墙仅在 Private profile 对 LocalSubnet 开放 TCP 18443。
+- 从开发机经当时的 D2 固定地址请求 `/health/ready` 返回 200，对应的凭据 CORS 预检返回 204，并精确回显 Origin 与 credentials。该地址已退役，不再是项目活动配置。验证时 PlayerWorker、AudioWorker、PowerPointHost、MediaMTX 进程数为 0，没有执行播放、显示选择、音量或设备写入。
 
 该证据只收口 SDK、clean build 和受限 HTTP 控制面连通性。T115/T116/T129 所需真实 Worker、画面、Office/VLC/MediaMTX/音频及 60 分钟测试仍未执行，T118 继续阻塞。
 

@@ -373,3 +373,9 @@ T102–T103 Development data boundary tests
 - [X] T127 受认证本机 runtime start/stop/restart/status 控制通道已接入 bootstrap、`/api/system/restart/` 与 `/api/system/shutdown/`；Supervisor 回执驱动 Worker ready→armed，启动超时/早退/登记失败会清理自有进程并持久化 faulted per FR-018, FR-020
 - [X] T128 修复并回归验证 Web 初始导航挂载竞态，完成 Web/Electron/Android 对 HTTPS simulation ControlHost 的认证、SSE 重连、路由、文件与客户端关闭矩阵 per FR-028–030
 - [ ] T129 在可运行的真实 Worker 上执行普通命令 1000 样本、健康预热切换 100 样本及具备四屏/Office/VLC/MediaMTX/音频条件时的 60 分钟混合测试，并记录原始证据 per SC-006, SC-009 (partial)
+
+## Phase 11: D4 Compatibility Deployment
+
+- [ ] T130 将活动工作站配置、Host/CORS 示例与局域网探针由已退役 D2 切换到 `D4` / `192.168.5.194`，历史 D2 证据仅保留为明确归档记录
+- [ ] T131 将当前分支提交并推送到 `secondary`，在 D4 从 `git.bbt.sspu.edu.cn` 拉取源码，安装固定 .NET SDK 与源码获取所需 Git，完成 locked restore/build
+- [ ] T132 在不启动 PlayerWorker、AudioWorker、PowerPointHost 或 MediaMTX 的前提下启动 D4 Hardware ControlHost，验证精确 Host、CORS、Private/LocalSubnet 防火墙与局域网健康检查，并将证据写入 `docs/qa/003-windows-runtime.md` 和 `specs/003-dotnet-runtime-refactor/verification.md`

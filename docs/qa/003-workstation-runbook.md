@@ -2,7 +2,17 @@
 
 用途：在具备四屏、Office、VLC 素材、MediaMTX 与真实音频的工作站上，一次性收口 T050/T115/T116/T128/T129。
 
-## 0.1 实际部署方式（2026-09-11，工作站 `d2` / 192.168.5.192）
+## 0.1 当前目标工作站（2026-09-17，`D4` / `192.168.5.194`）
+
+当前活动工作站为 `D4`，源码目录为 `D:\SCP-cv`，从内网仓库直接拉取：
+
+```powershell
+git clone --branch refactor/003-dotnet-runtime http://git.bbt.sspu.edu.cn/Qintsg/scp-cv.git D:\SCP-cv
+```
+
+`D4` 的 Windows 10 Pro 1909 / build 18363 低于项目 Windows 10 2004（build 19041）目标平台基线，且不属于 .NET 10 支持矩阵中的 Windows 10 版本。本机按用户批准执行**兼容性例外**：固定安装 .NET SDK 10.0.400，只有 locked restore、build 和无 Worker ControlHost 冒烟实际通过时才继续；这不改变项目受支持基线。PowerPoint 与 EasyTier 不属于本轮部署。
+
+## 0.2 已归档 D2 部署记录（2026-09-11 至 2026-09-14）
 
 2026-09-11 首次部署时工作站没有 .NET，因此从开发机做**自包含发布**再拷贝过去：
 
@@ -11,7 +21,7 @@
 dotnet publish runtime-dotnet/src/ScpCv.ControlHost/ScpCv.ControlHost.csproj  -c Release -r win-x64 --self-contained true -o .validation\ws-publish\ScpCv.ControlHost
 # Supervisor / PlayerWorker / AudioWorker / PowerPointHost 同理
 tar.exe -cf .validation\ws-publish.tar -C .validation\ws-publish .
-scp .validation\ws-publish.tar d2:D:/SCP-cv/.validation/runtime-portable.tar
+scp .validation\ws-publish.tar <已退役-D2>:D:/SCP-cv/.validation/runtime-portable.tar
 # 工作站
 tar.exe -xf D:\SCP-cv\.validation\runtime-portable.tar -C D:\SCP-cv\.validation\runtime-portable
 ```
@@ -31,7 +41,7 @@ dotnet build ScpCv.sln -c Debug --no-restore
 
 自包含目录 `D:\SCP-cv\.validation\runtime-portable` 仍可用于不依赖 SDK 的运行验证；它不是源码或提交内容。
 
-## 0.2 工作站环境要点
+## 0.3 工作站环境要点
 
 - **PowerShell 5.1 + ANSI 代码页 936**：`*.ps1` 必须带 UTF-8 BOM，否则中文注释被按 GBK 解析、字符串未闭合导致 `ParserError`。仓库内 `runtime.ps1`、`run-headless.ps1`、`benchmark-commands.ps1` 已加 BOM。
 - PowerShell 5.1 的 .NET Framework 没有 `String.Contains(string, StringComparison)` 重载，脚本内统一用 `IndexOf(..., StringComparison)`。
@@ -59,8 +69,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\run-h
   -SafetyMode Hardware `
   -DataRoot 'D:\SCP-cv\.validation\t129-workstation' `
   -ListenUrls 'http://0.0.0.0:18443' `
-  -AllowedHosts 'localhost;127.0.0.1;192.168.5.192' `
-  -AllowedOrigins 'http://192.168.5.192:5173,app://scp-cv,https://localhost' `
+  -AllowedHosts 'localhost;127.0.0.1;192.168.5.194' `
+  -AllowedOrigins 'http://192.168.5.194:5173,app://scp-cv,https://localhost' `
   -RuntimeRoot 'D:\SCP-cv\.validation\runtime-portable' `
   -SupervisorExecutable 'D:\SCP-cv\runtime-dotnet\src\ScpCv.Supervisor\bin\Debug\net10.0-windows10.0.19041.0\ScpCv.Supervisor.exe' `
   -MediaMtxPath 'D:\SCP-cv\tools\third_party\mediamtx\mediamtx.exe' `
@@ -85,9 +95,9 @@ New-NetFirewallRule `
   -RemoteAddress LocalSubnet -Profile Private
 ```
 
-从同一局域网验证：`Invoke-WebRequest http://192.168.5.192:18443/health/ready -UseBasicParsing`。
+从同一局域网验证：`Invoke-WebRequest http://192.168.5.194:18443/health/ready -UseBasicParsing`。
 
-## 1.1 2026-09-11 工作站实测结果
+## 1.1 2026-09-11 已归档 D2 实测结果
 
 `d2` 上以 `-Detach -SafetyMode Hardware -ListenUrls http://localhost:18443` 启动后：
 

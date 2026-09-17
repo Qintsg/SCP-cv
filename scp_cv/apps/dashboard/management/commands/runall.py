@@ -471,5 +471,5 @@ def _headless_session_error_message() -> str:
         "当前进程不在 Windows 活动控制台会话，PySide 播放器无法访问控制台的物理显示器。"
         f"当前 Session={current_session}，活动控制台 Session={active_session}。"
         "如需通过 SSH 远程启动，请使用：uv run python manage.py runall --headless --service；"
-        "或在 D2 控制台桌面直接运行 runall --headless。"
+        "或在 D4 控制台桌面直接运行 runall --headless。"
     )

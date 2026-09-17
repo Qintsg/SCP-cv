@@ -11,6 +11,7 @@
 - **Rationale**: 官方表列 .NET 10 为 LTS，支持至 2028-11-14。Windows 安装文档对 Windows 10 支持限于列出的 LTSC/Enterprise 版本，不能泛称所有 Windows 10/11 均受支持。
 - **Alternatives considered**: .NET 8 剩余支持期短；.NET Framework 不适合新后端；NativeAOT/trimming 对 WPF/COM/反射包装风险不值得本次引入。
 - **Gate**: 记录真实 Windows SKU/build、Office 位数/版本、VLC、WebView2、GPU；不支持的 OS 须升级或另审兼容风险，不能把“可运行”等同厂商支持。
+- **D4 compatibility exception (2026-09-17)**: `D4`（`192.168.5.194`）为 Windows 10 Pro 1909 / build 18363，低于项目的 Windows 10 2004（build 19041）目标平台基线，也不属于 .NET 10 文档列出的受支持 Windows 10 SKU。用户批准仅为部署试验绕过该基线：允许安装固定 SDK、锁定还原、构建和无 Worker ControlHost 冒烟；结果只能证明该机器上的当前组合可运行，不能改变受支持平台声明。任何 SDK、WPF/WinRT、WebView2、VLC 或 Office 失败均按兼容性风险记录，不通过关闭安全检查、降低 TFM 或伪报实机门禁来规避。
 - **Sources**: [生命周期](https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core)、[Windows 支持](https://learn.microsoft.com/en-us/dotnet/core/install/windows)。
 
 ## R02 - WPF 不自动解决无缝合成
