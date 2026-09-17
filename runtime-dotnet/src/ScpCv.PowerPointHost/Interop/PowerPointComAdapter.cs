@@ -183,7 +183,11 @@ public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
                 _createdApplication = true;
             }
             _application.Visible = true;
-            dynamic presentation = _application.Presentations.Open(path, WithWindow: -1);
+            // IDispatch 后期绑定不支持命名参数：PowerPoint 不通过 GetIDsOfNames 暴露
+            // 参数名，`Open(path, WithWindow: -1)` 会抛 MissingMemberException。
+            // 按签名位置传参：Open(FileName, ReadOnly, Untitled, WithWindow)，
+            // WithWindow 取 msoTrue(-1) 以便后续附着放映窗口 HWND。
+            dynamic presentation = _application.Presentations.Open(path, 0, 0, -1);
             openingPresentation = presentation;
             var identity = Interlocked.Increment(ref _nextIdentity);
             presentation.SlideShowSettings.Run();
