@@ -28,8 +28,16 @@ public sealed class RuntimeWorkerSession(
     private readonly SemaphoreSlim _wakeSignal = new(0, 1);
     private readonly CancellationTokenSource _shutdown = new();
     private long _reportSequence;
+    private long _heartbeatSequence;
+    private DateTimeOffset _lastHeartbeatAt = DateTimeOffset.MinValue;
     private long _readyConnectionGeneration;
     private int _disposed;
+
+    /// <summary>
+    /// 传输心跳间隔。心跳只声明“进程与管道仍然在线”，不冒充 UI 进度；
+    /// ControlHost 据此刷新目标存活时间，避免两次命令之间把在线播放器判为离线。
+    /// </summary>
+    private static readonly TimeSpan TransportHeartbeatInterval = TimeSpan.FromSeconds(2);
 
     public long OwnerEpoch { get; private set; }
     public long GroupEpoch { get; private set; }
@@ -114,6 +122,8 @@ public sealed class RuntimeWorkerSession(
                     }
 
                     await WaitForWakeOrPollAsync(linked.Token).ConfigureAwait(false);
+                    // 心跳只放在空闲路径，避免打断领取、执行与结果回放的既有帧顺序。
+                    await SendTransportHeartbeatIfDueAsync(linked.Token).ConfigureAwait(false);
                 }
                 catch (IOException) when (!linked.IsCancellationRequested)
                 {
@@ -287,6 +297,24 @@ public sealed class RuntimeWorkerSession(
     private async Task WaitForWakeOrPollAsync(CancellationToken cancellationToken)
     {
         _ = await _wakeSignal.WaitAsync(TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task SendTransportHeartbeatIfDueAsync(CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+        if (now - _lastHeartbeatAt < TransportHeartbeatInterval) return;
+        _lastHeartbeatAt = now;
+        var response = await _client.ExchangeAsync(Frame("health_report", new HealthReportDto
+        {
+            TransportHealthy = true,
+            UiHealthy = false,
+            ReportSequence = Interlocked.Increment(ref _heartbeatSequence),
+            ObservedAt = now.ToString("O"),
+        }), cancellationToken).ConfigureAwait(false);
+        if (!string.Equals(response.MessageType, "health_accepted", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException($"ControlHost 未接受 {identity.Role} 传输心跳：{response.MessageType}");
+        }
     }
 
     private async Task ReplayCachedResultsAsync(CancellationToken cancellationToken)

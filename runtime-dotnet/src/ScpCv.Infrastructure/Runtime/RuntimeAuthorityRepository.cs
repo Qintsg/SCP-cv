@@ -232,6 +232,21 @@ public sealed class RuntimeAuthorityRepository(
                     ownership.LastUiProgress = now;
                 }
 
+                // 传输心跳同样证明该目标的 PlayerWorker 进程仍在线。会话的
+                // player_last_seen_at 必须随之刷新，否则两次命令之间前端会把在线播放器
+                // 判为离线并拒绝下发控制命令（UI 进度仍只由 state_report 推进）。
+                if (targetKind == CommandTargetKind.Display)
+                {
+                    var session = await context.PlaybackSessions.SingleOrDefaultAsync(
+                            candidate => candidate.WindowId == targetId,
+                            token)
+                        .ConfigureAwait(false);
+                    if (session is not null)
+                    {
+                        session.PlayerLastSeenAt = now;
+                    }
+                }
+
                 return true;
             },
             cancellationToken);

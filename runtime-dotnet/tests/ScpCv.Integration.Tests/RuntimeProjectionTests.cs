@@ -14,6 +14,47 @@ namespace ScpCv.Integration.Tests;
 public sealed class RuntimeProjectionTests
 {
     [Fact]
+    public async Task DisplayTransportHeartbeatKeepsPlayerOnlineBetweenCommands()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var startRequest = Guid.NewGuid();
+        var group = await fixture.RuntimeAuthority.BeginStartAsync(startRequest);
+        await fixture.RuntimeAuthority.ArmAsync(startRequest, group.GroupEpoch);
+        using var process = Process.GetCurrentProcess();
+        var worker = Guid.NewGuid();
+        var ownership = await fixture.RuntimeAuthority.RegisterWorkerAsync(new RegisterWorker(
+            CommandTargetKind.Display,
+            1,
+            worker,
+            process.Id,
+            new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero),
+            process.SessionId,
+            group.GroupEpoch,
+            "[\"wpf\"]",
+            PreviousOwnerExitConfirmed: true));
+
+        var runtime = new RuntimeStateService(
+            fixture.Database,
+            fixture.Writes,
+            new CommandCoordinator(fixture.Commands, new NullCommandWakeNotifier()),
+            fixture.TimeProvider);
+
+        // 仅完成注册还不算“最近见过播放器”。
+        Assert.False((await runtime.GetSessionAsync(1)).PlayerOnline);
+
+        var accepted = await fixture.RuntimeAuthority.RecordHeartbeatAsync(
+            CommandTargetKind.Display,
+            1,
+            worker,
+            ownership.OwnerEpoch,
+            uiProgress: false);
+        Assert.True(accepted);
+
+        // 传输心跳必须让会话重新在线，否则前端会以“PlayerWorker 当前离线”拒绝控制命令。
+        Assert.True((await runtime.GetSessionAsync(1)).PlayerOnline);
+    }
+
+    [Fact]
     public async Task DisplayStateReportWithNullSourceIdIsAccepted()
     {
         await using var fixture = await ControlHostFixture.CreateAsync();
