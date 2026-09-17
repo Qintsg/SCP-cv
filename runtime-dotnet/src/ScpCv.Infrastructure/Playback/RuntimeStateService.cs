@@ -79,6 +79,42 @@ public sealed class RuntimeStateService(
         return await GetRuntimeAsync(cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// 运行时重新就绪后，按已保存的 <see cref="PlaybackSession.TargetDisplayLabel"/> 重新下发
+    /// SELECT_DISPLAY。PlayerWorker 启动时按 <c>Screen.AllScreens</c> 顺序推断屏幕，与 ControlHost
+    /// 的 Per-Monitor-V2 枚举顺序不一致，不重发就会出现“某个窗口没上屏、露出桌面”。
+    /// 目标已失效时保留原记录且不阻断运行时启动。
+    /// </summary>
+    public async Task<int> ReapplyDisplayTargetsAsync(CancellationToken cancellationToken = default)
+    {
+        IReadOnlyList<(int WindowId, string Label)> targets;
+        await using (var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            targets = await database.PlaybackSessions.AsNoTracking()
+                .Where(session => session.TargetDisplayLabel != string.Empty)
+                .OrderBy(session => session.WindowId)
+                .Select(session => new ValueTuple<int, string>(session.WindowId, session.TargetDisplayLabel))
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        var applied = 0;
+        foreach (var (windowId, label) in targets)
+        {
+            try
+            {
+                await SelectDisplayAsync(windowId, "single", label, cancellationToken).ConfigureAwait(false);
+                applied++;
+            }
+            catch (PlaybackServiceException)
+            {
+                // 现场显示器改过名或已拔除：保留记录，交由操作者重新选择。
+            }
+        }
+
+        return applied;
+    }
+
     public async Task<SystemVolumeDto> GetSystemVolumeAsync(CancellationToken cancellationToken = default)
     {
         await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);

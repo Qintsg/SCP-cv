@@ -180,6 +180,7 @@ public static class SystemEndpoints
             return ApiEndpointSupport.Error(detail, launch.Code, StatusCodes.Status503ServiceUnavailable);
         }
         await authority.ArmAsync(requestId, starting.GroupEpoch, cancellationToken).ConfigureAwait(false);
+        await runtime.ReapplyDisplayTargetsAsync(cancellationToken).ConfigureAwait(false);
         return Results.Accepted(value: new { success = true, group_epoch = starting.GroupEpoch, detail = launch.Detail });
     }
 
