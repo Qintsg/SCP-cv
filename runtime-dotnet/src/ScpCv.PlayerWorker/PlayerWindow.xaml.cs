@@ -35,11 +35,12 @@ public partial class PlayerWindow : Window
         if (_pendingBounds is not { } bounds) return;
         var handle = NativeHandle;
         if (handle == nint.Zero) return;
-        _ = SetWindowPos(handle, nint.Zero, bounds.X, bounds.Y, bounds.Width, bounds.Height, SwpNoActivate | SwpNoZOrder);
+        // HWND_TOPMOST(-1)：任务栏本身是置顶窗口，播放窗口必须同样置顶才能盖住它。
+        _ = SetWindowPos(handle, HwndTopmost, bounds.X, bounds.Y, bounds.Width, bounds.Height, SwpNoActivate);
     }
 
     private const uint SwpNoActivate = 0x0010;
-    private const uint SwpNoZOrder = 0x0004;
+    private static readonly nint HwndTopmost = new(-1);
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern bool SetWindowPos(nint hWnd, nint hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
