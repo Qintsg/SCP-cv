@@ -140,6 +140,28 @@
 - 本轮未启动任何 Worker，也未执行四屏/Office/VLC/MediaMTX/音频/60 分钟门禁；T115/T116/T129 仍未完成，T118 继续阻塞。
 - D4 未安装 PowerPoint，`Office 16 Click-to-Run Extensibility Component` 的存在不能当作 PowerPoint 可用。
 
+## D4 真实运行时启动与缺陷修复（2026-09-17）
+
+在 D4 交互桌面（session 1）启动 `SafetyMode=Hardware` 的全部受管进程，并在真实屏幕上执行 `SELECT_DISPLAY`。过程中发现并修复一个此前从未暴露的缺陷：
+
+- **现象**：`POST /api/system/restart/` 后 PlayerWorker 弹出“PlayerWorker 运行时故障：CommandResult 未被接受：error”模态框并停止响应；ControlHost 记录
+  `System.InvalidOperationException: The requested operation requires an element of type 'Number', but the target element has type 'Null'.`
+- **根因**：`PlayerRuntimeHost.Snapshot()` 在无源时把 `source_id` 序列化为 JSON `null`，而 `RuntimeProjectionPublisher.ReadInt64`（及同类 `ReadInt32`）直接调用
+  `JsonElement.TryGetInt64`/`TryGetInt32`。这两个方法在 `ValueKind` 不是 `Number` 时**抛异常**而不是返回 false——已在 .NET 10 上单独验证：`Null` 与 `String` 均抛
+  `InvalidOperationException`。异常使 ControlHost 以 `error` 帧回应 `command_result`，Worker 端据此抛出并停机。
+- **修复**：读取数值前校验 `ValueKind == JsonValueKind.Number`，并把同样缺守卫的同类写入点一并收口（`RuntimeProjectionPublisher`、`ScenarioEndpoints`、
+  `PlaybackEndpoints`、`BackgroundAudioEndpoints`、`MediaEndpoints`、`PresentationEndpoints`、`AudioCommandExecutor`、`RuntimePipeBroker.Office`、`RuntimeMessageDispatcher`）。
+- **回归**：新增 `RuntimeProjectionTests.DisplayStateReportWithNullSourceIdIsAccepted`。移除守卫时该用例以完全相同的异常失败（红/绿已验证），恢复守卫后通过；
+  本地 `dotnet test -c Debug --filter "Category!=Physical"` 共 192 项通过、0 失败。
+- **实测**：修复后 `POST /api/system/restart/` 返回 `{"success":true,"group_epoch":5,"detail":"Supervisor restart 的全部 Worker 已就绪。"}`；
+  4×PlayerWorker、AudioWorker、PowerPointHost、MediaMTX 全部在线，`control-host.err.log` 为空；对四个窗口执行 `POST /api/displays/select/` 全部 200，
+  `target_display_label` 正确落库。
+
+显示配置（按用户指定）：DISPLAY2/3/4/5 作为四路输出，集显 DISPLAY1 不参与播放。四块屏已切到 `3840×2160`，但 EDID 只提供 ≤30Hz 模式，刷新率因此由 60Hz 降到 30Hz；
+切换分辨率会打乱虚拟桌面坐标，已用 `ChangeDisplaySettingsEx` 重排为 `0 / 3840 / 7680 / 11520`（y=0），控制屏移至 `15360,0`。
+
+未执行：真实媒体播放、Office COM/HWND 附着、VLC/SRT/MediaMTX 播放、真实音频输出与 60 分钟混合测试；T115/T116/T129 状态不变。
+
 ## Spec Kit 一致性分析（T119）
 
 2026-09-08 对 `spec.md`、`plan.md`、`tasks.md`、项目宪章和实现路径进行只读交叉检查：

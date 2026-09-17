@@ -42,6 +42,16 @@
 
 部署方式与命令见 `003-workstation-runbook.md`；上述探针只证明硬件可见，不代表四屏播放已通过。
 
+### D4 全部 Worker 启动与显示落位（2026-09-17）
+
+- `POST /api/system/restart/` → `{"success":true,"group_epoch":5,"detail":"Supervisor restart 的全部 Worker 已就绪。"}`；
+  4×PlayerWorker、AudioWorker、PowerPointHost、MediaMTX 均在线（session 1），`control-host.err.log` 为空。
+- 启动过程中发现并修复 `RuntimeProjectionPublisher` 把 JSON `null` 当数字读取、导致 Worker 收到 `error` 帧后停机的缺陷，详见
+  `specs/003-dotnet-runtime-refactor/verification.md`。
+- 按用户指定，四路输出使用 `\\.\DISPLAY2`–`\\.\DISPLAY5`（集显 `\\.\DISPLAY1` 不参与播放），四个窗口经 `POST /api/displays/select/` 落位成功。
+- 四块输出已切换为 `3840×2160`；EDID 只提供 ≤30Hz 模式，刷新率由 60Hz 降到 30Hz，虚拟桌面已重排为 y=0 横排（`0 / 3840 / 7680 / 11520`），控制屏移至 `15360,0`。
+- 本轮仍只验证到“运行时就绪 + 显示落位”，未播放真实媒体；T116/T129 未完成，T118 继续阻塞。
+
 ## D4 部署与控制面验证（2026-09-17）
 
 `D4`（`192.168.5.194`，Windows 10 Pro 1909 / build 18363.1556）按用户批准的兼容性例外完成部署，未改变受支持基线：
