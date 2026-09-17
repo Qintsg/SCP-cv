@@ -199,20 +199,20 @@ public static class ScenarioEndpoints
     private static int FlexibleInt32(JsonElement body, string name)
     {
         if (!body.TryGetProperty(name, out var value)) return 0;
-        if (value.TryGetInt32(out var numeric)) return numeric;
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var numeric)) return numeric;
         return value.ValueKind == JsonValueKind.String && int.TryParse(value.GetString(), out var parsed) ? parsed : 0;
     }
 
     private static long? FlexibleInt64(JsonElement body, string name)
     {
         if (!body.TryGetProperty(name, out var value) || value.ValueKind == JsonValueKind.Null) return null;
-        if (value.TryGetInt64(out var numeric)) return numeric;
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var numeric)) return numeric;
         return value.ValueKind == JsonValueKind.String && long.TryParse(value.GetString(), out var parsed) ? parsed : null;
     }
 
     private static bool Has(JsonElement body, string name) => body.TryGetProperty(name, out _);
     private static string String(JsonElement body, string name, string fallback = "") => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? fallback : fallback;
-    private static int Integer(JsonElement body, string name, int fallback) => body.TryGetProperty(name, out var value) && value.TryGetInt32(out var parsed) ? parsed : fallback;
-    private static long Integer64(JsonElement body, string name, long fallback) => body.TryGetProperty(name, out var value) && value.TryGetInt64(out var parsed) ? parsed : fallback;
+    private static int Integer(JsonElement body, string name, int fallback) => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed) ? parsed : fallback;
+    private static long Integer64(JsonElement body, string name, long fallback) => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var parsed) ? parsed : fallback;
     private readonly record struct BodyResult(JsonElement Value, IResult? Error);
 }

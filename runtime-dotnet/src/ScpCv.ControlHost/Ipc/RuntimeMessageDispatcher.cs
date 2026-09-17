@@ -229,7 +229,7 @@ public sealed class RuntimeMessageDispatcher(
     }
 
     private static long ReadGeneration(JsonElement state) =>
-        state.TryGetProperty("source_generation", out var value) && value.TryGetInt64(out var parsed)
+        state.TryGetProperty("source_generation", out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var parsed)
             ? parsed
             : 0;
 }

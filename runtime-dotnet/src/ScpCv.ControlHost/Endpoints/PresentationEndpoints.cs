@@ -130,7 +130,7 @@ public static class PresentationEndpoints
     }
 
     private static string String(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()?.Trim() ?? string.Empty : string.Empty;
-    private static int? Integer(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.TryGetInt32(out var parsed) ? parsed : null;
-    private static long? Long(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.TryGetInt64(out var parsed) ? parsed : null;
+    private static int? Integer(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed) ? parsed : null;
+    private static long? Long(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var parsed) ? parsed : null;
     private readonly record struct BodyResult(JsonElement Value, IResult? Error);
 }

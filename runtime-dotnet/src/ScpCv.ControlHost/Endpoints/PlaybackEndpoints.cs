@@ -334,9 +334,9 @@ public static class PlaybackEndpoints
     private static string String(JsonElement body, string name, string defaultValue = "") =>
         body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() ?? defaultValue : defaultValue;
     private static long Integer64(JsonElement body, string name, long defaultValue) =>
-        body.TryGetProperty(name, out var value) && value.TryGetInt64(out var parsed) ? parsed : defaultValue;
+        body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var parsed) ? parsed : defaultValue;
     private static int Integer(JsonElement body, string name, int defaultValue) =>
-        body.TryGetProperty(name, out var value) && value.TryGetInt32(out var parsed) ? parsed : defaultValue;
+        body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed) ? parsed : defaultValue;
     private static bool Boolean(JsonElement body, string name, bool defaultValue) =>
         body.TryGetProperty(name, out var value) ? value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.String && value.GetString()?.Trim().ToLowerInvariant() is "true" or "1" or "yes" or "on" : defaultValue;
 

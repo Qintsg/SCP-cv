@@ -317,10 +317,10 @@ public sealed partial class RuntimePipeBroker
         values.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
 
     private static long ReadLong(Dictionary<string, JsonElement> values, string key) =>
-        values.TryGetValue(key, out var value) && value.TryGetInt64(out var parsed) ? parsed : 0;
+        values.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var parsed) ? parsed : 0;
 
     private static int ReadInt(Dictionary<string, JsonElement> values, string key, int fallback) =>
-        values.TryGetValue(key, out var value) && value.TryGetInt32(out var parsed) ? parsed : fallback;
+        values.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed) ? parsed : fallback;
 
     private static bool ReadBool(Dictionary<string, JsonElement> values, string key, bool fallback) =>
         values.TryGetValue(key, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False

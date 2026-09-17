@@ -72,10 +72,10 @@ public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio)
             : throw new InvalidDataException($"缺少字符串参数 {key}。");
 
     private static long Long(Dictionary<string, JsonElement> args, string key, long fallback = 0) =>
-        args.TryGetValue(key, out var value) && value.TryGetInt64(out var parsed) ? parsed : fallback;
+        args.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var parsed) ? parsed : fallback;
 
     private static int Int(Dictionary<string, JsonElement> args, string key, int fallback) =>
-        args.TryGetValue(key, out var value) && value.TryGetInt32(out var parsed) ? parsed : fallback;
+        args.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed) ? parsed : fallback;
 
     private static bool Bool(Dictionary<string, JsonElement> args, string key, bool fallback) =>
         args.TryGetValue(key, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False

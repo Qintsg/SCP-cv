@@ -131,9 +131,9 @@ public static class BackgroundAudioEndpoints
     }
 
     private static long Integer64(JsonElement body, string name) =>
-        body.TryGetProperty(name, out var value) && value.TryGetInt64(out var parsed) ? parsed : 0;
+        body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var parsed) ? parsed : 0;
 
-    private static int Integer(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.TryGetInt32(out var parsed) ? parsed : 0;
+    private static int Integer(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var parsed) ? parsed : 0;
     private static bool Boolean(JsonElement body, string name) => body.TryGetProperty(name, out var value) && (value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.String && value.GetString()?.Equals("true", StringComparison.OrdinalIgnoreCase) == true);
     private static string String(JsonElement body, string name) => body.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString()?.Trim() ?? string.Empty : string.Empty;
 

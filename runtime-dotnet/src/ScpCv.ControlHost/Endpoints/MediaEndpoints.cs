@@ -396,7 +396,7 @@ public static class MediaEndpoints
             return null;
         }
 
-        if (value.TryGetInt64(out var number))
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var number))
         {
             return number;
         }

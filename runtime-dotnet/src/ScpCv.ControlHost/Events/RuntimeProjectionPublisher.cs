@@ -177,6 +177,7 @@ public sealed class RuntimeProjectionPublisher(
     private static int ReadInt32(JsonElement state, string name, int fallback) =>
         state.ValueKind == JsonValueKind.Object &&
         state.TryGetProperty(name, out var value) &&
+        value.ValueKind == JsonValueKind.Number &&
         value.TryGetInt32(out var parsed)
             ? parsed
             : fallback;
@@ -184,6 +185,7 @@ public sealed class RuntimeProjectionPublisher(
     private static long? ReadInt64(JsonElement state, string name, long? fallback) =>
         state.ValueKind == JsonValueKind.Object &&
         state.TryGetProperty(name, out var value) &&
+        value.ValueKind == JsonValueKind.Number &&
         value.TryGetInt64(out var parsed)
             ? parsed
             : fallback;
