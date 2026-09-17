@@ -21,6 +21,7 @@ public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
 {
     private readonly ConcurrentDictionary<long, (dynamic Presentation, string Path)> _presentations = new();
     private dynamic? _application;
+    private DateTimeOffset _applicationCreatedAt;
     private bool _createdApplication;
     private long _nextIdentity;
     private int _disposed;
@@ -169,6 +170,7 @@ public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
         {
             if (_application is null)
             {
+                _applicationCreatedAt = DateTimeOffset.UtcNow;
                 var applicationType = Type.GetTypeFromProgID("PowerPoint.Application")
                     ?? throw new InvalidOperationException("未安装 PowerPoint COM Automation 类型。");
                 _application = Activator.CreateInstance(applicationType)
@@ -191,8 +193,15 @@ public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
             openingPresentation = presentation;
             var identity = Interlocked.Increment(ref _nextIdentity);
             presentation.SlideShowSettings.Run();
-            dynamic window = presentation.SlideShowWindow;
-            var handle = new nint((long)window.HWND);
+            // PowerPoint 的 IDispatch 不暴露 SlideShowWindow.HWND（dynamic 访问会抛
+            // MissingMemberException），改按放映窗口类名 screenClass + 进程归属回溯句柄。
+            var handle = ResolveSlideShowHandle(_applicationCreatedAt);
+            if (handle == 0)
+            {
+                presentation.Close();
+                MarshalFinalRelease(presentation);
+                return new(false, "slideshow_hwnd_unavailable", 0, 0, 0);
+            }
             var slides = (int)presentation.Slides.Count;
             if (GetWindowThreadProcessId(handle, out var processId) == 0 || processId == 0)
             {
@@ -282,4 +291,51 @@ public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
 
     [System.Runtime.InteropServices.DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(nint hWnd, out uint processId);
+
+    private const string SlideShowWindowClassName = "screenClass";
+
+    /// <summary>
+    /// 取本机自有 PowerPoint 放映窗口句柄：PowerPoint 的 IDispatch 不暴露
+    /// <c>SlideShowWindow.HWND</c>，因此按放映窗口类名枚举顶层窗口，并用进程名与
+    /// 进程启动时间证明该窗口属于本次创建的 PowerPoint 实例。
+    /// </summary>
+    private static nint ResolveSlideShowHandle(DateTimeOffset createdAfter)
+    {
+        var result = nint.Zero;
+        EnumWindows((window, _) =>
+        {
+            if (!IsWindowVisible(window)) return true;
+            var buffer = new char[64];
+            var length = GetClassName(window, buffer, buffer.Length);
+            if (length <= 0) return true;
+            if (!string.Equals(new string(buffer, 0, length), SlideShowWindowClassName, StringComparison.Ordinal)) return true;
+            if (GetWindowThreadProcessId(window, out var processId) == 0 || processId == 0) return true;
+            try
+            {
+                using var process = System.Diagnostics.Process.GetProcessById((int)processId);
+                if (!string.Equals(process.ProcessName, "POWERPNT", StringComparison.OrdinalIgnoreCase)) return true;
+                var start = new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero);
+                if (createdAfter != default && start < createdAfter.AddSeconds(-5)) return true;
+            }
+            catch
+            {
+                return true;
+            }
+
+            result = window;
+            return false;
+        }, nint.Zero);
+        return result;
+    }
+
+    private delegate bool EnumWindowsProc(nint window, nint parameter);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool EnumWindows(EnumWindowsProc callback, nint parameter);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern int GetClassName(nint window, char[] className, int maximum);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool IsWindowVisible(nint window);
 }
