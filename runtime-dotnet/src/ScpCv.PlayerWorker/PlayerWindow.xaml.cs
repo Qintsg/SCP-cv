@@ -6,19 +6,43 @@ namespace ScpCv.PlayerWorker;
 /// <summary>单实例 PlayerWorker 的无边框输出窗口；显示器坐标由 Supervisor 提供。</summary>
 public partial class PlayerWindow : Window
 {
+    private (int X, int Y, int Width, int Height)? _pendingBounds;
+
     public PlayerWindow()
     {
         InitializeComponent();
-        SourceInitialized += (_, _) => ApplyPerMonitorDpiAwareness();
+        SourceInitialized += (_, _) =>
+        {
+            ApplyPerMonitorDpiAwareness();
+            ApplyPendingBounds();
+        };
+        Loaded += (_, _) => ApplyPendingBounds();
     }
 
+    /// <summary>
+    /// 用物理像素把无边框窗口铺满目标显示器。WPF 的 Left/Top/Width/Height 是设备无关单位，
+    /// 直接填入 <see cref="System.Windows.Forms.Screen"/> 的物理像素，在非 100% 缩放的显示器上
+    /// 会留下未被窗口覆盖的桌面边条，因此这里改用 Win32 SetWindowPos。
+    /// </summary>
     public void AssignBounds(int x, int y, int width, int height)
     {
-        Left = x;
-        Top = y;
-        Width = width;
-        Height = height;
+        _pendingBounds = (x, y, width, height);
+        ApplyPendingBounds();
     }
+
+    private void ApplyPendingBounds()
+    {
+        if (_pendingBounds is not { } bounds) return;
+        var handle = NativeHandle;
+        if (handle == nint.Zero) return;
+        _ = SetWindowPos(handle, nint.Zero, bounds.X, bounds.Y, bounds.Width, bounds.Height, SwpNoActivate | SwpNoZOrder);
+    }
+
+    private const uint SwpNoActivate = 0x0010;
+    private const uint SwpNoZOrder = 0x0004;
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    private static extern bool SetWindowPos(nint hWnd, nint hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
 
     public void SetSurface(FrameworkElement surface)
     {
