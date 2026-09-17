@@ -99,26 +99,36 @@ try
         !acceptedValue.GetBoolean())
         throw new InvalidOperationException("ControlHost 未接受 PowerPointHost ready 状态。");
 
-    await foreach (var frame in client.ReadUnsolicitedAsync(stop.Token).ConfigureAwait(false))
+    // Office 宿主在两次请求之间没有任何帧往来；不发送传输心跳会被 ControlHost 的
+    // 10 秒读超时判为掉线，之后所有 Office 请求都会得到 office_unavailable。
+    var heartbeatTask = RunHeartbeatAsync(client, instanceId, welcome.OwnerEpoch, stop.Token);
+    try
     {
-        if (string.Equals(frame.MessageType, "shutdown_request", StringComparison.OrdinalIgnoreCase)) break;
-        if (!string.Equals(frame.MessageType, "office_request", StringComparison.OrdinalIgnoreCase)) continue;
-
-        var request = frame.Payload.Deserialize<OfficeRequestDto>()
-            ?? throw new InvalidDataException("OfficeRequest payload 无效。");
-        var result = await executor.ExecuteAsync(request, stop.Token).ConfigureAwait(false);
-        var response = new IpcFrameDto
+        await foreach (var frame in client.ReadUnsolicitedAsync(stop.Token).ConfigureAwait(false))
         {
-            MessageType = "office_result",
-            MessageId = Guid.NewGuid(),
-            CorrelationId = frame.MessageId,
-            InstanceId = instanceId,
-            OwnerEpoch = welcome.OwnerEpoch,
-            Payload = JsonSerializer.SerializeToElement(result),
-        };
-        var acceptedResult = await client.ExchangeAsync(response, stop.Token).ConfigureAwait(false);
-        if (!string.Equals(acceptedResult.MessageType, "office_result_accepted", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"ControlHost 未接受 OfficeResult：{acceptedResult.MessageType}");
+            if (string.Equals(frame.MessageType, "shutdown_request", StringComparison.OrdinalIgnoreCase)) break;
+            if (!string.Equals(frame.MessageType, "office_request", StringComparison.OrdinalIgnoreCase)) continue;
+
+            var request = frame.Payload.Deserialize<OfficeRequestDto>()
+                ?? throw new InvalidDataException("OfficeRequest payload 无效。");
+            var result = await executor.ExecuteAsync(request, stop.Token).ConfigureAwait(false);
+            var response = new IpcFrameDto
+            {
+                MessageType = "office_result",
+                MessageId = Guid.NewGuid(),
+                CorrelationId = frame.MessageId,
+                InstanceId = instanceId,
+                OwnerEpoch = welcome.OwnerEpoch,
+                Payload = JsonSerializer.SerializeToElement(result),
+            };
+            var acceptedResult = await client.ExchangeAsync(response, stop.Token).ConfigureAwait(false);
+            if (!string.Equals(acceptedResult.MessageType, "office_result_accepted", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException($"ControlHost 未接受 OfficeResult：{acceptedResult.MessageType}");
+        }
+    }
+    finally
+    {
+        try { await heartbeatTask.ConfigureAwait(false); } catch (OperationCanceledException) { }
     }
 
     return 0;
@@ -140,6 +150,46 @@ static string? Option(string[] values, string name)
     if (inline is not null) return inline[prefix.Length..];
     var index = Array.FindIndex(values, value => string.Equals(value, $"--{name}", StringComparison.OrdinalIgnoreCase));
     return index >= 0 && index + 1 < values.Length ? values[index + 1] : null;
+}
+
+static async Task RunHeartbeatAsync(
+    RuntimePipeClient client,
+    Guid instanceId,
+    long ownerEpoch,
+    CancellationToken cancellationToken)
+{
+    // 传输心跳只声明进程与管道仍然在线，不冒充 UI 进度。
+    using var timer = new PeriodicTimer(TimeSpan.FromSeconds(2));
+    var sequence = 0L;
+    while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+    {
+        var frame = new IpcFrameDto
+        {
+            MessageType = "health_report",
+            MessageId = Guid.NewGuid(),
+            InstanceId = instanceId,
+            OwnerEpoch = ownerEpoch,
+            Payload = JsonSerializer.SerializeToElement(new HealthReportDto
+            {
+                TransportHealthy = true,
+                UiHealthy = false,
+                ReportSequence = ++sequence,
+                ObservedAt = DateTimeOffset.UtcNow.ToString("O"),
+            }),
+        };
+        try
+        {
+            var response = await client.ExchangeAsync(frame, cancellationToken).ConfigureAwait(false);
+            if (!string.Equals(response.MessageType, "health_accepted", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"ControlHost 未接受 Office 传输心跳：{response.MessageType}");
+            }
+        }
+        catch (IOException)
+        {
+            // 连接是否仍然有效由读取循环判定；单次心跳失败不额外终止宿主。
+        }
+    }
 }
 
 static DateTimeOffset UtcStart(Process process) =>
