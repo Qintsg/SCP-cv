@@ -6,6 +6,7 @@ using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Media;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Infrastructure.Commands;
+using ScpCv.Infrastructure.VideoWall;
 
 namespace ScpCv.Infrastructure.Playback;
 
@@ -15,13 +16,15 @@ public sealed class RuntimeStateService(
     CommandCoordinator commands,
     TimeProvider? timeProvider = null,
     IDisplayTopologyProvider? displayTopology = null,
-    ISystemAudioController? systemAudio = null)
+    ISystemAudioController? systemAudio = null,
+    IVideoWallController? videoWall = null)
 {
     private static readonly int[] Windows = [1, 2, 3, 4];
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
     private readonly IDisplayTopologyProvider _displayTopology = displayTopology ?? new SimulationDisplayTopologyProvider();
     private readonly ISystemAudioController _systemAudio = systemAudio ?? new SimulationSystemAudioController();
+    private readonly IVideoWallController _videoWall = videoWall ?? new SimulationVideoWallController();
 
     public async Task<IReadOnlyList<PlaybackSessionDto>> GetSessionsAsync(CancellationToken cancellationToken = default)
     {
@@ -58,6 +61,19 @@ public sealed class RuntimeStateService(
             "double" => BigScreenMode.Double,
             _ => throw new PlaybackServiceException($"无效的大屏模式：{value}"),
         };
+
+        // 先下发视频墙、成功后才落库：节点不可达时运行态必须保持原样，否则界面显示已切到双屏、
+        // 墙上还是旧画面。旧 Python 版是先改内存再回滚，等价语义就是“下发失败即整体不生效”。
+        // 网络重试（单节点最多 5 次 × 2 秒）也绝不能压进数据库写事务里。
+        try
+        {
+            await _videoWall.DispatchAsync(EnumName(mode), cancellationToken).ConfigureAwait(false);
+        }
+        catch (VideoWallException exception)
+        {
+            throw new PlaybackServiceException(exception.Message, "video_wall_error");
+        }
+
         var changedWindows = await writes.ExecuteAsync(
             async (database, token) =>
             {

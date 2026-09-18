@@ -23,6 +23,7 @@ using ScpCv.Infrastructure.Playback;
 using ScpCv.Infrastructure.Presentations;
 using ScpCv.Infrastructure.Runtime;
 using ScpCv.Infrastructure.Scenarios;
+using ScpCv.Infrastructure.VideoWall;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,11 +101,15 @@ if (safetyMode.IsSimulation)
 {
     builder.Services.AddSingleton<IDisplayTopologyProvider, SimulationDisplayTopologyProvider>();
     builder.Services.AddSingleton<ISystemAudioController, SimulationSystemAudioController>();
+    builder.Services.AddSingleton<IVideoWallController, SimulationVideoWallController>();
 }
 else
 {
     builder.Services.AddSingleton<IDisplayTopologyProvider, WindowsDisplayTopologyProvider>();
     builder.Services.AddSingleton<ISystemAudioController, WindowsCoreAudioController>();
+    builder.Services.AddSingleton<IVideoWallTransport, TcpVideoWallTransport>();
+    builder.Services.AddSingleton(new VideoWallDispatchOptions());
+    builder.Services.AddSingleton<IVideoWallController, TcpVideoWallController>();
 }
 builder.Services.AddSingleton<RuntimeStateService>();
 builder.Services.AddSingleton<PresentationCoordinator>();

@@ -42,7 +42,9 @@ public static class VideoWallSequenceBuilder
         {
             "single" => BuildFor(VideoWallLayoutMode.FullscreenWs21),
             "double" => BuildFor(VideoWallLayoutMode.SplitWs21Ws22),
-            _ => throw new ArgumentOutOfRangeException(nameof(bigScreenMode), bigScreenMode, "无效的大屏模式。"),
+            // Python 的 build_sequence 同样以 VideoWallError 报未知模式，这里统一到视频墙异常类型，
+            // 调用方无需再区分 ArgumentOutOfRangeException。
+            _ => throw new VideoWallException($"未知的视频墙模式：{bigScreenMode}"),
         };
 
     /// <summary>构造完整的视频墙下发序列。</summary>

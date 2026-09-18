@@ -125,6 +125,8 @@ uv run pytest tests/test_runall_command.py -v
 - 影响用户或现场运维的行为已更新文档。
 - 没有提交本地缓存、日志、上传文件或密钥。
 - `docs/CHANGELOG.md` 已记录用户可感知变更。
+- 变更涉及物理副作用（墙面、声卡、显示器、设备电源、Office 放映、进程组）时，已对照
+  `docs/known-pitfalls.md` §1 的路径清单，并说明仿真替代是否会掩盖接线缺失。
 
 ## 8. Spec Kit 工作流
 

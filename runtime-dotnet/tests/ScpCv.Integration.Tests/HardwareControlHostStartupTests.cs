@@ -8,6 +8,14 @@ namespace ScpCv.Integration.Tests;
 
 public sealed class HardwareControlHostStartupTests
 {
+    /// <summary>
+    /// 就绪预算。子进程是冷启动（dotnet 宿主 + JIT + 数据库初始化），与其它测试工程或前端构建并行时
+    /// 实测可明显超过 10 秒，原先的 10 秒预算会让负载下的正常启动变成假失败。
+    /// 真正的启动死锁（例如单例构造环）表现为进程一直存活且永不就绪，仍会在这个预算内失败，
+    /// 因此放宽预算不削弱该回归的检出能力，只影响失败时的等待时长。
+    /// </summary>
+    private static readonly TimeSpan ReadyTimeout = TimeSpan.FromSeconds(60);
+
     [Fact]
     public async Task HardwareControlHostReachesReadyEndpointWithoutDependencyDeadlock()
     {
@@ -31,13 +39,26 @@ public sealed class HardwareControlHostStartupTests
             RedirectStandardError = true,
         }) ?? throw new InvalidOperationException("无法启动 Hardware ControlHost 测试进程。");
 
+        // 必须立刻开始排空 stdout/stderr：重定向后管道缓冲区（约 4 KB）一旦写满，子进程会阻塞在写日志上，
+        // 从而制造出“未就绪”的假象；同时把输出留到失败时做诊断。
+        var standardOutput = process.StandardOutput.ReadToEndAsync();
+        var standardError = process.StandardError.ReadToEndAsync();
+
         try
         {
             using var client = new HttpClient { BaseAddress = baseAddress };
-            using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var deadline = new CancellationTokenSource(ReadyTimeout);
             Exception? lastError = null;
             while (!deadline.IsCancellationRequested)
             {
+                // 先于超时判定进程早退，避免子进程崩溃时白等到预算耗尽才报一个无信息量的取消异常。
+                if (process.HasExited)
+                {
+                    throw new Xunit.Sdk.XunitException(
+                        $"Hardware ControlHost 在就绪前退出，退出码 {process.ExitCode}。\n" +
+                        $"stdout:\n{await standardOutput}\nstderr:\n{await standardError}");
+                }
+
                 try
                 {
                     using var response = await client.GetAsync("/health/ready", deadline.Token);
@@ -47,16 +68,15 @@ public sealed class HardwareControlHostStartupTests
                 catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
                 {
                     lastError = exception;
-                    await Task.Delay(100, CancellationToken.None);
+                    await Task.Delay(250, CancellationToken.None);
                 }
             }
 
             if (!process.HasExited) process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync();
-            var output = await process.StandardOutput.ReadToEndAsync();
-            var error = await process.StandardError.ReadToEndAsync();
             throw new Xunit.Sdk.XunitException(
-                $"Hardware ControlHost 未在 10 秒内就绪。最后错误：{lastError?.Message}\nstdout:\n{output}\nstderr:\n{error}");
+                $"Hardware ControlHost 未在 {ReadyTimeout.TotalSeconds:0} 秒内就绪。" +
+                $"最后错误：{lastError?.Message}\nstdout:\n{await standardOutput}\nstderr:\n{await standardError}");
         }
         finally
         {
