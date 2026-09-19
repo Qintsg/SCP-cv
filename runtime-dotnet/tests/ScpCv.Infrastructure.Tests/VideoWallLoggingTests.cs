@@ -84,10 +84,13 @@ public sealed class VideoWallLoggingTests
         await controller.DispatchAsync("double");
 
         // Simulation 下切换在开发机上「成功」，但墙上不会动；日志必须说清楚这一点。
-        var message = Assert.Single(logger.Entries).Message;
-        Assert.Contains("模式 double", message, StringComparison.Ordinal);
-        Assert.Contains("本应下发 200 个控制包", message, StringComparison.Ordinal);
-        Assert.DoesNotContain(logger.Messages, entry => entry.Contains("下发完成", StringComparison.Ordinal));
+        var entry = Assert.Single(logger.Entries);
+        // 级别必须到 Information：appsettings.json 的默认级别就是 Information，用 Debug 等于现场看不见，
+        // 「界面成功、墙面没动」的误判就又回来了。
+        Assert.Equal(LogLevel.Information, entry.Level);
+        Assert.Contains("模式 double", entry.Message, StringComparison.Ordinal);
+        Assert.Contains("本应下发 200 个控制包", entry.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(logger.Messages, message => message.Contains("下发完成", StringComparison.Ordinal));
     }
 
     private static VideoWallDispatchOptions FastOptions() => new()

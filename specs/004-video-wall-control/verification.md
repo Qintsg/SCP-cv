@@ -52,7 +52,9 @@
 | `FailedDispatchLogsThePhaseNodeCountAndReason` | 失败恰好 1 条 Error，含模式、`中止于阶段 clear`、`失败节点 50 个`、首个失败节点 `192.168.5.101:4830`；且**不出现**「下发完成」 |
 | `RetryThatSucceedsIsLoggedWithTheAttemptCount` | 每个包失败 2 次后成功 → 恰好 200 条重试记录，均为 `第 3/5 次尝试` |
 | `CancelledDispatchIsLoggedAsNeitherFailureNorSuccess` | 取消传播为 `OperationCanceledException`（不是 `VideoWallException`），且**零条**日志 |
-| `SimulationLogsTheSkipInsteadOfASuccessfulDispatch` | Simulation 只有 1 条 Debug，写明 `本应下发 200 个控制包`；不出现「下发完成」 |
+| `SimulationLogsTheSkipInsteadOfASuccessfulDispatch` | Simulation 恰好 1 条 **Information**，写明 `本应下发 200 个控制包`；不出现「下发完成」 |
+
+四条日志的级别都 ≥ `Information`：`appsettings.json` 的默认级别就是 `Information`（`Microsoft.AspNetCore` 为 `Warning`，不影响本模块的 category），若把 Simulation 那条写成 `Debug`，文档让维护者去找的日志在现场根本不会输出——首版即踩了这个坑，已改并加了级别断言。
 
 ### 日志测试确实能发现该缺陷（探针观察，已撤销）
 

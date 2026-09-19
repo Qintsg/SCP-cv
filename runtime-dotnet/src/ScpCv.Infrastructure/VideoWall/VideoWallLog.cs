@@ -39,7 +39,7 @@ internal static partial class VideoWallLog
 
     [LoggerMessage(
         EventId = 4103,
-        Level = LogLevel.Debug,
+        Level = LogLevel.Information,
         Message = "视频墙下发已跳过（Simulation）：模式 {Mode}，本应下发 {PacketCount} 个控制包，未建立任何连接")]
     public static partial void DispatchSkipped(ILogger logger, string mode, int packetCount);
 }
