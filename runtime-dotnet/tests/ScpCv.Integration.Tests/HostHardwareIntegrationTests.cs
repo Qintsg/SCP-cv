@@ -131,6 +131,22 @@ public sealed class HostHardwareIntegrationTests
     }
 
     [Fact]
+    public async Task RepeatingTheCurrentModeStillDispatchesTheWholeSequence()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var videoWall = new StubVideoWallController();
+        var runtime = CreateRuntime(fixture, new SimulationDisplayTopologyProvider(), new SimulationSystemAudioController(), videoWall);
+
+        // 运行态初始就是 single，这里两次请求的都是「当前已生效的模式」。
+        // 现场补救路径：切换报成功但墙面没动时重来一次，服务层不得因为模式没变就跳过下发。
+        await runtime.SetRuntimeModeAsync("single");
+        await runtime.SetRuntimeModeAsync("single");
+
+        Assert.Equal(["single", "single"], videoWall.Modes);
+        Assert.Equal(BigScreenMode.Single, await ReadBigScreenModeAsync(fixture));
+    }
+
+    [Fact]
     public async Task ScenarioActivationDispatchesVideoWallForItsBigScreenMode()
     {
         await using var fixture = await ControlHostFixture.CreateAsync();

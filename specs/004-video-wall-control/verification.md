@@ -6,6 +6,7 @@
 **变更集**：
 - 第 1 轮——视频墙下发层补齐（`VideoWallController.cs` 新增，`VideoWallSequenceBuilder`、`RuntimeStateService`、`ScenarioService`、`Program.cs` 修改）+ 3 个测试文件。
 - 第 2 轮（同日，补 FR-018/FR-020 缺口）——`VideoWallLog.cs` 新增，`VideoWallController.cs` 注入日志；`docs/使用文档.md` §4.5、`docs/维护文档.md` §8.6、`docs/CHANGELOG.md`、`docs/known-pitfalls.md` 同步；新增 `VideoWallLoggingTests.cs` 与测试替身 `RecordingLogger.cs`。
+- 第 3 轮（同日，补 FR-012/FR-013 缺口）——只新增测试，**未改动任何产品代码**：`VideoWallControllerTests.cs` 加 2 个用例，`HostHardwareIntegrationTests.cs` 加 1 个用例。两轮探针过后源码与探针前逐字节一致。
 
 ## 自动化执行记录
 
@@ -18,10 +19,13 @@
 | 集成层硬件入口 | `dotnet test runtime-dotnet/tests/ScpCv.Integration.Tests/ScpCv.Integration.Tests.csproj --filter "FullyQualifiedName~HostHardwareIntegrationTests"` | 7/7 通过 |
 | Spec Kit 校验 | `python .specify/scripts/python/validate_specs.py --specs-dir specs` | 通过（exit 0，无未完成占位符） |
 | .NET 完整测试（第 2 轮，补日志后） | `dotnet test runtime-dotnet/ScpCv.sln` | **213/213 通过** |
+| .NET 完整测试（第 3 轮，补 FR-012/FR-013 后） | `dotnet test runtime-dotnet/ScpCv.sln` | **216/216 通过** |
 
 第 1 轮第 2 次分项：Domain 38 / Windows 11 / Contracts 18 / Infrastructure 28 / Integration 57 / ControlHost 56 = **208**（补下发层前为 197，本轮新增 11 个测试）。
 
 第 2 轮分项：Domain 38 / Windows 11 / Contracts 18 / Infrastructure 33 / Integration 57 / ControlHost 56 = **213**（新增 5 个日志测试，未改动其它分层）。
+
+第 3 轮分项：Domain 38 / Windows 11 / Contracts 18 / Infrastructure 35 / Integration 58 / ControlHost 56 = **216**（新增 2 个控制器测试 + 1 个集成测试，未改动产品代码）。
 
 ### 回归测试确实能发现该缺陷（探针观察，已撤销）
 
@@ -56,6 +60,45 @@
 
 四条日志的级别都 ≥ `Information`：`appsettings.json` 的默认级别就是 `Information`（`Microsoft.AspNetCore` 为 `Warning`，不影响本模块的 category），若把 Simulation 那条写成 `Debug`，文档让维护者去找的日志在现场根本不会输出——首版即踩了这个坑，已改并加了级别断言。
 
+第 3 轮新增（3 个）：
+
+| 用例 | 位置 | 断言 |
+| --- | --- | --- |
+| `RepeatingTheCurrentModeStillDispatchesTheWholeSequence` | `HostHardwareIntegrationTests` | 运行态初值即 `single`，连续两次 `SetRuntimeModeAsync("single")` → 控制器收到 `["single", "single"]` 两次下发；服务层不得因模式未变而跳过 |
+| `DispatchingTheSameModeTwiceSendsTheWholeSequenceTwice` | `VideoWallControllerTests` | 同模式下发两次 → 400 个包、200 个 (节点, 阶段) 键各尝试 2 次；控制器不得去重或短路 |
+| `ConcurrentDispatchesAreSerializedInsteadOfInterleaving` | `VideoWallControllerTests` | 把首个「映射」发送卡住后再发起第二次下发：此刻时间线折叠后必须恰好是 `clear → wait → mapping`，第二次一个包都不能发；释放后整段折叠为两次完整的四阶段序列 |
+
+FR-012 分两层测是因为服务层与控制器层**任一**短路都会破坏「现场补救路径」：集成用例证明 `SetRuntimeModeAsync` 没有相同模式早退，控制器用例证明 `DispatchAsync` 没有去重。
+
+配套的文档缺口（属 FR-020）：这条补救路径此前只存在于代码里——前端 `BigScreenModeButtons.vue` 的 `selectMode` 同样刻意不因模式相同而短路，当前模式的按钮在切换完成后可再次点击——但两份运维文档都没告诉现场怎么用。已补 `docs/使用文档.md` §4.5 与 `docs/维护文档.md` §8.6。
+
+### FR-012 / FR-013 的测试确实能发现缺陷（探针观察，已撤销）
+
+2026-09-19 分两批注入缺陷：
+
+1. **控制器层**——给 `TcpVideoWallController` 加 `_lastMode` 去重（重复模式直接 return），并把 `_gate` 从 `(1, 1)` 放宽到 `(int.MaxValue, int.MaxValue)`（等效于无串行化）：
+
+```text
+失败!  - 失败: 2，通过: 33，已跳过: 0，总计: 35 - ScpCv.Infrastructure.Tests.dll (net10.0)
+```
+
+失败的正是 `DispatchingTheSameModeTwice…` 与 `ConcurrentDispatchesAreSerialized…`，其余 33 个用例不受影响。串行化用例的失败信息即交错特征：
+
+```text
+Expected: [···, "wait:1", "send:mapping"]
+Actual:   [···, "wait:1", "send:mapping", "send:clear", "wait:1", "send:mapping"]
+```
+
+2. **服务层**——在 `SetRuntimeModeAsync` 下发之前插入「模式与当前一致就直接返回」：
+
+```text
+失败!  - 失败: 1，通过: 57，已跳过: 0，总计: 58 - ScpCv.Integration.Tests.dll (net10.0)
+```
+
+失败的正是 `RepeatingTheCurrentModeStillDispatchesTheWholeSequence`。
+
+探针已全部撤销。`VideoWallController.cs`（md5 `a0a61b4426c29df864901fc73c2beb2f`）与 `RuntimeStateService.cs`（md5 `5888a760fc3ae2293988818321155b46`）均与探针前逐字节一致，`git diff -- runtime-dotnet/src/` 为空，即第 3 轮**没有改动任何产品代码**。
+
 ### 日志测试确实能发现该缺陷（探针观察，已撤销）
 
 2026-09-19 把两处构造函数的日志注入改为恒定的 `NullLogger.Instance`（模拟「日志全部不可达」）后重跑基础层：
@@ -83,8 +126,8 @@
 | FR-009 预案失败中止整个激活 | 集成 `ScenarioActivationFailureLeavesRuntimeModeUnchanged` | 通过 |
 | FR-010 静音策略只在下发成功后应用 | 集成同 FR-008；`RuntimeStateService.cs:91-94` 顺序代码复核 | 通过 |
 | FR-011 非法模式下发前拒绝 | `VideoWallControllerTests` + `VideoWallSequenceTests` 未知模式抛错 | 通过 |
-| FR-012 重复同一模式仍完整重下 | **仅代码复核**（`SetRuntimeModeAsync` 无相同模式早退） | 部分 |
-| FR-013 并发下发串行化 | **仅代码复核**（`TcpVideoWallController._gate`），无并发测试 | 部分 |
+| FR-012 重复同一模式仍完整重下 | 服务层 `RepeatingTheCurrentModeStillDispatchesTheWholeSequence` + 控制器层 `DispatchingTheSameModeTwiceSendsTheWholeSequenceTwice`；探针可证伪（两层各注入一次短路，对应用例失败） | 通过 |
+| FR-013 并发下发串行化 | `ConcurrentDispatchesAreSerializedInsteadOfInterleaving`（卡住首个映射发送后发起第二次下发，观察是否交错）；放开 `_gate` 后该用例失败 | 通过 |
 | FR-014 网络等待在写事务之外 / 阻塞有界 | 代码复核（下发在 `writes.ExecuteAsync` 之前）+ 集成用例；**90 秒上界无实网复现** | 部分 |
 | FR-015 Simulation 不发包 | 集成 + 单测（Simulation 分支装配）；「不发包」由实现保证 | 通过 |
 | FR-016 Hardware 装配可独立解析 | `VideoWallRegistrationTests` | 通过 |

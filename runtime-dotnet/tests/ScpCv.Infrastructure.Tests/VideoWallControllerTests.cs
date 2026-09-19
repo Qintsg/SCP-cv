@@ -79,6 +79,57 @@ public sealed class VideoWallControllerTests
     }
 
     [Fact]
+    public async Task DispatchingTheSameModeTwiceSendsTheWholeSequenceTwice()
+    {
+        var transport = new RecordingTransport([]);
+        var controller = new TcpVideoWallController(transport, FastOptions());
+
+        await controller.DispatchAsync("single");
+        await controller.DispatchAsync("single");
+
+        // 重复下发已生效的模式是现场补救路径（切换成功但墙面没动时重来一次），控制器不得去重或短路。
+        Assert.Equal(400, transport.Sends.Count);
+        Assert.Equal(200, transport.AttemptsByPhase.Count);
+        Assert.All(transport.AttemptsByPhase.Values, attempts => Assert.Equal(2, attempts));
+    }
+
+    [Fact]
+    public async Task ConcurrentDispatchesAreSerializedInsteadOfInterleaving()
+    {
+        var timeline = new List<string>();
+        var releaseMapping = new TaskCompletionSource();
+        var transport = new InterleavingProbeTransport(timeline, releaseMapping.Task);
+        var options = FastOptions() with
+        {
+            Wait = (delay, _) =>
+            {
+                timeline.Add($"wait:{delay.TotalMilliseconds:0}");
+                return Task.CompletedTask;
+            },
+        };
+        var controller = new TcpVideoWallController(transport, options);
+
+        var first = controller.DispatchAsync("single");
+        await transport.FirstMappingStarted;
+        var second = controller.DispatchAsync("double");
+
+        // 第一次下发正卡在映射阶段；串行化生效时第二次必须还在 _gate 上等，一个包都不能发出去。
+        // 摘掉 _gate 后第二次的清屏包会在这里就混进来，两段序列交错到达节点。
+        Assert.Equal(["send:clear", "wait:1", "send:mapping"], Collapse(timeline));
+
+        releaseMapping.SetResult();
+        await Task.WhenAll(first, second);
+
+        Assert.Equal(
+            [
+                "send:clear", "wait:1", "send:mapping", "send:commit", "send:refresh",
+                "send:clear", "wait:1", "send:mapping", "send:commit", "send:refresh",
+            ],
+            Collapse(timeline));
+        Assert.Equal(400, transport.Sent);
+    }
+
+    [Fact]
     public void DefaultOptionsMatchLegacyVideoWallConstants()
     {
         var options = new VideoWallDispatchOptions();
@@ -110,6 +161,44 @@ public sealed class VideoWallControllerTests
         }
 
         return [.. collapsed];
+    }
+
+    /// <summary>
+    /// 在第一次「映射」发送上卡住，用来把两次并发的下发真正重叠起来观察。位置选在映射而不是清屏：
+    /// 若卡在首个清屏包，第二次下发即便没有串行化也只能看到清屏+等待，交错特征出不来。
+    /// </summary>
+    private sealed class InterleavingProbeTransport(List<string> timeline, Task releaseMapping) : IVideoWallTransport
+    {
+        private readonly Lock _gate = new();
+        private readonly TaskCompletionSource _mappingReached = new();
+
+        /// <summary>第一次下发进入映射阶段时完成。</summary>
+        public Task FirstMappingStarted => _mappingReached.Task;
+
+        public int Sent { get; private set; }
+
+        public async Task SendAsync(string ip, int port, byte[] packet, CancellationToken cancellationToken)
+        {
+            var phase = packet[3] switch
+            {
+                0xFF => "clear",
+                0x02 => "mapping",
+                0xB8 => "commit",
+                0xB9 => "refresh",
+                _ => "unknown",
+            };
+            lock (_gate)
+            {
+                Sent++;
+                timeline.Add($"send:{phase}");
+            }
+
+            if (phase == "mapping")
+            {
+                _mappingReached.TrySetResult();
+                await releaseMapping.ConfigureAwait(false);
+            }
+        }
     }
 
     private sealed class RecordingTransport(List<string> timeline) : IVideoWallTransport
