@@ -15,7 +15,7 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
-| 拼接屏画面映射（视频墙） | `PATCH /api/runtime/`；`POST /api/scenarios/{id}/activate/` | `RuntimeStateService.cs:70`、`ScenarioService.cs:187` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`（清屏/映射/提交/刷新） | `SimulationVideoWallController`（只校验模式，不发包） | `VideoWallControllerTests`、`VideoWallSequenceTests`、`HostHardwareIntegrationTests`、`VideoWallRegistrationTests`；**物理画面未实机验证**（见 `specs/004-video-wall-control/spec.md` SC-007） |
+| 拼接屏画面映射（视频墙） | `PATCH /api/runtime/`；`POST /api/scenarios/{id}/activate/` | `RuntimeStateService.cs:70`、`ScenarioService.cs:187` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`（清屏/映射/提交/刷新） | `SimulationVideoWallController`（只校验模式，不发包） | `VideoWallControllerTests`、`VideoWallSequenceTests`、`HostHardwareIntegrationTests`、`VideoWallRegistrationTests`、`VideoWallLoggingTests`（成功/失败/重试/取消的日志）；**物理画面未实机验证**（见 `specs/004-video-wall-control/spec.md` SC-007）；排查入口 `docs/维护文档.md` §8.6 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/` | `RuntimeStateService.cs:159` → `ISystemAudioController.Apply` → `WindowsCoreAudioController` | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；**预案激活只落库不推硬件**，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（四窗 / 置顶 / 物理像素铺满） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/`；切换大屏模式后的固定静音策略也走这条链路（`RuntimeStateService.cs:91-94` 逐个 `SetMuteAsync`） | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2） | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`（simulation 跨层）、`docs/qa/003-*.md` |
@@ -76,6 +76,16 @@
 - **症状**：`HardwareControlHostStartupTests` 偶发失败，报就绪超时，与代码改动无关。
 - **根因**：就绪预算过短，且子进程 stdout/stderr 未及时排空导致管道缓冲堵塞。
 - **现状**：已修复（延长就绪预算、立即排空输出、`process.HasExited` 快速失败）。默认测试不启动真实播放器/Office/MediaMTX/设备，需要物理副作用的测试打 `Physical` trait，常规命令用 `--filter "Category!=Physical"` 排除（见 `runtime-dotnet/tests/README.md`）。
+
+### 坑 7 - 验证记录里的「部分 / 缺口」会原样留到现场（2026-09-19 修复 004 的 FR-018/FR-020）
+
+- **症状**：功能上线、测试全绿，但规范里写着「仅代码复核」的条目一直没人补；下一次改动时也看不出哪些是欠账。
+- **根因**：`verification.md` 把 FR-018（下发无日志）与 FR-020（使用文档未说明失败表现）明确记为**缺口**，却没有对应的 `tasks.md` 条目或 issue 承接——004 是走「spec → 直接实现 → 验证」的，缺口没有归属就没有闭环。同一类问题在 003 里表现为 4 条实机项长期挂起。
+- **检出方式**：
+  - `grep -n "仅代码复核\|缺口\|未满足\|未验证" specs/*/verification.md`，逐条确认是否已有承接方（tasks.md 条目 / issue）。
+  - 每条「缺口」都要能回答：谁来补、补完改哪一行。答不出来的就不是验证记录，是待办清单。
+- **现状**：004 的两处缺口已补——下发成功/失败/重试/取消的日志（`VideoWallLog.cs`，5 条新测试，见 `VideoWallLoggingTests`）与文档（`docs/使用文档.md` §4.5、`docs/维护文档.md` §8.6）。**日志的现场价值**：节点只写不读，日志是判断「墙面动没动」的唯一线索，只把失败写进 HTTP 错误体等于没写。
+- **仍挂起**（本条不覆盖）：004 的 FR-005（2 秒超时与 TCP_NODELAY）、FR-012（重复同一模式仍完整重下）、FR-013（并发下发串行化）、FR-014（等待在写事务之外）仍为「仅代码复核」；FR-017 本次只补上控制器侧断言，传输层的取消重抛仍是代码复核。SC-005/SC-007 与 002/003 的实机项仍等现场条件。
 
 ## 3. 相关沉淀点（不在这里重复）
 
