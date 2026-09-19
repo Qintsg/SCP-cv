@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ScpCv.Infrastructure.VideoWall;
 
@@ -36,13 +38,17 @@ public interface IVideoWallController
 /// 50 个节点各自的连接超时后整体失败，所以这里保持“切换成功但不发网络包”。
 /// 仍然构造下发序列，使非法模式在 Simulation 下立即报错，而不是留到现场才暴露。
 /// </summary>
-public sealed class SimulationVideoWallController : IVideoWallController
+public sealed class SimulationVideoWallController(ILogger<SimulationVideoWallController>? logger = null)
+    : IVideoWallController
 {
+    private readonly ILogger _logger = (ILogger?)logger ?? NullLogger.Instance;
+
     public bool IsHardware => false;
 
     public Task DispatchAsync(string bigScreenMode, CancellationToken cancellationToken = default)
     {
-        _ = VideoWallSequenceBuilder.Build(bigScreenMode);
+        var sequence = VideoWallSequenceBuilder.Build(bigScreenMode);
+        VideoWallLog.DispatchSkipped(_logger, bigScreenMode, sequence.Count);
         return Task.CompletedTask;
     }
 }
@@ -120,12 +126,19 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
 
     private readonly IVideoWallTransport _transport;
     private readonly VideoWallDispatchOptions _options;
+    private readonly ILogger _logger;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
-    public TcpVideoWallController(IVideoWallTransport transport, VideoWallDispatchOptions? options = null)
+    public TcpVideoWallController(
+        IVideoWallTransport transport,
+        VideoWallDispatchOptions? options = null,
+        ILogger<TcpVideoWallController>? logger = null)
     {
         _transport = transport;
         _options = options ?? new VideoWallDispatchOptions();
+        // 下发日志是现场唯一的“墙面到底动没动”线索（节点不回读状态），缺省实现保证直接 new 的
+        // 调用方与测试不必构造日志设施。
+        _logger = (ILogger?)logger ?? NullLogger.Instance;
     }
 
     public bool IsHardware => true;
@@ -138,11 +151,20 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var failures = await SendSequenceAsync(sequence, cancellationToken).ConfigureAwait(false);
-            if (failures.Count > 0)
+            var failure = await SendSequenceAsync(sequence, cancellationToken).ConfigureAwait(false);
+            if (failure is { } failed)
             {
-                throw new VideoWallException($"发送视频墙控制包失败：{FormatFailures(failures)}");
+                // 取消（OperationCanceledException）不会走到这里，FR-017：它既不算节点失败，也不记成功。
+                VideoWallLog.DispatchFailed(
+                    _logger,
+                    bigScreenMode,
+                    failed.Phase,
+                    failed.Failures.Count,
+                    failed.Failures[0]);
+                throw new VideoWallException($"发送视频墙控制包失败：{FormatFailures(failed.Failures)}");
             }
+
+            VideoWallLog.DispatchSucceeded(_logger, bigScreenMode, sequence.Count);
         }
         finally
         {
@@ -150,11 +172,11 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
         }
     }
 
-    private async Task<List<string>> SendSequenceAsync(
+    /// <summary>整段下发；全部成功返回 <c>null</c>，否则返回中止时的阶段与该阶段的失败描述。</summary>
+    private async Task<PhaseFailure?> SendSequenceAsync(
         IReadOnlyList<VideoWallSendItem> sequence,
         CancellationToken cancellationToken)
     {
-        var failures = new List<string>();
         var (order, groups) = GroupByPhase(sequence);
         foreach (var phase in order)
         {
@@ -167,13 +189,15 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
             if (phaseFailures.Count > 0)
             {
                 // 阶段内有节点没收到就到此为止：提交一份残缺映射比不切换更糟。
-                failures.AddRange(phaseFailures);
-                return failures;
+                return new PhaseFailure(phase, phaseFailures);
             }
         }
 
-        return failures;
+        return null;
     }
+
+    /// <summary>中止时的阶段与失败节点描述，供错误信息与日志共用（FR-007、FR-018）。</summary>
+    private sealed record PhaseFailure(string Phase, List<string> Failures);
 
     private async Task<List<string>> SendPhaseAsync(
         List<VideoWallSendItem> items,
@@ -201,6 +225,18 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
                 try
                 {
                     await _transport.SendAsync(item.Ip, item.Port, item.Packet, cancellationToken).ConfigureAwait(false);
+                    if (attempt > 1)
+                    {
+                        // FR-006：没有这条记录，现场只看到切换变慢，不知道有节点在掉线。
+                        VideoWallLog.RetrySucceeded(
+                            _logger,
+                            item.Ip,
+                            item.Port,
+                            item.Phase,
+                            attempt,
+                            _options.RetryAttempts);
+                    }
+
                     return null;
                 }
                 catch (VideoWallException exception)
