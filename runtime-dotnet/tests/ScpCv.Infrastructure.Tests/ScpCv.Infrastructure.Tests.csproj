@@ -24,4 +24,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- 视频墙控制包黄金样本：由 tools/generate_video_wall_golden.py 从旧 Python 实现导出。 -->
+  <ItemGroup>
+    <None Include="Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
