@@ -15,7 +15,7 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
-| 拼接屏画面映射（视频墙） | `PATCH /api/runtime/`；`POST /api/scenarios/{id}/activate/` | `RuntimeStateService.cs:70`、`ScenarioService.cs:187` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`（清屏/映射/提交/刷新） | `SimulationVideoWallController`（只校验模式，不发包） | `VideoWallControllerTests`、`VideoWallSequenceTests`、`HostHardwareIntegrationTests`、`VideoWallRegistrationTests`、`VideoWallLoggingTests`（成功/失败/重试/取消的日志）；**物理画面未实机验证**（见 `specs/004-video-wall-control/spec.md` SC-007）；排查入口 `docs/维护文档.md` §8.6 |
+| 拼接屏画面映射（视频墙） | `PATCH /api/runtime/`；`POST /api/scenarios/{id}/activate/` | `RuntimeStateService.cs:70`、`ScenarioService.cs:187` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`（清屏/映射/提交/刷新） | `SimulationVideoWallController`（只校验模式，不发包） | `VideoWallControllerTests`、`VideoWallSequenceTests`、`VideoWallGoldenPacketsTests`（两种模式 400 个包逐包比对旧 Python 实现的黄金样本）、`HostHardwareIntegrationTests`、`VideoWallRegistrationTests`、`VideoWallLoggingTests`（成功/失败/重试/取消的日志）；**物理画面未实机验证**（见 `specs/004-video-wall-control/spec.md` SC-007），**帧内容（常量与映射参数）未现场抓包复核**（issue #2）；排查入口 `docs/维护文档.md` §8.6 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/` | `RuntimeStateService.cs:159` → `ISystemAudioController.Apply` → `WindowsCoreAudioController` | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；**预案激活只落库不推硬件**，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（四窗 / 置顶 / 物理像素铺满） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/`；切换大屏模式后的固定静音策略也走这条链路（`RuntimeStateService.cs:91-94` 逐个 `SetMuteAsync`） | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2） | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`（simulation 跨层）、`docs/qa/003-*.md` |
@@ -85,7 +85,16 @@
   - `grep -n "仅代码复核\|缺口\|未满足\|未验证" specs/*/verification.md`，逐条确认是否已有承接方（tasks.md 条目 / issue）。
   - 每条「缺口」都要能回答：谁来补、补完改哪一行。答不出来的就不是验证记录，是待办清单。
 - **现状**：004 的两处缺口已补——下发成功/失败/重试/取消的日志（`VideoWallLog.cs`，5 条新测试，见 `VideoWallLoggingTests`）与文档（`docs/使用文档.md` §4.5、`docs/维护文档.md` §8.6）。**日志的现场价值**：节点只写不读，日志是判断「墙面动没动」的唯一线索，只把失败写进 HTTP 错误体等于没写。
-- **仍挂起**（本条不覆盖）：004 的 FR-005（2 秒超时与 TCP_NODELAY）与 FR-014（等待在写事务之外）仍为「仅代码复核」；FR-017 只补上了控制器侧断言，传输层的取消重抛仍是代码复核。SC-005/SC-007 与 002/003 的实机项仍等现场条件。FR-012/FR-013 已于同日补上自动化断言（服务层与控制器层各一条 + 并发交错一条）。
+- **仍挂起**（本条不覆盖）：004 的 FR-005（2 秒超时与 TCP_NODELAY）与 FR-014（等待在写事务之外）仍为「仅代码复核」；FR-017 只补上了控制器侧断言，传输层的取消重抛仍是代码复核。SC-005/SC-007 与 002/003 的实机项仍等现场条件。FR-012/FR-013 已于同日补上自动化断言（服务层与控制器层各一条 + 并发交错一条）。**帧内容的现场抓包复核**登记为 issue #2；2026-09-21 补上了「.NET 与旧实现逐字节等价」的黄金样本比对（坑 8），但那不覆盖「旧值对真实墙面是否正确」——`verification.md` 末节已写明承接方与「补完改哪一行」。
+
+### 坑 8 - 包级测试只断言序列里的第一个样本（2026-09-21 补上逐包比对）
+
+- **症状**：视频墙的包级测试全绿，但换节点、换模式没人验——单屏模式只断言了**第一个**映射包的字节，**双屏模式 50 个映射包一个字节都没有断言**（当时只有一条数 phase 的用例）。把右半墙的组播地址与窗口号错写成左半墙的值，旧断言的 4 个用例**全部通过**。
+- **根因**：`sequence.First(item => item.Phase == "mapping…")` 这类写法只证明「序列里有这么一种包」，不证明「每个节点都拿到自己的那一份」；而逐节点差异（裁切区、组播地址、窗口号、校验和）恰好是 1:1 迁移最容易走样的地方。
+- **检出方式**：
+  - 包级测试里出现 `First(...)`／`Any(...)` 而不是对全序列的断言时，先对一次数：`Build()` 返回多少项、断言覆盖多少项，差值就是盲区。
+  - 给序列构造器补一条「全序列比对**独立来源**黄金样本」的用例。样本必须来自旧实现的实际运行结果，不能从新实现转抄，否则是自证。
+- **现状**：已补（`VideoWallGoldenPacketsTests` + `tools/generate_video_wall_golden.py` + `tests/ScpCv.Infrastructure.Tests/Fixtures/video-wall-packets.json`，两种模式各 200 个包）。探针下新用例失败、旧用例通过，见 `specs/004-video-wall-control/verification.md` 第 4 轮。
 
 ## 3. 相关沉淀点（不在这里重复）
 
