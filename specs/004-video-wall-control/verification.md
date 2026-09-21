@@ -1,6 +1,6 @@
 # 验证记录
 
-**日期**：2026-09-19（第 1~3 轮）、2026-09-21（第 4 轮）
+**日期**：2026-09-19（第 1~3 轮）、2026-09-21（第 4、5 轮）
 **平台**：Windows 11 开发机（**不在视频墙网段**；未以 `-SafetyMode Hardware` 连接现场墙面）
 **对应需求**：`spec.md` FR-001 ~ FR-020、SC-001 ~ SC-007
 **变更集**：
@@ -8,6 +8,7 @@
 - 第 2 轮（同日，补 FR-018/FR-020 缺口）——`VideoWallLog.cs` 新增，`VideoWallController.cs` 注入日志；`docs/使用文档.md` §4.5、`docs/维护文档.md` §8.6、`docs/CHANGELOG.md`、`docs/known-pitfalls.md` 同步；新增 `VideoWallLoggingTests.cs` 与测试替身 `RecordingLogger.cs`。
 - 第 3 轮（同日，补 FR-012/FR-013 缺口）——只新增测试，**未改动任何产品代码**：`VideoWallControllerTests.cs` 加 2 个用例，`HostHardwareIntegrationTests.cs` 加 1 个用例。两轮探针过后源码与探针前逐字节一致。
 - 第 4 轮（2026-09-21，补「帧内容待抓包复核」里**本机可做**的那一半）——**未改动任何产品代码**：新增 `tools/generate_video_wall_golden.py`（从旧 Python 实现的实际运行结果导出黄金样本）、`tests/ScpCv.Infrastructure.Tests/Fixtures/video-wall-packets.json`（生成产物，400 个控制包）、`VideoWallGoldenPacketsTests.cs`（逐包校对两种模式）、`tests/test_video_wall_golden_fixture.py`（守样本与旧实现的一致性）、`ScpCv.Infrastructure.Tests.csproj` 复制样本到输出目录；`docs/known-pitfalls.md`、`docs/CHANGELOG.md` 同步。issue #2 的抓包复核本身**仍未完成**（见末节）。
+- 第 5 轮（2026-09-21，把「仅代码复核」的传输层行为换成回环实测）——**未改动任何产品代码**：新增 `runtime-dotnet/scripts/videowall-loopback.ps1`（在指定网卡上挂/摘 `192.168.5.101~150/32` 别名，`store=active`，重启即消失）、`VideoWallLoopbackTests.cs`（5 个用例在真实 TCP 上跑下发）、假节点 `FakeVideoWallNodes.cs`、别名探针与条件跳过 `VideoWallLoopbackAliases.cs`；`runtime-dotnet/tests/README.md`、`docs/known-pitfalls.md`、`docs/CHANGELOG.md` 同步。实测：全节点 200 包 **224~240 ms**；单节点掉线或拒连 **12.4~12.6 s** 后中止（5 次 2 秒超时 + 0.2/0.4/0.8/1.0 秒退避）；400 ms 取消在 **409 ms** 原样抛出且零日志。**仍未验证**：真实网段的时延与丢包、TCP_NODELAY、issue #2 的帧内容（回环收到的就是自己发的包，回声不构成证据）。
 
 ## 自动化执行记录
 
@@ -23,6 +24,10 @@
 | .NET 完整测试（第 3 轮，补 FR-012/FR-013 后） | `dotnet test runtime-dotnet/ScpCv.sln` | **216/216 通过** |
 | .NET 完整测试（第 4 轮，补黄金样本比对后） | `dotnet test runtime-dotnet/ScpCv.sln` | **219/219 通过** |
 | 黄金样本与旧实现一致性（第 4 轮） | `python -m pytest tests/test_video_wall_golden_fixture.py -q` | **3 passed**（python 环境见下注） |
+| 回环下发·配置一（第 5 轮，50 个别名全就绪） | `videowall-loopback.ps1 -Apply` 后 `dotnet test .../ScpCv.Infrastructure.Tests --filter "Requires=VideoWallLoopback"` | **4 通过 / 1 跳过**（跳过的是需要「某节点没有别名」的那条） |
+| 回环下发·配置二（第 5 轮，故意缺 `192.168.5.150`） | `videowall-loopback.ps1 -Apply -Except 192.168.5.150` 后同上 | **1 通过 / 4 跳过** |
+| 归还别名后复跑（第 5 轮） | `videowall-loopback.ps1 -Clear`（`-Status` 为 0/50）后同上 | **5 跳过、0 失败**：本机已恢复原状，用例也不假装跑过 |
+| .NET 完整测试（第 5 轮，常规命令） | `dotnet test runtime-dotnet/ScpCv.sln -c Debug --no-build --filter "Category!=Physical"` | **219/219 通过**（5 个新用例都带 `Physical` trait，被该命令排除，分项见下） |
 
 注：第 4 轮的 Python 用例**不是**在 `uv` 项目环境里跑的——本机没有 `uv`，`uv run pytest tests/ -v` 仍未执行（同末节）。为取得证据，用仓库外的临时 venv（`%TEMP%\scp-cv-golden-venv`，装 `django==6.0.3`、`djangorestframework==3.17.1`、`screeninfo`、`psutil`、`requests`、`pywin32`、`pytest`、`pytest-django`）执行了该文件与生成脚本；临时环境不属于仓库，已可随时删除。**其余 Python 测试与 Ruff 仍为未执行**。
 
@@ -33,6 +38,8 @@
 第 3 轮分项：Domain 38 / Windows 11 / Contracts 18 / Infrastructure 35 / Integration 58 / ControlHost 56 = **216**（新增 2 个控制器测试 + 1 个集成测试，未改动产品代码）。
 
 第 4 轮分项：Domain 38 / Windows 11 / Contracts 18 / Infrastructure 38 / Integration 58 / ControlHost 56 = **219**（Infrastructure 新增 2 个模式用例 + 1 个样本覆盖用例，未改动产品代码）。
+
+第 5 轮分项：常规命令的分项与第 4 轮**逐一相同**（= **219**）——第 5 轮的 5 个用例全带 `Physical` trait，不在这个数里，别把 219 当成「含回环实测」。单独跑 `Requires=VideoWallLoopback` 时按机器现状：配置一 5 中 4 通过 1 跳过、配置二 5 中 1 通过 4 跳过、未做准备或已归还别名 5 全跳过。
 
 ### 回归测试确实能发现该缺陷（探针观察，已撤销）
 
@@ -152,47 +159,85 @@ Actual:   [···, "wait:1", "send:mapping", "send:clear", "wait:1", "send:mappi
 
 探针已撤销：`VideoWallSequenceBuilder.cs` md5 `45a175c93a3473e8e4b01f8cb3dfc5dc` 与探针前一致，`git diff -- runtime-dotnet/src/` 为空，即本轮**未改动任何产品代码**。
 
+### 第 5 轮新增（5 个，`VideoWallLoopbackTests`）
+
+跑法（改网卡地址要管理员权限；别名一律 `store=active`，重启自动消失，不写持久配置）：
+
+```powershell
+runtime-dotnet/scripts/videowall-loopback.ps1 -Apply                      # 配置一：50 个节点地址全就绪
+dotnet test runtime-dotnet/ScpCv.sln -c Debug --filter "Requires=VideoWallLoopback"
+runtime-dotnet/scripts/videowall-loopback.ps1 -Apply -Except 192.168.5.150 # 配置二：造一个「连不上」的节点
+dotnet test runtime-dotnet/ScpCv.sln -c Debug --filter "Requires=VideoWallLoopback"
+runtime-dotnet/scripts/videowall-loopback.ps1 -Clear                       # 归还全部 50 个地址
+```
+
+假节点就在这些别名上监听真实端口 `4830`，所以这里跑的是**真的** `TcpVideoWallTransport` + 控制器，不是替身。
+
+| 用例 | 前置 | 断言与实测 |
+| --- | --- | --- |
+| `SingleModeReachesEveryNodeByteForByteWithinThreeSeconds` | 配置一 | 50 个节点各按 `clear → mapping → commit → refresh` 收到 4 个包，**逐字节**等于 `Build("single")`；恰好 1 条「下发完成」日志、无重试噪声。实测 **224~240 ms** |
+| `DoubleModeSendsEachHalfWallItsOwnMulticastWindowAndSourceRectangle` | 配置一 | 同上（**double** 200 包）；另从收到的字节里解出组播地址、窗口号和源矩形，按列坐标核对：左 5 列全是 `224.1.1.55`/窗口 1、右 5 列全是 `224.1.1.56`/窗口 2，源矩形 `768×432` 按列行平铺，包内两处窗口号一致。实测 **230~232 ms** |
+| `NodeRefusingConnectionsAbortsAtTheClearPhaseBeforeAnythingElseGoesOut` | 配置一 | `192.168.5.101` 挂着别名但没人监听：报错点名 `192.168.5.101:4830 phase=clear`；其余 49 个节点**只收到清屏包**（映射/提交/刷新 0 个）；恰好 1 条 Error 日志。实测 **12.4 s** 后中止 |
+| `UnreachableNodeBurnsFiveTwoSecondTimeoutsThenAbortsAtTheClearPhase` | 配置二 | `192.168.5.150` 无别名（连出去没人应答）：报错点名 `192.168.5.150:4830 phase=clear`；其余 49 个节点同样只收到清屏包；日志含「中止于阶段 clear」「失败节点 1 个」且**无**「下发完成」。实测 **12.5 s** |
+| `CancellingMidDispatchPropagatesCancellationWithoutLoggingSuccessOrFailure` | 配置一 | 400 ms 时取消：**409 ms** 抛 `OperationCanceledException`（不是 `VideoWallException`）、**0 条日志**、收到的只有 12 字节清屏包——FR-017 的传输层重抛第一次有实测 |
+
+前两条用例还各自断言了「恰好一条日志」，即正常路径上没有多余的失败/重试记录。
+
+前置条件的表达方式：`RequiresVideoWallAliasesAttribute` 覆写 `FactAttribute.Skip`，在发现阶段探测 50 个地址能否绑上 `4830`；不满足就按各自前置条件跳过（要 50 个 / 要恰好少 `.150` 这一个），跳过原因里直接写着准备命令。因此 `--filter "Category!=Physical"` 和没做过准备的机器都看不到它们，也不会因为缺别名而变红。
+
+### 回环假节点能测什么、不能测什么
+
+**能测**：真实 TCP 上的连接超时、重试退避、失败即中止、取消传播、字节保真——正是原先「仅代码复核」的那部分。单节点故障的两个形态（**拒连**、**掉线**）都实测为 12.4~12.6 s，都中止在**清屏**阶段：掉线节点在每个阶段都会被联系一次，最早那个阶段就把它挡住了。也就是说，静态别名配置下造不出「失败发生在更靠后的阶段」——那要让节点在序列中途掉线，可用窗口只有毫秒级，断言会变成掷骰子。可以据此给出上界：若故障发生在最后阶段，把前三个阶段的耗时（整段四阶段实测也才 224~240 ms）加到 12.5 s 上，也不到 13 s。
+
+**不能测**（写在这里，免得后人把回声当证据）：
+
+- **帧内容与常量是否正确**：假节点收到的是自己发的包。回环只证明「发出的字节与实现一致」，不证明「这些字节对真实墙面是对的」。这条仍归 issue #2。
+- **TCP_NODELAY**：发送端设不设 `NoDelay`，接收端的应用层读不出差别，要抓包看有没有 40 ms 延迟。仍为代码复核。
+- **真实网段的时延与丢包**：本机别名上的「拒连」要约 2 秒才回来（等于把 2 秒超时用满），真实设备上的 RST 可能只要毫秒级——所以 2 秒是**上界**，不是现场的实际等待时间。
+- **写失败**：回环上连上之后写 12/45 字节全部成功，2 秒预算实际只兜住了 `ConnectAsync`（真实链路上接收窗口满时 `WriteAsync` 也可能挂住，本机造不出来）。
+
 ## FR / SC 映射
 
 | 需求 | 验证位置 | 状态 |
 | --- | --- | --- |
 | FR-001 两条入口真实下发 | 集成 `RuntimeModeSwitchDispatches…`、`ScenarioActivationDispatches…` | 通过（探针可证伪） |
-| FR-002 布局语义（单屏铺满 / 双屏左右分） | `VideoWallGoldenPacketsTests` 两种模式 400 个包逐包比对旧实现黄金样本（含裁切区、组播地址、窗口号、校验和）；`VideoWallSequenceTests` 分块与组播断言 | 通过（**仅证明与旧实现等价，不证明旧值对墙正确**，见末节） |
+| FR-002 布局语义（单屏铺满 / 双屏左右分） | `VideoWallGoldenPacketsTests` 两种模式 400 个包逐包比对旧实现黄金样本（含裁切区、组播地址、窗口号、校验和）；`VideoWallLoopbackTests` 在真实 TCP 收到后按列坐标复核左右半墙字段；`VideoWallSequenceTests` 分块与组播断言 | 通过（**仅证明与旧实现等价，不证明旧值对墙正确**，见末节） |
 | FR-003 阶段顺序 + 200 ms 间隔 | `VideoWallControllerTests` 折叠时间线断言 `clear → wait → mapping → commit → refresh` | 通过 |
 | FR-004 阶段内并发 ≤25、阶段间串行 | `VideoWallControllerTests` 并发观测 | 通过 |
-| FR-005 单节点 2 s 超时 + TCP_NODELAY | **仅代码复核**（`TcpVideoWallTransport`），无自动化断言 | 部分 |
-| FR-006 重试 5 次 + 退避 | `VideoWallControllerTests` 尝试次数与退避序列 | 通过 |
-| FR-007 失败即中止 + 摘要格式 | `VideoWallControllerTests`（含「其余 45 个失败」与 `IP:端口 phase=…`） | 通过 |
+| FR-005 单节点 2 s 超时 + TCP_NODELAY | 超时已**实测**：`VideoWallLoopbackTests` 配置二整段 12.5 s = 5 次尝试 × 2 s 超时 + 退避（每次尝试都等满超时窗口）；TCP_NODELAY 在回环接收端**不可观测**，仍为代码复核 | 部分 |
+| FR-006 重试 5 次 + 退避 | `VideoWallControllerTests` 尝试次数与退避序列；`VideoWallLoopbackTests` 在真实 socket 上量到整段 12.4~12.6 s，正好是 5 次尝试加 0.2/0.4/0.8/1.0 秒退避 | 通过 |
+| FR-007 失败即中止 + 摘要格式 | `VideoWallControllerTests`（含「其余 45 个失败」与 `IP:端口 phase=…`）；`VideoWallLoopbackTests` 两种故障形态（拒连/掉线）都点名 `phase=clear`，且其余 49 个节点只收到清屏包 | 通过 |
 | FR-008 失败不改运行态 / 静音策略 + `video_wall_error` | 集成 `VideoWallFailureKeepsPersistedRuntimeModeAndMutePolicy` | 通过 |
 | FR-009 预案失败中止整个激活 | 集成 `ScenarioActivationFailureLeavesRuntimeModeUnchanged` | 通过 |
 | FR-010 静音策略只在下发成功后应用 | 集成同 FR-008；`RuntimeStateService.cs:91-94` 顺序代码复核 | 通过 |
 | FR-011 非法模式下发前拒绝 | `VideoWallControllerTests` + `VideoWallSequenceTests` 未知模式抛错 | 通过 |
 | FR-012 重复同一模式仍完整重下 | 服务层 `RepeatingTheCurrentModeStillDispatchesTheWholeSequence` + 控制器层 `DispatchingTheSameModeTwiceSendsTheWholeSequenceTwice`；探针可证伪（两层各注入一次短路，对应用例失败） | 通过 |
 | FR-013 并发下发串行化 | `ConcurrentDispatchesAreSerializedInsteadOfInterleaving`（卡住首个映射发送后发起第二次下发，观察是否交错）；放开 `_gate` 后该用例失败 | 通过 |
-| FR-014 网络等待在写事务之外 / 阻塞有界 | 代码复核（下发在 `writes.ExecuteAsync` 之前）+ 集成用例；**90 秒上界无实网复现** | 部分 |
+| FR-014 网络等待在写事务之外 / 阻塞有界 | 代码复核（下发在 `writes.ExecuteAsync` 之前）+ 集成用例；回环实测单节点故障整段 12.4~12.6 s，可作 90 秒上界的对照；**真实网段仍无实测** | 部分 |
 | FR-015 Simulation 不发包 | 集成 + 单测（Simulation 分支装配）；「不发包」由实现保证 | 通过 |
 | FR-016 Hardware 装配可独立解析 | `VideoWallRegistrationTests` | 通过 |
-| FR-017 取消显式传播 | 控制器侧：`CancelledDispatchIsLoggedAsNeitherFailureNorSuccess`（取消传播为 `OperationCanceledException`、零日志）；传输层 `TcpVideoWallTransport` 的 rethrow **仍为代码复核** | 部分 |
+| FR-017 取消显式传播 | 控制器侧：`CancelledDispatchIsLoggedAsNeitherFailureNorSuccess`；传输层：`VideoWallLoopbackTests` 在真实连接上 400 ms 取消 → **409 ms** 抛 `OperationCanceledException`（非 `VideoWallException`）、零日志 | 通过 |
 | FR-018 成功/失败日志 | `VideoWallLoggingTests` 5 个用例（成功含模式+包数、失败含阶段+节点数+原因、重试成功含尝试次数、取消不记、Simulation 记跳过）；探针可证伪 | 通过 |
 | FR-019 验证覆盖清单 | 本条即本文件 | 通过 |
 | FR-020 同步规范与使用文档 | `docs/使用文档.md` §4.5 已补下发语义、失败表现、等待上界与 Simulation 边界，并标注 SC-007 未实机验证；另补 `docs/维护文档.md` §8.6 按日志定位 | 通过 |
 | SC-001 ~ SC-004、SC-006 | 见上表对应 FR | 通过 |
-| SC-005（3 秒 / 90 秒上界） | 无实测数据 | 未验证 |
+| SC-005（3 秒 / 90 秒上界） | 回环实测：全节点 224~240 ms、单节点故障 12.4~12.6 s。**回环不等于现场**（无网络时延与丢包），不能据此判通过 | 部分 |
 | SC-007（物理画面） | 无墙面，未实机 | **未验证** |
 
 ## 尚未验证（不得计为通过）
 
-- **issue #2 帧内容抓包复核（2026-09-21 记录，未完成，本机做不了）**：`FBFC61FF…`／`FBFC61B8…`／`FBFC61B9…` 这组固定包与映射包参数，在仓库里只追溯到 `scp_cv/services/video_wall.py`，**没有任何来源记录**（无厂商协议文档、无 `.pcap`、无抓包日期）。第 4 轮补的黄金样本只能证明「.NET 发出的字节与旧实现逐字节等价」，**不能证明这些字节对真实墙面是对的**——本机跑假节点收到的就是自己发的包，回声不构成证据。
+- **issue #2 帧内容抓包复核（2026-09-21 记录，未完成，本机做不了）**：`FBFC61FF…`／`FBFC61B8…`／`FBFC61B9…` 这组固定包与映射包参数，在仓库里只追溯到 `scp_cv/services/video_wall.py`，**没有任何来源记录**（无厂商协议文档、无 `.pcap`、无抓包日期）。第 4 轮补的黄金样本与第 5 轮的回环实测都只能证明「.NET 发出的字节与旧实现逐字节等价」，**不能证明这些字节对真实墙面是对的**——本机跑假节点收到的就是自己发的包，回声不构成证据。
   - **承接方**：GitHub issue #2（`Qintsg/SCP-cv`）。
   - **补完改哪一行**：现场整墙确认写进 SC-007 与 `docs/实机测试结论.md`；若抓包发现与旧值有差异，改 `VideoWallSequenceBuilder.cs` 的常量或映射参数，再重跑 `tools/generate_video_wall_golden.py` 刷新样本，并同步本文件与 `docs/使用文档.md` §4.5。
   - **已有的一半证据**：`docs/实机测试结论.md:39`（2026-07-26，旧 Python 实现）用 RGB 测试卡确认**双屏模式下大屏左半区**被准确占据、边界与灰阶完整；`:40` 另以「摄像机确认大屏左右不同内容」间接确认右半区。即 double 的组播地址、窗口号与半宽切分**在现场被物理确认过**。而 `:41` 的「单屏/双屏切换 通过」核的是隐藏右入口、窗口 2 静音与回切，**全是 UI/运行态，没有一处整墙画面**。
   - **结论**：结合第 4 轮的逐字节等价，`double` 的帧内容可判为已有充足证据；**`single` 整墙（`3840×2160` 按 `384×432` 切 50 块）至今没有任何现场物理证据**，是现场最该抓/最该拍的那一次。注意这条只覆盖「常量对不对」，**不能销 SC-007**——SC-007 要的是 .NET 运行时驱动真实墙的画面证据。
 - **SC-007 物理画面**：本机不在 `192.168.5.0/24`，未以 `-SafetyMode Hardware` 启动并连真实墙面；`docs/实机测试结论.md`（2026-07-26）的单屏/双屏切换与 RGB 测试卡结论属于**旧 Python 实现**，不能当作本次证据。
-- **SC-005 等待上界**：3 秒常态 / 90 秒最坏值来自参数推算，没有真实丢包或慢节点的实测。
+- **SC-005 等待上界**：3 秒常态 / 90 秒最坏仍是**参数推算**。第 5 轮在回环上量到常态 224~240 ms、单节点故障 12.4~12.6 s，方向上印证了推算（远低于上界），但回环没有网络时延、丢包与 ARP/路由等待，**不能替代现场实测**；`docs/使用文档.md` §4.5 因此仍写「推算值」，本轮未改那里。
+- **第 5 轮回环实测的边界**：见上节「回环假节点能测什么、不能测什么」——帧内容、TCP_NODELAY、真实网段行为都测不到。**回环里的假节点收到的是自己发的包，回声不构成现场证据**，别拿这轮的绿色当作帧内容问题的答案。
 - **FR-018 日志缺口**：已于 2026-09-19 第 2 轮补齐（见上表与探针记录）。**日志本身未在真实 Hardware 链路上跑过**——自动化只验证了「记了什么」，没有验证现场日志文件里的实际落盘与轮转。
 - **FR-020 文档缺口**：已于 2026-09-19 第 2 轮补齐。文档描述的下发语义来自自动化与代码复核；「3 秒常态 / 90 秒最坏」仍沿用 SC-005 的推算值，无实测，**已在 `docs/使用文档.md` §4.5 就地标注为参数推算值**，不再写成实测结论。
 - `docs/known-pitfalls.md` 坑 2（预案音量不推 Windows Core Audio）：只有代码级证据，未实机复现，未修复，不属本规范范围。
-- 本机未执行：Python 侧全量 `uv run pytest`（第 4 轮新增了 `tests/test_video_wall_golden_fixture.py` 与 `tools/generate_video_wall_golden.py`，但只跑了新文件，见「自动化执行记录」下注）、Ruff、前端 typecheck/build（未改前端）、`runtime-dotnet/scripts/runtime.ps1` 启停脚本。
+- 本机未执行：Python 侧全量 `uv run pytest`（第 4 轮新增了 `tests/test_video_wall_golden_fixture.py` 与 `tools/generate_video_wall_golden.py`，但只跑了新文件，见「自动化执行记录」下注）、Ruff、前端 typecheck/build（未改前端）、`runtime-dotnet/scripts/runtime.ps1` 启停脚本。第 5 轮新增的 `runtime-dotnet/scripts/videowall-loopback.ps1` **已实跑**（`-Apply`/`-Apply -Except`/`-Status`/`-Clear` 四种动作都执行过，`-Clear` 后 `-Status` 为 0/50），但尚未在第二台机器上试过，脚本里的网卡名默认值按本机取的（`VMware Network Adapter VMnet1`，可用 `-Adapter` 换）。
 
 ## 第 1 次完整测试的偶发失败判定
 
