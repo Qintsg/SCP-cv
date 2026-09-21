@@ -63,3 +63,10 @@ pnpm --prefix frontend run build
 ```
 
 针对性修复可先运行相关测试，但交付前应说明完整验证是否完成。
+
+## 8. PowerShell 脚本
+
+- **`.ps1` 一律 UTF-8 带 BOM**（`EF BB BF` 开头）。Windows 自带的 `powershell.exe` 是 5.1，对无 BOM 的脚本按**当前 ANSI 代码页**解码：里面只要有中文，注释和提示就会变成乱码，严重时直接解析失败。开发机（中文 Windows，CP936）与现场工作站都是 5.1，只有另装的 `pwsh` 7 才默认按 UTF-8 读——所以这不是某台机器的怪癖。新脚本用 `Set-Content -Encoding utf8` 写（5.1 的 `utf8` 即带 BOM），或写入后补上那三个字节。
+- `.gitattributes` 的 `* text=auto eol=lf` 只管行尾，**不补 BOM**，别以为过了 Git 就没问题。
+- 面向现场的脚本，报错要写清缺什么、下一步跑什么命令（`runtime-dotnet/scripts/videowall-loopback.ps1` 的跳过提示即例）；改系统状态的动作要显式检查管理员权限；能用非持久写法就用（如 `netsh … store=active`），不在别人的机器上留持久改动。
+- 动作要幂等且显式：`-Apply` / `-Clear` / `-Status` 这种一个动作一个开关，重复执行不报错、不产生叠加副作用。
