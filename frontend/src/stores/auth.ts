@@ -70,7 +70,7 @@ export const useAuthStore = defineStore('auth', {
       }
     },
     /**
-     * 用户登录：username/password 经 /api/auth/login/ 建立 Django session。
+     * 用户登录：username/password 经 /api/auth/login/ 建立 ControlHost 会话。
      * @param username 用户名
      * @param password 密码
      * @return 解析后的用户信息
@@ -88,7 +88,7 @@ export const useAuthStore = defineStore('auth', {
       return payload.user;
     },
     /**
-     * 用户登出：清 Django session + 本地状态。
+     * 用户登出：清 ControlHost 会话 + 本地状态。
      * @return Promise<void>
      */
     async logout(): Promise<void> {

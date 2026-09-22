@@ -53,7 +53,7 @@ public sealed class SimulationVideoWallController(ILogger<SimulationVideoWallCon
     }
 }
 
-/// <summary>视频墙下发的节流与重试参数，默认值与 <c>scp_cv/services/video_wall.py</c> 的常量一致。</summary>
+/// <summary>视频墙下发的节流与重试参数，默认值与清理前提交 <c>e822be9</c> 的旧实现一致。</summary>
 public sealed record VideoWallDispatchOptions
 {
     /// <summary>单个控制包的最大尝试次数。</summary>
@@ -118,7 +118,7 @@ public sealed class TcpVideoWallTransport : IVideoWallTransport
 
 /// <summary>
 /// 视频墙下发：清屏 → 映射 → 提交 → 刷新，阶段内并行、阶段间串行，顺序、并行上限与重试退避
-/// 均与 <c>scp_cv/services/video_wall.py</c> 一致。整个序列串行化，避免两次切换的控制包交错到达节点。
+/// 均与清理前提交 <c>e822be9</c> 的旧实现一致。整个序列串行化，避免两次切换的控制包交错到达节点。
 /// </summary>
 public sealed class TcpVideoWallController : IVideoWallController, IDisposable
 {

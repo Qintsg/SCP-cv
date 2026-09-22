@@ -2,7 +2,7 @@ using ScpCv.Infrastructure.VideoWall;
 
 namespace ScpCv.Infrastructure.Tests;
 
-/// <summary>校对视频墙下发顺序、重试与失败语义（对应 <c>scp_cv/services/video_wall.py</c>）。</summary>
+/// <summary>校对视频墙下发顺序、重试与失败语义（对应清理前提交 <c>e822be9</c> 的旧实现）。</summary>
 public sealed class VideoWallControllerTests
 {
     [Fact]

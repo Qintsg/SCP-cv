@@ -11,10 +11,10 @@ info:
     SCP-cv 控制台 REST API 文档。
 
     所有业务路径默认挂载在 `/api` 前缀下；成功响应通常包含 `success: true`，错误响应统一为 `detail + code`。
-    业务接口与 `/media/` 文件由 Django session cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/`、`/auth/me/` 和 `/auth/status/` 为公开端点。
+    业务接口与 `/media/` 文件由 ControlHost 会话 Cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/`、`/auth/me/` 和 `/auth/status/` 为公开端点。
 servers:
   - url: /api
-    description: 本机 Django REST API 前缀
+    description: 本机 ControlHost REST API 前缀
   - url: http://127.0.0.1:8000/api
     description: 默认本机后端地址
 security:
@@ -49,7 +49,7 @@ paths:
         - auth
       summary: 获取 CSRF token
       description: |
-        显式触发 Django `csrftoken` cookie 下发。前端首次加载时调用一次，之后在不安全方法中把 cookie 值写入 `X-CSRFToken` 请求头。
+        显式触发 ControlHost `csrftoken` Cookie 下发。前端首次加载时调用一次，之后在不安全方法中把 Cookie 值写入 `X-CSRFToken` 请求头。
       operationId: getCsrfToken
       security: []
       responses:
@@ -70,7 +70,7 @@ paths:
     post:
       tags:
         - auth
-      summary: 登录并建立 Django session
+      summary: 登录并建立 ControlHost 会话
       description: |
         使用用户名和密码登录。登录成功后响应会设置 `sessionid` 与 `csrftoken` cookie，后续业务接口使用该会话访问。
       operationId: login
@@ -157,7 +157,7 @@ paths:
       tags:
         - auth
       summary: 修改当前用户密码
-      description: 校验当前密码并应用 Django 密码强度规则；成功后保持当前浏览器会话登录。
+      description: 校验当前密码并应用 ControlHost 密码强度规则；成功后保持当前浏览器会话登录。
       operationId: changePassword
       requestBody:
         required: true
@@ -1372,7 +1372,7 @@ components:
       type: apiKey
       in: cookie
       name: sessionid
-      description: Django session cookie。除 auth 白名单外，业务接口需要已登录会话。
+      description: ControlHost 会话 Cookie。除 auth 白名单外，业务接口需要已登录会话。
   schemas:
     CsrfTokenResponse:
       type: object
@@ -1381,7 +1381,7 @@ components:
       properties:
         csrfToken:
           type: string
-          description: Django CSRF token，同时响应会通过 Set-Cookie 写入 `csrftoken`。
+          description: ControlHost CSRF token，同时响应会通过 Set-Cookie 写入 `csrftoken`。
           example: x9I3kV7sExampleToken
     ErrorResponse:
       type: object

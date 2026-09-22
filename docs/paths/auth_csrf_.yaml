@@ -3,7 +3,7 @@ get:
     - auth
   summary: 获取 CSRF token
   description: |
-    显式触发 Django `csrftoken` cookie 下发。前端首次加载时调用一次，之后在不安全方法中把 cookie 值写入 `X-CSRFToken` 请求头。
+    显式触发 ControlHost `csrftoken` Cookie 下发。前端首次加载时调用一次，之后在不安全方法中把 Cookie 值写入 `X-CSRFToken` 请求头。
   operationId: getCsrfToken
   security: []
   responses:

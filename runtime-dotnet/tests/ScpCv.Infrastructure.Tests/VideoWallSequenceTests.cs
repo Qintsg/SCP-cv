@@ -2,7 +2,7 @@ using ScpCv.Infrastructure.VideoWall;
 
 namespace ScpCv.Infrastructure.Tests;
 
-/// <summary>校对视频墙序列与 <c>scp_cv/services/video_wall.py</c> 的既有协议事实。</summary>
+/// <summary>校对视频墙序列与清理前提交 <c>e822be9</c> 的既有协议事实。</summary>
 public sealed class VideoWallSequenceTests
 {
     [Fact]

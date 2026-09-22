@@ -27,11 +27,11 @@ git clone --branch refactor/003-dotnet-runtime http://git.bbt.sspu.edu.cn/Qintsg
 `HKLM\SOFTWARE\dotnet\Setup\InstalledVersions\x64\InstallLocation` 设为 `D:\dotnet`，否则由计划任务等新会话启动的框架依赖
 `ScpCv.ControlHost.exe` 找不到非默认位置运行时。
 
-`admin` 用户级 `C:\Users\admin\.npmrc` 必须与 `frontend/pnpm-lock.yaml` 的 tarball 来源一致，否则 pnpm 11 的供应链策略会以
-`ERR_PNPM_TARBALL_URL_MISMATCH` 拒绝安装（该 lockfile 全部指向校园镜像；开发机使用的也是同一镜像）：
+仓库根目录 `.npmrc` 已固定教育网联合镜像站；不要用 npm，也不要提交 pnpm 锁文件。安装使用：
 
-```text
-registry=https://mirrors.cernet.edu.cn/npm/
+```powershell
+pnpm install
+pnpm --prefix frontend install
 ```
 
 `frontend/.env` 未被版本控制，需按机器生成：

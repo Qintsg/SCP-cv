@@ -1,7 +1,7 @@
 post:
   tags:
     - auth
-  summary: 登录并建立 Django session
+  summary: 登录并建立 ControlHost 会话
   description: |
     使用用户名和密码登录。登录成功后响应会设置 `sessionid` 与 `csrftoken` cookie，后续业务接口使用该会话访问。
   operationId: login

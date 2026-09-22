@@ -79,12 +79,11 @@ runtime-dotnet/
 │   ├── ScpCv.AudioWorker/
 │   └── ScpCv.PowerPointHost/
 └── tests/                    # Domain/Contract/Integration/Windows
-scp_cv/ + tests/              # 现有实现，完成替换后按正常提交清理
 tools/third_party/
 docs/openapi.yaml
 ```
 
-**Structure Decision**: Domain无UI/ORM/COM；Worker不引用EF、不写库。共享Vue不直接引用Node/AndroidAPI；平台差异封装在薄适配层。无需维护web/windows/android三份业务页面；旧代码由Git保留历史，不要求长期同目录双栈可运行。
+**Structure Decision**: Domain无UI/ORM/COM；Worker不引用EF、不写库。共享Vue不直接引用Node/AndroidAPI；平台差异封装在薄适配层。无需维护web/windows/android三份业务页面；旧 Django/Python 代码已于 2026-09-22 清理，只由Git保留历史。
 
 ## Target Architecture
 

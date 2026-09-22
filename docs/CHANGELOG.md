@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## 2026-09-22
+
+### 完成旧 Django/Python 运行时退役
+
+- 在本地软件门禁完成后执行 003/T118：删除 `manage.py`、`scp_cv/`、旧 `tests/`、pytest/uv 工程、旧启动配置、Python 视频墙黄金样本生成器和已过时的 Django/PySide 设计文档；当前运行代码只保留 .NET 多进程运行时与共享 Vue 控制台。
+- 重写 README、使用/维护文档、贡献指南、代码风格和 PR 验证模板，使启动、配置、验证和排障入口全部指向 ControlHost、Supervisor、Worker 与 pnpm 前端。
+- 按用户要求删除 pnpm/npm 锁文件和旧 npm 故障计划，加入忽略规则；Node 依赖只使用 pnpm，并通过仓库 `.npmrc` 使用 `https://mirrors.cernet.edu.cn/npm/`。
+- 本地门禁：.NET Release 构建 0 警告/0 错误、非 Physical 测试 219/219，通过前端 40/40、类型检查与 Web 构建。旧 Python 套件删除前为 426 通过、1 个 Qt 时序用例偶发失败，单独复跑 5/5 通过。
+- T115/T116/T129 的性能、四屏/Office/VLC/MediaMTX/音频 60 分钟混合测试仍未完成；本次提前清理由用户明确要求，返工风险已记录。未删除旧 `db.sqlite3`、媒体、日志或凭据。
+
 ## 2026-09-21
 
 ### PowerShell 脚本编码约定补进 `STYLE.md`

@@ -15,7 +15,7 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
-| 拼接屏画面映射（视频墙） | `PATCH /api/runtime/`；`POST /api/scenarios/{id}/activate/` | `RuntimeStateService.cs:70`、`ScenarioService.cs:187` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`（清屏/映射/提交/刷新） | `SimulationVideoWallController`（只校验模式，不发包） | `VideoWallControllerTests`、`VideoWallSequenceTests`、`VideoWallGoldenPacketsTests`（两种模式 400 个包逐包比对旧 Python 实现的黄金样本）、`VideoWallLoopbackTests`（把 `192.168.5.101~150` 挂成本机别名后跑真实 TCP：全节点 224~240 ms、单节点故障 12.4~12.6 s、取消 409 ms；需要管理员先跑 `runtime-dotnet/scripts/videowall-loopback.ps1 -Apply`）、`HostHardwareIntegrationTests`、`VideoWallRegistrationTests`、`VideoWallLoggingTests`（成功/失败/重试/取消的日志）；**物理画面未实机验证**（见 `specs/004-video-wall-control/spec.md` SC-007），**帧内容（常量与映射参数）未现场抓包复核**（issue #2）；排查入口 `docs/维护文档.md` §8.6 |
+| 拼接屏画面映射（视频墙） | `PATCH /api/runtime/`；`POST /api/scenarios/{id}/activate/` | `RuntimeStateService.cs:70`、`ScenarioService.cs:187` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`（清屏/映射/提交/刷新） | `SimulationVideoWallController`（只校验模式，不发包） | `VideoWallControllerTests`、`VideoWallSequenceTests`、`VideoWallGoldenPacketsTests`（两种模式 400 个包逐包比对退役前固化的旧实现快照）、`VideoWallLoopbackTests`（把 `192.168.5.101~150` 挂成本机别名后跑真实 TCP：全节点 224~240 ms、单节点故障 12.4~12.6 s、取消 409 ms；需要管理员先跑 `runtime-dotnet/scripts/videowall-loopback.ps1 -Apply`）、`HostHardwareIntegrationTests`、`VideoWallRegistrationTests`、`VideoWallLoggingTests`（成功/失败/重试/取消的日志）；**物理画面未实机验证**（见 `specs/004-video-wall-control/spec.md` SC-007），**帧内容（常量与映射参数）未现场抓包复核**（issue #2）；排查入口 `docs/维护文档.md` §8.5 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/` | `RuntimeStateService.cs:159` → `ISystemAudioController.Apply` → `WindowsCoreAudioController` | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；**预案激活只落库不推硬件**，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（四窗 / 置顶 / 物理像素铺满） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/`；切换大屏模式后的固定静音策略也走这条链路（`RuntimeStateService.cs:91-94` 逐个 `SetMuteAsync`） | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2） | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`（simulation 跨层）、`docs/qa/003-*.md` |
@@ -45,13 +45,13 @@
 - **根因**：迁移时只迁了 `VideoWallSequenceBuilder`（控制包构造 + 常量 + 单测），下发层（协议阶段、并发上限、重试退避、失败即中止）没人承接；`specs/001~003` 全文没有「视频墙/拼接屏」条目，于是没有任何任务或验收点会暴露缺失。
 - **检出方式**：
   - 对每个 `*Builder` / `*Sequence` / `*Packet` / `*Service` 类型反查生产调用方：`grep -rn "<类型名>" --include=*.cs runtime-dotnet/src | grep -v Tests`，为 0 就是嫌疑。
-  - 对每个硬件接口（`IVideoWallController`、`ISystemAudioController`、`IDisplayTopologyProvider`、`IDeviceCommandTransport`）列出实现与调用点，逐条对照旧 `scp_cv/services/*.py` 的调用者。
+  - 对每个硬件接口（`IVideoWallController`、`ISystemAudioController`、`IDisplayTopologyProvider`、`IDeviceCommandTransport`）列出实现与调用点；需要历史对照时查看清理前提交 `e822be9` 中的旧 Python 调用者。
 - **现状**：已修复（`runtime-dotnet/src/ScpCv.Infrastructure/VideoWall/VideoWallController.cs`），规范见 `specs/004-video-wall-control/`。
 
 ### 坑 2 - 硬件副作用只接了单条入口（**未修复**，待确认）
 
 - **症状（推断）**：Hardware 模式下激活带音量的预案（`volume_state=set`），运行态音量变了、物理系统音量没变。
-- **根因**：`ISystemAudioController.Apply` 全仓库只有 `RuntimeStateService.SetSystemVolumeAsync`（`RuntimeStateService.cs:159`，入口 `PATCH /api/volume/`）会调用；`ScenarioService.ActivateAsync` 只把 `runtime.VolumeLevel` 写进库。旧 Python 的 `activate_scenario` 会调 `set_system_volume(level)`（`scp_cv/services/scenario.py:305`）。
+- **根因**：`ISystemAudioController.Apply` 全仓库只有 `RuntimeStateService.SetSystemVolumeAsync`（`RuntimeStateService.cs:159`，入口 `PATCH /api/volume/`）会调用；`ScenarioService.ActivateAsync` 只把 `runtime.VolumeLevel` 写进库。清理前提交 `e822be9` 中的旧 Python `activate_scenario` 会调用物理音量设置。
 - **检出方式**：对每条硬件接口反查全部调用点，再对照旧实现的调用者数量——「旧实现有 N 个入口、新实现只有 1 个」就是漏接线。
 - **现状**：代码证据明确，**尚未实机验证，尚未修复**。修复前先按宪章 II 立规范条目（不并入 004）。
 
@@ -94,7 +94,7 @@
 - **检出方式**：
   - 包级测试里出现 `First(...)`／`Any(...)` 而不是对全序列的断言时，先对一次数：`Build()` 返回多少项、断言覆盖多少项，差值就是盲区。
   - 给序列构造器补一条「全序列比对**独立来源**黄金样本」的用例。样本必须来自旧实现的实际运行结果，不能从新实现转抄，否则是自证。
-- **现状**：已补（`VideoWallGoldenPacketsTests` + `tools/generate_video_wall_golden.py` + `tests/ScpCv.Infrastructure.Tests/Fixtures/video-wall-packets.json`，两种模式各 200 个包）。探针下新用例失败、旧用例通过，见 `specs/004-video-wall-control/verification.md` 第 4 轮。
+- **现状**：已补（`VideoWallGoldenPacketsTests` + `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/Fixtures/video-wall-packets.json`，两种模式各 200 个包）。生成器与旧 Python 侧守卫在 T118 退役时删除，来源与生成证据保留在清理前提交 `e822be9` 和 `specs/004-video-wall-control/verification.md` 第 4 轮；当前 fixture 作为不可变迁移快照使用。
 
 ### 坑 9 - 本机回环测试的绿色容易被当成现场证据（2026-09-21 登记边界）
 

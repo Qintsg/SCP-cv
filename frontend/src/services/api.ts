@@ -277,7 +277,7 @@ function resolveBackendBase(): string {
   const runtimeProfile = clientConnection.profile;
   if (runtimeProfile) return runtimeProfile.origin;
 
-  // dev 模式下统一走 Vite 反向代理：相对路径 → 前端 origin → vite proxy → Django。
+  // dev 模式下统一走 Vite 反向代理：相对路径 → 前端 origin → vite proxy → ControlHost。
   // 这样请求与页面同 origin，浏览器不再发起跨 origin 预检，SameSite=Lax 的
   // csrftoken cookie 也能正常携带，避免登录失败。
   if (import.meta.env.DEV) return '';
@@ -394,7 +394,7 @@ async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = R
   }
   const response = await fetchWithTimeout(absoluteUrl, {
     ...init,
-    // Django session cookie 必须跟车，否则跨端口请求被识别为匿名用户。
+    // ControlHost 会话 Cookie 必须跟车，否则跨端口请求被识别为匿名用户。
     credentials: 'include',
     headers: {
       Accept: 'application/json',
@@ -422,7 +422,7 @@ function uploadFormData<T>(url: string, formData: FormData, options: UploadOptio
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
     request.open('POST', buildBackendUrl(url));
-    // 文件上传走 multipart：必须同样携带 session cookie + CSRF token，否则被拦截。
+    // 文件上传走 multipart：必须同样携带会话 Cookie + CSRF token，否则被拦截。
     request.withCredentials = true;
     const csrfToken = resolveCsrfToken(csrfRequestToken, readCookie('csrftoken'));
     if (csrfToken) request.setRequestHeader('X-CSRFToken', csrfToken);

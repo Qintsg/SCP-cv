@@ -1,5 +1,7 @@
 # 本地多轮 QA 测试结论
 
+> 历史归档：本文记录已于 2026-09-22 退役的 Django/PySide 运行时，不是当前启动或验收说明。当前验证见 `specs/003-dotnet-runtime-refactor/verification.md`。
+
 > 测试日期：2026-08-05
 > 环境：本机开发环境（前端 Vite 8.2、后端 Django、四窗口 PySide 播放器）
 > 方式：Playwright 真实浏览器逐轮操作，覆盖常规、异常、极限场景

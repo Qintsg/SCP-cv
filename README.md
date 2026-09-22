@@ -1,53 +1,44 @@
 # SCP-cv
 
-SCP-cv 是用于控制 **上海第二工业大学 28#108 多媒体显示系统** 的统一播放控制平台。系统在一台 Windows 主机上协同运行 Vue 控制台、Django 服务端、MediaMTX 流服务和 PySide6 播放器，用于管理 PPT、视频、图片、网页、音频和 SRT 直播流等媒体源，将内容投放到大屏与电视窗口，并通过独立背景音乐通道输出音频。
+SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和多个独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源，并输出到四个物理窗口。
 
 ## 项目信息
 
 | 项目 | 内容 |
-|------|------|
-| 开发者 | Qintsg（饶弘玮，上海第二工业大学 25网工A2） young86（陈子阳，上海第二工业大学 25数据A2）|
+| --- | --- |
+| 开发者 | Qintsg（饶弘玮，上海第二工业大学 25网工A2）、young86（陈子阳，上海第二工业大学 25数据A2） |
 | 单位 | 上海第二工业大学 / 计算机与信息工程学院 / SSPU AI-Lab / 超级棒棒糖 |
 | 应用地点 | 上海第二工业大学 28#108 |
 | 许可证 | Artistic-2.0 |
-| 镜像仓库 | `http://git.bbt.sspu.edu.cn/Qintsg/scp-cv`（仅作为同步镜像，不作为主开发入口） |
+| 主仓库 | `https://github.com/SCP-of-SSPU/SCP-cv.git` |
+| 镜像仓库 | `http://git.bbt.sspu.edu.cn/Qintsg/scp-cv.git` |
 
-## 核心能力
-
-- **统一媒体源管理**：上传文件、添加本机路径、添加网页源、自动发现 MediaMTX SRT 入流并默认创建 SRT 直拉源。
-- **统一预热**：媒体源可开启后台预热，网页、图片、视频、背景音频、直播流和 PPT 按类型提前准备；直播流使用 URI 级可认领预热，PPT 按源文件级预打开，降低现场切换等待。
-- **四窗口播控**：大屏左、大屏右、TV 左、TV 右分别独立控制，支持 single / double 大屏模式。
-- **背景音乐**：音频源通过独立后台播放器输出，支持播放列表、立即播放、循环、音量和静音控制。
-- **PPT 控制**：所有 PPT 导入、预览、播放缓存、预热和放映统一使用 Microsoft PowerPoint；导入后会尝试生成播放专用 `.ppsx`/`.pps` 缓存，显控页提供翻页、跳页和媒体控制。
-- **SRT / RTSP 直播播放**：MediaMTX 接收 OBS / 外部设备 SRT 推流，自动发现源默认通过 SRT read 地址交给 libVLC 播放；RTSP 保留为手动兼容路径。
-- **REST + SSE 控制台**：Vue 前端通过 REST 下发指令，通过 SSE 同步播放状态。
-- **设备控制**：支持拼接屏、电视电源 TCP 指令和 Windows 系统音量同步。
-
-## 当前 .NET 架构概览
+## 架构
 
 ```text
-Vue 3 + Tailwind 4 + Vite 控制台 (frontend/)
-  REST / SSE
-        |
-ASP.NET Core ControlHost（SQLite + EF Core）
-        |
-Named Pipe + 持久命令队列
-        |
-Windows Supervisor → PlayerWorker×4 / AudioWorker / PowerPointHost
-        |
-MediaMTX (SRT publish/read + RTSP read)
-
-Windows 控制客户端使用 Electron，Android 控制客户端使用 Capacitor；两者与 Web 共享同一套 Vue 页面和 API。旧 Django/Python 实现仍由 Git 保留，当前快速迭代期不做数据迁移或删除。
+Vue 3 + Tailwind CSS 4 + Pinia + Vite（Web / Electron / Capacitor）
+                         │ REST / SSE
+ASP.NET Core ControlHost（SQLite + EF Core + 持久命令队列）
+                         │ Named Pipe
+Windows Supervisor ─┬─ PlayerWorker × 4（WPF / VLC / WebView2 / PDF）
+                    ├─ AudioWorker
+                    ├─ PowerPointHost（唯一 STA / COM 槽）
+                    └─ MediaMTX
 ```
+
+ControlHost 是业务数据库的唯一写入者。控制端只访问 REST/SSE，不直接访问 Named Pipe、数据库或原生播放对象。旧 Django/PySide 运行时已在 .NET 替换完成后移除；历史可从 Git 获取，旧 `db.sqlite3`、媒体和日志不会自动迁移或删除。
 
 ## 环境要求
 
-- Windows 10/11
-- Python 3.12 或更高版本（推荐使用 `uv` 管理）
-- Node.js 20 或更高版本
-- Microsoft PowerPoint（唯一支持的 PPT 播放、预览和 show-format 导出组件）
-- VLC/libVLC Windows x64 运行时（SRT 播放必需）
-- MediaMTX Windows x64 可执行文件
+- Windows 10/11 x64 与交互式桌面
+- [.NET SDK 10.0.400](runtime-dotnet/global.json)
+- Node.js 22 或更高版本
+- pnpm 11（仓库 `packageManager` 字段固定版本；不要使用 npm 安装依赖）
+- Microsoft PowerPoint
+- VLC/libVLC Windows x64 运行时
+- MediaMTX Windows x64
+
+Node 依赖通过仓库级 `.npmrc` 使用 `https://mirrors.cernet.edu.cn/npm/`。项目不提交 pnpm 锁文件，依赖版本以 `package.json` 中的精确版本为准。
 
 ## 快速开始
 
@@ -55,193 +46,98 @@ Windows 控制客户端使用 Electron，Android 控制客户端使用 Capacitor
 git clone <repo-url> SCP-cv
 cd SCP-cv
 
-# 安装 uv（如本机尚未安装）
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
+dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
 
-# 同步 Python 依赖；本项目不再维护 requirements*.txt
-uv python install
-uv sync
-
-# 安装前端依赖
 pnpm install
-pnpm install --prefix frontend
-
-# 准备本地环境变量
-copy .env.example .env
-copy frontend\.env.example frontend\.env
-
-# 确认固定启动数据配置；默认管理员来自 config.toml
-type config.toml
-
-# 初始化数据库
-uv run python manage.py migrate
+pnpm --prefix frontend install
 ```
 
-首次登录使用 `config.toml` 中的一次性引导管理员。登录后请立即在“设置 → 账户安全”修改密码；登录页不会再展示默认口令。修改成功后当前浏览器会话保持登录，后续数据库迁移不会覆盖已修改的密码。
+第三方运行时约定：
 
-第三方运行时按以下约定放置：
+- `tools/third_party/mediamtx/mediamtx.exe`
+- `tools/third_party/vlc/runtime/`，或系统安装的 `C:\Program Files\VideoLAN\VLC`
+- 当前 Windows 用户可自动化调用的 Microsoft PowerPoint
 
-- `tools/third_party/mediamtx/mediamtx.exe`：MediaMTX 主程序，配置文件同目录放置。
-- `tools/third_party/vlc/runtime/`：项目内置 VLC/libVLC runtime；也可以使用系统安装的 `C:\Program Files\VideoLAN\VLC`。
-- Microsoft PowerPoint 需要安装在当前 Windows 用户可自动化调用的环境中，播放器会尝试 PowerPoint COM ProgID。
+## 开发运行
 
-## 环境变量
-
-后端配置在仓库根目录 `.env`，前端 Vite 配置在 `frontend/.env`。两者分离：
-
-- `.env`：Django、MediaMTX、日志和后端运行配置。
-- `frontend/.env`：`VITE_FRONTEND_PORT` 与 `VITE_BACKEND_TARGET`。
-
-PPT 相关配置：
-
-- PowerPoint 是唯一 PPT 播放器；导入、预览、播放缓存、预热和放映均不再提供后端选择。
-- 支持 `.pptx/.ppt/.pps/.ppsx/.pptm/.ppsm/.pot/.potx/.potm/.odp` 等演示文件。导入后会尝试生成播放专用 `.ppsx`/`.pps` 缓存，宏格式默认导出为非宏 `.ppsx`；生成失败不阻断媒体源创建，播放时回退原始文件。
-- PPT 媒体源启用预热时会按播放 URI 执行文件级预热：PowerPoint COM 会提前启动并无窗口预打开演示文稿，前台打开时按 `source_id + uri` 精确认领。
-- PPT 放映时目标 PySide 播放窗口会立即切到黑色视频容器并保持可见、置顶；PowerPoint 以窗口化放映启动，播放器将 `SlideShowWindow.HWND` 嵌入该视频容器。
-- PPT 切换到视频、图片、网页或直播时，播放器会先隐藏旧 PPT 嵌入子窗口并显示新内容，再延后关闭旧 PowerPoint 放映和 COM 资源，减少切换黑屏和窗口抢占。
-- 右上角“重置 PPT 放映”会关闭当前 PowerPoint 放映窗口与文档，再重启当前 PPT 放映并回到重置前页码。
-- `PPT_PREVIEW_WORKER_TIMEOUT_SECONDS=180`：上传或导入 PPT 时，预览导出 worker 的最长等待时间；Office 预览导出失败或超时只会跳过预览，不会阻断媒体源创建。
-- `PPT_PLAYBACK_EXPORT_TIMEOUT_SECONDS=180`：导入 PPT 时生成 `.ppsx`/`.pps` 播放缓存的最长等待时间；缓存生成失败只记录 metadata 并回退原始文件播放。
-
-直播与低延迟相关配置：
-
-- `MEDIAMTX_SRT_PUBLISH_LATENCY_US=30000`：SRT 推流端 URL 中的 latency，按微秒理解，默认保留现场已验证的 30ms；OBS / 编码器推流地址形如 `srt://<主机IP>:8890?streamid=publish:<流标识>&latency=30000&pkt_size=1316`。
-- `MEDIAMTX_SRT_READ_LATENCY_MS=50`：播放器 SRT 拉流 URL 中的 latency，按毫秒理解，可按现场网络质量增减。
-- `MEDIAMTX_RTSP_READ_TRANSPORT=tcp`：RTSP 拉流传输策略，播放器会转换为 libVLC `:rtsp-tcp` 或 `:rtsp-udp`。
-- `STREAM_VLC_NETWORK_CACHING_MS=50`、`STREAM_VLC_LIVE_CACHING_MS=50`、`STREAM_VLC_FILE_CACHING_MS=0`：前台 libVLC 播放缓存参数。
-- `STREAM_VLC_CLOCK_JITTER=0`、`STREAM_VLC_CLOCK_SYNCHRO=0`、`STREAM_VLC_DROP_LATE_FRAMES=True`、`STREAM_VLC_SKIP_FRAMES=True`：前台 libVLC 追实时画面的时钟与丢帧策略。
-- `STREAM_PREHEAT_NETWORK_CACHING_MS=100`、`STREAM_PREHEAT_LIVE_CACHING_MS=100`：直播 URI 级预热连接使用的缓存参数。
-- `STREAM_PREHEAT_TTL_SECONDS=60`：直播预热连接可被前台认领的最长保留时间。
-
-预热行为说明：
-
-- 图片和本地视频按 `source_id + uri` 进行文件级预热；命中后前台直接认领已加载资源。
-- 背景音频按 `source_id + uri` 预设本地 `QMediaPlayer + QAudioOutput`，背景音乐打开时优先认领，音频源仍不占用四个显示窗口。
-- 自动发现的 MediaMTX 在线流默认保存为 `srt://<read-host>:8890?streamid=read:<stream_identifier>&latency=<ms>`；如需 RTSP 拉流，可手动添加 RTSP / 自定义直播源。
-- SRT / RTSP / 自定义直播按 `source_id + uri` 建立可认领 libVLC 预热连接；前台 `SrtStreamAdapter` 命中后复用预热的 `instance/player/media`，不再把直播预热称为文件级。
-
-`runall` 启动前端时会移除父进程继承的 `VITE_*` 变量，让 `frontend/.env` 成为前端开发服务的实际配置来源。若 `frontend/.env` 未配置 `VITE_BACKEND_TARGET`，`runall` 才会按当前后端监听地址提供兜底值。
-
-局域网手机或其它控制端访问时，请把 `frontend/.env` 中的 `VITE_BACKEND_TARGET` 设置为浏览器可访问的后端地址，例如：
-
-```env
-VITE_FRONTEND_PORT=5173
-VITE_BACKEND_TARGET=http://192.168.1.100:8000
-```
-
-## 启动
-
-推荐一键启动：
+先启动无物理副作用的 ControlHost：
 
 ```powershell
-uv run python manage.py runall
+dotnet run --project runtime-dotnet/src/ScpCv.ControlHost -- `
+  --SafetyMode=Simulation `
+  --urls=http://127.0.0.1:18000 `
+  --DataRoot=.validation/dotnet
 ```
 
-常用参数：
+再启动共享控制台：
 
 ```powershell
-# 允许局域网访问前后端
-uv run python manage.py runall --backend-host 0.0.0.0 --frontend-host 0.0.0.0
-
-# 已手动启动 MediaMTX 时跳过
-uv run python manage.py runall --skip-mediamtx
-
-# 调试时跳过播放器或前端
-uv run python manage.py runall --skip-player
-uv run python manage.py runall --skip-frontend
-
-# 无启动器 GUI 启动全部服务和 4 个播放窗口
-uv run python manage.py runall --headless
-
-# 后台启动，不绑定当前终端生命周期；输出写入 logs/runall/service/
-uv run python manage.py runall --headless --service
-
-# 指定窗口到 Windows 显示器 ID，并指定 GPU ID
-uv run python manage.py runall --headless --window1 1 --window2 2 --window3 3 --window4 4 --gpu 0
+pnpm --prefix frontend run dev:web
 ```
 
-`--headless` 默认把窗口 1/2/3/4 分别映射到 Windows 显示器 ID 1/2/3/4；`runall --headless` 会为每个窗口启动独立 PySide 播放器进程，隔离 PowerPoint COM 生命周期，避免多窗口 PPT 串扰。未传 `--gpu` 时使用系统默认 GPU。`--window3` 与兼容别名 `--windows3` 等价。
-如果通过 SSH、OpenSSH 服务或其它非控制台会话远程启动，直接运行 `--headless` 无法访问物理显示器；请使用 `uv run python manage.py runall --headless --service`，系统会在当前登录用户的交互桌面中拉起真实 runall。
+如需让前端直连其它地址，复制 `frontend/.env.example` 为 `frontend/.env` 并修改 `VITE_BACKEND_TARGET`。
 
-控制台顶栏会分别显示“控制链路”和“播放器”状态：前者只表示 SSE 已连接，后者由每个 PySide 播放窗口的数据库心跳判断。只有播放器在线时，才代表控制命令有实际画面执行端。
+## Windows 播放运行时
 
-分进程调试：
+物理播放必须在 Windows 交互桌面中运行。推荐使用无头启动脚本；口令应放在 ACL 受保护的文件或 `SCP_CV_DEVELOPMENT_PASSWORD` 环境变量中，不要写入命令行或仓库。
 
 ```powershell
-# Django REST
-uv run python manage.py runserver
-
-# Vue 控制台
-pnpm --prefix frontend run dev
-
-# PySide6 播放器
-uv run python manage.py run_player
-
-# PySide6 播放器无 GUI 启动
-uv run python manage.py run_player --headless --window1 1 --window2 2 --window3 3 --window4 4
-
-# 单窗口调试，常用于验证某一路 PPT/显示器
-uv run python manage.py run_player --headless --only-window 2 --window2 2
-
-# MediaMTX
-.\tools\third_party\mediamtx\mediamtx.exe .\tools\third_party\mediamtx\mediamtx.yml
+powershell -NoProfile -ExecutionPolicy Bypass `
+  -File runtime-dotnet/scripts/run-headless.ps1 `
+  -SafetyMode Hardware `
+  -StartWorkers `
+  -Detach `
+  -DataRoot data/dotnet `
+  -ListenUrls https://localhost:18443 `
+  -AllowedHosts 'localhost;127.0.0.1' `
+  -AllowedOrigins 'https://localhost' `
+  -DevelopmentPasswordFile '<口令文件>'
 ```
 
-默认端口：
-
-| 端口 | 服务 |
-|------|------|
-| 5173 | Vue 控制台 |
-| 8000 | Django REST / admin / 媒体文件 |
-| 8890 | MediaMTX SRT publish/read |
-| 9997 | MediaMTX API |
-
-## 常用验证
+运行组状态与启停：
 
 ```powershell
-uv run python manage.py check
-uv run python manage.py makemigrations --check --dry-run
-uv run pytest tests/ -v
+powershell -File runtime-dotnet/scripts/runtime.ps1 -Action status
+powershell -File runtime-dotnet/scripts/runtime.ps1 -Action start
+powershell -File runtime-dotnet/scripts/runtime.ps1 -Action stop
+powershell -File runtime-dotnet/scripts/runtime.ps1 -Action restart
+```
+
+配置来源主要是 `runtime-dotnet/src/ScpCv.ControlHost/appsettings.json`、命令行参数和标准 ASP.NET Core 环境变量。默认 `SafetyMode=Simulation`；只有明确切到 `Hardware` 才会访问显示器、系统音量、设备和视频墙。
+
+## 验证
+
+```powershell
+dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
+dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
+$env:http_proxy=''; $env:https_proxy=''; $env:all_proxy=''
+dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
+
+pnpm --prefix frontend test
 pnpm --prefix frontend run typecheck
-pnpm --prefix frontend run build
+pnpm --prefix frontend run build:web
+
+py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
+pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 ```
 
-## 清除运行数据
+本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、四屏/Office/VLC/MediaMTX/音频 60 分钟混合测试和性能基准需要专用工作站，不能用 Simulation 结果替代。
 
-如需把现场恢复到空数据库和空媒体状态，先停止 `runall`、Django、播放器等正在运行的进程，再执行：
+## 数据边界
 
-```powershell
-uv run python manage.py clearall
-```
-
-该命令只作为 Django 管理命令提供，不暴露 API 或前端入口。它会删除 `db.sqlite3` 及 SQLite 附属文件，清空 `media/` 和 `logs/`，重新执行迁移，并仅按 `config.toml` 写入固定数据；当前固定数据只有默认管理员。
+新的运行数据默认位于 `data/dotnet/`，验证数据应放在 `.validation/`。不要自动删除或覆盖旧 `db.sqlite3`、上传媒体、日志、凭据或其它未跟踪数据；如需清空数据，必须先停止运行时并单独确认精确目标。
 
 ## 文档
 
-### Spec Kit 需求工作流
-
-本项目使用 GitHub Spec Kit 管理功能生命周期。先通过 GitHub 的“功能规范提案” Issue
-表单描述问题和验收标准，再按 `specify → clarify → plan → tasks → implement →
-analyze/review` 顺序推进。规范产物统一保存在 `specs/`，详细目录约定见
-[`specs/README.md`](specs/README.md)；项目原则见
-[`.specify/memory/constitution.md`](.specify/memory/constitution.md)。
-
-每个涉及规范的 PR 都会触发 [Spec Kit 文档校验](.github/workflows/spec-kit.yml)，并要求
-在 PR 模板中填写规范目录、验证命令及回滚信息。完整维护说明见
-[`CONTRIBUTING.md`](CONTRIBUTING.md) 和 [`.specify/README.md`](.specify/README.md)。
-
-- [使用文档](docs/使用文档.md)：现场部署、环境变量、启动、播控流程和常见问题。
-- [维护文档](docs/维护文档.md)：目录职责、运行时资产、依赖升级、备份、故障定位和发布维护流程。
-- [设计文档](docs/design/README.md)：面向迁移合并到 Django + Fluent + Vue 项目的系统架构、数据模型、接口、前端、播放器、运维和迁移指南。
-- [OpenAPI YAML](docs/openapi.yaml)：REST API 机器可读接口合同。
-- [贡献指南](CONTRIBUTING.md)：开发流程、提交规范和验证要求。
-- [代码风格](STYLE.md)：Python、TypeScript、Vue、CSS 和文档风格约定。
-- [变更记录](docs/CHANGELOG.md)：历史变更说明。
-
-## 仓库整理约定
-
-以下内容不进入版本库：本地 agent 配置、Playwright/Codex 运行缓存、pytest/ruff 缓存、`node_modules/`、上传媒体、日志和历史 `requirements*.txt`。Python 依赖以 `pyproject.toml` + `uv.lock` 为准，Node 依赖以根目录和 `frontend/` 各自的 `package.json` + `pnpm-lock.yaml` 为准。
+- [使用文档](docs/使用文档.md)
+- [维护文档](docs/维护文档.md)
+- [OpenAPI](docs/openapi.yaml)
+- [已知坑与物理副作用路径](docs/known-pitfalls.md)
+- [.NET 重构规范](specs/003-dotnet-runtime-refactor/spec.md)
+- [视频墙控制规范](specs/004-video-wall-control/spec.md)
+- [变更记录](docs/CHANGELOG.md)
 
 ## 许可证
 
-本项目主代码使用 Artistic License 2.0，详见 [LICENSE](LICENSE)。第三方运行时与依赖遵循其各自许可证。
+本项目使用 Artistic License 2.0，详见 [LICENSE](LICENSE)。

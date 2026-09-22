@@ -10,11 +10,13 @@
 请列出实际运行的命令及结果：
 
 ```text
-- [ ] uv run python manage.py check
-- [ ] uv run python manage.py makemigrations --check --dry-run
-- [ ] uv run pytest tests/ -v
+- [ ] dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
+- [ ] dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
+- [ ] dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
+- [ ] pnpm --prefix frontend test
 - [ ] pnpm --prefix frontend run typecheck
-- [ ] pnpm --prefix frontend run build
+- [ ] pnpm --prefix frontend run build:web
+- [ ] py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
 ```
 
 ## 风险与回滚

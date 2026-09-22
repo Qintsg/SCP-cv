@@ -7,7 +7,7 @@
 ```powershell
 git status --short --branch
 git pull --rebase
-uv sync
+dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
 pnpm install
 pnpm install --prefix frontend
 ```
@@ -47,7 +47,8 @@ docs(repo): 补充维护文档
 
 ## 3. 代码要求
 
-- Python 代码遵循 PEP 8、类型注解和项目既有服务分层。
+- C# 代码遵循 `runtime-dotnet/Directory.Build.props` 的分析器、nullable 和 warnings-as-errors 约束。
+- Python 只用于 Spec Kit/QA 辅助脚本，遵循 PEP 8 与类型注解，不得重新引入 Python 运行时服务。
 - Vue / TypeScript 代码遵循 `frontend/src/` 既有组件、store、composable 和样式结构。
 - 单文件超过 500 行时应优先拆分，不继续堆积实现。
 - 不保留空实现、假成功逻辑或无说明占位。
@@ -79,9 +80,10 @@ docs(repo): 补充维护文档
 后端：
 
 ```powershell
-uv run python manage.py check
-uv run python manage.py makemigrations --check --dry-run
-uv run pytest tests/ -v
+dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
+dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
+$env:http_proxy=''; $env:https_proxy=''; $env:all_proxy=''
+dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
 ```
 
 前端：
@@ -92,10 +94,11 @@ pnpm --prefix frontend run typecheck
 pnpm --prefix frontend run build
 ```
 
-启动流程或环境变量变更：
+规范与 API：
 
 ```powershell
-uv run pytest tests/test_runall_command.py -v
+py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
+pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 ```
 
 无法运行某项验证时，在提交或交付说明中写明原因和剩余风险。
@@ -110,13 +113,12 @@ uv run pytest tests/test_runall_command.py -v
 - `.oms/`
 - `.playwright-cli/`
 - `.playwright-mcp` / `.playwright-mcp/`
-- `.pytest_cache/`
-- `.ruff_cache/`
 - `node_modules/`
+- `pnpm-lock.yaml`
 - 上传媒体、日志、临时测试脚本
 - `requirements*.txt`
 
-依赖以 `uv.lock`、`pnpm-lock.yaml` 和 `frontend/pnpm-lock.yaml` 为准。
+.NET 依赖以集中包版本和项目 `packages.lock.json` 为准；Node 依赖只用 pnpm，版本以 `package.json` 的精确版本为准，不提交 pnpm 锁文件。
 
 ## 7. Pull Request 检查清单
 

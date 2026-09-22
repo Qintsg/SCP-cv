@@ -72,7 +72,17 @@
 
 工作站执行步骤见 `docs/qa/003-workstation-runbook.md`。
 
-因此当前不得执行 T118，也不得删除 Django/Python 运行时。
+T115/T116/T129 仍未验证。2026-09-22 用户明确要求在本地软件测试完成后执行 T118，并接受实机门禁尚未完成可能带来的返工风险；旧 Django/Python 运行时因此提前清理，历史继续由 Git 保留，未删除旧数据库、媒体或日志。
+
+## T118 本地门禁与旧栈清理（2026-09-22）
+
+- `dotnet restore runtime-dotnet/ScpCv.sln --locked-mode`：通过。
+- `dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore`：通过，0 警告、0 错误。
+- 清空本机代理环境变量后执行 `dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"`：219/219 通过。代理开启时两个自定义 Host Header 回环用例会收到本机代理返回的 502，关闭代理后通过，属于测试环境污染。
+- `pnpm --prefix frontend test`：40/40 通过；`typecheck` 与 `build:web` 通过。Vite 仍提示主入口约 1.07 MB，代码分割是后续优化项。
+- 删除前旧 Python 套件：426 通过、1 个 Qt 新子控件 mouse tracking 用例失败；该用例单独连续复跑 5/5 通过，记录为时序脆弱测试，不阻塞已被替代运行时清理。
+- 已删除 Django/PySide 源码、pytest/uv 工程、旧配置与旧设计文档；没有删除未跟踪的 `db.sqlite3`、`media/`、`logs/` 或凭据。
+- Node 依赖只使用 pnpm；按用户要求不再提交 pnpm 锁文件，仓库 `.npmrc` 使用 `https://mirrors.cernet.edu.cn/npm/`。
 
 ## Convergence 实施记录（2026-09-10）
 
@@ -169,6 +179,6 @@
 - Spec Kit 校验：通过（`validate_specs.py --specs-dir specs`）。
 - `git diff --check`：通过；仅报告现有 CRLF/LF 转换提示，无空白错误。
 - FR-001–FR-030：均有计划和任务映射；SC-001–SC-010：均有自动或人工证据条目。
-- 任务依赖顺序与快速迭代边界一致；T118 仍被明确阻塞于 T107–T116，且旧 Django/Python 未删除。
+- 任务依赖原要求 T118 等待 T107–T116；2026-09-22 用户明确接受实机门禁未完成的返工风险并要求提前清理，偏差和本地软件门禁已记录在上文。
 - 发现并保留的未完成项：T115/T116/T129 为硬件、媒体与性能门禁，已标为待工作站执行（见 `docs/qa/003-workstation-runbook.md`），不冒充通过；T050/T113/T128 已于 2026-09-11 完成并记录证据。
 - 无宪章 MUST 冲突、无未映射核心需求、无新增迁移/回滚工程。

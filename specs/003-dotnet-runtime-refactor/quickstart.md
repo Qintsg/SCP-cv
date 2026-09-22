@@ -1,38 +1,34 @@
 # Quickstart: 开发验证与三端联调
 
-**Status**: US1–US6 软件实现阶段；新 .NET/Electron/Capacitor 工程按 `tasks.md` 逐步交付。当前可运行检查与
-目标命令分开列出，不自动授权启动真实设备/Office。
+**Status**: US1–US6 软件实现完成；旧 Django/Python 运行时已删除。T115/T116/T129 的性能与实机长稳门禁仍待执行，不自动授权启动真实设备/Office。
 
 ## 当前文档检查
 
 在仓库根目录执行：
 
 ```powershell
-.\.venv\Scripts\python.exe .specify\scripts\python\validate_specs.py --specs-dir specs
+py -3 .specify\scripts\python\validate_specs.py --specs-dir specs
 git diff --check
 ```
 
 本地 feature 指向 003，Git 分支为 `refactor/003-dotnet-runtime`；规范变更继续检查链接、
 代码围栏、空白和需求编号。
 
-## 已有代码的参考测试
-
-仅在隔离测试数据下执行，与后续实际改动相关时选择；本轮不重复运行无关完整构建：
+## 当前软件验证
 
 ```powershell
-uv run python manage.py check
-uv run python manage.py makemigrations --check --dry-run
-uv run pytest tests/ -q --tb=short
+dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
+dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
+$env:http_proxy=''; $env:https_proxy=''; $env:all_proxy=''
+dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
 pnpm --prefix frontend test
 pnpm --prefix frontend run typecheck
-pnpm --prefix frontend run build
+pnpm --prefix frontend run build:web
 ```
 
 旧规范002的未完成实机项是风险参考，不是本次必须先做现场维护的前提，也不能当作已验证事实。
 
-## 实施后开发入口
-
-以下是 `tasks.md` 正在交付的命令约定；在对应任务完成前不得把命令存在视为功能已实现：
+## 开发入口
 
 ```powershell
 dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
@@ -43,7 +39,7 @@ dotnet run --project runtime-dotnet/src/ScpCv.ControlHost -- --SafetyMode=Simula
 
 预期：单独测试目录、假Worker/Office/设备，无真实输出/电源动作；新数据初始化不依赖旧库。已有目录不兼容时明确报错，不自动清空。
 
-前端构建入口（未来脚本）：
+前端构建入口：
 
 ```powershell
 pnpm --prefix frontend run build:web

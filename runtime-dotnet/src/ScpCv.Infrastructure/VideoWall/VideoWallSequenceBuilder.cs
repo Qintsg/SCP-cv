@@ -16,7 +16,7 @@ public enum VideoWallLayoutMode
 public sealed record VideoWallSendItem(string Phase, string Ip, int Port, byte[] Packet);
 
 /// <summary>
-/// 视频墙控制包序列构造。自 <c>scp_cv/services/video_wall.py</c> 1:1 迁移，协议逻辑不变：
+/// 视频墙控制包序列构造。自清理前提交 <c>e822be9</c> 的旧实现 1:1 迁移，协议逻辑不变：
 /// 清屏 → 映射 → 提交 → 刷新，节点 IP 仍为 <c>192.168.5.101~150:4830</c>（含现场 45/46 互换补丁）。
 /// </summary>
 public static class VideoWallSequenceBuilder

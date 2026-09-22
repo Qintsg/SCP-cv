@@ -12,11 +12,11 @@ info:
     SCP-cv 控制台 REST API 文档。
 
     所有业务路径默认挂载在 `/api` 前缀下；成功响应通常包含 `success: true`，错误响应统一为 `detail + code`。
-    业务接口与 `/media/` 文件由 Django session cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/`、`/auth/me/` 和 `/auth/status/` 为公开端点。
+    业务接口与 `/media/` 文件由 ControlHost 会话 Cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/`、`/auth/me/` 和 `/auth/status/` 为公开端点。
 
 servers:
   - url: /api
-    description: 本机 Django REST API 前缀
+    description: 本机 ControlHost REST API 前缀
   - url: http://127.0.0.1:8000/api
     description: 默认本机后端地址
 

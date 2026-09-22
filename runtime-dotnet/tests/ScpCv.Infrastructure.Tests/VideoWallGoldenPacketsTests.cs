@@ -5,8 +5,8 @@ namespace ScpCv.Infrastructure.Tests;
 
 /// <summary>
 /// 逐包校对视频墙下发序列与旧 Python 实现生成的黄金样本。
-/// 样本由 <c>tools/generate_video_wall_golden.py</c> 调用 <c>scp_cv/services/video_wall.py</c>
-/// 的实际结果导出，不是从本实现转抄：<see cref="VideoWallSequenceTests"/> 只断言了单屏模式第一个
+/// 样本在旧运行时退役前从提交 <c>e822be9</c> 的实际结果导出，不是从本实现转抄；生成器与旧实现
+/// 已由 T118 清理，生成证据保留在 Git 历史。<see cref="VideoWallSequenceTests"/> 只断言了单屏模式第一个
 /// 映射包的字节，双屏模式 50 个映射包一个字节都没有断言，逐节点的裁切区、组播地址、窗口号或
 /// 校验和一旦走样都发现不了。
 /// </summary>

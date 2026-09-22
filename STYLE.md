@@ -10,13 +10,13 @@
 - 注释解释意图、约束、边界和风险，不重复代码字面含义。
 - 不保留假成功、空实现和未接线的伪功能。
 
-## 2. Python
+## 2. C# / .NET
 
-- 使用类型注解，函数返回值显式标注。
-- 业务逻辑优先放在 `scp_cv/services/` 或对应 app 的服务层，不把复杂逻辑堆在 view 中。
-- Django 管理命令需要可测试，外部进程启动逻辑要便于 monkeypatch。
-- Windows 现场相关路径使用 `pathlib.Path`，避免手写路径拼接。
-- 错误信息面向现场排查，说明缺少什么、在哪里修复、下一步做什么。
+- 遵循 `runtime-dotnet/Directory.Build.props` 的 nullable、分析器与 warnings-as-errors 约束。
+- 领域规则放在 `ScpCv.Domain`，持久化和外部适配放在 `ScpCv.Infrastructure`，HTTP/进程入口保持薄层。
+- ControlHost 是业务数据库唯一写入者；Worker 通过合同和 Named Pipe 协作。
+- 外部副作用必须返回可诊断结果，不得静默假成功。
+- Python 仅保留 Spec Kit/QA 工具脚本，遵循 PEP 8、类型标注和项目文件头约定。
 
 ## 3. TypeScript / Vue
 
@@ -55,11 +55,12 @@
 常用验证命令：
 
 ```powershell
-uv run python manage.py check
-uv run python manage.py makemigrations --check --dry-run
-uv run pytest tests/ -v
+dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
+$env:http_proxy=''; $env:https_proxy=''; $env:all_proxy=''
+dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
 pnpm --prefix frontend run typecheck
-pnpm --prefix frontend run build
+pnpm --prefix frontend run build:web
+py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
 ```
 
 针对性修复可先运行相关测试，但交付前应说明完整验证是否完成。

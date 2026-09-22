@@ -56,7 +56,7 @@ cover/
 *.mo
 *.pot
 
-# Django stuff:
+# 退役 Python 运行时遗留数据（保留忽略，避免误提交用户旧库）:
 *.log
 local_settings.py
 db.sqlite3
@@ -176,6 +176,10 @@ AGENT_TODO.md
 
 # Local runtime artifacts
 node_modules/
+pnpm-lock.yaml
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
 frontend/dist/
 frontend/dist-app/
 frontend/electron-dist/

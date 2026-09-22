@@ -29,7 +29,7 @@
 - [X] T004 创建 Domain、Contracts、Infrastructure、ControlHost、Supervisor、PlayerWorker、AudioWorker、PowerPointHost 工程及引用关系到 `runtime-dotnet/src/*/*.csproj`
 - [X] T005 [P] 创建 Domain、Contracts、Infrastructure、ControlHost、Integration、Windows 测试工程及分类约定到 `runtime-dotnet/tests/*/*.csproj` 和 `runtime-dotnet/tests/README.md`
 - [X] T006 扩充 .NET、Electron、Capacitor、Android 与验证数据忽略规则到 `.gitignore`
-- [X] T007 为 Tailwind 4、Electron、Capacitor 和多目标构建添加锁定依赖及脚本到 `frontend/package.json` 和 `pnpm-lock.yaml`
+- [X] T007 为 Tailwind 4、Electron、Capacitor 和多目标构建添加精确依赖及脚本到 `frontend/package.json`；2026-09-22 按用户要求移除 pnpm 锁文件并改用仓库 `.npmrc` 的教育网联合镜像
 - [X] T008 接入 `@tailwindcss/vite` 并映射现有 Fluent tokens、保持无 Preflight 策略到 `frontend/vite.config.ts`、`frontend/src/styles/tailwind.css` 和 `frontend/src/main.ts`
 - [X] T009 建立 web/app 构建模式、共享路由工厂与平台适配接口到 `frontend/src/platform/index.ts`、`frontend/src/router/index.ts`、`frontend/vite.config.ts` 和 `frontend/tsconfig.json`
 
@@ -256,7 +256,7 @@
 - [ ] T115 执行普通命令 1000 样本与健康热切换 100 样本基准，记录 p95 和测试条件到 `docs/qa/003-performance.md`
 - [ ] T116 执行开发 Windows 四屏/Office/VLC/MediaMTX/音频 60 分钟混合测试，记录硬件条件和未通过项到 `docs/qa/003-windows-runtime.md`
 - [X] T117 更新目标架构、开发运行、客户端连接和故障诊断文档到 `README.md`、`docs/使用文档.md`、`docs/维护文档.md` 和 `docs/CHANGELOG.md`
-- [ ] T118 在 T107–T116 所需门禁通过后删除被完整替代的 Django/Python 运行时代码与依赖，并同步 `pyproject.toml`、`uv.lock`、`manage.py`、`scp_cv/` 和 `tests/`
+- [X] T118 删除被完整替代的 Django/Python 运行时代码与依赖，并同步 `pyproject.toml`、`uv.lock`、`manage.py`、`scp_cv/`、`tests/` 与当前文档；用户于 2026-09-22 明确要求在本地软件测试完成后提前清理，接受 T115/T116/T129 尚未完成的实机返工风险
 - [X] T119 运行 Spec Kit 校验、`git diff --check` 与跨产物一致性分析，并记录最终结论到 `specs/003-dotnet-runtime-refactor/verification.md`
 
 ---
@@ -352,7 +352,7 @@ T102–T103 Development data boundary tests
 1. 每个任务或紧密逻辑块使用 `type(scope): 中文摘要` 小提交。
 2. US2 先建立可靠命令，再接入 Office、WebView2、VLC 和音频等外部副作用。
 3. US3/US4 完成后由 US5 统一进程生命周期；US6 始终验证数据不被破坏。
-4. 只有 T107–T116 门禁通过后才执行 T118 删除旧实现；历史由 Git 保留，不维持长期双栈。
+4. T118 原定在 T107–T116 后执行；2026-09-22 用户明确要求在本地软件测试通过后提前清理。历史由 Git 保留，不维持长期双栈，T115/T116/T129 的实机风险继续单独追踪。
 
 ## Notes
 
