@@ -1,3 +1,4 @@
+// AudioWorker 的单实例 LibVLC 播放与自然结束事件。
 using LibVLCSharp.Shared;
 
 namespace ScpCv.AudioWorker.Audio;
@@ -50,8 +51,13 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    public Task PlayAsync(CancellationToken cancellationToken = default) { if (_media is not null) _ = _player.Play(_media); return Task.CompletedTask; }
-    public Task PauseAsync(CancellationToken cancellationToken = default) { _player.Pause(); return Task.CompletedTask; }
+    public Task PlayAsync(CancellationToken cancellationToken = default)
+    {
+        if (_player.State == VLCState.Paused) _player.SetPause(false);
+        else if (_media is not null) _ = _player.Play(_media);
+        return Task.CompletedTask;
+    }
+    public Task PauseAsync(CancellationToken cancellationToken = default) { _player.SetPause(true); return Task.CompletedTask; }
     public Task StopAsync(CancellationToken cancellationToken = default) { _player.Stop(); return Task.CompletedTask; }
     public Task SeekAsync(long positionMs, CancellationToken cancellationToken = default) { _player.Time = Math.Max(0, positionMs); return Task.CompletedTask; }
 

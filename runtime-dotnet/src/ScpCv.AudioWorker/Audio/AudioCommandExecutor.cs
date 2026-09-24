@@ -44,15 +44,21 @@ public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio, TimeSpan? 
                 if (Bool(lease.Args, "autoplay", true))
                 {
                     await audio.PlayAsync(cancellationToken).ConfigureAwait(false);
-                    await WaitForPlaybackReadyAsync(cancellationToken).ConfigureAwait(false);
+                    await WaitForPlaybackStateAsync("playing", cancellationToken).ConfigureAwait(false);
                 }
                 break;
             case "PLAY":
                 await audio.PlayAsync(cancellationToken).ConfigureAwait(false);
-                await WaitForPlaybackReadyAsync(cancellationToken).ConfigureAwait(false);
+                await WaitForPlaybackStateAsync("playing", cancellationToken).ConfigureAwait(false);
                 break;
-            case "PAUSE": await audio.PauseAsync(cancellationToken).ConfigureAwait(false); break;
-            case "STOP": await audio.StopAsync(cancellationToken).ConfigureAwait(false); break;
+            case "PAUSE":
+                await audio.PauseAsync(cancellationToken).ConfigureAwait(false);
+                await WaitForPlaybackStateAsync("paused", cancellationToken).ConfigureAwait(false);
+                break;
+            case "STOP":
+                await audio.StopAsync(cancellationToken).ConfigureAwait(false);
+                await WaitForPlaybackStateAsync("stopped", cancellationToken).ConfigureAwait(false);
+                break;
             case "SEEK": await audio.SeekAsync(Long(lease.Args, "position_ms"), cancellationToken).ConfigureAwait(false); break;
             case "SET_VOLUME": audio.Volume = Int(lease.Args, "volume", audio.Volume); break;
             case "SET_MUTE": audio.IsMuted = Bool(lease.Args, "muted", audio.IsMuted); break;
@@ -76,24 +82,23 @@ public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio, TimeSpan? 
             }));
     }
 
-    private async Task WaitForPlaybackReadyAsync(CancellationToken cancellationToken)
+    private async Task WaitForPlaybackStateAsync(string expectedState, CancellationToken cancellationToken)
     {
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         deadline.CancelAfter(_playbackReadyTimeout);
-        while (string.Equals(audio.PlaybackState, "loading", StringComparison.OrdinalIgnoreCase))
+        while (!string.Equals(audio.PlaybackState, expectedState, StringComparison.OrdinalIgnoreCase))
         {
+            if (string.Equals(audio.PlaybackState, "error", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("音频播放器报告打开失败。");
             try
             {
                 await Task.Delay(50, deadline.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new TimeoutException("音频在就绪预算内未离开加载状态。");
+                throw new TimeoutException($"音频在就绪预算内未进入 {expectedState} 状态。");
             }
         }
-
-        if (string.Equals(audio.PlaybackState, "error", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("音频播放器报告打开失败。");
     }
 
     private static string String(Dictionary<string, JsonElement> args, string key) =>

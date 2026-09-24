@@ -44,6 +44,31 @@ public sealed class AudioCommandExecutorTests
     }
 
     [Fact]
+    public async Task PauseWaitsForActualPausedStateBeforeReporting()
+    {
+        var audio = new FakeAudioAdapter { HoldPauseTransition = true };
+        var executor = new AudioCommandExecutor(audio);
+        await executor.ExecuteAsync(Lease("PLAY", 1, new { }));
+
+        var execution = executor.ExecuteAsync(Lease("PAUSE", 1, new { }));
+        Assert.False(execution.IsCompleted);
+        audio.CompletePauseTransition();
+
+        var result = await execution;
+        Assert.Equal("paused", result.ActualState.GetProperty("playback_state").GetString());
+    }
+
+    [Fact]
+    public async Task PauseFailsWhenNativePlayerKeepsPlaying()
+    {
+        var audio = new FakeAudioAdapter { HoldPauseTransition = true };
+        var executor = new AudioCommandExecutor(audio, TimeSpan.FromMilliseconds(100));
+        await executor.ExecuteAsync(Lease("PLAY", 1, new { }));
+
+        await Assert.ThrowsAsync<TimeoutException>(() => executor.ExecuteAsync(Lease("PAUSE", 1, new { })));
+    }
+
+    [Fact]
     public async Task OpenAppliesPlaybackSettingsAndReportsActualState()
     {
         var audio = new FakeAudioAdapter();
@@ -135,8 +160,10 @@ public sealed class AudioCommandExecutorTests
         public int PauseCalls { get; private set; }
         public int StopCalls { get; private set; }
         public bool HoldPlaybackTransition { get; init; }
+        public bool HoldPauseTransition { get; init; }
 
         public void CompletePlaybackTransition() => PlaybackState = "playing";
+        public void CompletePauseTransition() => PlaybackState = "paused";
 
         public Task OpenAsync(long sourceId, string uri, long generation, CancellationToken cancellationToken = default)
         {
@@ -156,7 +183,7 @@ public sealed class AudioCommandExecutorTests
         public Task PauseAsync(CancellationToken cancellationToken = default)
         {
             PauseCalls++;
-            PlaybackState = "paused";
+            if (!HoldPauseTransition) PlaybackState = "paused";
             return Task.CompletedTask;
         }
 
