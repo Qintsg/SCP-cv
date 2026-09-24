@@ -1,3 +1,4 @@
+// 验证浏览器使用的 REST 动作与持久命令合同保持一致。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -40,13 +41,23 @@ public sealed class RuntimeIntentQueueTests
             Assert.Equal(HttpStatusCode.OK, nextResponse.StatusCode);
         }
 
+        using (var previousRequest = Request(
+            HttpMethod.Post,
+            "/api/playback/1/navigate/",
+            csrf,
+            new { action = "prev" }))
+        using (var previousResponse = await client.SendAsync(previousRequest))
+        {
+            Assert.Equal(HttpStatusCode.OK, previousResponse.StatusCode);
+        }
+
         await using var database = await ContextAsync(factory);
         var commands = await database.CommandRecords
             .Where(command => command.TargetKind == CommandTargetKind.Display && command.TargetId == 1)
             .OrderBy(command => command.TargetSequence)
             .ToArrayAsync();
-        Assert.Equal(["OPEN", "NEXT"], commands.Select(command => command.Command));
-        Assert.Equal([1L, 2L], commands.Select(command => command.TargetSequence));
+        Assert.Equal(["OPEN", "NEXT", "PREV"], commands.Select(command => command.Command));
+        Assert.Equal([1L, 2L, 3L], commands.Select(command => command.TargetSequence));
         Assert.Equal(1, commands[0].SourceGeneration);
         Assert.Equal(7, commands[0].SourceRevision);
         Assert.Equal(sourceId, JsonDocument.Parse(commands[0].ArgsJson).RootElement.GetProperty("source_id").GetInt64());

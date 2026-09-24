@@ -1,3 +1,4 @@
+// 将演示文稿与页面导航的 REST 合同映射到运行时命令。
 using System.Text.Json;
 using ScpCv.Contracts.Http;
 using ScpCv.Infrastructure.Media;
@@ -68,8 +69,9 @@ public static class PresentationEndpoints
     {
         var body = await ReadObjectAsync(request, cancellationToken).ConfigureAwait(false);
         if (body.Error is not null) return body.Error;
-        var action = String(body.Value, "action");
+        var action = String(body.Value, "action").Trim();
         if (action.Length == 0) return ApiEndpointSupport.Error("缺少 action 字段", "missing_action");
+        if (string.Equals(action, "prev", StringComparison.OrdinalIgnoreCase)) action = "previous";
         try
         {
             var sessions = await runtime.NavigateAsync(windowId, action, Integer(body.Value, "target_index"), Long(body.Value, "position_ms"), cancellationToken).ConfigureAwait(false);
