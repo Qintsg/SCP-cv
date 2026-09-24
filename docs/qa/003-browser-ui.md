@@ -9,6 +9,8 @@
 
 真实设备触控与 GPU 播放仍需现场 Windows/Android 复核。
 
+2026-09-24 在 D4 Hardware ControlHost 上对桌面/平板/手机共享前端继续做浏览器、视觉、交互和 REST/SSE 联动探索；12 项可复现发现、自动门禁与安全边界见 [`003-frontend-exploratory-20260924.md`](./003-frontend-exploratory-20260924.md)。
+
 ## 2026-09-11 真实 HTTPS 会话补充
 
 使用 Vite dev（`http://localhost:5173`，`/api` 反代到 `https://localhost:18443`）与 `SafetyMode=Simulation` ControlHost，
