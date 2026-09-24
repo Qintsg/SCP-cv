@@ -382,3 +382,11 @@ T102–T103 Development data boundary tests
 
 T132 偏差记录：D4 的 `以太网` 是 Public 配置文件，原 `-Profile Private -RemoteAddress LocalSubnet` 规则实测不生效。
 未把网络类别改为 Private，而是新增按源地址收窄（`LocalSubnet` + `192.168.1.109`）的 18443/5173 放行规则，其余主机仍不可达。
+
+## Phase 12: Convergence
+
+- [ ] T133 CRITICAL 修复 `runtime-dotnet/src/ScpCv.Supervisor/Runtime/ShutdownCoordinator.cs`、`runtime-dotnet/src/ScpCv.PowerPointHost/Interop/PowerPointComAdapter.cs` 的协作退出与自建 PowerPoint 实例归属清理；在项目实例和用户 Office 并存、正常停机及超时场景核对 PID/启动时间、残留进程和不误杀用户软件，并记录到 `docs/qa/003-office-interop.md` per Constitution I, FR-018, SC-007 (partial)
+- [ ] T134 实现 `rtsp_stream`、`srt_stream`、`custom_stream` 的 URL 创建与校验路径，贯通 `frontend/src/features/sources/AddSourceDrawer.vue`、`runtime-dotnet/src/ScpCv.ControlHost/Endpoints/`、`runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.cs`、`docs/openapi.yaml` 与合同测试；用 MediaMTX 实流验证录入、打开和删除 per FR-003, FR-017 (missing)
+- [ ] T135 将 `runtime-dotnet/src/ScpCv.Infrastructure/Streams/StreamDiscoveryService.cs` 的 HTTP HEAD 单一路径扩展为可验证 RTSP/SRT/MediaMTX 的在线与错误状态，并在 `ScpCv.PlayerWorker` 覆盖 10 分钟预热后的连接健康与续热；补自动测试和 D4 实流记录 per FR-017, SC-005 (partial)
+- [ ] T136 为 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/PlayerRuntimeHost.cs` 的 LibVLC 自然结束建立带 source generation 的状态上报，避免短视频结束后最后一帧留屏而 `/api/sessions/` 长期显示 `playing`；补迟到事件回归和 D4 短片复测 per FR-010 (partial)
+- [ ] T137 对照 `runtime-dotnet/src/ScpCv.Infrastructure/Scenarios/ScenarioService.cs` 与 `RuntimeStateService.SetSystemVolumeAsync`，让预案音量 `set` 在 Hardware 模式作用于真实系统音量并对失败如实回报；补 Hardware 装配/控制器测试及现场安全验证 per FR-005 (partial)

@@ -110,7 +110,25 @@
 - **症状**：D4 ControlHost 的 `/health/ready` 为 200，但 `run-headless.ps1 -StartWorkers` 约 20 秒后报告失败，运行组持久状态变成 `Faulted`，`StopReason=runtime_restart_cancelled`。只看 HTTP 健康检查会误以为全部 Worker 已启动。
 - **根因**：脚本为所有 HTTP 请求固定使用 15 秒超时，`POST /api/system/restart/` 因真实 Worker 冷启动超出该时间而被客户端取消；服务端按取消语义停止整组。另有 Supervisor 管道空闲超时风险，需由已认证心跳保持连接。
 - **规避**：restart 请求使用 `ReadyTimeoutSeconds`，并以 `runtime_group_control.State=Armed`、七个受管进程的 PID/session 和脚本“全部 Worker 已就绪”结果共同判定启动成功；不要用 `/health/ready` 代替运行组就绪。相关回归：`HeadlessScriptSecurityTests.WorkerRestartUsesReadinessTimeout` 与 Supervisor 心跳集成测试。
-- **边界**：2026-09-24 D4 只完成运行组就绪与 HTTP 可达验证，未做四屏实际播放或长稳测试。
+- **边界**：该轮 D4 启动验证只完成运行组就绪与 HTTP 可达；同日后续多源冒烟另见 `docs/qa/003-windows-runtime.md`，仍未做 60 分钟长稳测试。
+
+### 坑 11 - WPF 资源在脱离视觉树或错误线程上初始化（2026-09-24 修复）
+
+- **症状**：网页源 `OPEN` 永久处于 `Processing`/`loading`；PPT `OPEN` 报“调用线程必须为 STA”。D4 阶段探针确认 WebView2 环境创建已完成，卡在 `EnsureCoreWebView2Async`，尚未导航。
+- **根因**：新建 WebView2 控件未挂入已显示的播放器窗口就开始初始化；PowerPoint 子操作的 `ConfigureAwait(false)` 让后续 WPF `Grid` 创建离开 Dispatcher。
+- **规避/现状**：WebView2 先作为待切入画面加入视觉树，成功后原位升为当前画面，失败时移除；环境、控件与导航均设明确超时。PlayerRuntimeHost 的 WPF 路径保留 UI 同步上下文。`PlayerWindowSurfaceTests` 覆盖预备/切入，D4 真实网页与 PPT 均已打开并截屏；网页初始化约 2 秒完成。
+
+### 坑 12 - 受控停机后旧执行租约阻塞新命令（2026-09-24 修复）
+
+- **症状**：网页命令卡住后，即使整组停机重启，新 `OPEN` 仍停在 `Pending`；旧命令一直是 `Processing`，`ClaimAsync` 因目标已有执行中命令拒绝领取。
+- **根因**：原先 `CompleteStopAsync` 只写运行组 `Stopped`，没有在 Supervisor 已确认整组退出后终结旧租约；重复调用时还会提前返回。
+- **规避/现状**：在已确认停机时将遗留 `Processing` 标为 `Superseded/runtime_group_stopped` 并清除 claim；重复停机也执行清理。`RuntimeAuthorityRepositoryTests` 两条红/绿回归通过，D4 旧命令 108/127 实测转为终态；不直接修改 SQLite。
+
+### 坑 13 - 原生播放的异步状态与前后端动作词汇不同步（2026-09-24 部分修复）
+
+- **症状**：音频已播放且命令 `Completed`，页面仍显示 `loading`；PPT“上一页”返回 `invalid_navigation`；短视频结束后 API 继续显示 `playing`。
+- **根因**：LibVLC 的 `Play()` 在真正进入 `Playing` 前返回，首个音频快照因此是 `loading`；前端/API 文档发送 `prev`，服务层只识别 `previous`。视频自然结束没有后续状态上报路径。
+- **规避/现状**：音频命令等待适配器离开 `loading`，超时明确失败；REST 边界兼容 `prev`，对应自动测试与 D4 实测通过。**仍未修复**视频自然结束的状态回报，承接于 003/T136；不能仅凭 `playing` 断言视频仍在运动。
 
 ## 3. 相关沉淀点（不在这里重复）
 

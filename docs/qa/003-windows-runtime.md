@@ -113,6 +113,47 @@
 `Armed` 只证明运行组就绪，不代表物理画面、Office 放映或音频验收通过。D4 的 Windows 10 1909
 仍属已批准的兼容性例外，不改变受支持平台基线。
 
+## D4 多源上传、打开与画面核对（2026-09-24）
+
+在同一工作站继续调试至 `2528f63`，最终 Hardware 运行组 `group_epoch=35`、状态 `Armed`。
+本轮只用既有 DISPLAY2–DISPLAY5 落位，不切换大屏模式、分辨率、设备电源或系统音量。
+实测拓扑为四块 `1920×1080` 输出（x=0/1920/3840/5760）加 `1920×1200` 控制屏；
+这是本轮观测值，不沿用 2026-09-17 的 4K 结论。
+
+| 源与路径 | 上传/录入 | 打开与证据 |
+| --- | --- | --- |
+| PNG 图片 | 浏览器文件选择上传 | 2 号窗口 `playing`；交互桌面截图出现测试渐变图 |
+| H.264 MP4 短视频 | 浏览器文件选择上传 | 2 号窗口 `playing`；交互桌面截图出现测试视频帧 |
+| PDF | 浏览器文件选择上传 | 2 号窗口 `playing`；交互桌面截图确认 PDF 页面渲染 |
+| 网页 | 浏览器录入 D4 本机可访问的静态 HTML | 2 号窗口 `playing`；交互桌面截图确认 WebView2 页面内容 |
+| 低音量 MP3 | 浏览器文件选择上传、背景音乐立即播放 | AudioWorker 从 `loading` 正确进入 `playing`；仅核对 Worker 状态，未做人耳/声卡回录验收 |
+| PPTX | 浏览器上传已有有效 9 页文稿的测试副本 | 3 号窗口 `playing/powerpoint`；`next` 到第 2 页、`prev` 回第 1 页；交互桌面截图确认真实放映 |
+| 播放主机本地路径 | `POST /api/sources/local/` 引用 DataRoot 内测试图片 | 4 号窗口 `playing`；测试副本和源随后删除 |
+
+现场发现与复核：
+
+- 网页初次打开时命令 108 持续 `Processing`。阶段探针确认 `CoreWebView2Environment.CreateAsync` 已完成、
+  `EnsureCoreWebView2Async` 在脱离视觉树的控件上不返回。修复视觉树预备与阶段超时后，同一页面约 2 秒导航完成，
+  API 状态和真实画面一致；临时探针代码、日志已清除。
+- 首次受控停机后旧网页命令 108/127 仍在 `Processing`，使新命令 `Pending` 无法领取。
+  `CompleteStopAsync` 现于 Supervisor 确认退出后终结旧租约；D4 复测两个旧命令均为
+  `Superseded/runtime_group_stopped`，没有手改数据库。
+- PPT 初次报 STA 错误；移除 WPF 路径的 `ConfigureAwait(false)` 后，遇到另一个已有 PowerPoint
+  自动化实例占用。该实例无主窗口，用户明确授权后仅终止核对过身份的单个进程，再试真实 PPT 成功。
+  本轮自己创建的 Office 测试孤儿进程亦在停机后按 PID/启动时间清理，未触碰其他 Office 进程。
+- 音频初次首帧回报仍是 `loading`，不改音量数值地再次下发命令才变 `playing`；
+  现在等待原生播放器离开加载态后再确认。前端 `prev` 与服务层 `previous` 的动作词汇不一致也已在 REST 边界修复。
+
+未完成边界：MediaMTX 上短时测试 RTSP 路径 `ready=true`，FFprobe 从另一机器读到 H.264 640×360，
+停流后路径消失；但控制台/ControlHost 当前没有直播 URL 创建入口，不能宣称应用直播源已打开（T134/T135）。
+短视频播放自然结束后最后一帧留屏，API 仍显示 `playing`，由 T136 补状态上报；Office 残留进程由 T133 处理。
+本轮没有 60 分钟四屏/Office/直播/音频混合稳定性、声卡回录或真实 4K 门禁，T115/T116/T129 仍未关闭。
+
+收尾：本轮创建的 6 个上传/网页测试源（ID 3–7、9）、本地路径源 ID 8、后台音乐列表与
+临时截图任务/脚本/日志均已清理；D4 原有源 ID 1/2、原始媒体、数据库及凭据保留。
+四窗口恢复 `idle`，本机忽略目录 `.validation/source-debug-20260924/` 保留五张截图证据（不提交 Git）。
+本机非 Physical .NET 测试 226/226 通过；D4 Debug 构建、针对性回归与真实源操作通过。
+
 ## 已归档工作站 `D2` HTTP 控制面（2026-09-14）
 
 - 安装 .NET SDK 10.0.400 后，`ScpCv.sln` 在 D2 完成 locked restore 和 Debug build，0 警告、0 错误。

@@ -49,10 +49,10 @@ VITE_BACKEND_TARGET=http://192.168.5.194:18443
 ```powershell
 New-NetFirewallRule -DisplayName 'SCP-cv ControlHost HTTP 18443 (D4 dev access)' `
   -Direction Inbound -Action Allow -Protocol TCP -LocalPort 18443 `
-  -RemoteAddress 'LocalSubnet','192.168.1.109' -Profile Any
+  -RemoteAddress 'LocalSubnet','192.168.1.104' -Profile Any
 New-NetFirewallRule -DisplayName 'SCP-cv Vite 5173 (D4 dev access)' `
   -Direction Inbound -Action Allow -Protocol TCP -LocalPort 5173 `
-  -RemoteAddress 'LocalSubnet','192.168.1.109' -Profile Any
+  -RemoteAddress 'LocalSubnet','192.168.1.104' -Profile Any
 ```
 
 SSH 关闭会回收会话进程树，前端开发服务需脱离会话常驻：
@@ -68,7 +68,8 @@ cd /d D:\SCP-cv\frontend
 ### 0.1.3 开发机到 D4 的网络坑
 
 开发机默认路由被代理 TUN 网卡接管，且没有 `192.168.5.0/24` 的具体路由，表现为**任意端口都能三次握手、但没有任何数据**（这会把普通端口探测误判成“服务在跑”）。可用做法是绑定源地址：
-`ssh -o BindAddress=192.168.1.109 ...`、`curl --interface 192.168.1.109 ...`。本机 `.ssh/config` 已加入 `d4` 别名封装这些参数；
+2026-09-24 开发机当前源地址为 `192.168.1.104`，使用 `ssh -o BindAddress=192.168.1.104 ...`、`curl --interface 192.168.1.104 ...`；
+旧记录的 `192.168.1.109` 不再作为当前值，使用 `.ssh/config` 的 `d4` 别名前应检查其绑定地址。
 GitHub 在 D4 上不可达时，也可用 `ssh -R 7890:127.0.0.1:7890 d4` 把开发机代理临时映射给 D4。
 
 ## 0.2 已归档 D2 部署记录（2026-09-11 至 2026-09-14）
