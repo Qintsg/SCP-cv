@@ -1,8 +1,9 @@
+// Supervisor 对已登记子进程的协作停机与定向强制退出。
 using ScpCv.Supervisor.Processes;
 
 namespace ScpCv.Supervisor.Runtime;
 
-public sealed class ShutdownCoordinator(ProcessRegistry registry)
+public sealed class ShutdownCoordinator(ProcessRegistry registry, TimeSpan? cooperativeTimeout = null)
 {
     public async Task StopAsync(CancellationToken cancellationToken = default)
     {
@@ -12,16 +13,16 @@ public sealed class ShutdownCoordinator(ProcessRegistry registry)
             try { owned.Process.CloseMainWindow(); } catch (InvalidOperationException) { }
         }
 
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
+        var deadline = DateTimeOffset.UtcNow.Add(cooperativeTimeout ?? TimeSpan.FromSeconds(5));
         while (DateTimeOffset.UtcNow < deadline && registry.Snapshot().Any(ProcessRegistry.StillOwns))
             await Task.Delay(100, cancellationToken).ConfigureAwait(false);
 
         foreach (var owned in registry.Snapshot())
         {
             if (!ProcessRegistry.StillOwns(owned)) { registry.Remove(owned.ProcessId); continue; }
-            // Office 进程只允许协作退出；不能证明 COM 所有权时绝不强杀。
-            if (owned.Role == "office") continue;
-            owned.Process.Kill(entireProcessTree: true);
+            // office 角色是项目自有 PowerPointHost，不是 POWERPNT.EXE。
+            // 只结束 Host 本身；绝不能用进程树强杀可能包含用户文稿的 Office 实例。
+            owned.Process.Kill(entireProcessTree: owned.Role != "office");
             await owned.Process.WaitForExitAsync(cancellationToken).WaitAsync(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
             registry.Remove(owned.ProcessId);
         }

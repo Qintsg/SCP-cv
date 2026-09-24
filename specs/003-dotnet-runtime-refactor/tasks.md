@@ -390,3 +390,12 @@ T132 偏差记录：D4 的 `以太网` 是 Public 配置文件，原 `-Profile P
 - [ ] T135 将 `runtime-dotnet/src/ScpCv.Infrastructure/Streams/StreamDiscoveryService.cs` 的 HTTP HEAD 单一路径扩展为可验证 RTSP/SRT/MediaMTX 的在线与错误状态，并在 `ScpCv.PlayerWorker` 覆盖 10 分钟预热后的连接健康与续热；补自动测试和 D4 实流记录 per FR-017, SC-005 (partial)
 - [ ] T136 为 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/PlayerRuntimeHost.cs` 的 LibVLC 自然结束建立带 source generation 的状态上报，避免短视频结束后最后一帧留屏而 `/api/sessions/` 长期显示 `playing`；补迟到事件回归和 D4 短片复测 per FR-010 (partial)
 - [ ] T137 对照 `runtime-dotnet/src/ScpCv.Infrastructure/Scenarios/ScenarioService.cs` 与 `RuntimeStateService.SetSystemVolumeAsync`，让预案音量 `set` 在 Hardware 模式作用于真实系统音量并对失败如实回报；补 Hardware 装配/控制器测试及现场安全验证 per FR-005 (partial)
+
+## Phase 13: Convergence
+
+- [ ] T138 CRITICAL 修复 Supervisor 运行组状态文件的跨进程覆盖/删除竞态；状态文件写入应原子发布、删除应核对完整 PID/启动时间/会话归属；补旧 Supervisor 清理与新运行组写入交错的回归，并在 D4 安全恢复缺失文件后验证启停/重启 per FR-018–020 (partial)
+- [ ] T139 修复同一视频源重复 OPEN 后实体画面空白，验证资源显隐与重复打开幂等性，并在 D4 短视频上复测 per FR-016 (partial)
+- [ ] T140 修复背景音频首次 PAUSE 失效及 paused 状态仍有声卡输出；区分命令完成、LibVLC 实际状态和回录证据，补自动回归与 D4 实测 per FR-010, FR-018 (partial)
+- [ ] T141 修复 PDF 播放关闭后源文件句柄仍被占用；补适配器生命周期回归与 D4 删除/替换复测 per FR-015 (partial)
+- [ ] T142 修复文件夹空名称创建无提示关闭及“编辑”点击仅进入文件夹的前端交互；补表单/事件冒泡测试并用浏览器回归 per FR-003 (partial)
+- [ ] T143 调查并修复 D4 动态 PowerPoint 打开时报 `slideshow_hwnd_unavailable`；保留用户 Office 归属保护，补 HWND/COM 诊断和实机复测 per FR-011–014 (partial)

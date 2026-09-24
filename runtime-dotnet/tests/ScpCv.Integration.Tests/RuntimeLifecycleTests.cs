@@ -1,3 +1,4 @@
+// 运行组停机闩锁、进程归属和协作退出回归。
 using System.Diagnostics;
 using ScpCv.Domain.Model;
 using ScpCv.Integration.Tests.Fixtures;
@@ -39,5 +40,26 @@ public sealed class RuntimeLifecycleTests
         var owned = registry.Register("test", current);
         Assert.True(ProcessRegistry.StillOwns(owned));
         Assert.False(ProcessRegistry.StillOwns(owned with { StartTime = owned.StartTime.AddMilliseconds(1) }));
+    }
+
+    [Fact]
+    public async Task StopTerminatesOwnedPowerPointHostWithoutKillingItsProcessTree()
+    {
+        using var process = Process.Start(new ProcessStartInfo("powershell.exe", "-NoLogo -NoProfile -Command Start-Sleep -Seconds 60")
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        }) ?? throw new InvalidOperationException("无法启动测试子进程。");
+        var registry = new ProcessRegistry();
+        registry.Register("office", process);
+        try
+        {
+            await new ScpCv.Supervisor.Runtime.ShutdownCoordinator(registry, TimeSpan.FromMilliseconds(50)).StopAsync();
+            Assert.True(process.HasExited);
+        }
+        finally
+        {
+            if (!process.HasExited) process.Kill();
+        }
     }
 }

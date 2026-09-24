@@ -1,3 +1,4 @@
+// Supervisor 进程组入口、登记、心跳和安全停机。
 using System.Diagnostics;
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
@@ -36,7 +37,7 @@ catch (Exception exception) when (exception is not OperationCanceledException)
 
 static async Task<int> StartAsync(string runtimeRoot, string statePath, string? mediaMtxPath, string? controlPipe)
 {
-    var existing = await ReadStateAsync(statePath);
+    var existing = SupervisorStateStore.Read(statePath);
     if (existing.Any(IsAlive))
     {
         Console.WriteLine("Supervisor 已有受管运行时，未重复启动。");
@@ -54,7 +55,8 @@ static async Task<int> StartAsync(string runtimeRoot, string statePath, string? 
             : await RegisterWithControlHostAsync(controlPipe, owned, supervisorInstanceId);
         // 身份登记完成后才放行子进程连接，避免 ControlHost 拒绝尚未登记的身份。
         startGate?.Open();
-        await WriteStateAsync(statePath, owned);
+        var state = owned.Select(ToState).ToArray();
+        SupervisorStateStore.Write(statePath, state);
         Console.WriteLine(JsonSerializer.Serialize(owned.Select(ToState), GetJsonOptions()));
 
         using var stop = new CancellationTokenSource();
@@ -87,21 +89,21 @@ static async Task<int> StartAsync(string runtimeRoot, string statePath, string? 
         stop.Cancel();
         try { await heartbeat.ConfigureAwait(false); } catch (OperationCanceledException) { }
         await new ShutdownCoordinator(registry).StopAsync();
-        DeleteStateIfSafe(statePath);
+        SupervisorStateStore.DeleteIfMatches(statePath, state);
         return runtimeFailed ? 1 : 0;
     }
     catch
     {
         startGate?.Open();
         await new ShutdownCoordinator(registry).StopAsync();
-        DeleteStateIfSafe(statePath);
+        SupervisorStateStore.DeleteIfMatches(statePath, owned.Select(ToState).ToArray());
         throw;
     }
 }
 
 static async Task<int> StopAsync(string statePath)
 {
-    var state = await ReadStateAsync(statePath);
+    var state = SupervisorStateStore.Read(statePath);
     var registry = new ProcessRegistry();
     foreach (var item in state)
     {
@@ -109,7 +111,7 @@ static async Task<int> StopAsync(string statePath)
     }
 
     await new ShutdownCoordinator(registry).StopAsync();
-    DeleteStateIfSafe(statePath);
+    SupervisorStateStore.DeleteIfMatches(statePath, state);
     Console.WriteLine("Supervisor 已完成受管进程停止请求。");
     return 0;
 }
@@ -206,7 +208,7 @@ static IpcFrameDto Frame<T>(string type, Guid instanceId, IpcTargetDto? target, 
 
 static async Task<int> StatusAsync(string statePath)
 {
-    var state = await ReadStateAsync(statePath);
+    var state = SupervisorStateStore.Read(statePath);
     Console.WriteLine(JsonSerializer.Serialize(state.Select(item => new
     {
         role = item.Role,
@@ -251,26 +253,6 @@ static bool DisposeAfter(Process process)
 
 static SupervisorProcessState ToState(OwnedProcess process) => new(process.Role, process.ProcessId, process.StartTime, process.SessionId);
 
-static async Task<SupervisorProcessState[]> ReadStateAsync(string statePath)
-{
-    if (!File.Exists(statePath)) return [];
-    await using var stream = File.OpenRead(statePath);
-    return await JsonSerializer.DeserializeAsync<SupervisorProcessState[]>(stream, GetJsonOptions()) ?? [];
-}
-
-static async Task WriteStateAsync(string statePath, IReadOnlyList<OwnedProcess> processes)
-{
-    var parent = Path.GetDirectoryName(statePath);
-    if (!string.IsNullOrWhiteSpace(parent)) Directory.CreateDirectory(parent);
-    await using var stream = File.Create(statePath);
-    await JsonSerializer.SerializeAsync(stream, processes.Select(ToState).ToArray(), GetJsonOptions());
-}
-
-static void DeleteStateIfSafe(string statePath)
-{
-    if (File.Exists(statePath)) File.Delete(statePath);
-}
-
 static string? GetOption(string[] values, string name)
 {
     var prefix = $"--{name}=";
@@ -287,5 +269,3 @@ static int Fail(string message)
 }
 
 static JsonSerializerOptions GetJsonOptions() => new(JsonSerializerDefaults.Web) { WriteIndented = true };
-
-internal sealed record SupervisorProcessState(string Role, int ProcessId, DateTimeOffset StartTime, int SessionId);
