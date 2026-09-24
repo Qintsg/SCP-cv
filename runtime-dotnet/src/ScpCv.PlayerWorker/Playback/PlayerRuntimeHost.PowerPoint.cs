@@ -1,3 +1,4 @@
+// 在 PlayerWorker 的 WPF Dispatcher 上处理 PowerPoint 画面和 Office 子操作结果。
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -46,7 +47,7 @@ public sealed partial class PlayerRuntimeHost
             Deadline = lease.Deadline ?? DateTimeOffset.UtcNow.AddSeconds(30).ToString("O"),
             Operation = "open",
             Parameters = parameters,
-        }, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
 
         if (string.Equals(result.Status, "fallback", StringComparison.OrdinalIgnoreCase))
         {
@@ -80,7 +81,7 @@ public sealed partial class PlayerRuntimeHost
             ["media_id"] = JsonSerializer.SerializeToElement(String(lease.Args, "media_id", string.Empty)),
         };
         if (lease.Args.TryGetValue("media_index", out var mediaIndex)) args["media_index"] = mediaIndex;
-        await SendOfficeAsync(lease, "media", args, cancellationToken).ConfigureAwait(false);
+        await SendOfficeAsync(lease, "media", args, cancellationToken);
     }
 
     private async Task<OfficeResultDto> SendOfficeAsync(
@@ -104,7 +105,7 @@ public sealed partial class PlayerRuntimeHost
             Deadline = lease.Deadline ?? DateTimeOffset.UtcNow.AddSeconds(30).ToString("O"),
             Operation = operation,
             Parameters = parameters,
-        }, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
         if (!string.Equals(result.Status, "succeeded", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"PowerPoint 操作 {operation} 失败：{result.ErrorCode} {result.ErrorDetail}");
         return result;
@@ -138,7 +139,7 @@ public sealed partial class PlayerRuntimeHost
                 ["presentation_identity"] = JsonSerializer.SerializeToElement(_officePresentationIdentity),
                 ["slot_source_generation"] = JsonSerializer.SerializeToElement(_generation),
             },
-        }, cancellationToken).ConfigureAwait(false);
+        }, cancellationToken);
         if (!string.Equals(result.Status, "succeeded", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException($"PowerPoint 安全关闭失败：{result.ErrorCode} {result.ErrorDetail}");
         _officePresentationIdentity = 0;

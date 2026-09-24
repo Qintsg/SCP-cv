@@ -1,3 +1,4 @@
+// 执行单窗口的媒体切换，保留旧画面直到新资源完成预备。
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -37,6 +38,7 @@ public sealed partial class PlayerRuntimeHost(
     private long _officeHostEpoch;
     private long _officeSlotEpoch;
     private int _disposed;
+    private static readonly TimeSpan WebViewStageTimeout = TimeSpan.FromSeconds(15);
 
     public Task<WorkerExecutionResult> ExecuteAsync(
         CommandLeaseDto lease,
@@ -102,7 +104,7 @@ public sealed partial class PlayerRuntimeHost(
         var sourceType = String(lease.Args, "source_type", InferType(uri));
         if (_current?.Kind == "powerpoint" && _officePresentationIdentity != 0)
         {
-            await ClosePowerPointAsync(lease, "switch-close", cancellationToken).ConfigureAwait(false);
+            await ClosePowerPointAsync(lease, "switch-close", cancellationToken);
         }
         SurfaceResource next;
         switch (sourceType)
@@ -164,46 +166,57 @@ public sealed partial class PlayerRuntimeHost(
             await existing.DisposeAsync();
         }
         var control = new WebView2();
-        var userData = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "SCP-cv",
-            "WebView2",
-            $"player-{_windowId}");
-        Directory.CreateDirectory(userData);
-        TraceWebStage("before-environment");
-        var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: userData);
-        TraceWebStage("after-environment");
-        TraceWebStage("before-ensure");
-        await control.EnsureCoreWebView2Async(environment);
-        TraceWebStage("after-ensure");
-        control.CoreWebView2.Settings.AreDevToolsEnabled = false;
-        control.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-        control.CoreWebView2.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
-        var navigated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var healthy = true;
-        void Completed(object? _, CoreWebView2NavigationCompletedEventArgs args)
+        _window.PrepareSurface(control);
+        try
         {
-            if (args.IsSuccess) navigated.TrySetResult();
-            else navigated.TrySetException(new InvalidOperationException($"WebView2 导航失败：{args.WebErrorStatus}"));
-        }
-        void Failed(object? _, CoreWebView2ProcessFailedEventArgs __) => healthy = false;
-        control.NavigationCompleted += Completed;
-        control.CoreWebView2.ProcessFailed += Failed;
-        TraceWebStage("before-source");
-        control.Source = new Uri(uri, UriKind.Absolute);
-        TraceWebStage("before-navigation-completed");
-        await navigated.Task.WaitAsync(cancellationToken);
-        TraceWebStage("after-navigation-completed");
-        control.NavigationCompleted -= Completed;
-        var resource = new SurfaceResource("web", control, async () =>
-        {
+            var userData = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "SCP-cv",
+                "WebView2",
+                $"player-{_windowId}");
+            Directory.CreateDirectory(userData);
+            TraceWebStage("before-environment");
+            var environment = await WaitForWebStageAsync(
+                CoreWebView2Environment.CreateAsync(userDataFolder: userData), "环境创建", cancellationToken);
+            TraceWebStage("after-environment");
+            TraceWebStage("before-ensure");
+            await WaitForWebStageAsync(control.EnsureCoreWebView2Async(environment), "控件初始化", cancellationToken);
+            TraceWebStage("after-ensure");
+            control.CoreWebView2.Settings.AreDevToolsEnabled = false;
+            control.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
+            control.CoreWebView2.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
+            var navigated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var healthy = true;
+            void Completed(object? _, CoreWebView2NavigationCompletedEventArgs args)
+            {
+                if (args.IsSuccess) navigated.TrySetResult();
+                else navigated.TrySetException(new InvalidOperationException($"WebView2 导航失败：{args.WebErrorStatus}"));
+            }
+            void Failed(object? _, CoreWebView2ProcessFailedEventArgs __) => healthy = false;
+            control.NavigationCompleted += Completed;
+            control.CoreWebView2.ProcessFailed += Failed;
+            TraceWebStage("before-source");
+            control.Source = new Uri(uri, UriKind.Absolute);
+            TraceWebStage("before-navigation-completed");
+            await WaitForWebStageAsync(navigated.Task, "页面导航", cancellationToken);
+            TraceWebStage("after-navigation-completed");
             control.NavigationCompleted -= Completed;
-            control.CoreWebView2.ProcessFailed -= Failed;
+            var resource = new SurfaceResource("web", control, async () =>
+            {
+                control.NavigationCompleted -= Completed;
+                control.CoreWebView2.ProcessFailed -= Failed;
+                control.Dispose();
+                await ValueTask.CompletedTask;
+            }, health: () => healthy);
+            _warmWebResources[key] = resource;
+            return resource;
+        }
+        catch
+        {
+            _window.RemovePendingSurface(control);
             control.Dispose();
-            await ValueTask.CompletedTask;
-        }, health: () => healthy);
-        _warmWebResources[key] = resource;
-        return resource;
+            throw;
+        }
     }
 
     private static void TraceWebStage(string stage)
@@ -216,6 +229,36 @@ public sealed partial class PlayerRuntimeHost(
         }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
+    }
+
+    private static async Task<T> WaitForWebStageAsync<T>(
+        Task<T> operation,
+        string stage,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await operation.WaitAsync(WebViewStageTimeout, cancellationToken);
+        }
+        catch (TimeoutException exception)
+        {
+            throw new TimeoutException($"WebView2 {stage}超时。", exception);
+        }
+    }
+
+    private static async Task WaitForWebStageAsync(
+        Task operation,
+        string stage,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await operation.WaitAsync(WebViewStageTimeout, cancellationToken);
+        }
+        catch (TimeoutException exception)
+        {
+            throw new TimeoutException($"WebView2 {stage}超时。", exception);
+        }
     }
 
     private static async Task<SurfaceResource> OpenPdfAsync(
@@ -272,7 +315,7 @@ public sealed partial class PlayerRuntimeHost(
             {
                 ["presentation_identity"] = JsonSerializer.SerializeToElement(_officePresentationIdentity),
                 ["action"] = JsonSerializer.SerializeToElement(action),
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
             return;
         }
         if (_current?.Native is not VlcMediaPlayer player) return;
@@ -301,7 +344,7 @@ public sealed partial class PlayerRuntimeHost(
                 ["presentation_identity"] = JsonSerializer.SerializeToElement(_officePresentationIdentity),
                 ["action"] = JsonSerializer.SerializeToElement(lease.Command.Trim().ToLowerInvariant()),
                 ["target_slide"] = JsonSerializer.SerializeToElement(page),
-            }, cancellationToken).ConfigureAwait(false);
+            }, cancellationToken);
             _currentSlide = Int(result.Result, "current_slide", page);
             return;
         }
@@ -345,7 +388,7 @@ public sealed partial class PlayerRuntimeHost(
         cancellationToken.ThrowIfCancellationRequested();
         if (_current?.Kind == "powerpoint" && _officePresentationIdentity != 0)
         {
-            await ClosePowerPointAsync(lease, "close", cancellationToken).ConfigureAwait(false);
+            await ClosePowerPointAsync(lease, "close", cancellationToken);
         }
         if (_current is not null && _current.Kind != "web") await _current.DisposeAsync();
         _current = null;

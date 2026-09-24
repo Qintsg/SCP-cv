@@ -1,3 +1,4 @@
+// 管理真实播放器窗口的画面落位及预备资源；预备资源必须先进入可见窗口的视觉树。
 using System.Windows;
 using System.Windows.Interop;
 
@@ -48,8 +49,32 @@ public partial class PlayerWindow : Window
     public void SetSurface(FrameworkElement surface)
     {
         ArgumentNullException.ThrowIfNull(surface);
-        SurfaceHost.Children.Clear();
-        SurfaceHost.Children.Add(surface);
+        if (!SurfaceHost.Children.Contains(surface))
+        {
+            SurfaceHost.Children.Clear();
+            SurfaceHost.Children.Add(surface);
+            return;
+        }
+
+        for (var index = SurfaceHost.Children.Count - 1; index >= 0; index--)
+        {
+            if (!ReferenceEquals(SurfaceHost.Children[index], surface))
+                SurfaceHost.Children.RemoveAt(index);
+        }
+    }
+
+    /// <summary>将待切入画面放在当前画面后面，使 WebView2 能在已加载的视觉树内初始化。</summary>
+    public void PrepareSurface(FrameworkElement surface)
+    {
+        ArgumentNullException.ThrowIfNull(surface);
+        if (!SurfaceHost.Children.Contains(surface)) SurfaceHost.Children.Insert(0, surface);
+    }
+
+    /// <summary>预备失败时移除尚未切入的画面，保留当前画面。</summary>
+    public void RemovePendingSurface(FrameworkElement surface)
+    {
+        ArgumentNullException.ThrowIfNull(surface);
+        SurfaceHost.Children.Remove(surface);
     }
 
     public nint NativeHandle => new WindowInteropHelper(this).Handle;
