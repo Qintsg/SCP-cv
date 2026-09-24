@@ -154,6 +154,10 @@
 四窗口恢复 `idle`，本机忽略目录 `.validation/source-debug-20260924/` 保留五张截图证据（不提交 Git）。
 本机非 Physical .NET 测试 226/226 通过；D4 Debug 构建、针对性回归与真实源操作通过。
 
+后续 D4 多媒体稳定性、实体屏幕、声卡回录与流通道压测见
+[`003-media-stability-20260924.md`](003-media-stability-20260924.md)；该轮发现视频循环/同源重开黑屏、
+背景音频暂停假成功、视频路径资源增长及重启状态文件竞态，不能据此关闭 T116/T129。
+
 ## 已归档工作站 `D2` HTTP 控制面（2026-09-14）
 
 - 安装 .NET SDK 10.0.400 后，`ScpCv.sln` 在 D2 完成 locked restore 和 Debug build，0 警告、0 错误。
