@@ -1,3 +1,4 @@
+// 验证音频命令只在真实适配器状态到达可观察值后回报完成。
 using System.Text.Json;
 using ScpCv.AudioWorker.Audio;
 using ScpCv.Contracts.Ipc;
@@ -6,6 +7,42 @@ namespace ScpCv.Windows.Tests;
 
 public sealed class AudioCommandExecutorTests
 {
+    [Fact]
+    public async Task OpenWaitsForDelayedPlaybackStateBeforeReporting()
+    {
+        var audio = new FakeAudioAdapter { HoldPlaybackTransition = true };
+        var executor = new AudioCommandExecutor(audio);
+        var execution = executor.ExecuteAsync(Lease("OPEN", 7, new
+        {
+            source_id = 42,
+            uri = "file:///C:/media/test.mp3",
+            autoplay = true,
+        }));
+
+        Assert.False(execution.IsCompleted);
+        audio.CompletePlaybackTransition();
+
+        var result = await execution;
+        Assert.Equal("playing", result.ActualState.GetProperty("playback_state").GetString());
+    }
+
+    [Fact]
+    public async Task OpenFailsClearlyWhenPlaybackNeverLeavesLoading()
+    {
+        var audio = new FakeAudioAdapter { HoldPlaybackTransition = true };
+        var executor = new AudioCommandExecutor(audio, TimeSpan.FromMilliseconds(100));
+
+        var exception = await Assert.ThrowsAsync<TimeoutException>(() =>
+            executor.ExecuteAsync(Lease("OPEN", 7, new
+            {
+                source_id = 42,
+                uri = "file:///C:/media/test.mp3",
+                autoplay = true,
+            })));
+
+        Assert.Contains("音频", exception.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task OpenAppliesPlaybackSettingsAndReportsActualState()
     {
@@ -97,6 +134,9 @@ public sealed class AudioCommandExecutorTests
         public int PlayCalls { get; private set; }
         public int PauseCalls { get; private set; }
         public int StopCalls { get; private set; }
+        public bool HoldPlaybackTransition { get; init; }
+
+        public void CompletePlaybackTransition() => PlaybackState = "playing";
 
         public Task OpenAsync(long sourceId, string uri, long generation, CancellationToken cancellationToken = default)
         {
@@ -109,7 +149,7 @@ public sealed class AudioCommandExecutorTests
         public Task PlayAsync(CancellationToken cancellationToken = default)
         {
             PlayCalls++;
-            PlaybackState = "playing";
+            if (!HoldPlaybackTransition) PlaybackState = "playing";
             return Task.CompletedTask;
         }
 

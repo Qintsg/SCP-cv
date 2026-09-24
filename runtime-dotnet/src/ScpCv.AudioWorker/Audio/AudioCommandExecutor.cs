@@ -1,3 +1,4 @@
+// 执行音频命令，并等待异步 LibVLC 播放状态就绪后再上报真实状态。
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Runtime;
@@ -20,8 +21,10 @@ public interface IAudioPlaybackAdapter
     Task SeekAsync(long positionMs, CancellationToken cancellationToken = default);
 }
 
-public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio)
+public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio, TimeSpan? playbackReadyTimeout = null)
 {
+    private readonly TimeSpan _playbackReadyTimeout = playbackReadyTimeout ?? TimeSpan.FromSeconds(5);
+
     public async Task<WorkerExecutionResult> ExecuteAsync(
         CommandLeaseDto lease,
         CancellationToken cancellationToken = default)
@@ -38,9 +41,16 @@ public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio)
                 audio.Volume = Int(lease.Args, "volume", audio.Volume);
                 audio.IsMuted = Bool(lease.Args, "muted", false);
                 audio.LoopEnabled = Bool(lease.Args, "loop", audio.LoopEnabled);
-                if (Bool(lease.Args, "autoplay", true)) await audio.PlayAsync(cancellationToken).ConfigureAwait(false);
+                if (Bool(lease.Args, "autoplay", true))
+                {
+                    await audio.PlayAsync(cancellationToken).ConfigureAwait(false);
+                    await WaitForPlaybackReadyAsync(cancellationToken).ConfigureAwait(false);
+                }
                 break;
-            case "PLAY": await audio.PlayAsync(cancellationToken).ConfigureAwait(false); break;
+            case "PLAY":
+                await audio.PlayAsync(cancellationToken).ConfigureAwait(false);
+                await WaitForPlaybackReadyAsync(cancellationToken).ConfigureAwait(false);
+                break;
             case "PAUSE": await audio.PauseAsync(cancellationToken).ConfigureAwait(false); break;
             case "STOP": await audio.StopAsync(cancellationToken).ConfigureAwait(false); break;
             case "SEEK": await audio.SeekAsync(Long(lease.Args, "position_ms"), cancellationToken).ConfigureAwait(false); break;
@@ -64,6 +74,26 @@ public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio)
                 muted = audio.IsMuted,
                 loop_enabled = audio.LoopEnabled,
             }));
+    }
+
+    private async Task WaitForPlaybackReadyAsync(CancellationToken cancellationToken)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(_playbackReadyTimeout);
+        while (string.Equals(audio.PlaybackState, "loading", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                await Task.Delay(50, deadline.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new TimeoutException("音频在就绪预算内未离开加载状态。");
+            }
+        }
+
+        if (string.Equals(audio.PlaybackState, "error", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("音频播放器报告打开失败。");
     }
 
     private static string String(Dictionary<string, JsonElement> args, string key) =>
