@@ -40,6 +40,15 @@ public sealed class HeadlessScriptSecurityTests
     }
 
     [Fact]
+    public void WorkerRestartUsesReadinessTimeout()
+    {
+        var script = File.ReadAllText(ScriptPath);
+
+        Assert.Contains("TimeoutSec = $TimeoutSeconds", script, StringComparison.Ordinal);
+        Assert.Contains("-TimeoutSeconds $ReadyTimeoutSeconds", script, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ExplicitAllowedHostsAcceptsDirectIpHostHeader()
     {
         if (!OperatingSystem.IsWindows())

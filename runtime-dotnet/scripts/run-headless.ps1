@@ -108,8 +108,8 @@ if ($isHttps -and -not $supportsSkip) {
 if ($null -eq $CrossSiteCookies) { $CrossSiteCookies = $isHttps }
 
 function Invoke-ScpCvWeb {
-    param([string]$Uri, [string]$Method = 'GET', $WebSession = $null, [hashtable]$Headers = $null, [string]$ContentType = '', [string]$Body = '')
-    $splat = @{ Uri = $Uri; Method = $Method; UseBasicParsing = $true; TimeoutSec = 15 }
+    param([string]$Uri, [string]$Method = 'GET', $WebSession = $null, [hashtable]$Headers = $null, [string]$ContentType = '', [string]$Body = '', [int]$TimeoutSeconds = 15)
+    $splat = @{ Uri = $Uri; Method = $Method; UseBasicParsing = $true; TimeoutSec = $TimeoutSeconds }
     if ($supportsSkip) { $splat['SkipCertificateCheck'] = $true }
     if ($WebSession) { $splat['WebSession'] = $WebSession }
     if ($Headers) { $splat['Headers'] = $Headers }
@@ -330,5 +330,5 @@ $csrf = (Invoke-ScpCvWeb -Uri "$baseUrl/api/auth/csrf/" -WebSession $session -He
 Invoke-ScpCvWeb -Method Post -Uri "$baseUrl/api/auth/login/" -WebSession $session -Headers $headers `
     -ContentType 'application/json' -Body (@{ username = $DevelopmentUsername; password = $DevelopmentPassword } | ConvertTo-Json) | Out-Null
 $headers['X-CSRFToken'] = $csrf
-$launch = (Invoke-ScpCvWeb -Method Post -Uri "$baseUrl/api/system/restart/" -WebSession $session -Headers $headers).Content | ConvertFrom-Json
+$launch = (Invoke-ScpCvWeb -Method Post -Uri "$baseUrl/api/system/restart/" -WebSession $session -Headers $headers -TimeoutSeconds $ReadyTimeoutSeconds).Content | ConvertFrom-Json
 Write-Log ("Worker 编排：group_epoch={0} detail={1}" -f $launch.group_epoch, $launch.detail)
