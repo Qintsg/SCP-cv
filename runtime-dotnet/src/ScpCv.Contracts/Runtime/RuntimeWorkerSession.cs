@@ -1,3 +1,4 @@
+// Worker 的认证管道会话、命令执行、状态与事件上报。
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -166,6 +167,25 @@ public sealed class RuntimeWorkerSession(
 
         cancellationToken.ThrowIfCancellationRequested();
         throw new OperationCanceledException("AudioFinished 上报因 Worker 停止而取消。", _shutdown.Token);
+    }
+
+    /// <summary>原生媒体自然结束等异步变化主动上报，仍受 owner epoch 与 source generation 约束。</summary>
+    public async Task<bool> ReportStateAsync(
+        long sourceGeneration,
+        JsonElement state,
+        CancellationToken cancellationToken = default)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdown.Token);
+        await ConnectAndReadyAsync(linked.Token).ConfigureAwait(false);
+        var response = await _client.ExchangeAsync(Frame("state_report", new StateReportDto
+        {
+            SourceGeneration = sourceGeneration,
+            ReportSequence = Interlocked.Increment(ref _reportSequence),
+            ObservedAt = DateTimeOffset.UtcNow.ToString("O"),
+            State = state,
+        }), linked.Token).ConfigureAwait(false);
+        return string.Equals(response.MessageType, "state_accepted", StringComparison.OrdinalIgnoreCase) &&
+            response.Payload.TryGetProperty("accepted", out var accepted) && accepted.GetBoolean();
     }
 
     /// <summary>

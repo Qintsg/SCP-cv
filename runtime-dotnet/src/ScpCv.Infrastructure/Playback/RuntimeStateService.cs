@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+// 四窗口运行状态、媒体命令与硬件输出意图协调。
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ScpCv.Contracts.Http;
@@ -260,6 +261,7 @@ public sealed class RuntimeStateService(
                     uri = source.Uri,
                     content_digest = source.ContentDigest,
                     autoplay,
+                    loop = session.LoopEnabled,
                     target_slide = targetSlide,
                     fallback_uri = presentation?.FallbackUri ?? string.Empty,
                     fallback_digest = presentation?.FallbackDigest ?? string.Empty,

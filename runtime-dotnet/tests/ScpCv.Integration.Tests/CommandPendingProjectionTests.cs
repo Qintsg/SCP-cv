@@ -1,4 +1,6 @@
+// 显示与音频命令队列投影及媒体打开参数回归。
 using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Audio;
@@ -11,6 +13,23 @@ namespace ScpCv.Integration.Tests;
 
 public sealed class CommandPendingProjectionTests
 {
+    [Fact]
+    public async Task OpenCarriesPersistedLoopIntentToPlayer()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var coordinator = new CommandCoordinator(fixture.Commands, new NullCommandWakeNotifier());
+        var runtime = new RuntimeStateService(fixture.Database, fixture.Writes, coordinator, fixture.TimeProvider);
+        var sourceId = await SeedSourceAsync(fixture);
+
+        await runtime.SetLoopAsync(1, true);
+        await runtime.OpenSourceAsync(1, sourceId, autoplay: true, targetSlide: 0);
+
+        await using var database = fixture.Database.CreateDbContext();
+        var command = await database.CommandRecords.SingleAsync(item => item.Command == "OPEN");
+        using var args = JsonDocument.Parse(command.ArgsJson);
+        Assert.True(args.RootElement.GetProperty("loop").GetBoolean());
+    }
+
     [Fact]
     public async Task CompletingCommandProjectsEarliestRemainingDisplayAndAudioIntent()
     {

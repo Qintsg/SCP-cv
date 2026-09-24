@@ -30,8 +30,12 @@ public sealed partial class PlayerRuntimeHost(
     private readonly Dictionary<string, SurfaceResource> _warmWebResources = new(StringComparer.Ordinal);
     private SurfaceResource? _current;
     private long _sourceId;
+    private long _sourceRevision;
+    private string _sourceUri = string.Empty;
     private long _generation;
     private string _state = "idle";
+    private string _errorMessage = string.Empty;
+    private bool _loopEnabled;
     private int _currentSlide;
     private int _totalSlides;
     private long _officePresentationIdentity;
@@ -102,6 +106,28 @@ public sealed partial class PlayerRuntimeHost(
         var sourceId = Long(lease.Args, "source_id");
         var uri = String(lease.Args, "uri");
         var sourceType = String(lease.Args, "source_type", InferType(uri));
+        var autoplay = Bool(lease.Args, "autoplay", true);
+        _loopEnabled = Bool(lease.Args, "loop", _loopEnabled);
+        if (_current?.Native is VlcMediaPlayer currentPlayer &&
+            sourceId == _sourceId && lease.SourceRevision == _sourceRevision &&
+            string.Equals(uri, _sourceUri, StringComparison.Ordinal))
+        {
+            if (autoplay)
+            {
+                if (currentPlayer.State == VLCState.Paused) currentPlayer.SetPause(false);
+                else if (currentPlayer.State is VLCState.Ended or VLCState.Stopped or VLCState.Error)
+                {
+                    currentPlayer.Stop();
+                    currentPlayer.Time = 0;
+                    if (!currentPlayer.Play()) throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
+                }
+            }
+            else currentPlayer.SetPause(true);
+            _generation = lease.SourceGeneration;
+            _state = autoplay ? "playing" : "paused";
+            _errorMessage = string.Empty;
+            return;
+        }
         if (_current?.Kind == "powerpoint" && _officePresentationIdentity != 0)
         {
             await ClosePowerPointAsync(lease, "switch-close", cancellationToken);
@@ -115,7 +141,7 @@ public sealed partial class PlayerRuntimeHost(
             case "audio":
             case "custom_stream":
             case "rtsp":
-            case "srt": next = await OpenVlcAsync(uri, Bool(lease.Args, "autoplay", true), cancellationToken); break;
+            case "srt": next = await OpenVlcAsync(uri, autoplay, cancellationToken); break;
             case "ppt" when Path.GetExtension(LocalPath(uri)).Equals(".pdf", StringComparison.OrdinalIgnoreCase):
                 next = await OpenPdfAsync(uri, Int(lease.Args, "target_slide", 1), cancellationToken);
                 break;
@@ -126,13 +152,16 @@ public sealed partial class PlayerRuntimeHost(
         var previous = _current;
         _current = next;
         _sourceId = sourceId;
+        _sourceRevision = lease.SourceRevision;
+        _sourceUri = uri;
         _generation = lease.SourceGeneration;
+        _errorMessage = string.Empty;
         if (next.Native is PdfPlaybackAdapter pdf)
         {
             _currentSlide = pdf.CurrentPage;
             _totalSlides = pdf.PageCount;
         }
-        _state = Bool(lease.Args, "autoplay", true) ? "playing" : "paused";
+        _state = autoplay ? "playing" : "paused";
         _window.SetSurface(next.Surface);
         if (previous is not null && !ReferenceEquals(previous, next) && previous.Kind != "web")
             await previous.DisposeAsync();
@@ -256,7 +285,7 @@ public sealed partial class PlayerRuntimeHost(
         return new SurfaceResource("pdf", image, adapter.DisposeAsync, adapter);
     }
 
-    private static Task<SurfaceResource> OpenVlcAsync(
+    private Task<SurfaceResource> OpenVlcAsync(
         string uri,
         bool autoplay,
         CancellationToken cancellationToken)
@@ -270,10 +299,18 @@ public sealed partial class PlayerRuntimeHost(
             ? new Media(libVlc, Path.GetFullPath(localPath), FromType.FromPath)
             : new Media(libVlc, uri, FromType.FromLocation);
         player.Media = media;
+        void Ended(object? _, EventArgs __)
+        {
+            var generation = Volatile.Read(ref _generation);
+            if (_window.Dispatcher.HasShutdownStarted) return;
+            _ = _window.Dispatcher.InvokeAsync(() => HandleVlcEndedAsync(player, generation));
+        }
+        player.EndReached += Ended;
         var view = new VideoView { MediaPlayer = player };
         if (autoplay && !player.Play()) throw new InvalidOperationException("LibVLC 无法开始播放媒体。");
         return Task.FromResult(new SurfaceResource("vlc", view, () =>
         {
+            player.EndReached -= Ended;
             player.Stop();
             view.MediaPlayer = null;
             media.Dispose();
@@ -281,6 +318,27 @@ public sealed partial class PlayerRuntimeHost(
             libVlc.Dispose();
             return ValueTask.CompletedTask;
         }, player));
+    }
+
+    private async Task HandleVlcEndedAsync(VlcMediaPlayer player, long generation)
+    {
+        if (!ReferenceEquals(_current?.Native, player) || generation != _generation) return;
+        if (_loopEnabled)
+        {
+            player.Stop();
+            player.Time = 0;
+            if (player.Play()) return;
+            _state = "error";
+            _errorMessage = "video_loop_restart_failed";
+        }
+        else _state = "stopped";
+
+        if (_officeSession is null) return;
+        try { await _officeSession.ReportStateAsync(generation, Snapshot()); }
+        catch (Exception exception) when (exception is IOException or InvalidOperationException or OperationCanceledException)
+        {
+            Console.Error.WriteLine($"视频自然结束状态上报失败：{exception.Message}");
+        }
     }
 
     private async Task CurrentControlAsync(
@@ -302,7 +360,7 @@ public sealed partial class PlayerRuntimeHost(
         switch (action)
         {
             case "play": _ = player.Play(); break;
-            case "pause": player.Pause(); break;
+            case "pause": player.SetPause(true); break;
             case "stop": player.Stop(); break;
         }
         await Task.CompletedTask;
@@ -348,8 +406,7 @@ public sealed partial class PlayerRuntimeHost(
 
     private void SetLoop(bool enabled)
     {
-        if (_current?.Native is VlcMediaPlayer player)
-            player.Media?.AddOption(enabled ? ":input-repeat=65535" : ":input-repeat=0");
+        _loopEnabled = enabled;
     }
 
     private void SelectDisplay(string targetLabel)
@@ -373,7 +430,10 @@ public sealed partial class PlayerRuntimeHost(
         if (_current is not null && _current.Kind != "web") await _current.DisposeAsync();
         _current = null;
         _sourceId = 0;
+        _sourceRevision = 0;
+        _sourceUri = string.Empty;
         _state = "idle";
+        _errorMessage = string.Empty;
         _currentSlide = 0;
         _totalSlides = 0;
         _window.SetSurface(new Grid { Background = WpfBrushes.Black });
@@ -406,7 +466,7 @@ public sealed partial class PlayerRuntimeHost(
             total_slides = _totalSlides,
             position_ms = position,
             duration_ms = duration,
-            error_message = string.Empty,
+            error_message = _errorMessage,
         });
     }
 
