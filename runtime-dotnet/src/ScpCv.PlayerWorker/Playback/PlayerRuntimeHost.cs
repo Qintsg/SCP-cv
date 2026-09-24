@@ -157,7 +157,6 @@ public sealed partial class PlayerRuntimeHost(
         string uri,
         CancellationToken cancellationToken)
     {
-        TraceWebStage("start");
         var key = $"{sourceId}:{sourceRevision}:{uri}";
         if (_warmWebResources.TryGetValue(key, out var existing))
         {
@@ -175,13 +174,9 @@ public sealed partial class PlayerRuntimeHost(
                 "WebView2",
                 $"player-{_windowId}");
             Directory.CreateDirectory(userData);
-            TraceWebStage("before-environment");
             var environment = await WaitForWebStageAsync(
                 CoreWebView2Environment.CreateAsync(userDataFolder: userData), "环境创建", cancellationToken);
-            TraceWebStage("after-environment");
-            TraceWebStage("before-ensure");
             await WaitForWebStageAsync(control.EnsureCoreWebView2Async(environment), "控件初始化", cancellationToken);
-            TraceWebStage("after-ensure");
             control.CoreWebView2.Settings.AreDevToolsEnabled = false;
             control.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
             control.CoreWebView2.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
@@ -195,11 +190,8 @@ public sealed partial class PlayerRuntimeHost(
             void Failed(object? _, CoreWebView2ProcessFailedEventArgs __) => healthy = false;
             control.NavigationCompleted += Completed;
             control.CoreWebView2.ProcessFailed += Failed;
-            TraceWebStage("before-source");
             control.Source = new Uri(uri, UriKind.Absolute);
-            TraceWebStage("before-navigation-completed");
             await WaitForWebStageAsync(navigated.Task, "页面导航", cancellationToken);
-            TraceWebStage("after-navigation-completed");
             control.NavigationCompleted -= Completed;
             var resource = new SurfaceResource("web", control, async () =>
             {
@@ -217,18 +209,6 @@ public sealed partial class PlayerRuntimeHost(
             control.Dispose();
             throw;
         }
-    }
-
-    private static void TraceWebStage(string stage)
-    {
-        try
-        {
-            File.AppendAllText(
-                Path.Combine(Path.GetTempPath(), $"scp-cv-web-{Environment.ProcessId}.log"),
-                $"[DEBUG-WEBVIEW-20260924] {DateTimeOffset.UtcNow:O} {stage}{Environment.NewLine}");
-        }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
     }
 
     private static async Task<T> WaitForWebStageAsync<T>(
