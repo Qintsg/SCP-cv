@@ -172,6 +172,16 @@ T115/T116/T129 仍未验证。2026-09-22 用户明确要求在本地软件测试
 
 未执行：真实媒体播放、Office COM/HWND 附着、VLC/SRT/MediaMTX 播放、真实音频输出与 60 分钟混合测试；T115/T116/T129 状态不变。
 
+## D4 更新后的启动验证（2026-09-24）
+
+本机 `main` 经 secondary（GitLab）同步到 D4 `D:\SCP-cv` 的 `47874b7`。D4 Debug 构建及前端测试、类型检查和 Web 构建通过。
+本机非 Physical .NET 测试 221/221 通过（清除该次测试进程的 HTTP 代理变量；带代理时两项回环断言误收 502）。
+现场启动发现 `run-headless.ps1` 对 restart 请求固定 15 秒超时，导致 Worker 尚未就绪时客户端取消，运行组进入 `Faulted`；
+修复为使用 `ReadyTimeoutSeconds`，并新增回归测试。同时补上 Supervisor 受认证心跳与 SQLite 测试清理重试。
+修复后 D4 `SafetyMode=Hardware` 运行组到达 `Armed`（group epoch 29），全部七个受管进程在交互会话就绪，
+ControlHost 与前端跨网段 HTTP 均为 200。详细命令、日志及验证边界见 `docs/qa/003-windows-runtime.md`。
+本轮未执行 T115/T116/T129 的真实媒体和 60 分钟门禁，状态不变；已提前完成的 T118 清理由 2026-09-22 用户指令授权。
+
 ## Spec Kit 一致性分析（T119）
 
 2026-09-08 对 `spec.md`、`plan.md`、`tasks.md`、项目宪章和实现路径进行只读交叉检查：

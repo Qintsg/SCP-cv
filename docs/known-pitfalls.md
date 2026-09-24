@@ -105,6 +105,13 @@
   - 边界要跟测试写在同一个提交里（本轮写在 `specs/004-video-wall-control/verification.md` §「回环假节点能测什么、不能测什么」），别只留在聊天记录里。
 - **现状**：回环用例已补（`VideoWallLoopbackTests` + `runtime-dotnet/scripts/videowall-loopback.ps1`，5 个用例带 `Physical` trait，缺别名自动跳过）。能测的：连接超时（2 秒 × 5 次 = 12.5 s 实测）、重试退避、失败即中止（其余 49 个节点只收到清屏包）、取消原样抛出（409 ms、零日志）、逐包字节。**测不到的**：帧内容是否对墙正确（issue #2）、TCP_NODELAY、真实网段的时延与丢包、写超时（连上后写 12/45 字节必然成功，2 秒预算实际只兜住 `ConnectAsync`）。
 
+### 坑 10 - 启动脚本的 HTTP 超时短于 Worker 就绪预算（2026-09-24 修复）
+
+- **症状**：D4 ControlHost 的 `/health/ready` 为 200，但 `run-headless.ps1 -StartWorkers` 约 20 秒后报告失败，运行组持久状态变成 `Faulted`，`StopReason=runtime_restart_cancelled`。只看 HTTP 健康检查会误以为全部 Worker 已启动。
+- **根因**：脚本为所有 HTTP 请求固定使用 15 秒超时，`POST /api/system/restart/` 因真实 Worker 冷启动超出该时间而被客户端取消；服务端按取消语义停止整组。另有 Supervisor 管道空闲超时风险，需由已认证心跳保持连接。
+- **规避**：restart 请求使用 `ReadyTimeoutSeconds`，并以 `runtime_group_control.State=Armed`、七个受管进程的 PID/session 和脚本“全部 Worker 已就绪”结果共同判定启动成功；不要用 `/health/ready` 代替运行组就绪。相关回归：`HeadlessScriptSecurityTests.WorkerRestartUsesReadinessTimeout` 与 Supervisor 心跳集成测试。
+- **边界**：2026-09-24 D4 只完成运行组就绪与 HTTP 可达验证，未做四屏实际播放或长稳测试。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 - `specs/003-dotnet-runtime-refactor/baseline.md` §易错语义：迁移前必须保住的**旧 Python 语义**（冻结在基线提交）。

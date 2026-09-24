@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2026-09-24
+
+### D4 工作站更新与运行时启动修复
+
+- 本机将 `main` 推送到 secondary（GitLab），D4 的 `D:\SCP-cv` 拉取更新；现场使用 pnpm 和 CERNET npm 镜像，未恢复旧 Python 运行时。
+- Supervisor 通过受认证管道定期发送心跳，避免启动阶段的空闲连接被误判为掉线；工作站 SQLite 测试清理对临时文件的占用增加重试。
+- 修复 `run-headless.ps1` 用固定 15 秒 HTTP 超时取消 Worker 启动的问题：`POST /api/system/restart/` 改用工作站就绪预算。D4 Hardware 运行组现已到达 `Armed`，全部七个受管进程就绪。
+- D4 前端与 ControlHost 分别在 `5173`、`18443` 运行，本机跨网段请求均返回 HTTP 200；尚未执行四屏媒体和 60 分钟混合测试。
+
 ## 2026-09-22
 
 ### 完成旧 Django/Python 运行时退役

@@ -89,6 +89,30 @@
 因此**不改变 T116/T129 状态**。D4 尚未安装 PowerPoint（用户后续安装），四屏实际播放、Office COM/HWND、VLC/SRT、
 真实音频与 60 分钟混合测试仍待执行。
 
+## D4 更新与常驻启动（2026-09-24）
+
+本机 `main` 经 secondary（GitLab）同步到 D4 的 `D:\SCP-cv`；D4 从 `9d2a782` 更新至 `47874b7`。
+现场在 `D:\dotnet` 使用 .NET 10.0.400，在 `D:\nodejs` 使用 Node 24.13.0 / pnpm 11.22.0；
+按仓库 `.npmrc` 使用 CERNET npm 镜像。此轮没有恢复旧 Python 运行时，也没有改动媒体、数据库或凭据。
+
+- D4 Debug 构建 0 警告、0 错误；前端 40/40 测试、类型检查、Web 构建通过。
+- 本机更新后的非 Physical .NET 测试为 221/221 通过；首次运行受本机 `http_proxy` 等环境变量影响，
+  两项回环 HTTP 断言得到代理的 502，清除该次测试进程的代理变量后全套通过。
+- 首次 Hardware 启动失败：`/health/ready` 虽为 200，运行组却在约 20 秒后因 `runtime_restart_cancelled` 进入 `Faulted`。
+  排查发现脚本对 restart 请求固定 15 秒 HTTP 超时，短于 Worker 的就绪预算；修复后使用 `ReadyTimeoutSeconds=120`。
+  同轮补上 Supervisor 已认证心跳，并对 SQLite 测试临时文件占用增加清理重试。
+- 修复后由计划任务在交互会话（session 1）启动 `SafetyMode=Hardware`；`run-headless.log` 记录
+  `group_epoch=29` 和“Supervisor restart 的全部 Worker 已就绪”。运行组数据库状态 `Armed`；
+  ControlHost、Supervisor、4×PlayerWorker、AudioWorker、PowerPointHost、MediaMTX 均在运行，
+  `runtime-processes.json` 中七个受管角色均在 session 1，`control-host.err.log` 为空。
+- 前端由 `ScpCvFrontend` 计划任务常驻启动，Vite 监听 `0.0.0.0:5173`；
+  本机经 `192.168.1.104` 跨网段访问 `http://192.168.5.194:5173/` 返回 200，
+  `http://192.168.5.194:18443/health/ready` 返回 200 `Healthy`。
+
+本轮未发起媒体播放、显示落位变更、音量或设备命令，未执行 T115/T116/T129 的性能与 60 分钟混合测试；
+`Armed` 只证明运行组就绪，不代表物理画面、Office 放映或音频验收通过。D4 的 Windows 10 1909
+仍属已批准的兼容性例外，不改变受支持平台基线。
+
 ## 已归档工作站 `D2` HTTP 控制面（2026-09-14）
 
 - 安装 .NET SDK 10.0.400 后，`ScpCv.sln` 在 D2 完成 locked restore 和 Debug build，0 警告、0 错误。
