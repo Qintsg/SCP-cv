@@ -18,6 +18,7 @@ export default {
     folderBreadcrumbAria: '文件夹路径',
     newFolder: '新建文件夹',
     newFolderName: '文件夹名称',
+    newFolderNameRequired: '请输入文件夹名称',
     newFolderPlaceholder: '例如：早会资料',
     newFolderOk: '创建',
     newFolderOkShort: '新建',

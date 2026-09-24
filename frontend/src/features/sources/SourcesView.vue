@@ -54,6 +54,7 @@ const editDrawerOpen = ref(false);
 const editingSource = ref<MediaSourceItem | null>(null);
 const newFolderDialogOpen = ref(false);
 const newFolderName = ref('');
+const folderNameError = ref(false);
 const creatingFolder = ref(false);
 const deleteFolderTarget = ref<MediaFolderItem | null>(null);
 const deleteFolderContents = ref(false);
@@ -290,17 +291,29 @@ async function navigateToFolder(folderId: number | null): Promise<void> {
   }
 }
 
-async function createFolder(): Promise<void> {
+function openFolderDialog(): void {
+  newFolderName.value = '';
+  folderNameError.value = false;
+  newFolderDialogOpen.value = true;
+}
+
+async function createFolder(): Promise<boolean> {
   const name = newFolderName.value.trim();
-  if (!name) return;
+  if (!name) {
+    folderNameError.value = true;
+    return false;
+  }
+  folderNameError.value = false;
   creatingFolder.value = true;
   try {
     await sourceStore.createFolder(name, sourceStore.currentFolderId);
     toast.success(t('sources.folderCreatedOk'));
     newFolderName.value = '';
     newFolderDialogOpen.value = false;
+    return true;
   } catch (error) {
     toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
+    return false;
   } finally {
     creatingFolder.value = false;
   }
@@ -461,7 +474,7 @@ async function moveSourceToFolder(source: MediaSourceItem, folderId: number | nu
               </button>
             </template>
           </nav>
-          <n-button size="small" quaternary :aria-label="t('sources.newFolder')" @click="newFolderDialogOpen = true">
+          <n-button size="small" quaternary :aria-label="t('sources.newFolder')" @click="openFolderDialog">
             <template #icon><FIcon name="add_24_regular" /></template>
             {{ t('sources.newFolderOkShort') }}
           </n-button>
@@ -469,12 +482,13 @@ async function moveSourceToFolder(source: MediaSourceItem, folderId: number | nu
 
         <!-- 子文件夹列表 -->
         <div v-if="childFolders.length > 0" class="sources-view__folders">
-          <div v-for="folder in childFolders" :key="folder.id" class="sources-view__folder-card" role="button"
-            tabindex="0" @click="navigateToFolder(folder.id)" @keyup.enter="navigateToFolder(folder.id)">
-            <FIcon name="folder_24_regular" :size="28" />
-            <span class="sources-view__folder-name">{{ folder.name }}</span>
+          <div v-for="folder in childFolders" :key="folder.id" class="sources-view__folder-card">
+            <button class="sources-view__folder-open" type="button" @click="navigateToFolder(folder.id)">
+              <FIcon name="folder_24_regular" :size="28" />
+              <span class="sources-view__folder-name">{{ folder.name }}</span>
+            </button>
             <n-dropdown trigger="click" placement="bottom-end" :options="buildFolderMenu(folder)"
-              @select="handleMenuSelect" @click.stop>
+              @select="handleMenuSelect">
               <n-button quaternary circle size="tiny" :aria-label="t('common.edit')">
                 <template #icon><FIcon name="more_horizontal_20_regular" :size="16" /></template>
               </n-button>
@@ -620,7 +634,11 @@ async function moveSourceToFolder(source: MediaSourceItem, folderId: number | nu
       :positive-text="t('sources.newFolderOk')" :negative-text="t('common.cancel')"
       :loading="creatingFolder" @positive-click="createFolder">
       <n-input v-model:value="newFolderName" :placeholder="t('sources.newFolderPlaceholder')"
-        :aria-label="t('sources.newFolderName')" @keyup.enter="createFolder" />
+        :aria-label="t('sources.newFolderName')" :status="folderNameError ? 'error' : undefined"
+        :aria-invalid="folderNameError" @update:value="folderNameError = false" @keyup.enter="createFolder" />
+      <div v-if="folderNameError" class="sources-view__folder-error" role="alert">
+        {{ t('sources.newFolderNameRequired') }}
+      </div>
     </n-modal>
 
     <AddSourceDrawer v-model:open="drawerOpen" :folderId="sourceStore.currentFolderId" @added="refresh" />

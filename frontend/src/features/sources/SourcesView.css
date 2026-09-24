@@ -1,3 +1,4 @@
+/* 媒体源页布局、文件夹与列表交互样式。 */
 .sources-view {
   display: flex;
   flex-direction: column;
@@ -222,7 +223,6 @@
   background: var(--color-background-card);
   border: 1px solid var(--colorNeutralStroke2);
   border-radius: var(--borderRadiusLarge);
-  cursor: pointer;
   transition: background var(--durationFaster) var(--curveEasyEase),
     border-color var(--durationFaster) var(--curveEasyEase);
 }
@@ -232,9 +232,30 @@
   border-color: var(--colorBrandStroke1);
 }
 
-.sources-view__folder-card:focus-visible {
+.sources-view__folder-open:focus-visible {
   outline: var(--strokeWidthThick) solid var(--colorBrandStroke1);
   outline-offset: 2px;
+}
+
+.sources-view__folder-open {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--spacing-s);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.sources-view__folder-error {
+  margin-top: var(--spacing-xs);
+  color: var(--colorStatusDangerForeground1);
+  font-size: var(--fontSizeBase200);
 }
 
 .sources-view__folder-name {
