@@ -90,7 +90,8 @@ public sealed class HardwareControlHostStartupTests
                 {
                     Directory.Delete(dataRoot, recursive: true);
                 }
-                catch (IOException) when (attempt < 19)
+                catch (Exception exception) when (attempt < 19 &&
+                                                  exception is IOException or UnauthorizedAccessException)
                 {
                     await Task.Delay(250);
                 }
