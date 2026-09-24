@@ -2,7 +2,7 @@
 
 ## 环境与边界
 
-- D4：`192.168.5.194`，仓库 `D:\SCP-cv`，Hardware ControlHost `:18443`、Web `:5173`；本轮基于 `5debb4c`。D4 Windows 10 Pro 1909 仍属已记录的兼容性试验机，不改变项目支持基线。
+- D4：`192.168.5.194`，仓库 `D:\SCP-cv`，Hardware ControlHost `:18443`、Web `:5173`；前端修复于 `5debb4c` 复测，最终运行时部署为 `7e40ce7`。D4 Windows 10 Pro 1909 仍属已记录的兼容性试验机，不改变项目支持基线。
 - 使用独立 `.validation/t129-workstation` 数据目录；原有源 1/2 未覆盖。测试源 25–28 和浏览器测试文件夹均通过 API 删除，四窗/背景音频最终为 idle/stopped。测试文件和截图留在忽略的 `.validation` 目录供本机复核；本机临时账号口令副本已删除。
 - 不触碰墙面映射和设备电源。PowerPoint 自动化实例归属不明时不结束用户 Office。
 
@@ -10,7 +10,7 @@
 
 旧版 API restart 返回新组 `Armed` 后，七个子进程存在但 `runtime-processes.json` 缺失。根因是旧 Supervisor 在新组写入同一路径后无条件删除状态文件。本轮新增 `SupervisorStateStore`：同目录临时文件原子发布、跨进程互斥、删除前比较整组 role/PID/启动时间/session。先行回归覆盖旧组清理不得删除新组及 PID 复用。
 
-D4 上先按父 Supervisor PID、七个子进程的路径/role/PID/启动时间/session 逐项核对，短暂恢复缺失文件并执行受控 shutdown。旧版遗留项目自有 `ScpCv.PowerPointHost.exe` 经精确身份复核后单独结束；没有结束 `POWERPNT.EXE`。新版本把 `office` 角色按“项目 Host”处理：协作等待后只定向结束 Host，不沿进程树强杀 Office。部署后 API restart 到 `group_epoch=41`，新组 7/7 存活、旧组 0/7 存活、无未登记项目子进程，状态文件持续存在；后续更新到 `group_epoch=43` 仍为 `Armed` 且文件存在。
+D4 上先按父 Supervisor PID、七个子进程的路径/role/PID/启动时间/session 逐项核对，短暂恢复缺失文件并执行受控 shutdown。旧版遗留项目自有 `ScpCv.PowerPointHost.exe` 经精确身份复核后单独结束；没有结束 `POWERPNT.EXE`。新版本把 `office` 角色按“项目 Host”处理：协作等待后只定向结束 Host，不沿进程树强杀 Office。部署后 API restart 到 `group_epoch=41`，新组 7/7 存活、旧组 0/7 存活、无未登记项目子进程，状态文件持续存在；最终更新到 `group_epoch=45` 仍为 `Armed` 且文件存在。
 
 ## 媒体源复测与修复
 
