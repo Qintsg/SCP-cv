@@ -473,6 +473,40 @@ public sealed class RuntimePipeBrokerTests
     }
 
     [Fact]
+    public async Task SupervisorHeartbeatIsAcceptedWithoutDisplayTarget()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var startRequest = Guid.NewGuid();
+        var starting = await fixture.RuntimeAuthority.BeginStartAsync(startRequest);
+        var registry = new RegisteredProcessRegistry();
+        using var current = Process.GetCurrentProcess();
+        var server = new NamedPipeServer(Guid.NewGuid(), current.SessionId, registry);
+        using var broker = CreateBroker(fixture, registry, server);
+        await broker.StartAsync(CancellationToken.None);
+
+        var supervisorId = Guid.NewGuid();
+        registry.Register(CurrentIdentity(current, "supervisor", supervisorId));
+        await using var client = await ConnectAsync(server.PipeName);
+        await WriteHelloAsync(client, current, "supervisor", supervisorId, target: null);
+        var welcome = await ReadAsync(client);
+        Assert.Equal("welcome", welcome.MessageType);
+        Assert.Equal(starting.GroupEpoch, welcome.Payload.Deserialize<WelcomeDto>()!.GroupEpoch);
+
+        await WriteAsync(client, Frame("health_report", supervisorId, 0, null, new HealthReportDto
+        {
+            TransportHealthy = true,
+            UiHealthy = false,
+            ReportSequence = 1,
+            ObservedAt = DateTimeOffset.UtcNow.ToString("O"),
+        }));
+        var heartbeat = await ReadAsync(client);
+
+        Assert.Equal("health_accepted", heartbeat.MessageType);
+        Assert.True(heartbeat.Payload.GetProperty("accepted").GetBoolean());
+        await broker.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
     public async Task SupervisorCanRegisterOnlyAnExistingMatchingChildProcess()
     {
         await using var fixture = await ControlHostFixture.CreateAsync();

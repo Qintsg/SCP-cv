@@ -297,7 +297,7 @@ public sealed partial class RuntimePipeBroker(
                     uiHealthy,
                     cancellationToken).ConfigureAwait(false);
             }
-            else if (string.Equals(connection.Identity.Role, "office", StringComparison.Ordinal))
+            else if (connection.Identity.Role is "office" or "supervisor")
             {
                 var group = await authority.GetGroupAsync(cancellationToken).ConfigureAwait(false);
                 accepted = group.GroupEpoch == connection.GroupEpoch &&

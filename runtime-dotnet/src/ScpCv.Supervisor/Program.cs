@@ -48,9 +48,10 @@ static async Task<int> StartAsync(string runtimeRoot, string statePath, string? 
     var owned = new RuntimeLauncher(registry).Start(runtimeRoot, mediaMtxPath, controlPipe, startGate?.Name);
     try
     {
+        var supervisorInstanceId = Guid.NewGuid();
         await using var control = string.IsNullOrWhiteSpace(controlPipe)
             ? null
-            : await RegisterWithControlHostAsync(controlPipe, owned);
+            : await RegisterWithControlHostAsync(controlPipe, owned, supervisorInstanceId);
         // 身份登记完成后才放行子进程连接，避免 ControlHost 拒绝尚未登记的身份。
         startGate?.Open();
         await WriteStateAsync(statePath, owned);
@@ -68,15 +69,26 @@ static async Task<int> StartAsync(string runtimeRoot, string statePath, string? 
         }
 
         Console.CancelKeyPress += (_, eventArgs) => { eventArgs.Cancel = true; stop.Cancel(); };
-        var completed = await Task.WhenAny(failure.Task, Task.Delay(Timeout.InfiniteTimeSpan, stop.Token));
-        if (completed == failure.Task)
+        var heartbeat = control is null
+            ? Task.Delay(Timeout.InfiniteTimeSpan, stop.Token)
+            : RunSupervisorHeartbeatAsync(control, supervisorInstanceId, stop.Token);
+        var completed = await Task.WhenAny(failure.Task, heartbeat);
+        var runtimeFailed = completed == failure.Task;
+        if (runtimeFailed)
         {
             Console.Error.WriteLine($"受管进程 {failure.Task.Result} 退出，触发整组协作停止。");
         }
+        else if (!stop.IsCancellationRequested)
+        {
+            await heartbeat.ConfigureAwait(false);
+            throw new InvalidOperationException("Supervisor 传输心跳意外停止。");
+        }
 
+        stop.Cancel();
+        try { await heartbeat.ConfigureAwait(false); } catch (OperationCanceledException) { }
         await new ShutdownCoordinator(registry).StopAsync();
         DeleteStateIfSafe(statePath);
-        return completed == failure.Task ? 1 : 0;
+        return runtimeFailed ? 1 : 0;
     }
     catch
     {
@@ -110,13 +122,13 @@ static async Task<int> RestartAsync(string runtimeRoot, string statePath, string
 
 static async Task<RuntimePipeClient> RegisterWithControlHostAsync(
     string pipeName,
-    IReadOnlyList<OwnedProcess> owned)
+    IReadOnlyList<OwnedProcess> owned,
+    Guid instanceId)
 {
     var client = new RuntimePipeClient(pipeName);
     try
     {
         await client.ConnectAsync();
-        var instanceId = Guid.NewGuid();
         using var process = Process.GetCurrentProcess();
         var hello = Frame("hello", instanceId, null, new HelloDto
         {
@@ -152,6 +164,31 @@ static async Task<RuntimePipeClient> RegisterWithControlHostAsync(
     {
         await client.DisposeAsync();
         throw;
+    }
+}
+
+static async Task RunSupervisorHeartbeatAsync(
+    RuntimePipeClient client,
+    Guid instanceId,
+    CancellationToken cancellationToken)
+{
+    long reportSequence = 0;
+    while (!cancellationToken.IsCancellationRequested)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken).ConfigureAwait(false);
+        var response = await client.ExchangeAsync(Frame("health_report", instanceId, null, new HealthReportDto
+        {
+            TransportHealthy = true,
+            UiHealthy = false,
+            ReportSequence = Interlocked.Increment(ref reportSequence),
+            ObservedAt = DateTimeOffset.UtcNow.ToString("O"),
+        }), cancellationToken).ConfigureAwait(false);
+        if (!string.Equals(response.MessageType, "health_accepted", StringComparison.OrdinalIgnoreCase) ||
+            !response.Payload.TryGetProperty("accepted", out var accepted) ||
+            !accepted.GetBoolean())
+        {
+            throw new InvalidOperationException($"ControlHost 未接受 Supervisor 传输心跳：{response.MessageType}");
+        }
     }
 }
 
