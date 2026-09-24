@@ -1,3 +1,4 @@
+// 持久化运行组代次与 Worker 所有权，并在受控停机后终结旧租约。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
@@ -126,17 +127,30 @@ public sealed class RuntimeAuthorityRepository(
             async (context, token) =>
             {
                 var group = await context.RuntimeGroupControls.SingleAsync(token).ConfigureAwait(false);
-                if (group.State == RuntimeGroupState.Stopped && group.GroupEpoch == expectedGroupEpoch)
-                {
-                    return group;
-                }
-                if (group.State != RuntimeGroupState.Draining || group.GroupEpoch != expectedGroupEpoch)
+                if (group.State is not (RuntimeGroupState.Draining or RuntimeGroupState.Stopped) ||
+                    group.GroupEpoch != expectedGroupEpoch)
                 {
                     throw new RuntimeAuthorityException("停止确认的 group epoch 已失效。");
                 }
 
                 group.State = RuntimeGroupState.Stopped;
                 group.ExplicitStartRequestId = null;
+                // Supervisor 已确认整组退出；旧执行结果不能再落库，也不能阻塞下一轮领取。
+                var inFlight = await context.CommandRecords
+                    .Where(command => command.Status == CommandStatus.Processing)
+                    .ToListAsync(token)
+                    .ConfigureAwait(false);
+                var now = _timeProvider.GetUtcNow();
+                foreach (var command in inFlight)
+                {
+                    command.Status = CommandStatus.Superseded;
+                    command.ConsumerInstanceId = null;
+                    command.ClaimToken = null;
+                    command.LeaseExpiresAt = null;
+                    command.CompletedAt = now;
+                    command.ResultCode = "runtime_group_stopped";
+                    command.LastError = "受控停机后旧 Worker 已退出，未完成命令不再重放。";
+                }
                 return group;
             },
             cancellationToken);

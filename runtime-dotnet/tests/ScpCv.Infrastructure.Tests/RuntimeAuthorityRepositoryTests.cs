@@ -1,5 +1,8 @@
+// 验证运行组代次、所有权与受控停机后的命令回收。
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
+using ScpCv.Infrastructure.Commands;
 using ScpCv.Infrastructure.Configuration;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Infrastructure.Runtime;
@@ -8,6 +11,84 @@ namespace ScpCv.Infrastructure.Tests;
 
 public sealed class RuntimeAuthorityRepositoryTests
 {
+    [Fact]
+    public async Task ConfirmedStopRetiresInFlightCommandBeforeNextStart()
+    {
+        var root = CreateTemporaryRoot();
+        try
+        {
+            var factory = await CreateInitializedFactoryAsync(root);
+            using var writes = new WriteCoordinator(factory);
+            var authority = new RuntimeAuthorityRepository(factory, writes);
+            var commands = new CommandRepository(writes);
+            var firstStart = await authority.BeginStartAsync(Guid.NewGuid());
+            await authority.ArmAsync(firstStart.ExplicitStartRequestId!.Value, firstStart.GroupEpoch);
+            await commands.EnqueueAsync(new EnqueueCommand(
+                CommandTargetKind.Display, 2, "OPEN", "{}", SourceGeneration: 1, SourceRevision: 1));
+            var inFlight = await commands.ClaimAsync(new ClaimCommand(
+                CommandTargetKind.Display, 2, Guid.NewGuid(), 1, firstStart.GroupEpoch, TimeSpan.FromSeconds(30)));
+            Assert.NotNull(inFlight);
+
+            var draining = await authority.BeginDrainAsync("system_shutdown");
+            await authority.CompleteStopAsync(draining.GroupEpoch);
+
+            await using (var database = factory.CreateDbContext())
+            {
+                var retired = await database.CommandRecords.SingleAsync();
+                Assert.Equal(CommandStatus.Superseded, retired.Status);
+                Assert.Equal("runtime_group_stopped", retired.ResultCode);
+                Assert.Null(retired.ClaimToken);
+            }
+
+            var secondStart = await authority.BeginStartAsync(Guid.NewGuid());
+            await authority.ArmAsync(secondStart.ExplicitStartRequestId!.Value, secondStart.GroupEpoch);
+            await commands.EnqueueAsync(new EnqueueCommand(
+                CommandTargetKind.Display, 2, "OPEN", "{}", SourceGeneration: 2, SourceRevision: 1));
+            var next = await commands.ClaimAsync(new ClaimCommand(
+                CommandTargetKind.Display, 2, Guid.NewGuid(), 2, secondStart.GroupEpoch, TimeSpan.FromSeconds(30)));
+            Assert.NotNull(next);
+            Assert.Equal(CommandStatus.Processing, next.Status);
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task RepeatedStopRetiresLegacyInFlightCommand()
+    {
+        var root = CreateTemporaryRoot();
+        try
+        {
+            var factory = await CreateInitializedFactoryAsync(root);
+            using var writes = new WriteCoordinator(factory);
+            var authority = new RuntimeAuthorityRepository(factory, writes);
+            var commands = new CommandRepository(writes);
+            var starting = await authority.BeginStartAsync(Guid.NewGuid());
+            await authority.ArmAsync(starting.ExplicitStartRequestId!.Value, starting.GroupEpoch);
+            await commands.EnqueueAsync(new EnqueueCommand(
+                CommandTargetKind.Display, 2, "OPEN", "{}", SourceGeneration: 1, SourceRevision: 1));
+            Assert.NotNull(await commands.ClaimAsync(new ClaimCommand(
+                CommandTargetKind.Display, 2, Guid.NewGuid(), 1, starting.GroupEpoch, TimeSpan.FromSeconds(30))));
+            var draining = await authority.BeginDrainAsync("system_shutdown");
+            await writes.ExecuteAsync(async (database, token) =>
+            {
+                var group = await database.RuntimeGroupControls.SingleAsync(token);
+                group.State = RuntimeGroupState.Stopped;
+            });
+
+            await authority.CompleteStopAsync(draining.GroupEpoch);
+
+            await using var verification = factory.CreateDbContext();
+            Assert.Equal(CommandStatus.Superseded, (await verification.CommandRecords.SingleAsync()).Status);
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
     [Fact]
     public async Task GroupLatchRequiresExplicitStartAndFencesOnDrain()
     {
