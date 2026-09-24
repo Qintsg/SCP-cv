@@ -124,25 +124,32 @@
 - **根因**：原先 `CompleteStopAsync` 只写运行组 `Stopped`，没有在 Supervisor 已确认整组退出后终结旧租约；重复调用时还会提前返回。
 - **规避/现状**：在已确认停机时将遗留 `Processing` 标为 `Superseded/runtime_group_stopped` 并清除 claim；重复停机也执行清理。`RuntimeAuthorityRepositoryTests` 两条红/绿回归通过，D4 旧命令 108/127 实测转为终态；不直接修改 SQLite。
 
-### 坑 13 - 原生播放的异步状态与前后端动作词汇不同步（2026-09-24 部分修复）
+### 坑 13 - 原生播放的异步状态与前后端动作词汇不同步（2026-09-24 修复）
 
 - **症状**：音频已播放且命令 `Completed`，页面仍显示 `loading`；PPT“上一页”返回 `invalid_navigation`；短视频结束后 API 继续显示 `playing`。
 - **根因**：LibVLC 的 `Play()` 在真正进入 `Playing` 前返回，首个音频快照因此是 `loading`；前端/API 文档发送 `prev`，服务层只识别 `previous`。视频自然结束没有后续状态上报路径。
-- **规避/现状**：音频命令等待适配器离开 `loading`，超时明确失败；REST 边界兼容 `prev`，对应自动测试与 D4 实测通过。**仍未修复**视频自然结束的状态回报，承接于 003/T136；不能仅凭 `playing` 断言视频仍在运动。
+- **规避/现状**：音频命令等待实际目标状态并使用 `SetPause(true)` 而非切换式 `Pause()`；REST 边界兼容 `prev`；视频自然结束使用 source generation fencing 主动上报 `stopped`，循环则重播。自动测试及 D4 声卡回录/实体画面复测见 `docs/qa/003-recovery-next-20260924.md`。不能仅凭 HTTP 已接受断言物理画面或声音正确。
 
 ### 坑 14 - 旧 Supervisor 清理会删除新运行组状态文件（2026-09-24 修复）
 
 - **症状**：D4 `/api/system/restart/` 返回新组已就绪，七个子进程仍在，但 `runtime-processes.json` 消失；后续 stop/restart 无法依据状态文件认领这些进程。
 - **根因**：重启启动了第二个 Supervisor；新组写入同一路径后，旧 Supervisor 处理旧子进程退出时无条件 `File.Delete`，删除了新组的文件。状态文件原先也通过 `File.Create` 原位写入，读者可能看到半文件。
 - **检出方式**：测试先写旧组、再写新组，模拟旧组清理；断言只允许完整 PID/启动时间/会话匹配的组删除，且新组内容保持完整。现场须同时核对状态文件、数据库 `Armed` 与进程树，不能只看 HTTP 成功。
-- **现状**：状态文件改为同目录原子发布，跨进程互斥保护读写删，删除前核对完整组身份。D4 原缺失文件经七个子进程的 PID/启动时间/会话及父进程逐一核验后短暂恢复，并通过受控 shutdown 停止旧组；部署新版本后还需复测重启竞态。停机另暴露项目自有 PowerPointHost 未退出（坑 15）。
+- **现状**：状态文件改为同目录原子发布，跨进程互斥保护读写删，删除前核对完整组身份。D4 原缺失文件经七个子进程的 PID/启动时间/会话及父进程逐一核验后短暂恢复，并通过受控 shutdown 停止旧组；新版本 API restart 实测旧组 0 残留、新组 7/7 且状态文件仍存在。停机另暴露项目自有 PowerPointHost 未退出（坑 15）。
 
 ### 坑 15 - PowerPointHost 被误当作用户 Office 保护，停机后残留（2026-09-24 部分修复）
 
 - **症状**：D4 运行组停机返回成功、数据库 `Stopped`，但项目自有 `ScpCv.PowerPointHost.exe` 仍存活；状态文件已删，后续启动可能与旧 Host 争用唯一槽。
 - **根因**：`ShutdownCoordinator` 将登记角色 `office` 整体排除强制退出；该角色实际是项目自有 Host，不是可能含用户文稿的 `POWERPNT.EXE`。
 - **检出方式**：停机后按已登记 PID、启动时间、可执行路径及父进程核对残留；测试用无窗口子进程模拟 Host 超时，并断言只结束 Host 本身。
-- **现状**：协作等待超时后定向结束项目 Host，不使用进程树强杀用户 Office。D4 旧 Host 已按精确身份核验后单独清理；自有 Presentation/Office COM 实例的持续归属问题仍由 T133/T143 跟进。
+- **现状**：协作等待超时后定向结束项目 Host，不使用进程树强杀用户 Office。D4 旧 Host 已按精确身份核验后单独清理，新版本正常停机/重启实测项目 Host 无残留；自有 Presentation/Office COM 实例的持续归属问题仍由 T133/T143 跟进。
+
+### 坑 16 - 媒体命令完成不等于实体画面持续有效（2026-09-24 修复视频路径）
+
+- **症状**：循环已开启的视频停在末帧、同源重复 OPEN 后实体屏幕黑屏；两种情形下 API 仍显示 `playing`。
+- **根因**：视频自然结束未进入 Worker→ControlHost 状态报告；`SET_LOOP` 在播放开始后才对 VLC Media 添加选项，不保证原生循环生效；重复 OPEN 在旧 VideoView 尚显示时重新创建 VLC 播放器。
+- **检出方式**：短视频叠加帧时钟，分别在自然结束前后、同源重复 OPEN 后抓取实体屏幕，核对帧计时/像素变化与 API；增加迟到 source generation、旧播放器结束回调不能改写新源的自动测试。
+- **现状**：OPEN 携带循环意图，结束回调按资源身份与代次重播或上报 stopped；同源 ID/revision/URI 复用当前播放器。D4 8 秒片循环后相隔 13 秒的画面不同，同源再开仍出画，不循环结束 API 为 stopped。长期私有内存/GPU 斜率仍由 T116/T129 验证。
 
 ## 3. 相关沉淀点（不在这里重复）
 

@@ -322,8 +322,9 @@ public sealed partial class PlayerRuntimeHost(
 
     private async Task HandleVlcEndedAsync(VlcMediaPlayer player, long generation)
     {
-        if (!ReferenceEquals(_current?.Native, player) || generation != _generation) return;
-        if (_loopEnabled)
+        var action = VlcEndPolicy.Decide(_current?.Native, player, _generation, generation, _loopEnabled);
+        if (action == VlcEndAction.Ignore) return;
+        if (action == VlcEndAction.Replay)
         {
             player.Stop();
             player.Time = 0;
