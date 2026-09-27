@@ -1,3 +1,4 @@
+// 独立 STA 中的 PowerPoint COM 放映、导航与归属清理。
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
@@ -12,7 +13,11 @@ public sealed record PowerPointOpenResult(
     nint SlideShowWindowHandle,
     int SlideCount,
     int ProcessId = 0,
-    DateTimeOffset ProcessStart = default);
+    DateTimeOffset ProcessStart = default,
+    int CurrentSlide = 1)
+{
+    public int ProjectedCurrentSlide => Math.Clamp(CurrentSlide, 1, Math.Max(1, SlideCount));
+}
 
 public sealed record PowerPointNavigationResult(bool Succeeded, int CurrentSlide);
 
@@ -213,9 +218,15 @@ public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
             var processStart = process is null
                 ? default
                 : new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero);
+            var currentSlide = 1;
+            try { currentSlide = (int)presentation.SlideShowWindow.View.CurrentShowPosition; }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine($"PowerPoint 初始页码读取失败，按第 1 页上报：{exception.Message}");
+            }
             _presentations[identity] = (presentation, path);
             openingPresentation = null;
-            return new(true, "ok", identity, handle, slides, (int)processId, processStart);
+            return new(true, "ok", identity, handle, slides, (int)processId, processStart, currentSlide);
         }
         catch (Exception exception)
         {

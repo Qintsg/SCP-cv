@@ -1,3 +1,4 @@
+// Office IPC 子操作、去重缓存及实际 COM 状态投影。
 using System.Collections.Concurrent;
 using System.IO;
 using System.Security.Cryptography;
@@ -116,6 +117,7 @@ public sealed class PowerPointOfficeRequestExecutor(
             presentation_identity = opened.PresentationIdentity,
             slideshow_hwnd = opened.SlideShowWindowHandle.ToInt64(),
             slide_count = opened.SlideCount,
+            current_slide = opened.ProjectedCurrentSlide,
             process_id = opened.ProcessId,
             process_start = opened.ProcessStart.ToString("O"),
             actual_dpi = attach.ActualDpi,

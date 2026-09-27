@@ -65,7 +65,7 @@ public sealed partial class PlayerRuntimeHost
         _officePresentationIdentity = Long(result.Result, "presentation_identity");
         _officeHostEpoch = Long(result.Result, "host_epoch");
         _officeSlotEpoch = Long(result.Result, "slot_epoch");
-        _currentSlide = Int(result.Result, "current_slide", Int(lease.Args, "target_slide", 1));
+        _currentSlide = Math.Max(1, Int(result.Result, "current_slide", 1));
         _totalSlides = Int(result.Result, "slide_count", 0);
         return new SurfaceResource("powerpoint", new Grid { Background = WpfBrushes.Black }, DisposePowerPointSurfaceAsync);
     }
