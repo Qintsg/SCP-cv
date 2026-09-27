@@ -44,3 +44,4 @@
 - 前端 `pnpm --dir frontend test` 42/42、`typecheck`、`build:web` 通过；Vite 仍提示主 chunk 超过 500 kB，为既有性能提醒，不影响构建。`redocly lint docs/openapi.yaml`、Spec Kit validator 与 `git diff --check` 通过；`PlayerRuntimeHost.cs` 有 Git CRLF→LF 的工作树提示，未见空白错误。
 - README、使用/维护、变更记录、已知硬件副作用清单、OpenAPI 与本规范已按新需求更新。历史 003/004 QA 报告保留作为旧版本审计，不将其中的四窗描述当作当前操作指引。
 - **仍未验收**：D4 两块大屏实体落位、两个既有预设真实画面、D4 上传转换/默认页图播放和原生实验模式、50 节点新手动映射帧抓包与真实设备确认，以及长时间混合稳定性。用户要求现场服务保持关闭；本轮未连接、启动、部署或向 D4 发包，后续需单独授权恢复现场测试。未知映射当前明确禁止下发。
+- 代码按运行时、前端/API 合同、用户文档分为 `8c16063`、`a5a4086`、`878314f` 三个提交；两处既有远端 `origin/main` 与 `gitlab/main` 均成功推送到 `878314f`。本机 `.validation/` 测试媒体、截图、日志和临时数据库未纳入提交；D4 服务及电源状态未改变。

@@ -92,7 +92,7 @@
 
 - [X] T040 更新 `docs/使用文档.md`、`docs/维护文档.md`、`docs/CHANGELOG.md`、`README.md` 与 `docs/known-pitfalls.md` 的当前两窗、电视电源、映射待抓包、PPT 和文件路径说明，保留历史 QA 审计。
 - [X] T041 运行 .NET 非 Physical 测试、前端 `pnpm test`/`typecheck`/构建、本机浏览器关键布局、Spec Kit 与 Redocly 校验；结果和未执行的 D4 实体门禁写入 `specs/005-big-screen-only/verification.md`。
-- [ ] T042 检查 `git diff --check`、敏感文件与 `.validation` 排除，在 `specs/005-big-screen-only/verification.md` 记录任务完成和剩余依赖；按项目格式分小提交并推送既有远端，不重启 D4 服务。
+- [X] T042 检查 `git diff --check`、敏感文件与 `.validation` 排除，在 `specs/005-big-screen-only/verification.md` 记录任务完成和剩余依赖；按项目格式分小提交并推送既有远端，不重启 D4 服务。
 
 ## Dependencies & Execution Order
 
