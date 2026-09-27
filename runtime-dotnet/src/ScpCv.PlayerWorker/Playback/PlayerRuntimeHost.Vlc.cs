@@ -43,7 +43,7 @@ public sealed partial class PlayerRuntimeHost
         {
             var generation = Volatile.Read(ref _generation);
             if (_window.Dispatcher.HasShutdownStarted) return;
-            _ = _window.Dispatcher.InvokeAsync(() => HandleVlcEndedAsync(player, generation));
+            _ = _window.Dispatcher.InvokeAsync(() => HandleVlcEndedAsync(player, media, generation));
         }
         player.EndReached += Ended;
         var view = new VideoView { MediaPlayer = player };
@@ -74,16 +74,15 @@ public sealed partial class PlayerRuntimeHost
         player.Dispose();
     }
 
-    private async Task HandleVlcEndedAsync(VlcMediaPlayer player, long generation)
+    private async Task HandleVlcEndedAsync(VlcMediaPlayer player, Media media, long generation)
     {
         var action = VlcEndPolicy.Decide(_current?.Native, player, _generation, generation, _loopEnabled);
         if (action == VlcEndAction.Ignore) return;
         if (action == VlcEndAction.Replay)
         {
-            // Stop() 会同步等待 VLC 线程；即使已投递到 WPF Dispatcher，结束回调未完全退出时仍可死锁。
-            // Ended 状态直接 Play() 会停在末帧，须先把播放位置复位，但不能同步 Stop()。
-            player.Time = 0;
-            if (player.Play()) return;
+            // Stop() 会同步等待 VLC 线程；结束时通过重新指定同一媒体重播，不调用 Stop()。
+            // 单独 Play() 或 Time=0 再 Play() 在 D4 均只改变状态，不再产生新视频帧。
+            if (player.Play(media)) return;
             _state = "error";
             _errorMessage = "video_loop_restart_failed";
         }
