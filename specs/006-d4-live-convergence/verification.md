@@ -56,6 +56,18 @@
 - PDF ID 42 在窗口 1 `playing/pdf`，页码经打开、next、goto 依次为 1/3、2/3、3/3；三个 D4 输出截图分别为蓝/绿/红的 `QA PDF PAGE 1/2/3`，与本机独立渲染源 PDF 的三页一致。网页 ID 43 打开本机 ControlHost 公开健康页后，窗口 1 截图实际显示 `Healthy`，会话为 `playing`。窗口 2 始终保持独立测试图，未观察到串台。
 - 在两个窗口持续播放时，D4 把旧源 ID 1 的 9 页测试 PPT 原件作为只读输入重新上传到 `media/QA-006-PPT-20260928/AllinOne.pptx`，新源 ID 44 返回 201 且原件目录正确，随后超过 45 秒仍 `queued`。代码追踪确定 `MediaPreparationService.ClaimNextAsync` 对**所有**作业要求两窗全空闲，现场长期播放导致 PPT 作业饥饿。新增“窗口 1 正在播图时仍可领取 PPT 转换”回归先红后绿；本机全部非 Physical .NET 302/302、前端 42/42、类型检查/Web 构建、Redocly 与 Spec Kit 校验通过。D4 更新到修复后须在仍有画面的条件下证明页图真实生成。
 
+## D4 并行 PPT 转换与默认页图复测（更新到 `92fb56b`）
+
+- 旧运行组经受认证 shutdown 后，两个 PlayerWorker、AudioWorker、PowerPointHost、Supervisor、MediaMTX 均退出，状态文件消失；再由精确 DataRoot 的脚本停止 ControlHost。D4 快进到 `92fb56b`，.NET Debug 与 pnpm Web 构建退出码 0；分阶段重启 ControlHost 与运行组到 epoch 57。
+- 升级启动时，先前排队的源 44 在空闲时准备为 `ready/9`。随后让窗口 1/2 分别保持图片源 39/40 `playing`，**在该条件下**再次上传原件为源 45：返回 `queued` 后转为 `ready/9`，两会话仍为 `playing`、源未切断。原件存于 `media/QA-006-PPT-20260928/AllinOne (2).pptx`，SHA-256 与旧源完全相同；制品有 `page-0001.png` 至 `page-0009.png`，PPT 资源接口返回 9 项；转换结束后 `POWERPNT` 进程数为 0。这是对排队修复的实体进程组证据，不只是单元测试。
+- 实验开关关闭时，窗口 1 打开源 45 后为 `playing`、1/9，NEXT 为 2/9，`POWERPNT` 数保持 0；D4 两张输出截图与其导出的第一页、第二页 PNG 逐一视觉一致。原始页图与屏幕截图在 D4 `qa-006/ppt45-pages-20260928.zip` 和本机忽略目录 `.validation/qa-d4-006/ppt45/`。
+- 同时发现会话的 `playback_mode` 返回空字符串，虽然页图已显示；根因是 ControlHost 把 `slide_images` 交给不识别下划线的枚举解析。新增真实投影→对外会话回归先红后绿，显式映射为 `SlideImages`。D4 当前截图来自修复前二进制，模式读回要在下次更新后复测。
+
+## 视频进度状态缺口（修复待 D4 更新）
+
+- D4 源 41 的两个屏幕截图存在不同视频帧，但在无新命令的 6 秒中会话 `position_ms=0/duration_ms=0`；发送不改变画面的循环设置后立即为 `42903/158322 ms`，随后 5 秒无命令又停在 `42903`。代码显示 VLC 时间只在命令结果快照和自然结束报告中采集，空闲循环仅发传输心跳，根因明确。
+- 新增真实 Named Pipe 集成测试，要求无新控制命令也能收到带 generation 的进度 `state_report`；测试先编译失败，接入可选周期采样后通过。全量非 Physical .NET 首跑 304 项中该新测试在并行条件下偶发失败、单独复跑通过；假服务器在回报后过早关闭管道有竞态，已改为等待测试取消后再关闭，目标测试再次通过。完整套件和 D4 连续进度仍待复跑，不能以单次目标测试宣布闭环。
+
 ## 待执行门禁
 
 - [x] D4 数据快照
