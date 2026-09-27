@@ -9,8 +9,6 @@ export default {
     bigLeftSubtitle: '双屏模式下的大屏左输出',
     bigRightTitle: '大屏右',
     bigRightSubtitle: '仅在双屏模式下可控',
-    tvLeftTitle: '电视左',
-    tvRightTitle: '电视右',
     routeTitle: '显示控制',
     windowEyebrow: 'Window {id}',
     windowUnknown: '未知窗口',
@@ -175,8 +173,6 @@ export default {
     winBig: '大屏',
     winBigLeft: '大屏左',
     winBigRight: '大屏右',
-    winTvLeft: 'TV左',
-    winTvRight: 'TV右',
     winFallback: '窗口 {id}',
   },
   pptRail: {

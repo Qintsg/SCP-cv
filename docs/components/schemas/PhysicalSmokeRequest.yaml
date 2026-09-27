@@ -2,11 +2,11 @@ type: object
 properties:
   windows:
     type: array
-    description: 要测试的窗口编号，默认 1-4 全部窗口
+    description: 要测试的大屏窗口编号，默认 1-2 全部窗口
     items:
       type: integer
       minimum: 1
-      maximum: 4
+      maximum: 2
   source_ids:
     type: object
     description: '按媒体源类型显式指定测试源 ID，例如 `{ "audio": 15, "ppt": 16 }`；audio 通过背景音乐通道测试，不打开到窗口'

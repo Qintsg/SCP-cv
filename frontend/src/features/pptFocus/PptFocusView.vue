@@ -152,10 +152,6 @@ const windowLabel = computed(() => {
       return runtimeStore.runtime?.big_screen_mode === 'double' ? t('pptFocus.winBigLeft') : t('pptFocus.winBig');
     case 2:
       return t('pptFocus.winBigRight');
-    case 3:
-      return t('pptFocus.winTvLeft');
-    case 4:
-      return t('pptFocus.winTvRight');
     default:
       return t('pptFocus.winFallback', { id: windowId.value });
   }

@@ -42,11 +42,15 @@ const routes: RouteRecordRaw[] = [
     redirect: () => resolveInitialRoute(getClientBuildTarget(), Boolean(loadStoredServerProfile())),
   },
   { path: '/dashboard', component: DashboardView, meta: { titleKey: 'nav.dashboard' } },
+  { path: '/display/tv-left', redirect: '/display/big-left' },
+  { path: '/display/tv-right', redirect: '/display/big-left' },
   {
     path: '/display/:target',
     component: DisplayControlView,
     meta: { titleKey: 'display.routeTitle' },
   },
+  { path: '/ppt-focus/3', redirect: '/display/big-left' },
+  { path: '/ppt-focus/4', redirect: '/display/big-left' },
   {
     path: '/ppt-focus/:windowId',
     component: PptFocusView,

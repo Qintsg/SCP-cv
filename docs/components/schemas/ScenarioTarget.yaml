@@ -9,6 +9,7 @@ properties:
     type: integer
     minimum: 1
     maximum: 4
+    description: 新预案仅使用 1-2；旧预案可只读返回历史 3-4 目标，但有效目标激活前会被拒绝
   source_state:
     $ref: ./SourceState.yaml
   source_id:

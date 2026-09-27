@@ -1,8 +1,8 @@
 in: path
 name: window_id
 required: true
-description: 窗口编号，当前有效范围为 1-4
+description: 大屏播放窗口编号，当前有效范围为 1-2；旧窗口 3/4 请求会被拒绝
 schema:
   type: integer
   minimum: 1
-  maximum: 4
+  maximum: 2

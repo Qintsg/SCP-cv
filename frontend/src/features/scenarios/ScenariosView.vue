@@ -18,7 +18,7 @@ import {
 import FIcon from '@/design-system/FIcon.vue';
 import ScenarioEditDrawer from './ScenarioEditDrawer.vue';
 import ScenarioPreviewDrawer from './ScenarioPreviewDrawer.vue';
-import { createEmptyDraft, type ScenarioDraft } from './scenarioModel';
+import { createEmptyDraft, hasRetiredActiveTargets, type ScenarioDraft } from './scenarioModel';
 import { useToast } from '@/composables/useToast';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useScenarioStore } from '@/stores/scenarios';
@@ -117,6 +117,10 @@ function onSaved(scenario: ScenarioItem): void {
 }
 
 async function activateScenario(scenario: ScenarioItem): Promise<void> {
+  if (hasRetiredActiveTargets(scenario)) {
+    toast.warning(t('scenarios.preview.legacyTitle'), t('scenarios.preview.legacyDescription'));
+    return;
+  }
   pendingActivateId.value = scenario.id;
   try {
     await scenarioStore.activate(scenario.id);

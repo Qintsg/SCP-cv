@@ -8,16 +8,16 @@
 
 **Goal**: 固定治理、范围和无现场副作用的验证边界。
 
-- [ ] T001 检查 `specs/005-big-screen-only/spec.md`、`plan.md` 与 `.specify/memory/constitution.md` 的两窗、电视电源、PPT、目录及抓包边界一致性。
-- [ ] T002 [P] 在 `specs/005-big-screen-only/verification.md` 记录本机现有 .NET/前端基线、D4 已停机状态和待执行的实体门禁。
+- [X] T001 检查 `specs/005-big-screen-only/spec.md`、`plan.md` 与 `.specify/memory/constitution.md` 的两窗、电视电源、PPT、目录及抓包边界一致性。
+- [X] T002 [P] 在 `specs/005-big-screen-only/verification.md` 记录本机现有 .NET/前端基线、D4 已停机状态和待执行的实体门禁。
 
 ## Phase 2: Foundational
 
 **Goal**: 建立共享两窗语义、可配置的两块大屏输出及安全错误语义，供各故事复用。
 
-- [ ] T003 在 `runtime-dotnet/src/ScpCv.Domain/Model/DomainPrimitives.cs` 建立唯一有效窗口 1/2 的规则，并在 `runtime-dotnet/tests/ScpCv.Domain.Tests/` 添加边界测试。
-- [ ] T004 在 `runtime-dotnet/src/ScpCv.Contracts/Http/PlaybackDtos.cs` 与 `frontend/src/services/api.ts` 对齐两窗、布局、PPT 准备状态和文件位置的合同类型，保留电视电源类型。
-- [ ] T005 在 `runtime-dotnet/src/ScpCv.ControlHost/appsettings.json` 与 `runtime-dotnet/src/ScpCv.Infrastructure/Playback/HostHardwareServices.cs` 定义显式大屏输出绑定及缺失时 fail-closed 规则，并补 `runtime-dotnet/tests/ScpCv.Windows.Tests/` 验证。
+- [X] T003 在 `runtime-dotnet/src/ScpCv.Domain/Model/DomainPrimitives.cs` 建立唯一有效窗口 1/2 的规则，并在 `runtime-dotnet/tests/ScpCv.Domain.Tests/` 添加边界测试。
+- [X] T004 在 `runtime-dotnet/src/ScpCv.Contracts/Http/PlaybackDtos.cs` 与 `frontend/src/services/api.ts` 对齐两窗、布局、PPT 准备状态和文件位置的合同类型，保留电视电源类型。
+- [X] T005 在 `runtime-dotnet/src/ScpCv.ControlHost/appsettings.json` 与 `runtime-dotnet/src/ScpCv.Infrastructure/Playback/BigScreenOutputOptions.cs` 定义显式大屏输出绑定及缺失时 fail-closed 规则，并补 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/BigScreenOutputOptionsTests.cs` 与 `runtime-dotnet/tests/ScpCv.Integration.Tests/HostHardwareIntegrationTests.cs` 验证。
 
 ## Phase 3: User Story 2 - 退役小电视播放能力 (P1)
 
@@ -25,14 +25,14 @@
 
 **Independent Test**: 本机启动模拟组后只有两个播放器角色与会话；旧窗口调用均拒绝且不入队；电源设备列表仍有三设备。
 
-- [ ] T006 [P] [US2] 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/LegacyHttpContractTests.cs` 与 `DeviceAndSystemEndpointTests.cs` 先写两窗/旧窗口拒绝及电视电源保留回归。
-- [ ] T007 [P] [US2] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/RuntimePipeBrokerTests.cs` 先写仅 player-1/2 的就绪和拒绝 player-3/4 回归。
-- [ ] T008 [US2] 将 `runtime-dotnet/src/ScpCv.Supervisor/Runtime/RuntimeLauncher.cs`、`Windows/DisplayTopologyService.cs` 与 `runtime-dotnet/src/ScpCv.PlayerWorker/App.xaml.cs` 收缩到两播放器、两块允许输出。
-- [ ] T009 [US2] 将 `runtime-dotnet/src/ScpCv.ControlHost/Ipc/RuntimePipeBroker.cs`、`RuntimeMessageDispatcher.cs` 的角色与目标白名单收缩到两窗。
-- [ ] T010 [US2] 将 `runtime-dotnet/src/ScpCv.Infrastructure/Playback/RuntimeStateService.cs`、`Commands/CommandRepository.cs`、`Persistence/DatabaseInitializer.cs` 的新会话、快照、重置和命令限制为 1/2，保留旧数据库 3/4 行但不对外呈现或执行。
-- [ ] T011 [US2] 将 `frontend/src/features/display/displayTargets.ts`、`frontend/src/layouts/navItems.ts`、`frontend/src/router/index.ts`、`frontend/src/features/sources/SourcesView.vue` 的播放入口收缩为两窗；旧路由只重定向到大屏。
-- [ ] T012 [US2] 将 `frontend/src/stores/sessions.ts` 的服务端快照作为有效窗口权威集合，清除本地旧 3/4 会话；清理 `frontend/src/locales/zh-CN/` 中小电视播放文案但保留电视电源文案。
-- [ ] T013 [US2] 更新 `docs/components/parameters/WindowId.yaml`、`docs/components/schemas/ScenarioTarget.yaml` 和相关 OpenAPI 窗口范围，并运行两窗合同测试。
+- [X] T006 [P] [US2] 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/LegacyHttpContractTests.cs`、`PlaybackEndpointTests.cs` 与 `DeviceAndSystemEndpointTests.cs` 写两窗/旧窗口拒绝及电视电源保留回归。
+- [X] T007 [P] [US2] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/RuntimePipeBrokerTests.cs` 写仅 player-1/2 的就绪回归。
+- [X] T008 [US2] 将 `runtime-dotnet/src/ScpCv.Supervisor/Runtime/RuntimeLauncher.cs` 与 `runtime-dotnet/src/ScpCv.PlayerWorker/App.xaml.cs` 收缩到两播放器、两块显式绑定的大屏输出。
+- [X] T009 [US2] 将 `runtime-dotnet/src/ScpCv.ControlHost/Ipc/RuntimePipeBroker.cs`、`RuntimeMessageDispatcher.cs` 的角色与目标白名单收缩到两窗。
+- [X] T010 [US2] 将 `runtime-dotnet/src/ScpCv.Infrastructure/Playback/RuntimeStateService.cs`、`Commands/CommandRepository.cs`、`Persistence/DatabaseInitializer.cs` 的新会话、快照、重置和命令限制为 1/2，保留旧数据库 3/4 行但不对外呈现或执行。
+- [X] T011 [US2] 将 `frontend/src/features/display/displayTargets.ts`、`frontend/src/layouts/navItems.ts`、`frontend/src/router/index.ts`、`frontend/src/features/sources/SourcesView.vue` 的播放入口收缩为两窗；旧路由只重定向到大屏。
+- [X] T012 [US2] 将 `frontend/src/stores/sessions.ts` 的服务端快照作为有效窗口权威集合，清除本地旧 3/4 会话；清理 `frontend/src/locales/zh-CN/` 中小电视播放文案但保留电视电源文案。
+- [X] T013 [US2] 更新 `docs/components/parameters/WindowId.yaml`、`docs/components/schemas/ScenarioTarget.yaml` 和相关 OpenAPI 窗口范围，并运行两窗合同测试及 Redocly 校验。
 
 ## Phase 4: User Story 3 - 安全处理旧配置 (P1)
 
@@ -40,10 +40,10 @@
 
 **Independent Test**: 旧预案含 3/4 有效目标时拒绝，墙面和 1/2 会话无变化；只含 1/2 时照常执行。
 
-- [ ] T014 [P] [US3] 在 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/ScenarioServiceTests.cs` 增加旧 3/4 预案先拒绝、无副作用与 unset 兼容测试。
-- [ ] T015 [US3] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Scenarios/ScenarioService.cs` 统一新目标校验与旧预案激活前预检，禁止静默跳过退役目标。
-- [ ] T016 [US3] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Commands/CommandRepository.cs` 与运行组停机清理路径将历史未完成 3/4 命令显式终结为退役状态，不再唤醒不存在的 Worker。
-- [ ] T017 [US3] 在 `frontend/src/features/scenarios/scenarioModel.ts`、`ScenarioEditDrawer.vue`、`ScenarioPreviewDrawer.vue` 只编辑 1/2，并对含有效旧目标的预案显示只读警告和明确清除确认。
+- [X] T014 [P] [US3] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/HostHardwareIntegrationTests.cs` 增加旧 3/4 预案先拒绝、无副作用与 unset 兼容测试。
+- [X] T015 [US3] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Scenarios/ScenarioService.cs` 统一新目标校验与旧预案激活前预检，禁止静默跳过退役目标。
+- [X] T016 [US3] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Persistence/DatabaseInitializer.cs` 将历史未完成 3/4 命令显式终结为退役状态，不再唤醒不存在的 Worker。
+- [X] T017 [US3] 在 `frontend/src/features/scenarios/scenarioModel.ts`、`ScenarioEditDrawer.vue`、`ScenarioPreviewDrawer.vue` 只编辑 1/2，并对含有效旧目标的预案显示只读警告和明确清除确认。
 
 ## Phase 5: User Story 1 - 控制两块大屏与手动映射 (P1)
 

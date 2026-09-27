@@ -1,5 +1,5 @@
 /*
- * 播放会话 Store：每个窗口（1-4）的源、状态、音量、循环。
+ * 播放会话 Store：两块大屏窗口（1-2）的源、状态、音量、循环。
  * 与 SSE 推送强联动：runtime.connectEvents 会调用 applyRemoteSessions 把
  * 服务端推送的最新快照写入本 store，所有 UI 直接订阅。
  */
@@ -8,7 +8,7 @@ import { defineStore } from 'pinia';
 import { api, type SessionSnapshot } from '@/services/api';
 
 interface SessionState {
-  /** 后端返回的四个窗口会话；首次启动前为空数组。 */
+  /** 后端返回的两个大屏窗口会话；首次启动前为空数组。 */
   sessions: SessionSnapshot[];
 }
 
@@ -67,7 +67,7 @@ export const useSessionStore = defineStore('sessions', {
       const session = this.sessions.find((item) => item.window_id === windowId);
       if (!session?.player_online) throw new Error('PlayerWorker 当前离线，已拒绝发送控制命令。');
     },
-    /** 拉取最新四窗口快照，常用于初始化和兜底重试。 */
+    /** 拉取最新两窗口快照，常用于初始化和兜底重试。 */
     async refresh(): Promise<void> {
       const payload = await api.listSessions();
       this.applyRemoteSessions(payload.sessions);
@@ -75,15 +75,11 @@ export const useSessionStore = defineStore('sessions', {
     /** SSE 推送或 REST 返回时统一入口。 */
     applyRemoteSessions(sessions: SessionSnapshot[]): void {
       const existingByWindow = new Map(this.sessions.map((session) => [session.window_id, session]));
-      const incomingWindowIds = new Set(sessions.map((session) => session.window_id));
-      const mergedSessions = sessions.map((session) => {
+      const mergedSessions = sessions.filter((session) => session.window_id === 1 || session.window_id === 2).map((session) => {
         const existingSession = existingByWindow.get(session.window_id);
         return existingSession ? newerOrSameSession(session, existingSession) : session;
       });
 
-      this.sessions
-        .filter((session) => !incomingWindowIds.has(session.window_id))
-        .forEach((session) => mergedSessions.push(session));
       this.sessions = mergedSessions.sort((left, right) => left.window_id - right.window_id);
     },
     async openSource(windowId: number, sourceId: number, autoplay = true, targetSlide = 0): Promise<void> {

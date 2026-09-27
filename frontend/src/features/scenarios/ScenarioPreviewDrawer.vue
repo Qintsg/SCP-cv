@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
- * 预案预览抽屉：列出四窗口配置；
+ * 预案预览抽屉：只列出两块大屏窗口，并提示旧电视目标。
  * 桌面 480 px 右侧 Drawer，移动端自动改全屏 Sheet。
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
+  NAlert,
   NButton,
   NCard,
   NDrawer,
@@ -20,6 +21,7 @@ import { useRuntimeStore } from '@/stores/runtime';
 import { useScenarioStore } from '@/stores/scenarios';
 import { useSourceStore } from '@/stores/sources';
 import { formatRelativeTime } from '@/design-system/utils';
+import { hasRetiredActiveTargets } from './scenarioModel';
 import type { ScenarioItem, ScenarioTargetItem } from '@/services/api';
 
 interface ScenarioPreviewDrawerProps {
@@ -42,6 +44,7 @@ const dialog = useDialog();
 const toast = useToast();
 const isActivating = ref(false);
 const isPinning = ref(false);
+const hasLegacyTargets = computed(() => Boolean(props.scenario && hasRetiredActiveTargets(props.scenario)));
 
 type NTagType = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
 
@@ -63,8 +66,8 @@ const orderedTargets = computed<ScenarioTargetItem[]>(() => {
   if (!props.scenario) return [];
   const relevantWindowIds =
     props.scenario.big_screen_mode === 'single' && props.scenario.big_screen_mode_state !== 'unset'
-      ? [1, 3, 4]
-      : [1, 2, 3, 4];
+      ? [1]
+      : [1, 2];
   const map = new Map<number, ScenarioTargetItem>();
   props.scenario.targets.forEach((target) => map.set(target.window_id, target));
   return relevantWindowIds.map((wid) => map.get(wid) ?? ({
@@ -84,10 +87,6 @@ function windowLabel(windowId: number, isSingle: boolean): string {
       return t('scenarios.preview.winBigLeft');
     case 2:
       return t('scenarios.preview.winBigRight');
-    case 3:
-      return t('scenarios.preview.winTvLeft');
-    case 4:
-      return t('scenarios.preview.winTvRight');
     default:
       return t('scenarios.preview.winFallback', { id: windowId });
   }
@@ -130,6 +129,7 @@ function targetIcon(target: ScenarioTargetItem): string {
 
 async function activate(): Promise<void> {
   if (!props.scenario) return;
+  if (hasLegacyTargets.value) return;
   isActivating.value = true;
   try {
     await scenarioStore.activate(props.scenario.id);
@@ -192,6 +192,9 @@ void runtime;
   <n-drawer v-model:show="isOpen" width="min(520px, 100vw)" placement="right">
     <n-drawer-content :title="scenario?.name ?? t('scenarios.preview.title')" closable>
       <p class="scenario-preview__meta">{{ meta }}</p>
+      <n-alert v-if="hasLegacyTargets" type="warning" :title="t('scenarios.preview.legacyTitle')">
+        {{ t('scenarios.preview.legacyDescription') }}
+      </n-alert>
 
       <div class="scenario-preview__matrix" :class="{ 'scenario-preview__matrix--single': isSingleScreenMode }">
         <n-card v-for="target in orderedTargets" :key="target.window_id" size="small">
@@ -240,7 +243,7 @@ void runtime;
             <template #icon><FIcon name="edit_24_regular" /></template>
             {{ t('common.edit') }}
           </n-button>
-          <n-button type="primary" :loading="isActivating" @click="activate">
+          <n-button type="primary" :loading="isActivating" :disabled="hasLegacyTargets" @click="activate">
             <template #icon><FIcon name="play_24_regular" /></template>
             {{ t('scenarios.preview.activate') }}
           </n-button>

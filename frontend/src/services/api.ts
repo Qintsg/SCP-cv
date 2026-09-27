@@ -1,3 +1,4 @@
+/** 共享控制端使用的 REST 合同与请求封装。 */
 import { t } from '@/locales';
 import {
   clientConnection,
@@ -10,6 +11,7 @@ export interface MediaFolderItem {
   id: number;
   name: string;
   parent_id: number | null;
+  relative_path?: string;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +38,8 @@ export interface MediaSourceItem {
   keep_alive: boolean;
   /** 演示文稿播放模式：pdf / powerpoint；其它类型为空字符串。 */
   playback_mode: string;
+  preparation_state?: string;
+  page_count?: number;
   preview_url: string;
   thumbnail_url: string;
   preview_kind: 'icon' | 'image' | 'video';
@@ -156,6 +160,26 @@ export interface DisplayTargetItem {
   x: number;
   y: number;
   is_primary: boolean;
+  playback_role?: 'big_left' | 'big_right' | '';
+  is_playback_target?: boolean;
+}
+
+export type PlaybackWindowId = 1 | 2;
+
+export type VideoWallInputKind = 'window_1' | 'window_2' | 'laptop' | 'ip_stream';
+export type VideoWallRegion = 'fullscreen' | 'left' | 'right';
+
+export interface VideoWallMappingItem {
+  region: VideoWallRegion;
+  input: { kind: VideoWallInputKind; ip_address?: string };
+}
+
+export interface VideoWallLayoutItem {
+  name: string;
+  preset: 'window_1_fullscreen' | 'window_1_left_window_2_right' | '';
+  mappings: VideoWallMappingItem[];
+  can_apply: boolean;
+  unavailable_reason: string;
 }
 
 export interface DeviceItem {

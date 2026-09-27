@@ -4,7 +4,7 @@
  *   - 桌面：左侧类型 NavList + 右侧 DetailList；
  *   - 移动：顶部类型 Pills（横滑） + 卡片列表 + 右下 FAB（添加源 Sheet）。
  *
- * 行末菜单只保留：打开到窗口 1/2/3/4、编辑、下载（仅文件型）、删除。
+ * 行末菜单只保留：打开到大屏窗口 1/2、编辑、下载（仅文件型）、删除。
  */
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -197,7 +197,7 @@ function buildRowMenu(source: MediaSourceItem): DropdownOption[] {
         label: t('sources.openToWindow'),
         key: 'open-group',
         disabled: !source.is_available,
-        children: [1, 2, 3, 4].map((windowId) => ({
+        children: [1, 2].map((windowId) => ({
           label: t('sources.window', { id: windowId }),
           key: `open-${windowId}`,
           icon: renderIcon('open_24_regular'),

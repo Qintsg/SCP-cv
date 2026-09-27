@@ -4,7 +4,7 @@
  *   - 三态 source_state（unset 保持 / empty 黑屏 / set 切换）严格对应后端字段。
  */
 import { t } from '@/locales';
-import type { ScenarioItem, ScenarioPayload } from '@/services/api';
+import type { ScenarioItem, ScenarioPayload, ScenarioTargetItem } from '@/services/api';
 
 export type ScenarioWindowMode = 'unset' | 'empty' | 'set';
 
@@ -26,9 +26,11 @@ export interface ScenarioDraft {
   volumeState: ScenarioWindowMode;
   volumeLevel: number;
   windows: ScenarioWindowDraft[];
+  /** 仅供旧预案迁移提示；保存时必须经用户确认后清除。 */
+  retiredTargets: ScenarioTargetItem[];
 }
 
-const DEFAULT_WINDOWS: ScenarioWindowDraft[] = [1, 2, 3, 4].map((windowId) => ({
+const DEFAULT_WINDOWS: ScenarioWindowDraft[] = [1, 2].map((windowId) => ({
   windowId,
   sourceState: 'unset',
   sourceId: null,
@@ -50,6 +52,7 @@ export function createEmptyDraft(): ScenarioDraft {
     volumeState: 'unset',
     volumeLevel: 100,
     windows: DEFAULT_WINDOWS.map((win) => ({ ...win })),
+    retiredTargets: [],
   };
 }
 
@@ -61,6 +64,7 @@ export function createEmptyDraft(): ScenarioDraft {
 export function fromScenarioItem(item: ScenarioItem): ScenarioDraft {
   const targets = new Map<number, ScenarioWindowDraft>();
   for (const target of item.targets) {
+    if (target.window_id !== 1 && target.window_id !== 2) continue;
     targets.set(target.window_id, {
       windowId: target.window_id,
       sourceState: target.source_state,
@@ -77,13 +81,14 @@ export function fromScenarioItem(item: ScenarioItem): ScenarioDraft {
     bigScreenMode: item.big_screen_mode,
     volumeState: item.volume_state,
     volumeLevel: item.volume_level,
-    windows: [1, 2, 3, 4].map((windowId) => targets.get(windowId) ?? {
+    windows: [1, 2].map((windowId) => targets.get(windowId) ?? {
       windowId,
       sourceState: 'unset',
       sourceId: null,
       autoplay: false,
       resume: false,
     }),
+    retiredTargets: item.targets.filter((target) => target.window_id !== 1 && target.window_id !== 2 && target.source_state !== 'unset'),
   };
 }
 
@@ -101,7 +106,7 @@ export function toScenarioPayload(draft: ScenarioDraft): ScenarioPayload {
     big_screen_mode: draft.bigScreenMode,
     volume_state: draft.volumeState,
     volume_level: draft.volumeLevel,
-    targets: draft.windows.map((win) => ({
+    targets: draft.windows.filter((win) => win.windowId === 1 || win.windowId === 2).map((win) => ({
       window_id: win.windowId,
       source_state: win.sourceState,
       source_id: win.sourceState === 'set' ? win.sourceId ?? undefined : undefined,
@@ -109,6 +114,11 @@ export function toScenarioPayload(draft: ScenarioDraft): ScenarioPayload {
       resume: win.resume,
     })),
   };
+}
+
+/** 旧预案是否仍会对已退役的小电视窗口产生播放副作用。 */
+export function hasRetiredActiveTargets(item: ScenarioItem): boolean {
+  return item.targets.some((target) => target.window_id !== 1 && target.window_id !== 2 && target.source_state !== 'unset');
 }
 
 /**

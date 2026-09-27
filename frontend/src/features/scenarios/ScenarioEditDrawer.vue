@@ -10,6 +10,7 @@ import {
   NAlert,
   NButton,
   NCard,
+  NCheckbox,
   NDrawer,
   NDrawerContent,
   NFormItem,
@@ -60,6 +61,7 @@ const toast = useToast();
 const draft = ref<ScenarioDraft>(createEmptyDraft());
 const errorMessage = ref('');
 const saving = ref(false);
+const confirmRetiredTargetRemoval = ref(false);
 
 const isOpen = computed({
   get: () => props.open,
@@ -78,6 +80,7 @@ watch(
       draft.value = createEmptyDraft();
     }
     errorMessage.value = '';
+    confirmRetiredTargetRemoval.value = false;
   },
 );
 
@@ -126,10 +129,6 @@ function windowLabel(windowId: number): string {
       return t('scenarios.edit.winBigLeft');
     case 2:
       return t('scenarios.edit.winBigRight');
-    case 3:
-      return t('scenarios.edit.winTvLeft');
-    case 4:
-      return t('scenarios.edit.winTvRight');
     default:
       return t('scenarios.edit.winFallback', { id: windowId });
   }
@@ -175,6 +174,10 @@ const bigScreenSegmentValue = computed<ScenarioWindowMode>({
 async function save(): Promise<void> {
   errorMessage.value = validateName(draft.value.name);
   if (errorMessage.value) return;
+  if (draft.value.retiredTargets.length > 0 && !confirmRetiredTargetRemoval.value) {
+    errorMessage.value = t('scenarios.edit.legacyConfirmRequired');
+    return;
+  }
 
   for (const window of draft.value.windows) {
     if (window.sourceState === 'set' && (window.sourceId === null || window.sourceId === undefined || window.sourceId < 1)) {
@@ -208,6 +211,13 @@ function close(): void {
   <n-drawer v-model:show="isOpen" width="min(520px, 100vw)" placement="right">
     <n-drawer-content :title="scenario ? t('scenarios.edit.titleEdit') : t('scenarios.edit.titleCreate')" closable>
       <p class="scenario-edit__desc">{{ t('scenarios.edit.desc') }}</p>
+
+      <n-alert v-if="draft.retiredTargets.length" type="warning" :title="t('scenarios.edit.legacyTitle')" class="scenario-edit__card">
+        {{ t('scenarios.edit.legacyDescription', { windows: draft.retiredTargets.map((target) => target.window_id).join('、') }) }}
+        <n-checkbox v-model:checked="confirmRetiredTargetRemoval" class="scenario-edit__legacy-confirm">
+          {{ t('scenarios.edit.legacyConfirm') }}
+        </n-checkbox>
+      </n-alert>
 
       <n-card size="small" :title="t('scenarios.edit.basic')" class="scenario-edit__card">
         <n-form-item :label="t('scenarios.edit.name')" required>
@@ -302,6 +312,11 @@ function close(): void {
   margin: 0 0 var(--spacingVerticalM);
   color: var(--colorNeutralForeground2);
   font-size: var(--fontSizeBase200);
+}
+
+.scenario-edit__legacy-confirm {
+  display: block;
+  margin-top: var(--spacingVerticalS);
 }
 
 .scenario-edit__card {
