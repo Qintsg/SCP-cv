@@ -66,13 +66,13 @@
 
 **Independent Test**: 用本机 `C:\Users\qintsg\Desktop\Resources\AllinOne.pptx` 的副本上传，页图数量和顺序正确；默认打开/翻页不调用放映；实验开关在多个客户端状态一致。
 
-- [ ] T026 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/` 写上传转换作业、失败重试、默认页图播放与实验开关合同测试，使用本机测试素材副本或生成小文稿。
-- [ ] T027 [US4] 在 `runtime-dotnet/src/ScpCv.Contracts/` 与 `ScpCv.PowerPointHost/Interop/PowerPointComAdapter.cs` 增加独立 STA 的逐页 PNG 导出命令，不进入 SlideShow；补 Office 隔离/归属测试。
-- [ ] T028 [US4] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaPreparationService.cs`、`MediaSourceService.Ppt.cs` 实现版本化页图作业、清单、失败状态与重试；新上传和旧 PPT 源可触发准备但不删原件。
-- [ ] T029 [US4] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/` 实现页图显示、前后/指定页导航及会话 `slide_images` 状态；已有 PDF/PPT 控制仍按真实模式映射能力。
-- [ ] T030 [US4] 在 `runtime-dotnet/src/ScpCv.ControlHost/Endpoints/` 与配置持久层加入默认关闭的实验性 PowerPoint 开关，只有开启后才允许原生放映，且仅影响后续打开。
-- [ ] T031 [US4] 在 `frontend/src/features/settings/`、`frontend/src/features/sources/`、`frontend/src/features/display/` 展示转换状态、默认页图模式与实验性警告/开关，更新前端合同类型和测试。
-- [ ] T032 [US4] 用本机素材副本和模拟 Office 适配器执行完整上传、默认播放、翻页、失败重试测试；D4 Office 实机留待用户恢复现场测试。
+- [X] T026 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/` 写上传转换作业、失败重试、默认页图播放与实验开关合同测试，使用本机测试素材副本或生成小文稿。
+- [X] T027 [US4] 在 `runtime-dotnet/src/ScpCv.Contracts/` 与 `ScpCv.PowerPointHost/Interop/PowerPointComAdapter.cs` 增加独立 STA 的逐页 PNG 导出命令，不进入 SlideShow；补 Office 隔离/归属测试。
+- [X] T028 [US4] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaPreparationService.cs`、`MediaSourceService.Ppt.cs` 实现版本化页图作业、清单、失败状态与重试；新上传和旧 PPT 源可触发准备但不删原件。
+- [X] T029 [US4] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/` 实现页图显示、前后/指定页导航及会话 `slide_images` 状态；已有 PDF/PPT 控制仍按真实模式映射能力。
+- [X] T030 [US4] 在 `runtime-dotnet/src/ScpCv.ControlHost/Endpoints/` 与配置持久层加入默认关闭的实验性 PowerPoint 开关，只有开启后才允许原生放映，且仅影响后续打开。
+- [X] T031 [US4] 在 `frontend/src/features/settings/`、`frontend/src/features/sources/`、`frontend/src/features/display/` 展示转换状态、默认页图模式与实验性警告/开关，更新前端合同类型和测试。
+- [X] T032 [US4] 用本机素材副本和模拟 Office 适配器执行完整上传、默认播放、翻页、失败重试测试；D4 Office 实机留待用户恢复现场测试。
 
 ## Phase 7: User Story 5 - 媒体按用户文件夹存储与转移 (P1)
 
@@ -80,18 +80,18 @@
 
 **Independent Test**: 根级、中文子目录、同名、重命名与移动后实体路径和下载哈希一致，故障时不出现假成功。
 
-- [ ] T033 [P] [US5] 在 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/` 写路径穿越、Windows 保留名、同名不覆盖、文件及目录移动补偿测试。
-- [ ] T034 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/` 实现从 FolderId 层级到受管理路径的解析器、合法化与稳定冲突命名，禁止越出媒体根目录。
-- [ ] T035 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.cs` 将新上传落盘从日期/散列目录改为页面文件夹路径，并在成功写库前完成 staging/摘要/物理落盘。
-- [ ] T036 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.Support.cs` 实现媒体源移动/改名与文件路径、版本和衍生页图的原子或补偿更新；正在播放的文件移动须明确拒绝。
-- [ ] T037 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/` 实现文件夹重命名、层级移动、删除前校验及子树文件路径更新，不自动批量迁移旧目录。
-- [ ] T038 [US5] 在 `frontend/src/features/sources/` 与 `frontend/src/stores/sources.ts` 增加文件夹移动入口、真实路径反馈和冲突错误；修正根目录筛选及跨文件夹选源。
-- [ ] T039 [US5] 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/MediaEndpointTests.cs` 与 `frontend/scripts/` 完成上传/移动/下载哈希合同回归。
+- [X] T033 [P] [US5] 在 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/` 写路径穿越、Windows 保留名、同名不覆盖、文件及目录移动补偿测试。
+- [X] T034 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/` 实现从 FolderId 层级到受管理路径的解析器、合法化与稳定冲突命名，禁止越出媒体根目录。
+- [X] T035 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.cs` 将新上传落盘从日期/散列目录改为页面文件夹路径，并在成功写库前完成 staging/摘要/物理落盘。
+- [X] T036 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.Support.cs` 实现媒体源移动与文件路径、衍生页图引用的原子或补偿更新；正在播放的文件移动须明确拒绝。
+- [X] T037 [US5] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/` 实现文件夹重命名、层级移动、删除前校验及子树文件路径更新，不自动批量迁移旧目录。
+- [X] T038 [US5] 在 `frontend/src/features/sources/` 与 `frontend/src/stores/sources.ts` 增加文件夹移动入口、真实路径反馈和冲突错误；修正根目录筛选及跨文件夹选源。
+- [X] T039 [US5] 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/MediaEndpointTests.cs`、`frontend/scripts/` 与本机浏览器完成上传/移动/下载哈希合同回归。
 
 ## Final Phase: Polish & Cross-Cutting
 
-- [ ] T040 更新 `docs/使用文档.md`、`docs/维护文档.md`、`docs/CHANGELOG.md`、`README.md` 与 `docs/known-pitfalls.md` 的当前两窗、电视电源、映射待抓包、PPT 和文件路径说明，保留历史 QA 审计。
-- [ ] T041 运行 .NET 非 Physical 测试、前端 `pnpm test`/`typecheck`/构建、本机浏览器关键布局、Spec Kit 与 Redocly 校验；结果和未执行的 D4 实体门禁写入 `specs/005-big-screen-only/verification.md`。
+- [X] T040 更新 `docs/使用文档.md`、`docs/维护文档.md`、`docs/CHANGELOG.md`、`README.md` 与 `docs/known-pitfalls.md` 的当前两窗、电视电源、映射待抓包、PPT 和文件路径说明，保留历史 QA 审计。
+- [X] T041 运行 .NET 非 Physical 测试、前端 `pnpm test`/`typecheck`/构建、本机浏览器关键布局、Spec Kit 与 Redocly 校验；结果和未执行的 D4 实体门禁写入 `specs/005-big-screen-only/verification.md`。
 - [ ] T042 检查 `git diff --check`、敏感文件与 `.validation` 排除，在 `specs/005-big-screen-only/verification.md` 记录任务完成和剩余依赖；按项目格式分小提交并推送既有远端，不重启 D4 服务。
 
 ## Dependencies & Execution Order

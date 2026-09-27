@@ -1,6 +1,6 @@
 # SCP-cv
 
-SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和多个独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源，并输出到四个物理窗口。
+SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
 ## 项目信息
 
@@ -20,7 +20,7 @@ Vue 3 + Tailwind CSS 4 + Pinia + Vite（Web / Electron / Capacitor）
                          │ REST / SSE
 ASP.NET Core ControlHost（SQLite + EF Core + 持久命令队列）
                          │ Named Pipe
-Windows Supervisor ─┬─ PlayerWorker × 4（WPF / VLC / WebView2 / PDF）
+Windows Supervisor ─┬─ PlayerWorker × 2（WPF / VLC / WebView2 / PDF / PPT 页图）
                     ├─ AudioWorker
                     ├─ PowerPointHost（唯一 STA / COM 槽）
                     └─ MediaMTX
@@ -31,10 +31,10 @@ ControlHost 是业务数据库的唯一写入者。控制端只访问 REST/SSE�
 ## 环境要求
 
 - Windows 10/11 x64 与交互式桌面
-- [.NET SDK 10.0.400](runtime-dotnet/global.json)
+- [.NET SDK 10.0.400](global.json)
 - Node.js 22 或更高版本
 - pnpm 11（仓库 `packageManager` 字段固定版本；不要使用 npm 安装依赖）
-- Microsoft PowerPoint
+- Microsoft PowerPoint（仅 PPT 上传转换需要；原生放映为设置中的实验性选项）
 - VLC/libVLC Windows x64 运行时
 - MediaMTX Windows x64
 
@@ -122,7 +122,7 @@ py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
 pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 ```
 
-本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、四屏/Office/VLC/MediaMTX/音频 60 分钟混合测试和性能基准需要专用工作站，不能用 Simulation 结果替代。
+本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、两块大屏/Office/VLC/MediaMTX/音频长稳测试和性能基准需要专用工作站，不能用 Simulation 结果替代。未知协议的手动墙面映射只能保存与预览，不能向实体节点下发；仅“窗口 1 全屏”和“窗口 1 左、窗口 2 右”两个已知预设可执行。
 
 ## 数据边界
 
@@ -136,6 +136,7 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 - [已知坑与物理副作用路径](docs/known-pitfalls.md)
 - [.NET 重构规范](specs/003-dotnet-runtime-refactor/spec.md)
 - [视频墙控制规范](specs/004-video-wall-control/spec.md)
+- [大屏专用与媒体整理规范](specs/005-big-screen-only/spec.md)
 - [变更记录](docs/CHANGELOG.md)
 
 ## 许可证

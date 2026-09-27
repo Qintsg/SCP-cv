@@ -29,3 +29,18 @@
 - 旧“窗口 1 全屏”与“窗口 1 左／窗口 2 右”通过统一布局应用入口返回当前运行态和两会话；原 `/api/runtime/` 作为兼容预设入口保留。手写 EF 迁移在从上一版 schema 升级的本机数据库上保留 `Double` 与音量 77，并添加空草稿字段。
 - 本机真实 Chromium 对桌面与 390px 手机视口验证：两窗导航、固定预设文案、左右墙面预览、保存“现场笔记本左／自定义 IP 流右”并从 API 读回，应用按钮禁用；无横向溢出或浏览器控制台错误。截图保存在忽略目录 `.validation/qa-big-screen-20260927/mapping-*.png`。测试 ControlHost/Vite 每次按创建 PID 关闭；D4 服务未启动。
 - 这一阶段最新 .NET 非 Physical 257/257、前端 `pnpm test` 40/40、类型检查/Web 构建、Redocly lint 和 Spec Kit 校验通过；Vite 仍有 >500 kB chunk 警告。浏览器测试第一次误选左侧下拉框，增加左右区域与 API 映射值断言后重新通过，这是测试定位器问题，不是产品映射缺陷。D4 两个固定预设的实体墙面画面与新布局控制帧仍未验收。
+
+## PPT 图片与实体媒体目录本机阶段（2026-09-27）
+
+- 本机 `C:\Users\qintsg\Desktop\Resources\AllinOne.pptx` 作为只读输入，经独立 Office STA 导出 9 张有序 PNG，真实 PowerPoint 转换测试 1/1 通过；测试后无 `POWERPNT` 残留。没有调用 `SlideShowSettings.Run`，未启动原生放映。`TestPPT.pptx`（约 98 MB）和 D4 Office 实机转换未在本轮执行。
+- PPT 上传登记保留原件并创建页图准备作业；Simulation 不伪造 Office 结果，页面显示排队不可播放。假 Office IPC/转换器测试覆盖发布、默认 `slide_images` 选择、翻页、失败重试、状态不明不盲重试、实验开关默认关闭及场景预检。转换作业在 Hardware 模式由 PowerPointHost 执行；现场进程所有权与动画放映仍需 D4 后续复测。
+- 上传路径由日期目录改为 `DataRoot/media/` 的页面文件夹层级；根目录、中文多级目录、重名后缀、Windows 保留名与越界、源移动、目录改名/移动/删除、未登记文件拒绝和“物理已移动但未写库”故障补偿均由临时目录测试覆盖。旧日期/`uploads` 源不会被自动批量改写。页图制品独立以源 ID/摘要存于 `cache/artifacts`，移动原件后 URL 关联仍有效。
+- ControlHost 合同测试验证上传→移动源→重命名目录→下载字节逐项一致；前端脚本守卫保留跨文件夹全量选源索引、根目录只显示根源和禁止把文件夹移入子孙。Chromium 页面测试实际上传 15 MB 文稿到“PPT文件”，确认原件路径和排队状态，移动该文件夹到“归档”后检查 `relative_path=归档/PPT文件` 与磁盘路径，再将源移回根目录；开发设置实验开关在 Simulation 下禁用，无浏览器控制台错误。截图在忽略目录 `.validation/qa-big-screen-20260927/`，浏览器关闭后本机 ControlHost/Vite 监听端口清空。
+- 删除旧四屏物理冒烟测试前端/API 入口及 OpenAPI 合同，避免已停用测试仍被误触发。两台电视的电源按钮与协议保持，不受此删除影响。
+
+## 最终本机门禁与未执行项（2026-09-27）
+
+- 清空本机 HTTP 代理变量后，`dotnet test runtime-dotnet/ScpCv.sln --no-restore --filter "Category!=Physical"`：290/290 通过（Domain 41、Infrastructure 68、Contracts 18、ControlHost 66、Integration 71、Windows 26）。直接带本机代理首跑时，仅自定义 Host 头的回环测试失败；按仓库规定清空代理后全绿，未改业务代码规避。
+- 前端 `pnpm --dir frontend test` 42/42、`typecheck`、`build:web` 通过；Vite 仍提示主 chunk 超过 500 kB，为既有性能提醒，不影响构建。`redocly lint docs/openapi.yaml`、Spec Kit validator 与 `git diff --check` 通过；`PlayerRuntimeHost.cs` 有 Git CRLF→LF 的工作树提示，未见空白错误。
+- README、使用/维护、变更记录、已知硬件副作用清单、OpenAPI 与本规范已按新需求更新。历史 003/004 QA 报告保留作为旧版本审计，不将其中的四窗描述当作当前操作指引。
+- **仍未验收**：D4 两块大屏实体落位、两个既有预设真实画面、D4 上传转换/默认页图播放和原生实验模式、50 节点新手动映射帧抓包与真实设备确认，以及长时间混合稳定性。用户要求现场服务保持关闭；本轮未连接、启动、部署或向 D4 发包，后续需单独授权恢复现场测试。未知映射当前明确禁止下发。

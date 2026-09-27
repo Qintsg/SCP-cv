@@ -15,15 +15,15 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
-| 拼接屏画面映射（视频墙） | `PATCH /api/runtime/`；`POST /api/scenarios/{id}/activate/` | `RuntimeStateService.cs:70`、`ScenarioService.cs:187` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`（清屏/映射/提交/刷新） | `SimulationVideoWallController`（只校验模式，不发包） | `VideoWallControllerTests`、`VideoWallSequenceTests`、`VideoWallGoldenPacketsTests`（两种模式 400 个包逐包比对退役前固化的旧实现快照）、`VideoWallLoopbackTests`（把 `192.168.5.101~150` 挂成本机别名后跑真实 TCP：全节点 224~240 ms、单节点故障 12.4~12.6 s、取消 409 ms；需要管理员先跑 `runtime-dotnet/scripts/videowall-loopback.ps1 -Apply`）、`HostHardwareIntegrationTests`、`VideoWallRegistrationTests`、`VideoWallLoggingTests`（成功/失败/重试/取消的日志）；**物理画面未实机验证**（见 `specs/004-video-wall-control/spec.md` SC-007），**帧内容（常量与映射参数）未现场抓包复核**（issue #2）；排查入口 `docs/维护文档.md` §8.5 |
+| 拼接屏画面映射（视频墙） | `PUT /api/video-wall/layout/` 保存草稿；`POST /api/video-wall/layout/apply/` 或 `/presets/{preset}/apply/`；预案兼容入口 | `VideoWallLayoutService`/`ScenarioService` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`；仅两个既有预设可下发，未知手动映射在下发前拒绝 | `SimulationVideoWallController`；未知布局同样拒绝 | `VideoWallLayoutServiceTests`、`VideoWallGoldenPacketsTests`、`HostHardwareIntegrationTests`；新映射帧待现场抓包，不能把本机预览或回环称为实体画面证据 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/` | `RuntimeStateService.cs:159` → `ISystemAudioController.Apply` → `WindowsCoreAudioController` | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；**预案激活只落库不推硬件**，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
-| 播放器窗口内容（四窗 / 置顶 / 物理像素铺满） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/`；切换大屏模式后的固定静音策略也走这条链路（`RuntimeStateService.cs:91-94` 逐个 `SetMuteAsync`） | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2） | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`（simulation 跨层）、`docs/qa/003-*.md` |
-| PowerPoint 放映（唯一 STA/COM 槽） | `POST /api/playback/{windowId}/navigate/`、`.../ppt-media/`、`/playback/reset-ppt/`、`GET\|PUT /sources/{id}/ppt-resources/` | 命令队列 → `PowerPointHost` 进程（唯一 STA、PDF 回退） | 无（Hardware 才有该进程） | `docs/qa/003-office-interop.md`、`docs/实机测试结论.md` |
+| 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`；3/4 请求拒绝、旧命令不重放 |
+| PPT 上传转换 / 实验性 PowerPoint 放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 重试；`PATCH /api/settings/powerpoint/` 显式开启后才允许原生放映 | `PptConversionHostedService` → `PowerPointHost` STA 导出 PNG；播放器默认 `slide_images`，实验开关只影响后续打开 | Simulation 不启动 Office，作业保持待处理 | `PowerPointSlideExportTests`、`PptConversionHostedServiceTests`、`PowerPointSettingsEndpointTests`；D4 实机转换/放映仍待复测 |
 | 背景音频（独立列表） | `POST\|PATCH\|DELETE /api/background-audio/*` | `BackgroundAudioService` → 命令队列（`CommandTargetKind.Audio`）→ Named Pipe → `AudioWorker` | `QueuedCommandWakeNotifier`（仅排队） | `docs/实机测试结论.md` 背景音乐段 |
 | 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 2026-09-27 已在用户授权后发送拼接屏 ON→OFF→ON 与电视各两次 toggle；API 只确认写出，物理电源状态未独立读回，见 `docs/qa/003-full-regression-20260927.md`；`appsettings.json` §Devices |
 | MediaMTX 推拉流 / 直播 | `POST /api/sources/local\|web/`、`GET /sources/{id}/`（在线探测） | MediaMTX 进程（流端口 `8890`/`9997`/`8554`）、`stream-probe` HttpClient | 无进程，探测失败即离线 | `docs/qa/003-runtime-lifecycle.md` |
-| 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×4 / AudioWorker / PowerPointHost / MediaMTX | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `docs/qa/003-workstation-runbook.md` |
+| 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×2 / AudioWorker / PowerPointHost / MediaMTX | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `docs/qa/003-workstation-runbook.md` |
 
 核对程度说明：表内 `file:line` 是 2026-09-19 逐个 grep 出来的代码位置。其中「拼接屏画面映射」「系统音量」「显示器拓扑」「设备电源」四行我读到了完整链路（入口 → 接口 → 实现 → 目标地址）；「播放器窗口内容」「PowerPoint」「背景音频」「MediaMTX」「进程组生命周期」五行的**下游部件**列来自 003 规范与既有 QA 记录，只核到了入口与 Hardware 注册，未逐行走完进程侧链路——首次改动这几条时请顺便复核本表。
 
@@ -164,6 +164,27 @@
 - **根因**：Office COM 可能让项目文稿和桌面用户文稿共享进程；启动时的 PID/时间只证明历史归属，不证明当前 `Presentations` 集合仍全部自有。SSH 所在 session 0 的 `MainWindowHandle=0` 也不能证明交互桌面没有窗口。
 - **检出方式**：停机后在交互会话只读枚举每份 Presentation 的路径、保存状态及放映窗口，和项目已登记源逐项比对；对用户文稿保留进程，不按名称或进程树杀 Office。
 - **现状**：D4 本轮确有两份桌面用户文稿加入同一 Office 实例，项目 shutdown 正确保留它；用户明确授权后才定向关闭该实例。T133 仍需在没有用户文稿的清洁条件下验证自有 Office 退出，并补自动化归属/超时回归。
+
+### 坑 19 - 两窗运行组不能只缩减启动数量（2026-09-27 修复）
+
+- **症状**：只停用 PlayerWorker 3/4 时，旧命令、旧预案或前端残留入口仍可写入窗口 3/4，出现运行组“就绪”但目标永远不执行的假成功。
+- **根因**：播放器数量、数据库种子、命令队列、预案、REST 参数、前端菜单和 Ready 角色门禁原本分别维护窗口集合。
+- **检出方式**：从旧 3/4 请求、待执行命令、历史预案激活和进程组角色四条路径分别断言；物理显示器绑定缺失也必须拒绝而不是落到主桌面。
+- **现状**：统一两窗边界；旧命令保留审计但不重放，旧预案目标在物理动作前拒绝，显示器缺失 fail closed。D4 两块实体输出仍待服务恢复后复测。
+
+### 坑 20 - 墙面草稿不能冒充已知实体帧（2026-09-27 防护）
+
+- **症状**：前端可以选笔记本或自定义 IP 流，但协议抓包尚无，若把保存草稿当作应用成功会制造假画面状态，甚至向 50 节点发送猜测帧。
+- **根因**：预览模型与物理协议实现的能力边界不同。
+- **检出方式**：未知映射应用应返回 `protocol_unavailable`，测试传输假节点收到 0 包；两个固定预设仍按既有黄金包验证。
+- **现状**：草稿仅持久化/预览，只有既有“窗口 1 全屏”和“窗口 1 左、窗口 2 右”可执行；新增输入组合待抓包后单独实现与实机验证。
+
+### 坑 21 - 文件已移动时数据库提交异常不等于事务未提交（2026-09-27 修复）
+
+- **症状**：上传、目录移动或 PPT 页图发布先完成物理落盘，SQLite 提交阶段返回异常；如果立即把文件搬回，数据库可能已提交新路径，形成“成功记录指向不存在文件”。
+- **根因**：文件系统与 SQLite 不共享一个原子事务；`CommitAsync` 的异常可能是提交结果不明。
+- **检出方式**：故障注入在物理移动之后抛异常，核对旧路径/数据库均恢复；对提交结果不明的路径先用新连接查询目标记录或制品清单，再决定补偿，查询也失败时保留文件供人工核查。
+- **现状**：上传、源/目录移动、文件夹删除与页图发布均先查询持久化结果再补偿；页图制品独立于媒体目录，移动原件不重写缓存清单。D4 长稳和断电故障仍未做。
 
 ## 3. 相关沉淀点（不在这里重复）
 
