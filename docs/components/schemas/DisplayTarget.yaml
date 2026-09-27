@@ -7,6 +7,8 @@ required:
   - x
   - 'y'
   - is_primary
+  - playback_role
+  - is_playback_target
 properties:
   index:
     type: integer
@@ -22,3 +24,10 @@ properties:
     type: integer
   is_primary:
     type: boolean
+  playback_role:
+    type: string
+    enum: ['', big_left, big_right]
+    description: 仅大屏输出有对应角色，其余显示器只用于诊断
+  is_playback_target:
+    type: boolean
+    description: 当前安全模式下是否允许作为播放窗口目标；Hardware 仅允许两块绑定的大屏

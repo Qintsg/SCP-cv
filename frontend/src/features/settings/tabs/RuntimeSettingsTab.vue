@@ -17,6 +17,7 @@ import {
 import FIcon from '@/design-system/FIcon.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
 import BigScreenModeButtons from '@/features/runtime/BigScreenModeButtons.vue';
+import VideoWallMappingPanel from '@/features/runtime/VideoWallMappingPanel.vue';
 import { useThrottledSlider } from '@/composables/useThrottledSlider';
 import { useToast } from '@/composables/useToast';
 import { useRuntimeStore } from '@/stores/runtime';
@@ -151,6 +152,10 @@ async function resetAll(): Promise<void> {
         {{ t('settings.changeServer') }}
       </n-button>
     </n-card>
+  </section>
+
+  <section class="settings-view__grid">
+    <VideoWallMappingPanel />
   </section>
 
   <section class="settings-view__danger-zone">

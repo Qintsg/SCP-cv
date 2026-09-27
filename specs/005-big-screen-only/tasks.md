@@ -51,14 +51,14 @@
 
 **Independent Test**: 两预设生成原有包序列；全屏与左右布局校验正确；笔记本/IP 手动布局在下发前拒绝、活动布局不变。
 
-- [ ] T018 [P] [US1] 在 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/VideoWallControllerTests.cs` 与 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/` 先写固定预设、手动布局保存/拒绝及零发包测试。
-- [ ] T019 [US1] 在 `runtime-dotnet/src/ScpCv.Domain/Model/` 定义布局输入、区域、固定预设和冲突校验，新增 `runtime-dotnet/tests/ScpCv.Domain.Tests/` 测试。
-- [ ] T020 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Persistence/` 为草稿布局和当前已应用预设增加持久记录及兼容迁移，不重写旧媒体数据。
-- [ ] T021 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/VideoWall/` 实现原子保存/预览/应用服务：仅两个已知预设调用现有包构造器，其余返回 `protocol_unavailable` 且零实体写入。
-- [ ] T022 [US1] 在 `runtime-dotnet/src/ScpCv.ControlHost/Endpoints/` 接入布局 GET/保存/预览/应用与原 `/api/runtime/` 兼容预设投影，更新 `docs/paths/` 和 `docs/components/schemas/`。
-- [ ] T023 [US1] 在 `frontend/src/features/` 增加统一大屏映射面板，替换 `BigScreenModeButtons.vue` 多入口的双状态交互，呈现手动布局预览、未就绪禁用、已应用预设与明确失败。
-- [ ] T024 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Playback/RuntimeStateService.cs` 限制窗口 1/2 的显示器选择和停机后恢复只能落在显式绑定的两块大屏输出，增加 Hardware 装配测试。
-- [ ] T025 [US1] 在 `frontend/scripts/` 增加本机映射与两窗导航测试，并按 `specs/005-big-screen-only/quickstart.md` 执行非实体验证。
+- [X] T018 [P] [US1] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/VideoWallLayoutServiceTests.cs` 与 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/VideoWallLayoutEndpointTests.cs` 写固定预设、手动布局保存/拒绝及零发包测试。
+- [X] T019 [US1] 在 `runtime-dotnet/src/ScpCv.Domain/Model/VideoWallLayout.cs` 和 `Rules/WallLayoutPolicy.cs` 定义布局输入、区域、固定预设与冲突校验，并补领域测试。
+- [X] T020 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Persistence/` 为草稿布局增加持久字段及兼容迁移，活动预设复用现有运行态，不重写旧媒体数据。
+- [X] T021 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/VideoWall/VideoWallLayoutService.cs` 实现保存/预览/应用：仅两个已知预设调用现有包构造器，其余返回 `protocol_unavailable` 且零实体写入。
+- [X] T022 [US1] 在 `runtime-dotnet/src/ScpCv.ControlHost/Endpoints/VideoWallLayoutEndpoints.cs` 接入布局 GET/保存/应用与原 `/api/runtime/` 兼容预设投影，更新 `docs/paths/` 和 `docs/components/schemas/`。
+- [X] T023 [US1] 在 `frontend/src/features/runtime/VideoWallMappingPanel.vue` 增加大屏映射面板，三处固定预设按钮改走统一布局合同，呈现手动布局预览、未就绪禁用与明确失败。
+- [X] T024 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Playback/RuntimeStateService.Displays.cs` 限制窗口 1/2 的显示器选择和停机后恢复只能落在显式绑定的两块大屏输出，增加 Hardware 装配测试。
+- [X] T025 [US1] 在本机忽略目录 `.validation/qa-big-screen-20260927/browser_mapping.py` 使用真实浏览器验证桌面/手机映射、保存与禁用，服务用受控 PID 启停，不触碰 D4。
 
 ## Phase 6: User Story 4 - PPT 默认逐页图片播放 (P1)
 

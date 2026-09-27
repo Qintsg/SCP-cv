@@ -1,0 +1,11 @@
+type: object
+required:
+  - kind
+properties:
+  kind:
+    type: string
+    enum: [window_1, window_2, laptop, ip_stream]
+  ip_address:
+    type: string
+    format: ipv4
+    description: 仅 kind=ip_stream 使用；控制帧待现场抓包

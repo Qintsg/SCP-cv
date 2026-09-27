@@ -41,8 +41,8 @@ export default {
     },
   },
   screen: {
-    single: '单屏',
-    double: '双屏',
+    single: '窗口 1 全屏',
+    double: '窗口 1 左 / 窗口 2 右',
   },
   nav: {
     dashboard: '仪表盘',
@@ -96,8 +96,8 @@ export default {
   more: {
     title: '更多',
     desc: '次级入口与全局设置',
-    screenMode: '大屏模式',
-    screenHint: '切换会立即生效；单屏模式下窗口 2 自动静音。',
+    screenMode: '大屏固定预设',
+    screenHint: '应用会立即向墙面下发已验证帧；窗口 1 全屏时窗口 2 自动静音。',
     systemMute: '系统静音',
     enableSystemMute: '启用系统静音',
     backgroundAudio: '背景音乐',
@@ -105,8 +105,8 @@ export default {
     settings: '设置',
     openSettings: '打开设置中心',
     aboutHelp: '关于与帮助',
-    switchedDouble: '已切换为双屏',
-    switchedSingle: '已切换为单屏',
+    switchedDouble: '已应用：窗口 1 左 / 窗口 2 右',
+    switchedSingle: '已应用：窗口 1 全屏',
     switchFail: '切换失败',
     muteFail: '系统静音切换失败',
   },

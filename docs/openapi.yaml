@@ -35,6 +35,8 @@ tags:
     description: 背景音乐播放列表、播放控制与状态查询
   - name: runtime
     description: 全局运行态、系统音量与系统关闭请求
+  - name: video-wall
+    description: 大屏固定预设与手动映射草稿；未知控制帧仅可保存预览，不可实体应用
   - name: displays
     description: 显示器枚举与窗口显示目标选择
   - name: devices
@@ -88,6 +90,12 @@ paths:
     $ref: './paths/sessions_{window_id}_.yaml'
   /runtime/:
     $ref: './paths/runtime_.yaml'
+  /video-wall/layout/:
+    $ref: './paths/video-wall_layout_.yaml'
+  /video-wall/layout/apply/:
+    $ref: './paths/video-wall_layout_apply_.yaml'
+  /video-wall/presets/{preset}/apply/:
+    $ref: './paths/video-wall_presets_{preset}_apply_.yaml'
   /volume/:
     $ref: './paths/volume_.yaml'
   /background-audio/:

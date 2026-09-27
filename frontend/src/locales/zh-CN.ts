@@ -21,6 +21,7 @@ import sources from './zh-CN/sources';
 import settings from './zh-CN/settings';
 
 import designSystem from './zh-CN/design-system';
+import videoWall from './zh-CN/videoWall';
 
 
 
@@ -41,5 +42,6 @@ export default {
   ...settings,
 
   ...designSystem,
+  ...videoWall,
 
 } as const;

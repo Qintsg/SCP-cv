@@ -1,0 +1,7 @@
+allOf:
+  - $ref: ./SuccessResponse.yaml
+  - type: object
+    required: [layout]
+    properties:
+      layout:
+        $ref: ./VideoWallLayoutState.yaml

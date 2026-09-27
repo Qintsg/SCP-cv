@@ -1,0 +1,20 @@
+parameters:
+  - in: path
+    name: preset
+    required: true
+    schema:
+      type: string
+      enum: [window_1_fullscreen, window_1_left_window_2_right]
+post:
+  tags: [video-wall]
+  summary: 应用已抓包验证的大屏固定预设
+  operationId: applyVideoWallPreset
+  responses:
+    '200':
+      description: 预设应用成功
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VideoWallLayoutApplyResponse.yaml
+    '400':
+      $ref: ../components/responses/ErrorResponse.yaml

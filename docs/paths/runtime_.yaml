@@ -15,7 +15,7 @@ get:
 patch:
   tags:
     - runtime
-  summary: 设置大屏模式
+  summary: 设置大屏固定预设（兼容旧客户端）
   operationId: updateRuntimeState
   requestBody:
     required: true

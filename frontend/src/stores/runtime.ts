@@ -1,5 +1,5 @@
 /*
- * Runtime / 大屏模式 / 系统音量 / SSE 连接状态。
+ * Runtime / 大屏固定预设 / 系统音量 / SSE 连接状态。
  *
  * 设计稿 §3 + §4.1：TitleBar 与仪表盘需要长时可见这些信息。
  * 拆出本 store 让多个布局层共享同一份状态，避免轮询接口。
@@ -98,14 +98,18 @@ export const useRuntimeStore = defineStore('runtime', {
         backend: volume.backend,
       };
     },
-    /** 切换大屏模式：会同步刷新 sessions（后端 PATCH 返回最新会话快照）。 */
+    /** 应用两个已验证的大屏固定预设；后端原子返回活动布局与会话。 */
     async setBigScreenMode(mode: 'single' | 'double'): Promise<void> {
-      const payload = await api.setRuntimeMode(mode);
+      const preset = mode === 'single' ? 'window_1_fullscreen' : 'window_1_left_window_2_right';
+      const payload = await api.applyVideoWallPreset(preset);
       this.runtime = payload.runtime;
       useSessionStore().applyRemoteSessions(payload.sessions);
-      if (payload.background_audio) {
-        useBackgroundAudioStore().applyRemoteSnapshot(payload.background_audio);
-      }
+    },
+    /** 应用已经保存且具备控制帧的布局；未知帧会由后端明确拒绝。 */
+    async applySavedVideoWallLayout(): Promise<void> {
+      const payload = await api.applyVideoWallDraft();
+      this.runtime = payload.runtime;
+      useSessionStore().applyRemoteSessions(payload.sessions);
     },
     /** 设置系统音量；后端可能返回未同步标记（无 Windows Core Audio 时）。 */
     async setSystemVolume(level: number, muted?: boolean): Promise<void> {

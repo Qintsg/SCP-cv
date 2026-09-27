@@ -1,0 +1,13 @@
+allOf:
+  - $ref: ./VideoWallLayoutResponse.yaml
+  - type: object
+    required: [runtime, sessions]
+    properties:
+      runtime:
+        $ref: ./RuntimeSnapshot.yaml
+      sessions:
+        type: array
+        minItems: 2
+        maxItems: 2
+        items:
+          $ref: ./SessionSnapshot.yaml

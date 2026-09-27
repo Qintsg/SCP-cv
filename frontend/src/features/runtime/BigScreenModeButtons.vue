@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 大屏模式动作按钮组：当前模式高亮，但点击当前模式仍会重新下发控制命令。
+ * 两个已抓包验证的大屏预设；点击当前预设仍可重新下发控制命令。
  */
 import { computed } from 'vue';
 import { NButton } from 'naive-ui';

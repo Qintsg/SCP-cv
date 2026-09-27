@@ -1,0 +1,32 @@
+get:
+  tags: [video-wall]
+  summary: 获取已保存草稿与当前活动预设
+  operationId: getVideoWallLayout
+  responses:
+    '200':
+      description: 成功
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VideoWallLayoutResponse.yaml
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+put:
+  tags: [video-wall]
+  summary: 保存并预览大屏布局草稿，不向墙面发包
+  operationId: saveVideoWallLayout
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/VideoWallLayoutSaveRequest.yaml
+  responses:
+    '200':
+      description: 保存成功，墙面保持原样
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/VideoWallLayoutResponse.yaml
+    '400':
+      $ref: ../components/responses/ErrorResponse.yaml

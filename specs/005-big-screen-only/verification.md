@@ -22,3 +22,10 @@
 - 旧预案含 3/4 有效目标时，在视频墙、音量、数据库和队列写入前返回 `scenario_legacy_window`；历史 unset 目标可保留。旧未完成 3/4 命令在数据库初始化时标记 `retired_window`，历史记录不删除。
 - 本机非 Physical .NET 合计 248/248，通过；前端 `pnpm test` 40/40、`pnpm run typecheck` 和 `pnpm run build:web` 通过。已知 Vite 大 chunk 警告仍在。真实浏览器与 D4 实体两屏暂未验证。
 - OpenAPI 分拆合同将新写入窗口收缩到 1/2、旧预案只读目标保留 3/4 说明；`redocly lint docs/openapi.yaml` 通过。
+
+## 大屏布局本机阶段（2026-09-27）
+
+- 左/右/全屏输入的领域校验与两个已知预设识别通过；笔记本左＋`239.1.2.3` 右的草稿保存后 `can_apply=false`，应用返回 HTTP 409 / `protocol_unavailable`，模拟墙面控制器 0 次发包且活动预设不变。
+- 旧“窗口 1 全屏”与“窗口 1 左／窗口 2 右”通过统一布局应用入口返回当前运行态和两会话；原 `/api/runtime/` 作为兼容预设入口保留。手写 EF 迁移在从上一版 schema 升级的本机数据库上保留 `Double` 与音量 77，并添加空草稿字段。
+- 本机真实 Chromium 对桌面与 390px 手机视口验证：两窗导航、固定预设文案、左右墙面预览、保存“现场笔记本左／自定义 IP 流右”并从 API 读回，应用按钮禁用；无横向溢出或浏览器控制台错误。截图保存在忽略目录 `.validation/qa-big-screen-20260927/mapping-*.png`。测试 ControlHost/Vite 每次按创建 PID 关闭；D4 服务未启动。
+- 这一阶段最新 .NET 非 Physical 257/257、前端 `pnpm test` 40/40、类型检查/Web 构建、Redocly lint 和 Spec Kit 校验通过；Vite 仍有 >500 kB chunk 警告。浏览器测试第一次误选左侧下拉框，增加左右区域与 API 映射值断言后重新通过，这是测试定位器问题，不是产品映射缺陷。D4 两个固定预设的实体墙面画面与新布局控制帧仍未验收。

@@ -1,0 +1,18 @@
+type: object
+required:
+  - draft
+  - draft_revision
+  - active_preset
+properties:
+  draft:
+    type: object
+    nullable: true
+    allOf:
+      - $ref: ./VideoWallLayout.yaml
+  draft_revision:
+    type: integer
+    format: int64
+    minimum: 0
+  active_preset:
+    type: string
+    enum: [single, double]
