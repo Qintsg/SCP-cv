@@ -10,9 +10,9 @@ public sealed partial class PlayerRuntimeHost
     /// <summary>只对活动 VLC 表面读取真实进度；其它媒体不制造虚假的时间轴。</summary>
     public async Task<WorkerStateSample?> SampleProgressAsync(CancellationToken cancellationToken)
     {
-        if (Volatile.Read(ref _disposed) != 0) return null;
+        if (Volatile.Read(ref _disposed) != 0 || _mediaGate.CurrentCount == 0) return null;
         var operation = _window.Dispatcher.InvokeAsync(
-            () => _current?.Native is MediaPlayer && _generation > 0
+            () => _mediaGate.CurrentCount != 0 && _current?.Native is MediaPlayer && _generation > 0
                 ? new WorkerStateSample(_generation, Snapshot())
                 : null,
             DispatcherPriority.Background,

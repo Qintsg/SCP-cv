@@ -25,7 +25,7 @@ public sealed partial class PlayerRuntimeHost
         _libVlc = null;
     }
 
-    private Task<SurfaceResource> OpenVlcAsync(
+    private async Task<SurfaceResource> OpenVlcAsync(
         string uri,
         bool autoplay,
         CancellationToken cancellationToken)
@@ -49,24 +49,24 @@ public sealed partial class PlayerRuntimeHost
         var view = new VideoView { MediaPlayer = player };
         if (autoplay && !player.Play())
         {
-            ReleaseVlcResource(player, Ended, view, media);
+            await ReleaseVlcResourceAsync(player, Ended, view, media);
             throw new InvalidOperationException("LibVLC 无法开始播放媒体。");
         }
-        return Task.FromResult(new SurfaceResource("vlc", view, () =>
+        return new SurfaceResource("vlc", view, async () =>
         {
-            ReleaseVlcResource(player, Ended, view, media);
-            return ValueTask.CompletedTask;
-        }, player));
+            await ReleaseVlcResourceAsync(player, Ended, view, media);
+        }, player);
     }
 
-    private static void ReleaseVlcResource(
+    private static async ValueTask ReleaseVlcResourceAsync(
         VlcMediaPlayer player,
         EventHandler<EventArgs> ended,
         VideoView view,
         Media media)
     {
         player.EndReached -= ended;
-        player.Stop();
+        // 原生 Stop 会等待输出线程，必须让 UI Dispatcher 继续处理 HWND 消息。
+        await Task.Run(player.Stop, CancellationToken.None);
         view.MediaPlayer = null;
         // VideoView 持有 WPF 前景窗口和 HWND；仅清空 MediaPlayer 不会释放它们。
         view.Dispose();
@@ -76,24 +76,31 @@ public sealed partial class PlayerRuntimeHost
 
     private async Task HandleVlcEndedAsync(VlcMediaPlayer player, Media media, long generation)
     {
-        var action = VlcEndPolicy.Decide(_current?.Native, player, _generation, generation, _loopEnabled);
-        if (action == VlcEndAction.Ignore) return;
-        if (action == VlcEndAction.Replay)
+        if (Volatile.Read(ref _disposed) != 0) return;
+        await _mediaGate.WaitAsync();
+        try
         {
-            // Stop() 会同步等待 VLC 线程；结束时通过重新指定同一媒体重播，不调用 Stop()。
-            // 单独 Play() 或 Time=0 再 Play() 在 D4 均只改变状态，不再产生新视频帧。
-            if (player.Play(media)) return;
-            _state = "error";
-            _errorMessage = "video_loop_restart_failed";
-        }
-        else _state = "stopped";
+            if (Volatile.Read(ref _disposed) != 0) return;
+            var action = VlcEndPolicy.Decide(_current?.Native, player, _generation, generation, _loopEnabled);
+            if (action == VlcEndAction.Ignore) return;
+            if (action == VlcEndAction.Replay)
+            {
+                // 先在线程池等待原生线程结束，UI 保持泵消息；媒体门禁阻止切源并发处置 player。
+                await Task.Run(player.Stop, CancellationToken.None);
+                if (player.Play(media)) return;
+                _state = "error";
+                _errorMessage = "video_loop_restart_failed";
+            }
+            else _state = "stopped";
 
-        if (_officeSession is null) return;
-        try { await _officeSession.ReportStateAsync(generation, Snapshot()); }
-        catch (Exception exception) when (exception is IOException or InvalidOperationException or OperationCanceledException)
-        {
-            Console.Error.WriteLine($"视频自然结束状态上报失败：{exception.Message}");
+            if (_officeSession is null) return;
+            try { await _officeSession.ReportStateAsync(generation, Snapshot()); }
+            catch (Exception exception) when (exception is IOException or InvalidOperationException or OperationCanceledException)
+            {
+                Console.Error.WriteLine($"视频自然结束状态上报失败：{exception.Message}");
+            }
         }
+        finally { _mediaGate.Release(); }
     }
 
     private async Task CurrentControlAsync(
@@ -116,7 +123,7 @@ public sealed partial class PlayerRuntimeHost
         {
             case "play": _ = player.Play(); break;
             case "pause": player.SetPause(true); break;
-            case "stop": player.Stop(); break;
+            case "stop": await Task.Run(player.Stop, CancellationToken.None); break;
         }
         await Task.CompletedTask;
     }

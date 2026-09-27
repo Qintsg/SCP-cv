@@ -1,16 +1,19 @@
 // 大屏播放器进程的启动参数与窗口生命周期。
 using System.Windows;
+using System.ComponentModel;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Runtime;
 using ScpCv.PlayerWorker.Playback;
 
 namespace ScpCv.PlayerWorker;
 
-public partial class App : System.Windows.Application, IDisposable
+public partial class App : System.Windows.Application, IAsyncDisposable
 {
     private CancellationTokenSource? _stop;
     private RuntimeWorkerSession? _session;
     private PlayerRuntimeHost? _runtime;
+    private bool _closeReady;
+    private int _closing;
     private int _disposed;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -32,6 +35,7 @@ public partial class App : System.Windows.Application, IDisposable
                 screen.Bounds.Width,
                 screen.Bounds.Height)));
         var window = new PlayerWindow();
+        window.Closing += ClosePlayerAsync;
         window.AssignBounds(display.X, display.Y, display.Width, display.Height);
         window.Show();
         if (string.IsNullOrWhiteSpace(pipeName)) return;
@@ -48,18 +52,35 @@ public partial class App : System.Windows.Application, IDisposable
 
     protected override void OnExit(ExitEventArgs e)
     {
-        Dispose();
+        // 正常关窗已在 Closing 中异步释放；退出回调不可同步阻塞 Dispatcher 等待原生线程。
+        _stop?.Cancel();
+        _stop?.Dispose();
         base.OnExit(e);
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _stop?.Cancel();
-        _session?.DisposeAsync().AsTask().GetAwaiter().GetResult();
-        _runtime?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        if (_session is not null) await _session.DisposeAsync();
+        if (_runtime is not null) await _runtime.DisposeAsync();
         _stop?.Dispose();
+        _stop = null;
         GC.SuppressFinalize(this);
+    }
+
+    private async void ClosePlayerAsync(object? sender, CancelEventArgs args)
+    {
+        if (_closeReady || _runtime is null) return;
+        args.Cancel = true;
+        if (Interlocked.Exchange(ref _closing, 1) != 0) return;
+        try { await DisposeAsync(); }
+        catch (Exception exception) { Console.Error.WriteLine($"播放器协作退出失败：{exception.Message}"); }
+        finally
+        {
+            _closeReady = true;
+            if (sender is Window window) window.Close();
+        }
     }
 
     private async Task RunRuntimeAsync(
@@ -76,15 +97,10 @@ public partial class App : System.Windows.Application, IDisposable
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception)
         {
-            await Dispatcher.InvokeAsync(() =>
-            {
-                System.Windows.MessageBox.Show(
-                    exception.Message,
-                    "PlayerWorker 运行时故障",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-                Shutdown(1);
-            });
+            Console.Error.WriteLine($"PlayerWorker 运行时故障：{exception}");
+            try { await DisposeAsync(); }
+            catch (Exception cleanupException) { Console.Error.WriteLine($"故障退出清理失败：{cleanupException.Message}"); }
+            finally { await Dispatcher.InvokeAsync(() => Shutdown(1)); }
         }
     }
 

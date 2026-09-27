@@ -26,6 +26,7 @@ public sealed partial class PlayerRuntimeHost(
     private readonly PlayerWindow _window = window;
     private readonly int _windowId = windowId;
     private readonly RuntimeWorkerSession? _officeSession = officeSession;
+    private readonly SemaphoreSlim _mediaGate = new(1, 1);
     private readonly Dictionary<string, SurfaceResource> _warmWebResources = new(StringComparer.Ordinal);
     private SurfaceResource? _current;
     private long _sourceId;
@@ -64,43 +65,57 @@ public sealed partial class PlayerRuntimeHost(
 
     private async Task DisposeCoreAsync()
     {
-        var resources = _warmWebResources.Values.Append(_current).OfType<SurfaceResource>().Distinct().ToArray();
-        _window.SetSurface(new Grid { Background = WpfBrushes.Black });
-        _current = null;
-        foreach (var resource in resources) await resource.DisposeAsync();
-        _warmWebResources.Clear();
-        DisposeVlcInstance();
+        await _mediaGate.WaitAsync();
+        try
+        {
+            var resources = _warmWebResources.Values.Append(_current).OfType<SurfaceResource>().Distinct().ToArray();
+            _window.SetSurface(new Grid { Background = WpfBrushes.Black });
+            _current = null;
+            foreach (var resource in resources) await resource.DisposeAsync();
+            _warmWebResources.Clear();
+            DisposeVlcInstance();
+        }
+        finally
+        {
+            _mediaGate.Release();
+            _mediaGate.Dispose();
+        }
     }
 
     private async Task<WorkerExecutionResult> ExecuteCoreAsync(
         CommandLeaseDto lease,
         CancellationToken cancellationToken)
     {
-        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-        var command = lease.Command.Trim().ToUpperInvariant();
-        switch (command)
+        await _mediaGate.WaitAsync(cancellationToken);
+        try
         {
-            case "OPEN": await OpenAsync(lease, cancellationToken); break;
-            case "CLOSE":
-            case "RESET_PPT": await CloseAsync(lease, cancellationToken); break;
-            case "PLAY": await CurrentControlAsync(lease, "play", cancellationToken); _state = "playing"; break;
-            case "PAUSE": await CurrentControlAsync(lease, "pause", cancellationToken); _state = "paused"; break;
-            case "STOP": await CurrentControlAsync(lease, "stop", cancellationToken); _state = "stopped"; break;
-            case "SEEK": await SeekAsync(Long(lease.Args, "position_ms"), cancellationToken); break;
-            case "NEXT": await NavigateAsync(lease, _currentSlide + 1, cancellationToken); break;
-            case "PREV": await NavigateAsync(lease, Math.Max(1, _currentSlide - 1), cancellationToken); break;
-            case "GOTO": await NavigateAsync(lease, Int(lease.Args, "target_index", 1), cancellationToken); break;
-            case "SET_VOLUME": SetVolume(Int(lease.Args, "volume", 100)); break;
-            case "SET_MUTE": SetMute(Bool(lease.Args, "muted", false)); break;
-            case "SET_LOOP": SetLoop(Bool(lease.Args, "enabled", false)); break;
-            case "SELECT_DISPLAY": SelectDisplay(String(lease.Args, "target_label")); break;
-            case "SHOW_ID": ShowWindowId(); break;
-            case "PPT_MEDIA": await ControlPptMediaAsync(lease, cancellationToken); break;
-            default: throw new InvalidOperationException($"PlayerWorker 不支持命令 {lease.Command}。");
-        }
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            var command = lease.Command.Trim().ToUpperInvariant();
+            switch (command)
+            {
+                case "OPEN": await OpenAsync(lease, cancellationToken); break;
+                case "CLOSE":
+                case "RESET_PPT": await CloseAsync(lease, cancellationToken); break;
+                case "PLAY": await CurrentControlAsync(lease, "play", cancellationToken); _state = "playing"; break;
+                case "PAUSE": await CurrentControlAsync(lease, "pause", cancellationToken); _state = "paused"; break;
+                case "STOP": await CurrentControlAsync(lease, "stop", cancellationToken); _state = "stopped"; break;
+                case "SEEK": await SeekAsync(Long(lease.Args, "position_ms"), cancellationToken); break;
+                case "NEXT": await NavigateAsync(lease, _currentSlide + 1, cancellationToken); break;
+                case "PREV": await NavigateAsync(lease, Math.Max(1, _currentSlide - 1), cancellationToken); break;
+                case "GOTO": await NavigateAsync(lease, Int(lease.Args, "target_index", 1), cancellationToken); break;
+                case "SET_VOLUME": SetVolume(Int(lease.Args, "volume", 100)); break;
+                case "SET_MUTE": SetMute(Bool(lease.Args, "muted", false)); break;
+                case "SET_LOOP": SetLoop(Bool(lease.Args, "enabled", false)); break;
+                case "SELECT_DISPLAY": SelectDisplay(String(lease.Args, "target_label")); break;
+                case "SHOW_ID": ShowWindowId(); break;
+                case "PPT_MEDIA": await ControlPptMediaAsync(lease, cancellationToken); break;
+                default: throw new InvalidOperationException($"PlayerWorker 不支持命令 {lease.Command}。");
+            }
 
-        _generation = Math.Max(_generation, lease.SourceGeneration);
-        return new WorkerExecutionResult("completed", "ok", Snapshot());
+            _generation = Math.Max(_generation, lease.SourceGeneration);
+            return new WorkerExecutionResult("completed", "ok", Snapshot());
+        }
+        finally { _mediaGate.Release(); }
     }
 
     private async Task OpenAsync(CommandLeaseDto lease, CancellationToken cancellationToken)
@@ -119,7 +134,7 @@ public sealed partial class PlayerRuntimeHost(
                 if (currentPlayer.State == VLCState.Paused) currentPlayer.SetPause(false);
                 else if (currentPlayer.State is VLCState.Ended or VLCState.Stopped or VLCState.Error)
                 {
-                    currentPlayer.Stop();
+                    await Task.Run(currentPlayer.Stop, CancellationToken.None);
                     currentPlayer.Time = 0;
                     if (!currentPlayer.Play()) throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
                 }
