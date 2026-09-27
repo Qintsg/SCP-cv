@@ -67,7 +67,7 @@ public sealed class LegacyHttpContractTests
                 "created_at", "preview_url",
                 "thumbnail_url", "preview_kind", "preview_label");
             Assert.Equal("ppt", source.GetProperty("source_type").GetString());
-            Assert.Equal("pdf", source.GetProperty("playback_mode").GetString());
+            Assert.Equal("slide_images", source.GetProperty("playback_mode").GetString());
         }
 
         using (var response = await client.GetAsync("/api/sessions/"))

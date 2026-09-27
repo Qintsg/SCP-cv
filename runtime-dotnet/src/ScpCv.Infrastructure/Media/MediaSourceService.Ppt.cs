@@ -8,6 +8,44 @@ namespace ScpCv.Infrastructure.Media;
 
 public sealed partial class MediaSourceService
 {
+    public async Task<MediaFileResult> GetPptSlideImageAsync(
+        long sourceId,
+        int page,
+        CancellationToken cancellationToken = default)
+    {
+        var source = await GetSourceAsync(sourceId, cancellationToken).ConfigureAwait(false);
+        if (source.SourceType != MediaSourceType.Presentation)
+            throw new MediaServiceException("只有演示文稿源支持逐页图片。", isNotFound: true);
+        JsonElement images;
+        try
+        {
+            using var metadata = JsonDocument.Parse(source.MetadataJson);
+            if (!metadata.RootElement.TryGetProperty("slide_images", out var parsed) ||
+                parsed.ValueKind != JsonValueKind.Object ||
+                !parsed.TryGetProperty("status", out var status) || status.GetString() != "ready" ||
+                !parsed.TryGetProperty("source_digest", out var digest) ||
+                digest.GetString() != source.ContentDigest ||
+                !parsed.TryGetProperty("page_count", out var pages) || pages.ValueKind != JsonValueKind.Number ||
+                !parsed.TryGetProperty("directory", out var location) || location.ValueKind != JsonValueKind.String)
+                throw new MediaServiceException("演示文稿逐页图片尚未准备完成。", isNotFound: true);
+            images = parsed.Clone();
+        }
+        catch (JsonException)
+        {
+            throw new MediaServiceException("演示文稿逐页图片元数据无效。", isNotFound: true);
+        }
+        var pageCount = images.GetProperty("page_count").GetInt32();
+        if (page < 1 || page > pageCount)
+            throw new MediaServiceException($"演示文稿第 {page} 页不存在。", isNotFound: true);
+        var directory = Path.GetFullPath(images.GetProperty("directory").GetString() ?? string.Empty);
+        var artifactRoot = Path.Combine(controlDbFactory.Layout.RootPath, "cache", "artifacts");
+        if (!IsWithinRoot(directory, artifactRoot))
+            throw new MediaServiceException("页图目录超出受管理制品范围。");
+        var file = Path.Combine(directory, $"page-{page:0000}.png");
+        if (!File.Exists(file)) throw new MediaServiceException("页图文件已缺失。", isNotFound: true);
+        return new MediaFileResult(file, "image/png", Path.GetFileName(file), Download: false);
+    }
+
     public async Task<IReadOnlyList<PptResourceDto>> GetPptResourcesAsync(
         long sourceId,
         CancellationToken cancellationToken = default)

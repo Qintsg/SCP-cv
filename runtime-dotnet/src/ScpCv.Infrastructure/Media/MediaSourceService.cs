@@ -1,3 +1,4 @@
+// 媒体源上传、文件夹、移动和播放元数据管理。
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -15,151 +16,9 @@ public sealed partial class MediaSourceService(
     TimeProvider? timeProvider = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
-    private readonly string _uploadRoot = Path.GetFullPath(
-        Path.Combine(controlDbFactory.Layout.RootPath, "media", "uploads"));
+    private readonly string _mediaRoot = Path.GetFullPath(Path.Combine(controlDbFactory.Layout.RootPath, "media"));
+    private readonly MediaPathResolver _paths = new(Path.Combine(controlDbFactory.Layout.RootPath, "media"));
     private readonly string[] _allowedRoots = BuildAllowedRoots(controlDbFactory, storageOptions);
-
-    public async Task<IReadOnlyList<MediaFolderDto>> ListFoldersAsync(CancellationToken cancellationToken = default)
-    {
-        await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        return await database.MediaFolders.AsNoTracking()
-            .OrderBy(folder => folder.Id)
-            .Select(folder => new MediaFolderDto
-            {
-                Id = folder.Id,
-                Name = folder.Name,
-                ParentId = folder.ParentId,
-                CreatedAt = folder.CreatedAt.ToString("O"),
-                UpdatedAt = folder.UpdatedAt.ToString("O"),
-            })
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-    }
-
-    public Task<MediaFolderDto> CreateFolderAsync(
-        string name,
-        long? parentId,
-        CancellationToken cancellationToken = default)
-    {
-        var normalizedName = ValidateName(name, "文件夹名称不能为空");
-        return writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                if (parentId is not null && !await database.MediaFolders.AnyAsync(
-                        folder => folder.Id == parentId.Value,
-                        token).ConfigureAwait(false))
-                {
-                    throw new MediaServiceException($"父文件夹 id={parentId.Value} 不存在");
-                }
-
-                var now = _timeProvider.GetUtcNow();
-                var folder = new MediaFolder
-                {
-                    Name = normalizedName,
-                    ParentId = parentId,
-                    CreatedAt = now,
-                    UpdatedAt = now,
-                };
-                database.MediaFolders.Add(folder);
-                await database.SaveChangesAsync(token).ConfigureAwait(false);
-                return ToFolderDto(folder);
-            },
-            cancellationToken);
-    }
-
-    public Task<MediaFolderDto> UpdateFolderAsync(
-        long folderId,
-        string? name,
-        long? parentId,
-        bool updateParent,
-        CancellationToken cancellationToken = default) =>
-        writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                var folder = await database.MediaFolders.SingleOrDefaultAsync(
-                        candidate => candidate.Id == folderId,
-                        token).ConfigureAwait(false)
-                    ?? throw new MediaServiceException($"文件夹 id={folderId} 不存在", isNotFound: true);
-                if (name is not null)
-                {
-                    folder.Name = ValidateName(name, "文件夹名称不能为空");
-                }
-
-                if (updateParent)
-                {
-                    if (parentId == folderId)
-                    {
-                        throw new MediaServiceException("不能将文件夹设为自己的子文件夹");
-                    }
-
-                    if (parentId is not null)
-                    {
-                        var ancestors = await LoadAncestorIdsAsync(database, parentId.Value, token).ConfigureAwait(false);
-                        if (ancestors is null)
-                        {
-                            throw new MediaServiceException($"父文件夹 id={parentId.Value} 不存在");
-                        }
-
-                        if (ancestors.Contains(folderId))
-                        {
-                            throw new MediaServiceException("不能将文件夹移动到自己的子文件夹");
-                        }
-                    }
-
-                    folder.ParentId = parentId;
-                }
-
-                folder.UpdatedAt = _timeProvider.GetUtcNow();
-                return ToFolderDto(folder);
-            },
-            cancellationToken);
-
-    public async Task DeleteFolderAsync(
-        long folderId,
-        bool deleteContents,
-        CancellationToken cancellationToken = default)
-    {
-        var managedFiles = await writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                if (!await database.MediaFolders.AnyAsync(folder => folder.Id == folderId, token).ConfigureAwait(false))
-                {
-                    throw new MediaServiceException($"文件夹 id={folderId} 不存在", isNotFound: true);
-                }
-
-                var folders = await database.MediaFolders.ToListAsync(token).ConfigureAwait(false);
-                var subtree = CollectSubtree(folderId, folders);
-                var sources = await database.MediaSources
-                    .Where(source => source.FolderId != null && subtree.Contains(source.FolderId.Value))
-                    .ToListAsync(token).ConfigureAwait(false);
-                var files = deleteContents
-                    ? sources.Select(source => ManagedFileOrNull(source.UploadedFile)).Where(path => path is not null).Cast<string>().ToArray()
-                    : [];
-                if (deleteContents)
-                {
-                    database.MediaSources.RemoveRange(sources);
-                }
-                else
-                {
-                    foreach (var source in sources)
-                    {
-                        source.FolderId = null;
-                    }
-                }
-
-                var parentById = folders.ToDictionary(folder => folder.Id, folder => folder.ParentId);
-                foreach (var folder in folders
-                             .Where(folder => subtree.Contains(folder.Id))
-                             .OrderByDescending(folder => GetDepth(folder.Id, parentById)))
-                {
-                    database.MediaFolders.Remove(folder);
-                }
-
-                return files;
-            },
-            cancellationToken).ConfigureAwait(false);
-        DeleteManagedFiles(managedFiles);
-    }
 
     public async Task<IReadOnlyList<MediaSourceDto>> ListSourcesAsync(
         string? sourceType,
@@ -183,83 +42,6 @@ public sealed partial class MediaSourceService(
 
         var sources = await query.OrderBy(source => source.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
         return sources.Select(ToSourceDto).ToArray();
-    }
-
-    public async Task<MediaSourceDto> AddUploadedAsync(
-        Stream content,
-        string fileName,
-        string? contentType,
-        string? displayName,
-        string? sourceType,
-        long? folderId,
-        bool isTemporary,
-        bool preheatEnabled,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(content);
-        var safeFileName = Path.GetFileName(fileName);
-        if (safeFileName.Length == 0)
-        {
-            safeFileName = "未命名文件";
-        }
-
-        var parsedType = string.IsNullOrWhiteSpace(sourceType)
-            ? DetectSourceType(safeFileName)
-            : ParseSourceType(sourceType);
-        Directory.CreateDirectory(_uploadRoot);
-        var destination = Path.Combine(
-            _uploadRoot,
-            $"{Guid.NewGuid():N}{Path.GetExtension(safeFileName).ToLowerInvariant()}");
-        string digest;
-        long length;
-        try
-        {
-            await using (var target = new FileStream(
-                             destination,
-                             FileMode.CreateNew,
-                             FileAccess.Write,
-                             FileShare.None,
-                             81920,
-                             FileOptions.Asynchronous | FileOptions.SequentialScan))
-            {
-                using var hasher = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-                var buffer = new byte[81920];
-                length = 0;
-                while (true)
-                {
-                    var read = await content.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
-                    if (read == 0)
-                    {
-                        break;
-                    }
-
-                    await target.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
-                    hasher.AppendData(buffer, 0, read);
-                    length += read;
-                }
-
-                digest = Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
-            }
-
-            return await CreateFileSourceAsync(
-                destination,
-                destination,
-                safeFileName,
-                contentType,
-                displayName,
-                parsedType,
-                folderId,
-                isTemporary,
-                preheatEnabled,
-                length,
-                digest,
-                cancellationToken).ConfigureAwait(false);
-        }
-        catch
-        {
-            TryDeleteFile(destination);
-            throw;
-        }
     }
 
     public async Task<MediaSourceDto> AddLocalAsync(
@@ -327,25 +109,76 @@ public sealed partial class MediaSourceService(
             cancellationToken);
     }
 
-    public Task<MediaSourceDto> MoveSourceAsync(
+    public async Task<MediaSourceDto> MoveSourceAsync(
         long sourceId,
         long? folderId,
-        CancellationToken cancellationToken = default) =>
-        writes.ExecuteAsync(
-            async (database, token) =>
+        CancellationToken cancellationToken = default)
+    {
+        string? originalPath = null;
+        string? targetPath = null;
+        try
+        {
+            return await writes.ExecuteAsync(async (database, token) =>
             {
                 var source = await FindSourceAsync(database, sourceId, token).ConfigureAwait(false);
-                if (folderId is not null && !await database.MediaFolders.AnyAsync(
-                        folder => folder.Id == folderId.Value,
-                        token).ConfigureAwait(false))
+                var effectiveFolder = await OptionalFolderIdAsync(database, folderId, token).ConfigureAwait(false);
+                var managed = ManagedFileOrNull(source.UploadedFile);
+                if (managed is not null)
                 {
-                    throw new MediaServiceException($"文件夹 id={folderId.Value} 不存在", isNotFound: true);
-                }
+                    var activeDisplay = await database.PlaybackSessions.AnyAsync(session =>
+                        session.WindowId <= WindowId.Maximum && session.MediaSourceId == sourceId &&
+                        (session.PendingCommand != string.Empty ||
+                         session.PlaybackState == PlaybackState.Loading ||
+                         session.PlaybackState == PlaybackState.Playing ||
+                         session.PlaybackState == PlaybackState.Paused), token).ConfigureAwait(false);
+                    var activeAudio = await database.BackgroundAudioStates.AnyAsync(audio =>
+                        audio.CurrentSourceId == sourceId &&
+                        (audio.PlaybackState == PlaybackState.Loading ||
+                         audio.PlaybackState == PlaybackState.Playing ||
+                         audio.PlaybackState == PlaybackState.Paused), token).ConfigureAwait(false);
+                    var converting = await database.MediaPreparationJobs.AnyAsync(job =>
+                        job.SourceId == sourceId && job.Status == OperationStatus.Running, token).ConfigureAwait(false);
+                    if (activeDisplay || activeAudio || converting)
+                        throw new MediaServiceException("媒体源正在播放或转换中，停止后才能移动原件。");
+                    if (!File.Exists(managed)) throw new MediaServiceException("受管理媒体原件不存在，不能移动。");
 
-                source.FolderId = folderId;
+                    var folders = await database.MediaFolders.AsNoTracking().ToListAsync(token).ConfigureAwait(false);
+                    var targetFolder = _paths.FolderPath(effectiveFolder, folders);
+                    _paths.EnsureNoReparsePoint(targetFolder);
+                    if (source.FolderId == effectiveFolder &&
+                        string.Equals(Path.GetDirectoryName(managed), targetFolder, StringComparison.OrdinalIgnoreCase))
+                        return ToSourceDto(source);
+                    Directory.CreateDirectory(targetFolder);
+                    var originalName = source.OriginalFilename.Length > 0
+                        ? source.OriginalFilename
+                        : Path.GetFileName(managed);
+                    var selected = _paths.NextAvailableFilePath(targetFolder, originalName);
+                    if (!string.Equals(managed, selected, StringComparison.OrdinalIgnoreCase))
+                    {
+                        originalPath = managed;
+                        targetPath = selected;
+                        File.Move(originalPath, targetPath);
+                        source.Uri = targetPath;
+                        source.UploadedFile = targetPath;
+                    }
+                }
+                source.FolderId = effectiveFolder;
                 return ToSourceDto(source);
-            },
-            cancellationToken);
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        catch
+        {
+            if (originalPath is not null && targetPath is not null && File.Exists(targetPath) && !File.Exists(originalPath))
+            {
+                await using var check = await contextFactory.CreateDbContextAsync(CancellationToken.None).ConfigureAwait(false);
+                var committed = await check.MediaSources.AsNoTracking().Include(source => source.PptResources)
+                    .SingleOrDefaultAsync(source => source.Id == sourceId, CancellationToken.None).ConfigureAwait(false);
+                if (committed?.UploadedFile == targetPath) return ToSourceDto(committed);
+                File.Move(targetPath, originalPath);
+            }
+            throw;
+        }
+    }
 
     public Task<MediaSourceDto> UpdateSourceAsync(
         long sourceId,
@@ -427,46 +260,6 @@ public sealed partial class MediaSourceService(
             Download: false);
     }
 
-    private Task<MediaSourceDto> CreateFileSourceAsync(
-        string uri,
-        string uploadedFile,
-        string originalFilename,
-        string? contentType,
-        string? displayName,
-        MediaSourceType sourceType,
-        long? folderId,
-        bool isTemporary,
-        bool preheatEnabled,
-        long fileSize,
-        string digest,
-        CancellationToken cancellationToken) =>
-        writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                var effectiveFolder = await OptionalFolderIdAsync(database, folderId, token).ConfigureAwait(false);
-                var source = new MediaSource
-                {
-                    SourceType = sourceType,
-                    Name = string.IsNullOrWhiteSpace(displayName) ? Path.GetFileNameWithoutExtension(originalFilename) : ValidateName(displayName, "显示名称不能为空"),
-                    Uri = uri,
-                    UploadedFile = uploadedFile,
-                    IsAvailable = true,
-                    FolderId = effectiveFolder,
-                    OriginalFilename = originalFilename,
-                    FileSize = fileSize,
-                    MimeType = string.IsNullOrWhiteSpace(contentType) ? GuessMimeType(originalFilename) : contentType,
-                    IsTemporary = isTemporary,
-                    ExpiresAt = isTemporary ? _timeProvider.GetUtcNow().AddDays(1) : null,
-                    KeepAlive = preheatEnabled,
-                    SourceRevision = 1,
-                    ContentDigest = digest,
-                    CreatedAt = _timeProvider.GetUtcNow(),
-                };
-                database.MediaSources.Add(source);
-                await database.SaveChangesAsync(token).ConfigureAwait(false);
-                return ToSourceDto(source);
-            },
-            cancellationToken);
 
 }
 

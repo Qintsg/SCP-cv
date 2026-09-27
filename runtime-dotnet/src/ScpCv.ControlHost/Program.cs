@@ -11,6 +11,7 @@ using ScpCv.ControlHost.Events;
 using ScpCv.ControlHost.Health;
 using ScpCv.ControlHost.Ipc;
 using ScpCv.ControlHost.Logging;
+using ScpCv.ControlHost.Media;
 using ScpCv.ControlHost.Runtime;
 using ScpCv.ControlHost.Commands;
 using ScpCv.Infrastructure.Auth;
@@ -76,6 +77,7 @@ if (safetyMode.IsSimulation)
 {
     builder.Services.AddSingleton<QueuedCommandWakeNotifier>();
     builder.Services.AddSingleton<ICommandWakeNotifier>(services => services.GetRequiredService<QueuedCommandWakeNotifier>());
+    builder.Services.AddSingleton<IPptSlideConverter, UnavailablePptSlideConverter>();
 }
 else
 {
@@ -88,6 +90,7 @@ else
     builder.Services.AddSingleton<RuntimePipeBroker>();
     builder.Services.AddSingleton<RuntimeCommandWakeNotifier>();
     builder.Services.AddSingleton<ICommandWakeNotifier>(services => services.GetRequiredService<RuntimeCommandWakeNotifier>());
+    builder.Services.AddSingleton<IPptSlideConverter, BrokerPptSlideConverter>();
     builder.Services.AddHostedService(services => services.GetRequiredService<RuntimePipeBroker>());
 }
 builder.Services.AddSingleton<RuntimeSupervisorControl>(services =>
@@ -104,6 +107,7 @@ builder.Services.AddSingleton<CommandResultService>();
 builder.Services.AddSingleton<RuntimeAuthorityRepository>();
 builder.Services.AddSingleton<MediaSourceService>();
 builder.Services.AddSingleton<MediaPreparationService>();
+builder.Services.AddHostedService<PptConversionHostedService>();
 if (safetyMode.IsSimulation)
 {
     builder.Services.AddSingleton<IDisplayTopologyProvider, SimulationDisplayTopologyProvider>();
@@ -119,6 +123,7 @@ else
     builder.Services.AddSingleton<IVideoWallController, TcpVideoWallController>();
 }
 builder.Services.AddSingleton<RuntimeStateService>();
+builder.Services.AddSingleton<PowerPointSettingsService>();
 builder.Services.AddSingleton<VideoWallLayoutService>();
 builder.Services.AddSingleton<PresentationCoordinator>();
 builder.Services.AddSingleton<ScenarioService>();
@@ -189,6 +194,7 @@ app.MapAuthEndpoints();
 app.MapMediaEndpoints();
 app.MapPlaybackEndpoints();
 app.MapVideoWallLayoutEndpoints();
+app.MapPowerPointSettingsEndpoints();
 app.MapPresentationEndpoints();
 app.MapScenarioEndpoints();
 app.MapSystemEndpoints();

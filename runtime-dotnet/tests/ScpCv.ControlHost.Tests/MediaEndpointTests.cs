@@ -1,13 +1,108 @@
+// 受保护媒体上传、移动、下载和 PPT 页图合同回归。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
+using ScpCv.Domain.Model;
+using ScpCv.Infrastructure.Media;
 
 namespace ScpCv.ControlHost.Tests;
 
 public sealed class MediaEndpointTests
 {
+    [Fact]
+    public async Task PreparedPptSlideImageRequiresSessionAndReturnsPublishedPng()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var media = factory.Services.GetRequiredService<MediaSourceService>();
+        var preparation = factory.Services.GetRequiredService<MediaPreparationService>();
+        await using var upload = new MemoryStream("pptx-test"u8.ToArray());
+        var source = await media.AddUploadedAsync(upload, "deck.pptx", null, null, null, null, false, false);
+        var job = await preparation.ClaimNextAsync(PreparationJobKind.PptImages);
+        Assert.NotNull(job);
+        var staging = Path.Combine(factory.TemporaryRoot, "cache", "staging", job.JobId.ToString("N"));
+        Directory.CreateDirectory(staging);
+        byte[] png = [137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3, 4];
+        await File.WriteAllBytesAsync(Path.Combine(staging, "page-0001.png"), png);
+        await preparation.PublishSlideImagesAsync(job.JobId, staging, 1);
+
+        using var anonymous = await client.GetAsync($"/api/sources/{source.Id}/slides/1/");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        await AuthenticateAsync(client);
+        using var response = await client.GetAsync($"/api/sources/{source.Id}/slides/1/");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/png", response.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(png, await response.Content.ReadAsByteArrayAsync());
+    }
+
+    [Fact]
+    public async Task FailedPptPreparationCanBeRetriedThroughProtectedEndpoint()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var media = factory.Services.GetRequiredService<MediaSourceService>();
+        var preparation = factory.Services.GetRequiredService<MediaPreparationService>();
+        await using var upload = new MemoryStream("pptx-retry"u8.ToArray());
+        var source = await media.AddUploadedAsync(upload, "retry.pptx", null, null, null, null, false, false);
+        var job = await preparation.ClaimNextAsync(PreparationJobKind.PptImages);
+        Assert.NotNull(job);
+        await preparation.FailSlideImagesAsync(job.JobId, "转换失败");
+        var csrf = await AuthenticateAsync(client);
+
+        using var request = CreateJsonRequest(HttpMethod.Post, $"/api/sources/{source.Id}/prepare/", csrf, new { });
+        using var response = await client.SendAsync(request);
+        using var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("queued", body.RootElement.GetProperty("source").GetProperty("preparation_state").GetString());
+    }
+
     private const string InitialPassword = "Old-password-123";
+
+    [Fact]
+    public async Task UploadedBytesRemainIdenticalAfterSourceAndFolderMoves()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        var bytes = "api-move-hash-原件"u8.ToArray();
+        using var createFolder = CreateJsonRequest(HttpMethod.Post, "/api/folders/", csrf, new { name = "PPT文件" });
+        using var folderResponse = await client.SendAsync(createFolder);
+        using var folderBody = await ReadJsonAsync(folderResponse);
+        Assert.Equal(HttpStatusCode.Created, folderResponse.StatusCode);
+        var folderId = folderBody.RootElement.GetProperty("folder").GetProperty("id").GetInt64();
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new ByteArrayContent(bytes), "file", "a.png");
+        using var upload = new HttpRequestMessage(HttpMethod.Post, "/api/sources/upload/") { Content = form };
+        upload.Headers.Add("X-CSRFToken", csrf);
+        using var uploaded = await client.SendAsync(upload);
+        using var uploadBody = await ReadJsonAsync(uploaded);
+        Assert.Equal(HttpStatusCode.Created, uploaded.StatusCode);
+        var sourceId = uploadBody.RootElement.GetProperty("source").GetProperty("id").GetInt64();
+
+        using var moveSource = CreateJsonRequest(HttpMethod.Patch, $"/api/sources/{sourceId}/move/", csrf,
+            new { folder_id = folderId });
+        using var moved = await client.SendAsync(moveSource);
+        using var movedBody = await ReadJsonAsync(moved);
+        Assert.Equal(HttpStatusCode.OK, moved.StatusCode);
+        var firstPath = movedBody.RootElement.GetProperty("source").GetProperty("uri").GetString()!;
+        Assert.Equal(Path.Combine(factory.TemporaryRoot, "media", "PPT文件", "a.png"), firstPath);
+
+        using var rename = CreateJsonRequest(HttpMethod.Patch, $"/api/folders/{folderId}/", csrf,
+            new { name = "演示资料" });
+        using var renamed = await client.SendAsync(rename);
+        Assert.Equal(HttpStatusCode.OK, renamed.StatusCode);
+        Assert.False(File.Exists(firstPath));
+        Assert.True(File.Exists(Path.Combine(factory.TemporaryRoot, "media", "演示资料", "a.png")));
+
+        using var download = await client.GetAsync($"/api/sources/{sourceId}/download/");
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal(bytes, await download.Content.ReadAsByteArrayAsync());
+    }
 
     [Fact]
     public async Task FolderAndWebSourceCrudPreservesCompatibilityContract()

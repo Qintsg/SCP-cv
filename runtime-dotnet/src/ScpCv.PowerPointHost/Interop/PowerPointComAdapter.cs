@@ -21,6 +21,8 @@ public sealed record PowerPointOpenResult(
 
 public sealed record PowerPointNavigationResult(bool Succeeded, int CurrentSlide);
 
+public sealed record PowerPointSlideExportResult(bool Succeeded, string Code, int PageCount, string Detail);
+
 /// <summary>所有 COM 对象只在 OfficeStaDispatcher 所在线程创建、访问和释放。</summary>
 public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
 {
@@ -137,6 +139,109 @@ public sealed class PowerPointComAdapter(OfficeStaDispatcher sta) : IDisposable
             item.Presentation.SaveAs(outputPath, 32 /* ppSaveAsPDF */);
             return File.Exists(outputPath);
         }, cancellationToken);
+
+    /// <summary>上传阶段在独立 STA 导出 PNG，绝不创建 SlideShow 放映窗口。</summary>
+    public Task<PowerPointSlideExportResult> ExportSlidesAsync(
+        Guid operationId,
+        string path,
+        string outputDirectory,
+        CancellationToken cancellationToken = default) =>
+        sta.InvokeAsync(operationId, _ => ExportSlidesCore(path, outputDirectory), cancellationToken);
+
+    private PowerPointSlideExportResult ExportSlidesCore(string path, string outputDirectory)
+    {
+        if (!File.Exists(path)) return new(false, "source_missing", 0, "文稿原件不存在。");
+        if (!_presentations.IsEmpty) return new(false, "office_slot_busy", 0, "当前有原生放映，暂不转换上传文稿。");
+        var fullOutput = Path.GetFullPath(outputDirectory);
+        if (Directory.Exists(fullOutput) && Directory.EnumerateFileSystemEntries(fullOutput).Any())
+            return new(false, "output_not_empty", 0, "转换暂存目录不是空目录。");
+
+        dynamic? presentation = null;
+        dynamic? slides = null;
+        dynamic? setup = null;
+        try
+        {
+            if (_application is null)
+            {
+                var applicationType = Type.GetTypeFromProgID("PowerPoint.Application")
+                    ?? throw new InvalidOperationException("未安装 PowerPoint COM Automation 类型。");
+                _application = Activator.CreateInstance(applicationType)
+                    ?? throw new InvalidOperationException("无法创建 PowerPoint COM Application。");
+                _applicationCreatedAt = DateTimeOffset.UtcNow;
+                _createdApplication = true;
+            }
+
+            dynamic presentations = _application.Presentations;
+            try
+            {
+                if ((int)presentations.Count != 0)
+                    return new(false, "office_not_exclusive", 0, "现有 PowerPoint 实例含其他文稿，未接管用户内容。");
+                // Open(FileName, ReadOnly, Untitled, WithWindow)：只读且不创建编辑窗口。
+                presentation = presentations.Open(path, -1, 0, 0);
+            }
+            finally { MarshalFinalRelease(presentations); }
+
+            slides = presentation.Slides;
+            var pageCount = (int)slides.Count;
+            if (pageCount is < 1 or > 500)
+                return new(false, "invalid_page_count", 0, "文稿页数必须为 1 到 500。" );
+            setup = presentation.PageSetup;
+            var slideWidth = Convert.ToDouble(setup.SlideWidth, System.Globalization.CultureInfo.InvariantCulture);
+            var slideHeight = Convert.ToDouble(setup.SlideHeight, System.Globalization.CultureInfo.InvariantCulture);
+            if (slideWidth <= 0 || slideHeight <= 0)
+                return new(false, "invalid_slide_size", 0, "文稿页面尺寸无效。");
+            const int imageWidth = 1920;
+            var imageHeight = Math.Clamp((int)Math.Round(imageWidth * slideHeight / slideWidth), 1, 2160);
+            Directory.CreateDirectory(fullOutput);
+            for (var index = 1; index <= pageCount; index++)
+            {
+                dynamic slide = slides[index];
+                try
+                {
+                    var file = Path.Combine(fullOutput, $"page-{index:0000}.png");
+                    slide.Export(file, "PNG", imageWidth, imageHeight);
+                    if (!File.Exists(file) || new FileInfo(file).Length == 0)
+                        throw new IOException($"第 {index} 页 PNG 未生成。");
+                }
+                finally { MarshalFinalRelease(slide); }
+            }
+            return new(true, "ok", pageCount, "逐页 PNG 已生成。");
+        }
+        catch (Exception exception)
+        {
+            return new(false, $"com_export_failed:{exception.GetType().Name}", 0, exception.Message);
+        }
+        finally
+        {
+            if (setup is not null) MarshalFinalRelease(setup);
+            if (slides is not null) MarshalFinalRelease(slides);
+            if (presentation is not null)
+            {
+                try { presentation.Close(); } catch { }
+                MarshalFinalRelease(presentation);
+            }
+            ReleaseIdleConversionApplication();
+        }
+    }
+
+    private void ReleaseIdleConversionApplication()
+    {
+        if (!_createdApplication || _application is null || !_presentations.IsEmpty) return;
+        dynamic? presentations = null;
+        try
+        {
+            presentations = _application.Presentations;
+            if ((int)presentations.Count == 0) _application.Quit();
+        }
+        catch { }
+        finally
+        {
+            if (presentations is not null) MarshalFinalRelease(presentations);
+            MarshalFinalRelease(_application);
+            _application = null;
+            _createdApplication = false;
+        }
+    }
 
     public void Dispose()
     {

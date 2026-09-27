@@ -70,6 +70,7 @@ public sealed class PowerPointOfficeRequestExecutor(
                 "media" => await MediaAsync(request, cancellationToken).ConfigureAwait(false),
                 "close" => await CloseAsync(request, cancellationToken).ConfigureAwait(false),
                 "export_pdf" => await ExportPdfAsync(request, cancellationToken).ConfigureAwait(false),
+                "export_slides" => await ExportSlidesAsync(request, cancellationToken).ConfigureAwait(false),
                 _ => Failed(request, "unsupported_operation", $"不支持 Office 操作 {request.Operation}。"),
             };
         }
@@ -190,6 +191,18 @@ public sealed class PowerPointOfficeRequestExecutor(
         return succeeded
             ? Succeeded(request, new { output_path = output, format = "pdf" })
             : Failed(request, "export_failed", "PowerPoint PDF 导出未生成已验证文件。");
+    }
+
+    private async Task<OfficeResultDto> ExportSlidesAsync(OfficeRequestDto request, CancellationToken cancellationToken)
+    {
+        var result = await adapter.ExportSlidesAsync(
+            request.OfficeOperationId,
+            String(request.Parameters, "path"),
+            String(request.Parameters, "output_directory"),
+            cancellationToken).ConfigureAwait(false);
+        return result.Succeeded
+            ? Succeeded(request, new { page_count = result.PageCount, output_directory = String(request.Parameters, "output_directory") })
+            : Failed(request, result.Code, result.Detail);
     }
 
     private static OfficeResultDto Succeeded(OfficeRequestDto request, object result)

@@ -248,6 +248,11 @@ public sealed class ScenarioEndpointTests
             Name = name,
             Uri = $"{name}.pptx",
             IsAvailable = true,
+            ContentDigest = "sha256:scenario-ppt",
+            MetadataJson = JsonSerializer.Serialize(new
+            {
+                slide_images = new { status = "ready", source_digest = "sha256:scenario-ppt", directory = @"C:\cache\scenario-slides", page_count = 2 },
+            }),
             CreatedAt = DateTimeOffset.UtcNow,
         };
         database.MediaSources.Add(source);

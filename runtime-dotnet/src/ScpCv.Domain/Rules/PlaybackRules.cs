@@ -50,7 +50,7 @@ public static class PlaybackRules
         MediaSourceType sourceType,
         PlaybackMode reportedMode) =>
         sourceType == MediaSourceType.Presentation &&
-        reportedMode is PlaybackMode.PowerPoint or PlaybackMode.Pdf
+        reportedMode is PlaybackMode.PowerPoint or PlaybackMode.Pdf or PlaybackMode.SlideImages
             ? reportedMode
             : PlaybackMode.None;
 

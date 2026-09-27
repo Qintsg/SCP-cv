@@ -98,6 +98,7 @@ public sealed class RuntimeState
     public BigScreenMode BigScreenMode { get; set; } = BigScreenMode.Single;
     public int VolumeLevel { get; set; } = 100;
     public bool VolumeMuted { get; set; }
+    public bool ExperimentalPowerPointEnabled { get; set; }
     public string WallLayoutDraftJson { get; set; } = "{}";
     public long WallLayoutDraftRevision { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }

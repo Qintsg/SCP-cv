@@ -1,3 +1,4 @@
+// 媒体文件夹、上传、预览和下载的 REST 入口。
 using System.Globalization;
 using System.Text.Json;
 using ScpCv.Infrastructure.Media;
@@ -20,6 +21,8 @@ public static class MediaEndpoints
         api.MapPatch("/sources/{sourceId:long}/move/", MoveSourceAsync);
         api.MapGet("/sources/{sourceId:long}/download/", DownloadSourceAsync);
         api.MapGet("/sources/{sourceId:long}/preview/", PreviewSourceAsync);
+        api.MapGet("/sources/{sourceId:long}/slides/{page:int}/", PptSlideImageAsync);
+        api.MapPost("/sources/{sourceId:long}/prepare/", RetryPptImagesAsync);
         api.MapPatch("/sources/{sourceId:long}/", UpdateSourceAsync);
         api.MapDelete("/sources/{sourceId:long}/", DeleteSourceAsync);
         return endpoints;
@@ -347,6 +350,39 @@ public static class MediaEndpoints
         {
             var file = await media.GetPreviewAsync(sourceId, cancellationToken).ConfigureAwait(false);
             return Results.File(file.Path, file.ContentType, enableRangeProcessing: true);
+        }
+        catch (MediaServiceException exception)
+        {
+            return MediaError(exception, notFoundForMissing: true);
+        }
+    }
+
+    private static async Task<IResult> PptSlideImageAsync(
+        long sourceId,
+        int page,
+        MediaSourceService media,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var file = await media.GetPptSlideImageAsync(sourceId, page, cancellationToken).ConfigureAwait(false);
+            return Results.File(file.Path, file.ContentType, enableRangeProcessing: true);
+        }
+        catch (MediaServiceException exception)
+        {
+            return MediaError(exception, notFoundForMissing: true);
+        }
+    }
+
+    private static async Task<IResult> RetryPptImagesAsync(
+        long sourceId,
+        MediaPreparationService preparation,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var source = await preparation.RetryPptImagesAsync(sourceId, cancellationToken).ConfigureAwait(false);
+            return Results.Ok(new { success = true, source });
         }
         catch (MediaServiceException exception)
         {

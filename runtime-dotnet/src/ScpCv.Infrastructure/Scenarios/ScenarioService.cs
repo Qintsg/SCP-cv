@@ -5,6 +5,7 @@ using ScpCv.Contracts.Http;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Infrastructure.Playback;
+using ScpCv.Infrastructure.Presentations;
 using ScpCv.Infrastructure.Commands;
 using ScpCv.Infrastructure.VideoWall;
 
@@ -189,6 +190,28 @@ public sealed class ScenarioService(
                 $"预案仍包含已退役的窗口 {retiredTarget.WindowId} 目标；请编辑预案并明确清除该目标后再激活。",
                 code: "scenario_legacy_window");
 
+        var presentationBySource = new Dictionary<long, PresentationSelection>();
+        await using (var preflight = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var experimental = await preflight.RuntimeStates.AsNoTracking()
+                .Select(state => state.ExperimentalPowerPointEnabled)
+                .SingleAsync(cancellationToken).ConfigureAwait(false);
+            foreach (var target in targets.Where(target => target.SourceState == "set"))
+            {
+                if (target.SourceId is not > 0)
+                    throw new ScenarioServiceException($"预案窗口 {target.WindowId} 未指定媒体源。");
+                var source = await preflight.MediaSources.AsNoTracking()
+                    .SingleOrDefaultAsync(item => item.Id == target.SourceId.Value, cancellationToken)
+                    .ConfigureAwait(false) ?? throw new ScenarioServiceException($"媒体源 id={target.SourceId.Value} 不存在");
+                if (source.SourceType != MediaSourceType.Presentation) continue;
+                try { presentationBySource[source.Id] = PresentationPlaybackSelector.Select(source, experimental); }
+                catch (PresentationPreparationException exception)
+                {
+                    throw new ScenarioServiceException(exception.Message, code: "presentation_not_prepared");
+                }
+            }
+        }
+
         if (scenario.BigScreenModeState == ScenarioValueState.Set)
         {
             // 旧 Python 的 activate_scenario 走 set_big_screen_mode，同样先切视频墙、失败即中止整个激活。
@@ -271,6 +294,17 @@ public sealed class ScenarioService(
                         uri = source.Uri,
                         autoplay = target.Autoplay,
                         target_slide = 0,
+                        presentation_mode = presentationBySource.TryGetValue(sourceId, out var presentation)
+                            ? presentation.Mode switch
+                            {
+                                PlaybackMode.Pdf => "pdf",
+                                PlaybackMode.SlideImages => "slide_images",
+                                PlaybackMode.PowerPoint => "powerpoint",
+                                _ => string.Empty,
+                            }
+                            : string.Empty,
+                        slide_images_directory = presentation?.SlidesDirectory ?? string.Empty,
+                        slide_images_page_count = presentation?.PageCount ?? 0,
                     });
                     command.ArgsJson = current.CommandArgsJson;
                     command.SourceGeneration = current.DesiredGeneration;

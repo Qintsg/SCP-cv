@@ -668,6 +668,9 @@ namespace ScpCv.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ExperimentalPowerPointEnabled")
+                        .HasColumnType("INTEGER");
+
                     b.Property<long>("UpdatedAt")
                         .HasColumnType("INTEGER");
 

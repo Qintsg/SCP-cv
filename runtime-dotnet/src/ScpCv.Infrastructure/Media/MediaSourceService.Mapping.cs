@@ -1,3 +1,4 @@
+// 媒体与文件夹的 REST 投影，显式区分页图准备状态。
 using System.Text.Json;
 using ScpCv.Contracts.Http;
 using ScpCv.Domain.Model;
@@ -19,9 +20,18 @@ public sealed partial class MediaSourceService
     {
         var metadata = ParseMetadata(source.MetadataJson);
         var playbackMode = SourceTypeName(source.SourceType) == "ppt"
-            ? ReadString(metadata, "slides_playback_mode") ??
-                (Path.GetExtension(source.Uri).Equals(".pdf", StringComparison.OrdinalIgnoreCase) ? "pdf" : "powerpoint")
+            ? (Path.GetExtension(source.Uri).Equals(".pdf", StringComparison.OrdinalIgnoreCase) ? "pdf" : "slide_images")
             : string.Empty;
+        var slideImages = metadata.TryGetValue("slide_images", out var value) && value.ValueKind == JsonValueKind.Object
+            ? value
+            : default;
+        var preparationState = slideImages.ValueKind == JsonValueKind.Object
+            ? ReadString(slideImages, "status") ?? string.Empty
+            : string.Empty;
+        var pageCount = slideImages.ValueKind == JsonValueKind.Object &&
+                        slideImages.TryGetProperty("page_count", out var pages) && pages.TryGetInt32(out var count)
+            ? count
+            : 0;
         var (previewUrl, previewKind, previewLabel) = Preview(source);
         return new MediaSourceDto
         {
@@ -41,6 +51,8 @@ public sealed partial class MediaSourceService
             KeepAlive = source.KeepAlive,
             PreheatEnabled = source.KeepAlive,
             PlaybackMode = playbackMode,
+            PreparationState = preparationState,
+            PageCount = pageCount,
             PreviewUrl = previewUrl,
             ThumbnailUrl = previewUrl,
             PreviewKind = previewKind,
@@ -99,4 +111,7 @@ public sealed partial class MediaSourceService
 
     private static string? ReadString(Dictionary<string, JsonElement> values, string key) =>
         values.TryGetValue(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+
+    private static string? ReadString(JsonElement value, string key) =>
+        value.TryGetProperty(key, out var item) && item.ValueKind == JsonValueKind.String ? item.GetString() : null;
 }

@@ -81,6 +81,48 @@ public sealed class HostHardwareIntegrationTests
     }
 
     [Fact]
+    public async Task UnpreparedPptTargetRejectsScenarioBeforePhysicalWallChange()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var wall = new StubVideoWallController();
+        long scenarioId;
+        await using (var database = fixture.Database.CreateDbContext())
+        {
+            var source = new MediaSource
+            {
+                Name = "未准备 PPT",
+                SourceType = MediaSourceType.Presentation,
+                Uri = "unprepared.pptx",
+                ContentDigest = "sha256:unprepared",
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            database.MediaSources.Add(source);
+            await database.SaveChangesAsync();
+            var scenario = new Scenario
+            {
+                Name = "危险的旧预案",
+                BigScreenModeState = ScenarioValueState.Set,
+                BigScreenMode = BigScreenMode.Double,
+                TargetsJson = JsonSerializer.Serialize(new[]
+                {
+                    new ScenarioTargetDto { WindowId = 1, SourceState = "set", SourceId = source.Id },
+                }),
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+            database.Scenarios.Add(scenario);
+            await database.SaveChangesAsync();
+            scenarioId = scenario.Id;
+        }
+
+        var error = await Assert.ThrowsAsync<ScenarioServiceException>(() => CreateScenarios(fixture, wall).ActivateAsync(scenarioId));
+
+        Assert.Equal("presentation_not_prepared", error.Code);
+        Assert.Empty(wall.Modes);
+        Assert.Equal(BigScreenMode.Single, await ReadBigScreenModeAsync(fixture));
+    }
+
+    [Fact]
     public async Task OnlyConfiguredBigScreenOutputsCanBeSelected()
     {
         await using var fixture = await ControlHostFixture.CreateAsync();

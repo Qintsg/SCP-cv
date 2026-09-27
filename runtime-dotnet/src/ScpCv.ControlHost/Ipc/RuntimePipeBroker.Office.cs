@@ -1,3 +1,4 @@
+// OfficeHost 放映请求与上传转页图的独立 STA 操作桥。
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Domain.Model;
@@ -8,6 +9,88 @@ namespace ScpCv.ControlHost.Ipc;
 
 public sealed partial class RuntimePipeBroker
 {
+    private int _officeConversionActive;
+
+    public bool CanConvertSlides => _connections.ContainsKey("office");
+
+    /// <summary>从 ControlHost 的准备作业发送独立转页图请求，不占用放映窗口。</summary>
+    public async Task<OfficeResultDto> ConvertSlidesAsync(
+        Guid jobId,
+        long sourceRevision,
+        string path,
+        string outputDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        if (Interlocked.CompareExchange(ref _officeConversionActive, 1, 0) != 0)
+            return OfficeResult("failed", "office_conversion_busy", jobId);
+        try
+        {
+            if (!_connections.TryGetValue("office", out var office) || office.OwnerEpoch <= 0)
+                return OfficeResult("failed", "office_unavailable", jobId);
+            if (_presentations.CurrentSlot is not null)
+                return OfficeResult("failed", "office_slot_busy", jobId);
+            var group = await authority.GetGroupAsync(cancellationToken).ConfigureAwait(false);
+            if (group.State != RuntimeGroupState.Armed || group.GroupEpoch != office.GroupEpoch)
+                return OfficeResult("failed", "group_not_armed", jobId);
+
+            var deadline = DateTimeOffset.UtcNow.AddMinutes(5);
+            var request = new OfficeRequestDto
+            {
+                OfficeOperationId = jobId,
+                ParentJobId = jobId,
+                SourceGeneration = sourceRevision,
+                GroupEpoch = group.GroupEpoch,
+                HostEpoch = office.OwnerEpoch,
+                SlotEpoch = 1,
+                Deadline = deadline.ToString("O"),
+                Operation = "export_slides",
+                Parameters = new Dictionary<string, JsonElement>
+                {
+                    ["path"] = JsonSerializer.SerializeToElement(path),
+                    ["output_directory"] = JsonSerializer.SerializeToElement(outputDirectory),
+                },
+            };
+            var fingerprint = OfficeRequestFingerprint(request);
+            if (_officeResults.TryGetValue(jobId, out var cached))
+                return string.Equals(cached.RequestFingerprint, fingerprint, StringComparison.Ordinal)
+                    ? cached.Result
+                    : OfficeResult("failed", "office_operation_conflict", jobId);
+
+            await authority.RegisterOfficeOperationAsync(new RegisterOfficeOperation(
+                jobId, null, jobId, null, sourceRevision, group.GroupEpoch, office.OwnerEpoch, 1,
+                deadline, JsonSerializer.Serialize(new { request.Operation, request.Parameters })), cancellationToken)
+                .ConfigureAwait(false);
+            var completion = new TaskCompletionSource<OfficeResultDto>(TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!_officePending.TryAdd(jobId, new OfficePendingRequest(completion, request, Guid.Empty, fingerprint)))
+                return OfficeResult("failed", "office_operation_inflight", jobId);
+
+            try
+            {
+                await office.SendAsync(new IpcFrameDto
+                {
+                    MessageType = "office_request",
+                    MessageId = Guid.NewGuid(),
+                    InstanceId = office.Identity.InstanceId,
+                    OwnerEpoch = office.OwnerEpoch,
+                    Payload = JsonSerializer.SerializeToElement(request),
+                }, cancellationToken).ConfigureAwait(false);
+                var result = await completion.Task.WaitAsync(deadline - DateTimeOffset.UtcNow, cancellationToken)
+                    .ConfigureAwait(false);
+                _officeResults[jobId] = new OfficeCachedResult(fingerprint, result);
+                return result;
+            }
+            catch (TimeoutException)
+            {
+                var uncertain = OfficeResult("uncertain", "office_timeout", jobId);
+                _officeResults[jobId] = new OfficeCachedResult(fingerprint, uncertain);
+                await CompleteOfficeOperationAsync(request, uncertain, CancellationToken.None).ConfigureAwait(false);
+                return uncertain;
+            }
+            finally { _officePending.TryRemove(jobId, out _); }
+        }
+        finally { Interlocked.Exchange(ref _officeConversionActive, 0); }
+    }
+
     private async Task<IpcFrameDto> ForwardOfficeRequestAsync(
         RuntimeConnection player,
         IpcFrameDto frame,
@@ -32,6 +115,10 @@ public sealed partial class RuntimePipeBroker
         }
 
         var operation = request.Operation.Trim().ToLowerInvariant();
+        if (operation == "export_slides")
+            return Response(frame, "office_result", OfficeResult("failed", "office_operation_forbidden", request.OfficeOperationId));
+        if (operation == "open" && Volatile.Read(ref _officeConversionActive) != 0)
+            return Response(frame, "office_result", OfficeResult("failed", "office_conversion_busy", request.OfficeOperationId));
         var authorityRequest = request with
         {
             GroupEpoch = player.GroupEpoch,

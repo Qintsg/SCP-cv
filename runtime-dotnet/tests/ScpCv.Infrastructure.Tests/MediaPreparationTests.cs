@@ -1,3 +1,4 @@
+// 媒体准备作业、页图制品与原件保留回归。
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
@@ -9,6 +10,77 @@ namespace ScpCv.Infrastructure.Tests;
 
 public sealed class MediaPreparationTests
 {
+    [Fact]
+    public async Task PptUploadQueuesImagesAndPublishingMakesOrderedPagesAvailable()
+    {
+        var root = CreateTemporaryRoot();
+        try
+        {
+            var factory = await CreateInitializedFactoryAsync(root);
+            using var writes = new WriteCoordinator(factory);
+            var media = new MediaSourceService(factory, writes, factory, new MediaStorageOptions());
+            await using var upload = new MemoryStream("local-ppt-test"u8.ToArray());
+            var uploaded = await media.AddUploadedAsync(
+                upload, "deck.pptx", null, "deck", null, null, false, false);
+
+            Assert.False(uploaded.IsAvailable);
+            Assert.Equal("queued", uploaded.PreparationState);
+            await using var initial = factory.CreateDbContext();
+            var source = await initial.MediaSources.SingleAsync(item => item.Id == uploaded.Id);
+            Assert.True(File.Exists(source.UploadedFile));
+
+            var service = new MediaPreparationService(factory, writes, new DataRootOptions { RootPath = root });
+            var job = await service.ClaimNextAsync(PreparationJobKind.PptImages);
+            Assert.NotNull(job);
+            var staging = Path.Combine(root, "cache", "staging", job.JobId.ToString("N"));
+            Directory.CreateDirectory(staging);
+            byte[] png = [137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3, 4];
+            await File.WriteAllBytesAsync(Path.Combine(staging, "page-0001.png"), png);
+            await File.WriteAllBytesAsync(Path.Combine(staging, "page-0002.png"), png);
+
+            var manifest = await service.PublishSlideImagesAsync(job.JobId, staging, 2);
+
+            Assert.Equal(OperationStatus.Succeeded, manifest.Status);
+            await using var current = factory.CreateDbContext();
+            var prepared = await current.MediaSources.Include(item => item.PptResources)
+                .SingleAsync(item => item.Id == uploaded.Id);
+            Assert.True(prepared.IsAvailable);
+            Assert.Equal(2, prepared.PptResources.Count);
+            Assert.True(File.Exists(prepared.UploadedFile));
+            Assert.Equal("ready", MediaSourceService.ToSourceDto(prepared).PreparationState);
+            Assert.Equal(2, MediaSourceService.ToSourceDto(prepared).PageCount);
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Fact]
+    public async Task FailedPptCanBeRetriedWithNewOperationIdButUncertainPptCannot()
+    {
+        var root = CreateTemporaryRoot();
+        try
+        {
+            var factory = await CreateInitializedFactoryAsync(root);
+            using var writes = new WriteCoordinator(factory);
+            var media = new MediaSourceService(factory, writes, factory, new MediaStorageOptions());
+            var preparation = new MediaPreparationService(factory, writes, new DataRootOptions { RootPath = root });
+            await using var upload = new MemoryStream("retry-ppt"u8.ToArray());
+            var source = await media.AddUploadedAsync(upload, "retry.pptx", null, null, null, null, false, false);
+            var first = await preparation.ClaimNextAsync(PreparationJobKind.PptImages);
+            Assert.NotNull(first);
+            await preparation.FailSlideImagesAsync(first.JobId, "COM 导出失败");
+
+            var retried = await preparation.RetryPptImagesAsync(source.Id);
+            var second = await preparation.ClaimNextAsync(PreparationJobKind.PptImages);
+
+            Assert.Equal("queued", retried.PreparationState);
+            Assert.NotNull(second);
+            Assert.NotEqual(first.JobId, second.JobId);
+            await preparation.MarkUncertainSlideImagesAsync(second.JobId, "Office 结果未知");
+            await Assert.ThrowsAsync<MediaServiceException>(() => preparation.RetryPptImagesAsync(source.Id));
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
     [Fact]
     public async Task PreparationJobsDeduplicateAndPublishArtifactAtomically()
     {

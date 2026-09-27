@@ -101,114 +101,6 @@ public sealed partial class RuntimeStateService(
         return await GetRuntimeAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<SystemVolumeDto> GetSystemVolumeAsync(CancellationToken cancellationToken = default)
-    {
-        await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        var runtime = await database.RuntimeStates.AsNoTracking().SingleAsync(cancellationToken).ConfigureAwait(false);
-        var persisted = ToVolumeDto(runtime);
-        if (!_systemAudio.IsHardware) return persisted;
-
-        var current = _systemAudio.GetCurrent();
-        return current.Available
-            ? ToVolumeDto(current)
-            : persisted with { Backend = current.Backend, SystemSynced = false };
-    }
-
-    public Task<SystemVolumeDto> SetSystemVolumeAsync(
-        int? level,
-        bool? muted,
-        CancellationToken cancellationToken = default)
-    {
-        if (level is < 0 or > 100)
-        {
-            throw new PlaybackServiceException("系统音量必须在 0 到 100 之间", "volume_error");
-        }
-
-        if (_systemAudio.IsHardware)
-        {
-            var applied = _systemAudio.Apply(level, muted);
-            if (!applied.Available)
-                throw new PlaybackServiceException(applied.Detail, "system_audio_unavailable");
-
-            return writes.ExecuteAsync(
-                async (database, token) =>
-                {
-                    var runtime = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
-                    runtime.VolumeLevel = applied.Level;
-                    runtime.VolumeMuted = applied.Muted;
-                    runtime.UpdatedAt = _timeProvider.GetUtcNow();
-                    return ToVolumeDto(applied);
-                },
-                cancellationToken);
-        }
-
-        return writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                var runtime = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
-                if (level is not null)
-                {
-                    runtime.VolumeLevel = level.Value;
-                }
-
-                runtime.VolumeMuted = muted ?? (runtime.VolumeLevel == 0 || runtime.VolumeMuted);
-                runtime.UpdatedAt = _timeProvider.GetUtcNow();
-                return ToVolumeDto(runtime);
-            },
-            cancellationToken);
-    }
-
-    public Task<IReadOnlyList<PlaybackSessionDto>> OpenSourceAsync(
-        int windowId,
-        long sourceId,
-        bool autoplay,
-        int targetSlide,
-        CancellationToken cancellationToken = default)
-    {
-        ValidateWindow(windowId);
-        if (sourceId <= 0)
-        {
-            throw new PlaybackServiceException("source_id 必须大于 0", "invalid_source");
-        }
-
-        return EnqueueDisplayAsync(
-            windowId,
-            "OPEN",
-            "{}",
-            async (database, session, command, token) =>
-            {
-                var source = await database.MediaSources.SingleOrDefaultAsync(item => item.Id == sourceId, token).ConfigureAwait(false)
-                    ?? throw new PlaybackServiceException($"媒体源 id={sourceId} 不存在");
-                session.MediaSourceId = source.Id;
-                session.PlaybackMode = PlaybackMode.None;
-                session.PlaybackState = PlaybackState.Loading;
-                session.ErrorMessage = string.Empty;
-                session.CurrentSlide = targetSlide;
-                session.PendingCommand = command.Command;
-                session.DesiredGeneration = checked(session.DesiredGeneration + 1);
-                var presentation = source.SourceType == MediaSourceType.Presentation
-                    ? PresentationArguments(source)
-                    : null;
-                session.CommandArgsJson = JsonSerializer.Serialize(new
-                {
-                    source_id = source.Id,
-                    source_type = SourceTypeName(source.SourceType),
-                    uri = source.Uri,
-                    content_digest = source.ContentDigest,
-                    autoplay,
-                    loop = session.LoopEnabled,
-                    target_slide = targetSlide,
-                    fallback_uri = presentation?.FallbackUri ?? string.Empty,
-                    fallback_digest = presentation?.FallbackDigest ?? string.Empty,
-                    fallback_fresh = presentation?.FallbackFresh ?? false,
-                });
-                command.ArgsJson = session.CommandArgsJson;
-                command.SourceGeneration = session.DesiredGeneration;
-                command.SourceRevision = source.SourceRevision;
-            },
-            cancellationToken);
-    }
-
     public Task<IReadOnlyList<PlaybackSessionDto>> ControlAsync(
         int windowId,
         string command,
@@ -512,22 +404,6 @@ public sealed partial class RuntimeStateService(
         MutedWindows = MutedWindows(runtime.BigScreenMode),
     };
 
-    private static SystemVolumeDto ToVolumeDto(RuntimeState runtime) => new()
-    {
-        Level = runtime.VolumeLevel,
-        Muted = runtime.VolumeMuted,
-        SystemSynced = false,
-        Backend = "runtime_state",
-    };
-
-    private static SystemVolumeDto ToVolumeDto(SystemAudioSnapshot audio) => new()
-    {
-        Level = audio.Level,
-        Muted = audio.Muted,
-        SystemSynced = audio.Available,
-        Backend = audio.Backend,
-    };
-
     private static IReadOnlyList<int> MutedWindows(BigScreenMode mode) =>
         mode == BigScreenMode.Single ? [2] : [];
 
@@ -545,6 +421,7 @@ public sealed partial class RuntimeStateService(
     {
         PlaybackMode.PowerPoint => "powerpoint",
         PlaybackMode.Pdf => "pdf",
+        PlaybackMode.SlideImages => "slide_images",
         _ => string.Empty,
     };
 
@@ -567,38 +444,6 @@ public sealed partial class RuntimeStateService(
         PlaybackState.Error => "错误",
         _ => string.Empty,
     };
-
-    private static PresentationCommandArguments PresentationArguments(MediaSource source)
-    {
-        if (Path.GetExtension(source.Uri).Equals(".pdf", StringComparison.OrdinalIgnoreCase))
-            return new PresentationCommandArguments(source.Uri, source.ContentDigest, true);
-        try
-        {
-            using var metadata = JsonDocument.Parse(source.MetadataJson);
-            if (!metadata.RootElement.TryGetProperty("slides_pdf", out var pdf) || pdf.ValueKind != JsonValueKind.Object)
-                return new PresentationCommandArguments(string.Empty, string.Empty, false);
-            var status = ReadJsonString(pdf, "status");
-            var path = ReadJsonString(pdf, "path");
-            if (string.IsNullOrWhiteSpace(path)) path = ReadJsonString(pdf, "relative_path");
-            var digest = ReadJsonString(pdf, "source_digest");
-            var fresh = status.Equals("ready", StringComparison.OrdinalIgnoreCase) &&
-                        !string.IsNullOrWhiteSpace(path) &&
-                        !string.IsNullOrWhiteSpace(digest) &&
-                        string.Equals(digest, source.ContentDigest, StringComparison.OrdinalIgnoreCase);
-            return new PresentationCommandArguments(path, digest, fresh);
-        }
-        catch (JsonException)
-        {
-            return new PresentationCommandArguments(string.Empty, string.Empty, false);
-        }
-    }
-
-    private static string ReadJsonString(JsonElement value, string property) =>
-        value.TryGetProperty(property, out var item) && item.ValueKind == JsonValueKind.String
-            ? item.GetString() ?? string.Empty
-            : string.Empty;
-
-    private sealed record PresentationCommandArguments(string FallbackUri, string FallbackDigest, bool FallbackFresh);
 
     private static string SourceTypeLabel(MediaSourceType type) => type switch
     {

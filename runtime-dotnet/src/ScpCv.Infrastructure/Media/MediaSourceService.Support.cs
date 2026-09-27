@@ -30,14 +30,14 @@ public sealed partial class MediaSourceService
         long? folderId,
         CancellationToken cancellationToken)
     {
-        if (folderId is null || folderId <= 0)
+        if (folderId is null)
         {
             return null;
         }
-
-        return await database.MediaFolders.AnyAsync(folder => folder.Id == folderId, cancellationToken).ConfigureAwait(false)
-            ? folderId
-            : null;
+        if (folderId <= 0 || !await database.MediaFolders.AnyAsync(folder => folder.Id == folderId, cancellationToken)
+                .ConfigureAwait(false))
+            throw new MediaServiceException($"文件夹 id={folderId} 不存在", isNotFound: true);
+        return folderId;
     }
 
     private static async Task<HashSet<long>?> LoadAncestorIdsAsync(
@@ -125,7 +125,7 @@ public sealed partial class MediaSourceService
         }
 
         var resolved = Path.GetFullPath(path);
-        return IsWithinRoot(resolved, _uploadRoot) ? resolved : null;
+        return IsWithinRoot(resolved, _mediaRoot) ? resolved : null;
     }
 
     private static bool IsWithinRoot(string path, string root)

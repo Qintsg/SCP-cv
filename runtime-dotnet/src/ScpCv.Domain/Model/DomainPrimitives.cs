@@ -49,6 +49,7 @@ public enum PlaybackMode
     None,
     PowerPoint,
     Pdf,
+    SlideImages,
 }
 
 #pragma warning disable CA1720 // Single/Double 是现有外部合同中的领域术语。
@@ -118,6 +119,7 @@ public enum PreparationJobKind
     Preview,
     ShowFormat,
     Pdf,
+    PptImages,
 }
 
 public enum OperationStatus

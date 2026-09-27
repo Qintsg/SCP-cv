@@ -145,7 +145,15 @@ public sealed partial class PlayerRuntimeHost(
             case "ppt" when Path.GetExtension(LocalPath(uri)).Equals(".pdf", StringComparison.OrdinalIgnoreCase):
                 next = await OpenPdfAsync(uri, Int(lease.Args, "target_slide", 1), cancellationToken);
                 break;
-            case "ppt": next = await OpenPowerPointAsync(lease, uri, cancellationToken); break;
+            case "ppt" when String(lease.Args, "presentation_mode") == "slide_images":
+                next = await OpenSlideImagesAsync(
+                    String(lease.Args, "slide_images_directory"),
+                    Int(lease.Args, "target_slide", 1), cancellationToken);
+                break;
+            case "ppt" when String(lease.Args, "presentation_mode") == "powerpoint":
+                next = await OpenPowerPointAsync(lease, uri, cancellationToken);
+                break;
+            case "ppt": throw new InvalidOperationException("PPT 页图尚未准备完成，且原生 PowerPoint 放映未启用。");
             default: throw new InvalidOperationException($"不支持媒体类型 {sourceType}。");
         }
 
@@ -160,6 +168,11 @@ public sealed partial class PlayerRuntimeHost(
         {
             _currentSlide = pdf.CurrentPage;
             _totalSlides = pdf.PageCount;
+        }
+        else if (next.Native is SlideImagePlaybackAdapter slides)
+        {
+            _currentSlide = slides.CurrentPage;
+            _totalSlides = slides.PageCount;
         }
         _state = autoplay ? "playing" : "paused";
         _window.SetSurface(next.Surface);
@@ -285,6 +298,21 @@ public sealed partial class PlayerRuntimeHost(
         return new SurfaceResource("pdf", image, adapter.DisposeAsync, adapter);
     }
 
+    private static async Task<SurfaceResource> OpenSlideImagesAsync(
+        string directory,
+        int initialPage,
+        CancellationToken cancellationToken)
+    {
+        var adapter = new SlideImagePlaybackAdapter();
+        await adapter.OpenAsync(directory, Math.Max(1, initialPage), cancellationToken);
+        var image = new System.Windows.Controls.Image
+        {
+            Source = Bitmap(await adapter.RenderPageAsync(adapter.CurrentPage, cancellationToken)),
+            Stretch = Stretch.Uniform,
+        };
+        return new SurfaceResource("slide_images", image, adapter.DisposeAsync, adapter);
+    }
+
     private Task<SurfaceResource> OpenVlcAsync(
         string uri,
         bool autoplay,
@@ -387,12 +415,15 @@ public sealed partial class PlayerRuntimeHost(
             _currentSlide = Int(result.Result, "current_slide", page);
             return;
         }
-        if (_current?.Native is not PdfPlaybackAdapter pdf) return;
-        page = Math.Clamp(page, 1, pdf.PageCount);
-        var bytes = await pdf.RenderPageAsync(page, cancellationToken);
+        if (_current?.Native is not PdfPlaybackAdapter && _current?.Native is not SlideImagePlaybackAdapter) return;
+        var pageCount = _current.Native is PdfPlaybackAdapter pdf ? pdf.PageCount : ((SlideImagePlaybackAdapter)_current.Native!).PageCount;
+        page = Math.Clamp(page, 1, pageCount);
+        var bytes = _current.Native is PdfPlaybackAdapter currentPdf
+            ? await currentPdf.RenderPageAsync(page, cancellationToken)
+            : await ((SlideImagePlaybackAdapter)_current.Native!).RenderPageAsync(page, cancellationToken);
         ((System.Windows.Controls.Image)_current.Surface).Source = Bitmap(bytes);
         _currentSlide = page;
-        _totalSlides = pdf.PageCount;
+        _totalSlides = pageCount;
     }
 
     private void SetVolume(int volume)
@@ -461,7 +492,7 @@ public sealed partial class PlayerRuntimeHost(
             source_generation = _generation,
             source_id = _sourceId == 0 ? (long?)null : _sourceId,
             playback_state = _state,
-            playback_mode = _current?.Kind switch { "pdf" => "pdf", "powerpoint" => "powerpoint", _ => "" },
+            playback_mode = _current?.Kind switch { "pdf" => "pdf", "slide_images" => "slide_images", "powerpoint" => "powerpoint", _ => "" },
             adapter_kind = _current?.Kind ?? string.Empty,
             current_slide = _currentSlide,
             total_slides = _totalSlides,

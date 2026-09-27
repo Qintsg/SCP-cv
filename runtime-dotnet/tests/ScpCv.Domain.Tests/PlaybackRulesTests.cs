@@ -71,11 +71,17 @@ public sealed class PlaybackRulesTests
         var pdf = PlaybackRules.GetWindowCapabilities(
             MediaSourceType.Presentation,
             PlaybackMode.Pdf);
+        var slideImages = PlaybackRules.GetWindowCapabilities(
+            MediaSourceType.Presentation,
+            PlaybackMode.SlideImages);
 
         Assert.True(powerPoint.HasFlag(PlaybackCapability.SlideMedia));
         Assert.True(powerPoint.HasFlag(PlaybackCapability.ResetPresentation));
         Assert.False(pdf.HasFlag(PlaybackCapability.SlideMedia));
         Assert.False(pdf.HasFlag(PlaybackCapability.ResetPresentation));
+        Assert.True(slideImages.HasFlag(PlaybackCapability.Next));
+        Assert.True(slideImages.HasFlag(PlaybackCapability.GoTo));
+        Assert.False(slideImages.HasFlag(PlaybackCapability.ResetPresentation));
         Assert.Equal(
             PlaybackMode.None,
             PlaybackRules.NormalizeReportedPlaybackMode(MediaSourceType.Video, PlaybackMode.PowerPoint));

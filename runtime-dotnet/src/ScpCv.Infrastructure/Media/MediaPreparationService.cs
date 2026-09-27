@@ -1,3 +1,4 @@
+// 媒体准备作业、版本化制品发布与旧结果隔离。
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
@@ -15,7 +16,7 @@ public sealed record PrepareMediaRequest(
     DateTimeOffset? Deadline,
     string RecipeVersion);
 
-public sealed class MediaPreparationService(
+public sealed partial class MediaPreparationService(
     IDbContextFactory<ControlDbContext> contextFactory,
     WriteCoordinator writes,
     DataRootOptions dataRootOptions,
@@ -63,17 +64,20 @@ public sealed class MediaPreparationService(
             cancellationToken);
     }
 
-    public Task<MediaPreparationJob?> ClaimNextAsync(CancellationToken cancellationToken = default) =>
+    public Task<MediaPreparationJob?> ClaimNextAsync(
+        PreparationJobKind? kind = null,
+        CancellationToken cancellationToken = default) =>
         writes.ExecuteAsync(
             async (database, token) =>
             {
                 var showing = await database.PlaybackSessions.AnyAsync(
-                    item => item.PlaybackState == PlaybackState.Playing,
+                    item => item.WindowId <= WindowId.Maximum && item.PlaybackState == PlaybackState.Playing,
                     token).ConfigureAwait(false);
                 if (showing) return null;
                 var now = _timeProvider.GetUtcNow();
                 var job = await database.MediaPreparationJobs
                     .Where(item => item.Status == OperationStatus.Queued &&
+                                   (kind == null || item.Kind == kind) &&
                                    (item.Deadline == null || item.Deadline > now))
                     .OrderByDescending(item => item.Priority)
                     .ThenBy(item => item.Id)

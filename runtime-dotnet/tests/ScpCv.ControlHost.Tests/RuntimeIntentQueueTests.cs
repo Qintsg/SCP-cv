@@ -218,6 +218,13 @@ public sealed class RuntimeIntentQueueTests
             Uri = $"queue-test-{type.ToString().ToLowerInvariant()}",
             IsAvailable = true,
             SourceRevision = sourceRevision,
+            ContentDigest = type == MediaSourceType.Presentation ? "sha256:queue-ppt" : string.Empty,
+            MetadataJson = type == MediaSourceType.Presentation
+                ? JsonSerializer.Serialize(new
+                {
+                    slide_images = new { status = "ready", source_digest = "sha256:queue-ppt", directory = @"C:\cache\queue-slides", page_count = 2 },
+                })
+                : "{}",
             CreatedAt = DateTimeOffset.UtcNow,
         };
         database.MediaSources.Add(source);

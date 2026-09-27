@@ -70,9 +70,9 @@ public sealed class PlaybackEndpointTests
                 .SingleAsync();
             using var args = JsonDocument.Parse(argsJson);
             Assert.Equal("sha256:presentation", args.RootElement.GetProperty("content_digest").GetString());
-            Assert.Equal("fallback.pdf", args.RootElement.GetProperty("fallback_uri").GetString());
-            Assert.Equal("sha256:presentation", args.RootElement.GetProperty("fallback_digest").GetString());
-            Assert.True(args.RootElement.GetProperty("fallback_fresh").GetBoolean());
+            Assert.Equal("slide_images", args.RootElement.GetProperty("presentation_mode").GetString());
+            Assert.Equal(@"C:\cache\presentation-slides", args.RootElement.GetProperty("slide_images_directory").GetString());
+            Assert.Equal(3, args.RootElement.GetProperty("slide_images_page_count").GetInt32());
         }
 
         using var closeRequest = Request(HttpMethod.Post, "/api/playback/1/close/", csrf, new { });
@@ -82,6 +82,40 @@ public sealed class PlaybackEndpointTests
         var closed = closeBody.RootElement.GetProperty("sessions").EnumerateArray().Single(item => item.GetProperty("window_id").GetInt32() == 1);
         Assert.Equal(JsonValueKind.Null, closed.GetProperty("source_id").ValueKind);
         Assert.Equal("idle", closed.GetProperty("playback_state").GetString());
+    }
+
+    [Fact]
+    public async Task UnpreparedPptDoesNotQueueOpenOrStartPowerPointByDefault()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var contextFactory = factory.Services.GetRequiredService<IDbContextFactory<ControlDbContext>>();
+        long sourceId;
+        await using (var database = await contextFactory.CreateDbContextAsync())
+        {
+            var source = new MediaSource
+            {
+                SourceType = MediaSourceType.Presentation,
+                Name = "未准备文稿",
+                Uri = "unprepared.pptx",
+                ContentDigest = "sha256:unprepared",
+                CreatedAt = DateTimeOffset.UtcNow,
+            };
+            database.MediaSources.Add(source);
+            await database.SaveChangesAsync();
+            sourceId = source.Id;
+        }
+        var csrf = await AuthenticateAsync(client);
+
+        using var request = Request(HttpMethod.Post, "/api/playback/1/open/", csrf, new { source_id = sourceId });
+        using var response = await client.SendAsync(request);
+        using var body = await Json(response);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("presentation_not_prepared", body.RootElement.GetProperty("code").GetString());
+
+        await using var check = await contextFactory.CreateDbContextAsync();
+        Assert.Empty(await check.CommandRecords.ToArrayAsync());
+        Assert.Null((await check.PlaybackSessions.SingleAsync(item => item.WindowId == 1)).MediaSourceId);
     }
 
     [Fact]
@@ -148,7 +182,10 @@ public sealed class PlaybackEndpointTests
             Name = "演示",
             Uri = "presentation.pptx",
             IsAvailable = true,
-            MetadataJson = "{\"slides_playback_mode\":\"pdf\",\"slides_pdf\":{\"status\":\"ready\",\"path\":\"fallback.pdf\",\"source_digest\":\"sha256:presentation\"}}",
+            MetadataJson = JsonSerializer.Serialize(new
+            {
+                slide_images = new { status = "ready", source_digest = "sha256:presentation", directory = @"C:\cache\presentation-slides", page_count = 3 },
+            }),
             ContentDigest = "sha256:presentation",
             CreatedAt = DateTimeOffset.UtcNow,
         };
