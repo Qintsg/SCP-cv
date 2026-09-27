@@ -1,14 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 2.0.0
-- Modified principles:
-  - I. 现场安全优先 → I. 运行安全优先
-  - III. 可验证交付 → III. 分层验证交付
-  - IV. 集成边界清晰 → IV. 合同与进程边界清晰
-  - V. 简单、可观测、可维护 → V. 快速迭代与最小复杂度
+- Version change: 2.0.0 → 3.0.0
+- Modified principles: none
+- Modified sections: Project Constraints（四个 PlayerWorker / 四窗 → 两个大屏 PlayerWorker / 两窗）
 - Added sections: none
 - Removed sections: none
-- Follow-up TODOs: none
+- Follow-up TODOs: 以 specs/005-big-screen-only 完成代码、合同、文档和本地验证；D4 实体复测按用户停测要求暂缓
 -->
 
 # SCP-cv Constitution
@@ -58,8 +55,8 @@ Vue 应用，Windows 客户端使用 Electron，Android 客户端使用 Capacito
 store、API 类型和业务规则，只允许保留必要的薄平台适配层。
 
 播放主机面向受支持的 Windows x64 交互桌面，使用 ASP.NET Core ControlHost、SQLite/EF Core、
-持久化命令队列和 Named Pipe；Supervisor 管理四个 PlayerWorker、一个 AudioWorker、独立
-PowerPointHost 和 MediaMTX。四窗、独立音频、场景三态、单 PowerPoint COM 与 PDF 回退等
+持久化命令队列和 Named Pipe；Supervisor 管理两个大屏 PlayerWorker、一个 AudioWorker、独立
+PowerPointHost 和 MediaMTX。两窗、独立音频、场景三态、单 PowerPoint COM 与 PDF 回退等
 现有核心语义 MUST 保持。敏感配置 MUST 通过环境变量或本地配置提供，不得提交密钥、媒体、
 数据库、日志或缓存。
 
@@ -85,4 +82,4 @@ PowerPointHost 和 MediaMTX。四窗、独立音频、场景三态、单 PowerPo
 MINOR；不改变含义的澄清与文字修订递增 PATCH。快速开发范围不免除运行时安全、数据保护、
 合同兼容和如实报告未验证边界的义务。
 
-**Version**: 2.0.0 | **Ratified**: 2026-08-30 | **Last Amended**: 2026-09-08
+**Version**: 3.0.0 | **Ratified**: 2026-08-30 | **Last Amended**: 2026-09-27
