@@ -74,7 +74,7 @@ const resourcePollAttempts = ref(0);
 const windowId = computed(() => Number.parseInt(String(route.params.windowId ?? '0'), 10));
 const session = computed(() => sessionStore.byWindowId(windowId.value));
 const pptSourceId = computed(() => (session.value?.source_type === 'ppt' ? session.value.source_id : null));
-const isPdfMode = computed(() => session.value?.playback_mode === 'pdf');
+const isStaticSlideMode = computed(() => session.value?.playback_mode === 'pdf' || session.value?.playback_mode === 'slide_images');
 const orientationKey = computed<'landscape' | 'portrait'>(() => (isLandscape.value ? 'landscape' : 'portrait'));
 
 const slidesProgress = computed(() => ({
@@ -449,7 +449,7 @@ function exitFocus(): void {
         </div>
 
         <div class="ppt-focus__controls" :aria-label="t('pptFocus.controlsAria')">
-          <template v-if="!isPdfMode">
+          <template v-if="!isStaticSlideMode">
             <div class="ppt-focus__media-picker">
               <n-select
                 v-model:value="selectedMediaKey"

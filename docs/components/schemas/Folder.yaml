@@ -7,6 +7,9 @@ properties:
     type: integer
   name:
     type: string
+  relative_path:
+    type: string
+    description: media 根目录下的真实相对目录路径，使用正斜杠分隔
   parent_id:
     type: integer
     nullable: true

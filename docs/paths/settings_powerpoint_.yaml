@@ -1,0 +1,38 @@
+get:
+  tags: [settings]
+  summary: 获取实验性 PowerPoint 放映设置，默认禁用
+  operationId: getPowerPointSettings
+  responses:
+    '200':
+      description: 成功
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/PowerPointSettingsResponse.yaml
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+patch:
+  tags: [settings]
+  summary: 显式开启或关闭实验性 PowerPoint 放映，仅影响后续打开
+  operationId: updatePowerPointSettings
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/PowerPointSettingsUpdateRequest.yaml
+  responses:
+    '200':
+      description: 更新成功
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/PowerPointSettingsResponse.yaml
+    '400':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '503':
+      description: 当前主机不具备原生 PowerPoint 放映条件
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml

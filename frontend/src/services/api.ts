@@ -9,17 +9,18 @@ import { resolveCsrfToken } from '@/platform/csrf';
 
 import type {
   ApiStatePayload, BackgroundAudioPayload, DeviceItem, DisplayTargetItem, MediaFolderItem,
-  MediaSourceItem, MediaSourceUpdate, PhysicalSmokeRequest, PhysicalSmokeResult,
+  MediaSourceItem, MediaSourceUpdate,
   PptResourceItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload, UploadOptions,
   VideoWallLayoutItem, VideoWallLayoutState,
 } from './apiTypes';
 export type {
   ApiStatePayload, BackgroundAudioPayload, BackgroundAudioPlaylistItem, BackgroundAudioSnapshot,
   BackgroundAudioStateSnapshot, DeviceItem, DisplayTargetItem, MediaFolderItem, MediaSourceItem,
-  MediaSourceUpdate, PhysicalSmokeRequest, PhysicalSmokeResult, PhysicalSmokeStepResult,
+  MediaSourceUpdate,
   PlaybackWindowId, PptMediaItem, PptResourceItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload,
   ScenarioTargetItem, SessionSnapshot, UploadOptions, VideoWallInputKind, VideoWallLayoutItem,
   VideoWallLayoutState, VideoWallMappingItem, VideoWallRegion,
+  PowerPointSettingsItem,
 } from './apiTypes';
 
 interface ApiDetailPayload {
@@ -28,8 +29,6 @@ interface ApiDetailPayload {
 
 const REQUEST_TIMEOUT_MS = 10000;
 const RUNTIME_MODE_TIMEOUT_MS = 120000;
-export const PHYSICAL_SMOKE_TOTAL_TIMEOUT_SECONDS = 9 * 60;
-const PHYSICAL_SMOKE_TIMEOUT_MS = (PHYSICAL_SMOKE_TOTAL_TIMEOUT_SECONDS + 60) * 1000;
 const DEFAULT_BACKEND_PORT = '8000';
 let csrfRequestToken = '';
 
@@ -267,8 +266,13 @@ export const api = {
   deleteSource: (sourceId: number) => requestJson<{ success: boolean }>(`/api/sources/${sourceId}/`, { method: 'DELETE' }),
   downloadSourceUrl: (sourceId: number) => buildBackendUrl(`/api/sources/${sourceId}/download/`),
   listPptResources: (sourceId: number) => requestJson<{ success: boolean; resources: PptResourceItem[] }>(`/api/sources/${sourceId}/ppt-resources/`),
+  preparePptImages: (sourceId: number) => requestJson<{ success: boolean; source: MediaSourceItem }>(
+    `/api/sources/${sourceId}/prepare/`, { method: 'POST' }),
   listSessions: () => requestJson<ApiStatePayload>('/api/sessions/'),
   getRuntime: () => requestJson<{ success: boolean; runtime: RuntimeSnapshot }>('/api/runtime/'),
+  getPowerPointSettings: () => requestJson<{ success: boolean; settings: import('./apiTypes').PowerPointSettingsItem }>('/api/settings/powerpoint/'),
+  setPowerPointSettings: (enabled: boolean) => requestJson<{ success: boolean; settings: import('./apiTypes').PowerPointSettingsItem }>(
+    '/api/settings/powerpoint/', { method: 'PATCH', body: JSON.stringify({ experimental_enabled: enabled }) }),
   getVideoWallLayout: () => requestJson<{ success: boolean; layout: VideoWallLayoutState }>('/api/video-wall/layout/'),
   saveVideoWallLayout: (payload: Pick<VideoWallLayoutItem, 'name' | 'mappings'>) =>
     requestJson<{ success: boolean; layout: VideoWallLayoutState }>('/api/video-wall/layout/', {
@@ -304,13 +308,6 @@ export const api = {
   closeSource: (windowId: number) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/close/`, { method: 'POST' }),
   resetAllSessions: () => requestJson<ApiStatePayload>('/api/playback/reset-all/', { method: 'POST' }),
   resetPptPlayback: () => requestJson<ApiStatePayload>('/api/playback/reset-ppt/', { method: 'POST' }),
-  runPhysicalSmoke: (payload: PhysicalSmokeRequest = {}) => requestJson<PhysicalSmokeResult>('/api/playback/physical-smoke/', {
-    method: 'POST',
-    body: JSON.stringify({
-      ...payload,
-      total_timeout_seconds: payload.total_timeout_seconds ?? PHYSICAL_SMOKE_TOTAL_TIMEOUT_SECONDS,
-    }),
-  }, PHYSICAL_SMOKE_TIMEOUT_MS),
   shutdownSystem: () => requestJson<ApiStatePayload & { detail?: string }>('/api/system/shutdown/', { method: 'POST' }),
   restartAll: () => requestJson<ApiStatePayload & { detail?: string }>('/api/system/restart/', { method: 'POST' }),
   setLoop: (windowId: number, enabled: boolean) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/loop/`, { method: 'PATCH', body: JSON.stringify({ enabled }) }),

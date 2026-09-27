@@ -28,6 +28,8 @@ import FIcon from '@/design-system/FIcon.vue';
 import AddSourceDrawer from './AddSourceDrawer.vue';
 import EditSourceDrawer from './EditSourceDrawer.vue';
 import SourceThumbnail from './SourceThumbnail.vue';
+import { useSourceDownload } from './useSourceDownload';
+import { useSourceFolders } from './useSourceFolders';
 import { sourceCategoryLabel, sourceCategoryTone } from './sourcePresentation';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useDialog } from '@/composables/useDialog';
@@ -35,10 +37,8 @@ import { useToast } from '@/composables/useToast';
 import { useBackgroundAudioStore } from '@/stores/backgroundAudio';
 import { useSessionStore } from '@/stores/sessions';
 import { useSourceStore, type SourceCategory } from '@/stores/sources';
-import { api, type MediaFolderItem, type MediaSourceItem } from '@/services/api';
+import type { MediaSourceItem } from '@/services/api';
 import { formatBytes, formatRelativeTime } from '@/design-system/utils';
-import { saveResponseFile } from '@/platform/files';
-import { getNativePlatformAdapter } from '@/platform/native';
 
 const { t } = useI18n();
 const sourceStore = useSourceStore();
@@ -52,14 +52,6 @@ const isLoading = ref(false);
 const drawerOpen = ref(false);
 const editDrawerOpen = ref(false);
 const editingSource = ref<MediaSourceItem | null>(null);
-const newFolderDialogOpen = ref(false);
-const newFolderName = ref('');
-const folderNameError = ref(false);
-const creatingFolder = ref(false);
-const deleteFolderTarget = ref<MediaFolderItem | null>(null);
-const deleteFolderContents = ref(false);
-const deletingFolder = ref(false);
-const deleteFolderDialogOpen = ref(false);
 
 function startEdit(source: MediaSourceItem): void {
   editingSource.value = source;
@@ -129,31 +121,7 @@ async function addToBackgroundAudio(source: MediaSourceItem): Promise<void> {
   }
 }
 
-async function downloadSource(source: MediaSourceItem): Promise<void> {
-  try {
-    const response = await fetch(api.downloadSourceUrl(source.id), { credentials: 'include' });
-    const suggestedName = source.original_filename || source.name;
-    const adapter = getNativePlatformAdapter();
-    if (adapter) {
-      const saved = await saveResponseFile(adapter, response, suggestedName);
-      if (!saved) return;
-    } else {
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const blobUrl = URL.createObjectURL(await response.blob());
-      const anchor = document.createElement('a');
-      anchor.href = blobUrl;
-      anchor.download = suggestedName;
-      anchor.hidden = true;
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(blobUrl), 0);
-    }
-    toast.success(t('sources.downloadedOk', { name: source.name }));
-  } catch (error) {
-    toast.error(t('sources.downloadFail'), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
+const downloadSource = useSourceDownload();
 
 async function deleteSource(source: MediaSourceItem): Promise<void> {
   const confirmed = await dialog.danger({
@@ -248,6 +216,14 @@ function activeWindowLabel(sourceId: number): string {
   return windows ? t('sources.onAirWindows', { windows }) : '';
 }
 
+/** 区分 PPT 转换状态与真正离线，避免把排队误报为源故障。 */
+function availabilityLabel(source: MediaSourceItem): string {
+  if (source.source_type !== 'ppt') return t('sources.offline');
+  if (source.preparation_state === 'queued' || source.preparation_state === 'running') return t('sources.preparing');
+  if (source.preparation_state === 'uncertain') return t('sources.prepareUncertain');
+  return t(source.preparation_state === 'failed' ? 'sources.prepareFailed' : 'sources.prepareMissing');
+}
+
 function setCategory(value: SourceCategory): void {
   sourceStore.setCategory(value);
 }
@@ -274,141 +250,10 @@ const categoryModel = computed({
   set: (value: string) => setCategory(value as SourceCategory),
 });
 
-// ═══════════════════ 文件夹管理 ═══════════════════
-
-const breadcrumbs = computed(() => sourceStore.folderBreadcrumbs);
-const childFolders = computed(() => sourceStore.childFolders);
-
-async function navigateToFolder(folderId: number | null): Promise<void> {
-  isLoading.value = true;
-  try {
-    sourceStore.setCurrentFolder(folderId);
-    await sourceStore.refresh();
-  } catch (error) {
-    toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-function openFolderDialog(): void {
-  newFolderName.value = '';
-  folderNameError.value = false;
-  newFolderDialogOpen.value = true;
-}
-
-async function createFolder(): Promise<boolean> {
-  const name = newFolderName.value.trim();
-  if (!name) {
-    folderNameError.value = true;
-    return false;
-  }
-  folderNameError.value = false;
-  creatingFolder.value = true;
-  try {
-    await sourceStore.createFolder(name, sourceStore.currentFolderId);
-    toast.success(t('sources.folderCreatedOk'));
-    newFolderName.value = '';
-    newFolderDialogOpen.value = false;
-    return true;
-  } catch (error) {
-    toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
-    return false;
-  } finally {
-    creatingFolder.value = false;
-  }
-}
-
-async function renameFolder(folder: MediaFolderItem): Promise<void> {
-  // 使用简单的 prompt 对话框重命名
-  const newName = window.prompt(t('sources.renameFolder'), folder.name);
-  if (newName === null || newName.trim() === folder.name) return;
-  try {
-    await sourceStore.renameFolder(folder.id, newName.trim());
-    toast.success(t('sources.folderRenamedOk'));
-  } catch (error) {
-    toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
-
-async function deleteFolderConfirm(folder: MediaFolderItem): Promise<void> {
-  deleteFolderTarget.value = folder;
-  deleteFolderContents.value = false;
-  deleteFolderDialogOpen.value = true;
-}
-
-async function executeFolderDelete(): Promise<void> {
-  const folder = deleteFolderTarget.value;
-  if (folder === null) return;
-  deletingFolder.value = true;
-  try {
-    await sourceStore.deleteFolder(folder.id, deleteFolderContents.value);
-    toast.success(t('sources.folderDeletedOk'));
-    deleteFolderDialogOpen.value = false;
-    deleteFolderTarget.value = null;
-  } catch (error) {
-    toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
-  } finally {
-    deletingFolder.value = false;
-  }
-}
-
-function buildFolderMenu(folder: MediaFolderItem): DropdownOption[] {
-  return [
-    {
-      label: t('sources.renameFolder'),
-      key: 'rename-folder',
-      icon: renderIcon('edit_24_regular'),
-      props: { onClick: () => renameFolder(folder) },
-    },
-    {
-      label: t('sources.deleteFolder'),
-      key: 'delete-folder',
-      icon: renderIcon('delete_24_regular'),
-      props: {
-        onClick: () => deleteFolderConfirm(folder),
-        style: 'color: var(--colorStatusDangerForeground1);',
-      },
-    },
-  ];
-}
-
-/** 构建可移动到的文件夹列表（排除源当前所在文件夹）。 */
-function buildMoveToFolderOptions(source: MediaSourceItem): DropdownOption[] {
-  const allFolders = sourceStore.folders;
-  const options: DropdownOption[] = [
-    {
-      label: t('sources.moveToRoot'),
-      key: 'move-root',
-      icon: renderIcon('folder_24_regular'),
-      disabled: source.folder_id === null,
-      props: { onClick: () => moveSourceToFolder(source, null) },
-    },
-  ];
-  for (const folder of allFolders) {
-    if (folder.id === source.folder_id) continue;
-    options.push({
-      label: folder.name,
-      key: `move-${folder.id}`,
-      icon: renderIcon('folder_24_regular'),
-      props: { onClick: () => moveSourceToFolder(source, folder.id) },
-    });
-  }
-  return options;
-}
-
-async function moveSourceToFolder(source: MediaSourceItem, folderId: number | null): Promise<void> {
-  try {
-    await sourceStore.moveSource(source.id, folderId);
-    const folderName = sourceStore.folders.find((folder) => folder.id === folderId)?.name;
-    toast.success(folderId === null
-      ? t('sources.movedRootOk')
-      : t('sources.movedOk', { name: folderName ?? '' }));
-    await refresh();
-  } catch (error) {
-    toast.error(t('sources.moveFail'), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
+const { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
+  deleteFolderTarget, deleteFolderContents, deletingFolder, deleteFolderDialogOpen,
+  breadcrumbs, childFolders, navigateToFolder, openFolderDialog, createFolder,
+  executeFolderDelete, buildFolderMenu, buildMoveToFolderOptions } = useSourceFolders(refresh, isLoading);
 </script>
 
 <template>
@@ -485,7 +330,7 @@ async function moveSourceToFolder(source: MediaSourceItem, folderId: number | nu
           <div v-for="folder in childFolders" :key="folder.id" class="sources-view__folder-card">
             <button class="sources-view__folder-open" type="button" @click="navigateToFolder(folder.id)">
               <FIcon name="folder_24_regular" :size="28" />
-              <span class="sources-view__folder-name">{{ folder.name }}</span>
+              <span class="sources-view__folder-name" :title="folder.relative_path || folder.name">{{ folder.name }}</span>
             </button>
             <n-dropdown trigger="click" placement="bottom-end" :options="buildFolderMenu(folder)"
               @select="handleMenuSelect">
@@ -548,8 +393,8 @@ async function moveSourceToFolder(source: MediaSourceItem, folderId: number | nu
                   </td>
                   <td>
                     <n-tag :type="sourceCategoryTone(source)" round size="small">{{ sourceCategoryLabel(source) }}</n-tag>
-                    <n-tag v-if="!source.is_available" type="error" round size="small" class="sources-view__chip">
-                      {{ t('sources.offline') }}
+                    <n-tag v-if="!source.is_available" :type="source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error'" round size="small" class="sources-view__chip">
+                      {{ availabilityLabel(source) }}
                     </n-tag>
                   </td>
                   <td class="sources-view__col--num">{{ source.file_size ? formatBytes(source.file_size) : t('common.none') }}</td>
@@ -600,8 +445,8 @@ async function moveSourceToFolder(source: MediaSourceItem, folderId: number | nu
                   <span v-if="source.file_size">{{ formatBytes(source.file_size) }}</span>
                   <span>{{ formatRelativeTime(source.created_at) }}</span>
                 </div>
-                <n-alert v-if="!source.is_available" type="error" :closable="false">
-                  {{ t('sources.unavailableCard') }}
+                <n-alert v-if="!source.is_available" :type="source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error'" :closable="false">
+                  {{ availabilityLabel(source) }}
                 </n-alert>
               </n-card>
             </div>

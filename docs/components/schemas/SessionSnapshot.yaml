@@ -45,6 +45,7 @@ properties:
     enum:
       - ''
       - pdf
+      - slide_images
       - powerpoint
     description: 播放器上报的当前演示文稿实际放映模式；尚未确认或其它源为空字符串
   playback_state:

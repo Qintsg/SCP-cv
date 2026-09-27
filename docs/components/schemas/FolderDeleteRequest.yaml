@@ -3,4 +3,4 @@ properties:
   delete_contents:
     type: boolean
     default: false
-    description: true 时永久删除文件夹子树内的媒体源及其上传文件；false 时把媒体源移到根目录。
+    description: true 时永久删除文件夹子树内的媒体源及其上传文件；false 时把受管理原件搬到媒体根目录，遇到未登记文件会拒绝删除。

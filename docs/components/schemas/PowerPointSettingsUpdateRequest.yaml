@@ -1,0 +1,5 @@
+type: object
+required: [experimental_enabled]
+properties:
+  experimental_enabled:
+    type: boolean

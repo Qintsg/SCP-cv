@@ -3,7 +3,7 @@ parameters:
 patch:
   tags:
     - folders
-  summary: 更新媒体文件夹
+  summary: 重命名或移动实体媒体文件夹
   operationId: updateFolder
   requestBody:
     required: true
@@ -23,7 +23,7 @@ patch:
 delete:
   tags:
     - folders
-  summary: 删除媒体文件夹
+  summary: 删除实体媒体文件夹；默认保留原件
   operationId: deleteFolder
   requestBody:
     required: false

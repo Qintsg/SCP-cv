@@ -1,0 +1,18 @@
+parameters:
+  - $ref: ../components/parameters/SourceId.yaml
+post:
+  tags: [sources]
+  summary: 对失败或旧 PPT 源显式重新排队逐页图片转换
+  operationId: retryPptSlideImagePreparation
+  description: 结果不确定的 Office 操作不会盲目重试；原件始终保留。
+  responses:
+    '200':
+      description: 源状态已进入 queued，或原作业仍在进行
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SourceResponse.yaml
+    '400':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '404':
+      $ref: ../components/responses/ErrorResponse.yaml

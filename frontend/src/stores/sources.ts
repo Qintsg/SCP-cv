@@ -69,7 +69,7 @@ export const useSourceStore = defineStore('sources', {
     /** 类型计数：用于侧栏 NavList / Pills 数字徽章。 */
     countByCategory(state): Record<SourceCategory, number> {
       const result: Record<SourceCategory, number> = {
-        all: state.sources.length,
+        all: 0,
         ppt: 0,
         video: 0,
         audio: 0,
@@ -78,6 +78,8 @@ export const useSourceStore = defineStore('sources', {
         stream: 0,
       };
       for (const source of state.sources) {
+        if (source.folder_id !== state.currentFolderId) continue;
+        result.all += 1;
         const category = SOURCE_TYPE_TO_CATEGORY[source.source_type];
         if (category && category !== 'all') result[category] += 1;
       }
@@ -91,6 +93,7 @@ export const useSourceStore = defineStore('sources', {
     filtered(state): MediaSourceItem[] {
       const keyword = state.searchKeyword.trim().toLowerCase();
       const matched = state.sources.filter((source) => {
+        if (source.folder_id !== state.currentFolderId) return false;
         if (state.category !== 'all') {
           const cat = SOURCE_TYPE_TO_CATEGORY[source.source_type];
           if (cat !== state.category) return false;
@@ -136,7 +139,7 @@ export const useSourceStore = defineStore('sources', {
     },
     async refresh(): Promise<void> {
       const [sourcePayload, folderPayload] = await Promise.all([
-        api.listSources('', this.currentFolderId),
+        api.listSources(),
         api.listFolders(),
       ]);
       // 背景音乐功能启用后，audio 源保留在列表中并进入独立大类。
@@ -153,26 +156,27 @@ export const useSourceStore = defineStore('sources', {
       return payload.folder;
     },
     async renameFolder(folderId: number, name: string): Promise<void> {
-      const payload = await api.updateFolder(folderId, { name });
-      this.folders = this.folders.map((folder) =>
-        folder.id === folderId ? { ...folder, name: payload.folder.name } : folder,
-      );
+      await api.updateFolder(folderId, { name });
+      await this.refresh();
+    },
+    async moveFolder(folderId: number, parentId: number | null): Promise<void> {
+      await api.updateFolder(folderId, { parent_id: parentId });
+      await this.refresh();
     },
     async deleteFolder(folderId: number, deleteContents: boolean = false): Promise<void> {
+      const parent = this.folders.find((folder) => folder.id === folderId)?.parent_id ?? null;
       await api.deleteFolder(folderId, deleteContents);
-      this.folders = this.folders.filter((folder) => folder.id !== folderId);
-      // 删除文件夹后其下源变为无文件夹（SET_NULL）或被删除，刷新列表。
-      if (this.currentFolderId === folderId) {
-        const parent = this.folders.find((folder) => folder.id === folderId)?.parent_id ?? null;
-        this.currentFolderId = parent;
+      // 删除子树后当前路径可能已失效，统一返回被删根目录的父级。
+      let cursor = this.currentFolderId;
+      while (cursor !== null) {
+        if (cursor === folderId) { this.currentFolderId = parent; break; }
+        cursor = this.folders.find((folder) => folder.id === cursor)?.parent_id ?? null;
       }
       await this.refresh();
     },
     async moveSource(sourceId: number, folderId: number | null): Promise<MediaSourceItem> {
       const payload = await api.moveSource(sourceId, folderId);
-      this.sources = this.sources.map((item) =>
-        item.id === sourceId ? { ...item, folder_id: payload.source.folder_id } : item,
-      );
+      this.sources = this.sources.map((item) => item.id === sourceId ? payload.source : item);
       return payload.source;
     },
     /** 上传源；支持「上传但不保存（is_temporary）」/「上传并保存」两种语义。 */
@@ -217,6 +221,11 @@ export const useSourceStore = defineStore('sources', {
     async updateSource(sourceId: number, patch: MediaSourceUpdate): Promise<MediaSourceItem> {
       const payload = await api.updateSource(sourceId, patch);
       this.sources = this.sources.map((item) => (item.id === sourceId ? payload.source : item));
+      return payload.source;
+    },
+    async retryPptImages(sourceId: number): Promise<MediaSourceItem> {
+      const payload = await api.preparePptImages(sourceId);
+      this.sources = this.sources.map((item) => item.id === sourceId ? payload.source : item);
       return payload.source;
     },
     /** 删除源；删除当前类型时若列表为空 UI 会自动展示空态。 */

@@ -10,6 +10,8 @@ required:
   - keep_alive
   - preheat_enabled
   - playback_mode
+  - preparation_state
+  - page_count
   - preview_url
   - thumbnail_url
   - preview_kind
@@ -48,9 +50,8 @@ properties:
     type: object
     additionalProperties: true
     description: |
-      媒体源扩展元数据。PPT 源可能包含 `ppt_playback` 字段，记录播放专用 `.ppsx`/`.pps`
-      缓存的生成状态、原始扩展名、缓存路径和错误信息；播放时仅在 `status=ready`
-      且缓存文件存在时使用该缓存 URI，否则回退原始 `uri`。
+      媒体源扩展元数据。PPT/PPTX 源的 `slide_images` 记录逐页图片准备状态、
+      原件摘要、制品路径与页数；原始文稿仍保留在 `uri`。
   keep_alive:
     type: boolean
     deprecated: true
@@ -63,8 +64,16 @@ properties:
     enum:
       - ''
       - pdf
+      - slide_images
       - powerpoint
-    description: 演示文稿播放模式；非演示文稿源为空字符串
+    description: PPT/PPTX 默认 slide_images，PDF 为 pdf；实际原生放映需显式实验开关
+  preparation_state:
+    type: string
+    description: PPT 页图准备状态（queued/running/ready/failed/uncertain），其它媒体源为空
+  page_count:
+    type: integer
+    minimum: 0
+    description: 已准备的 PPT 页图数，未就绪时为 0
   preview_url:
     type: string
     description: 可嵌入前端缩略位的预览 URL；无真实预览时为空字符串

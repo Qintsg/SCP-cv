@@ -1,0 +1,11 @@
+type: object
+required: [experimental_enabled, available, detail]
+properties:
+  experimental_enabled:
+    type: boolean
+    description: 默认为 false，仅影响下一次打开 PPT/PPTX 源
+  available:
+    type: boolean
+    description: 当前主机是否具备实验性原生放映条件
+  detail:
+    type: string

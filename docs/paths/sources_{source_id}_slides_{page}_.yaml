@@ -1,0 +1,22 @@
+parameters:
+  - $ref: ../components/parameters/SourceId.yaml
+  - in: path
+    name: page
+    required: true
+    schema:
+      type: integer
+      minimum: 1
+get:
+  tags: [sources]
+  summary: 读取已准备的 PPT 指定页 PNG，需当前会话
+  operationId: getPptSlideImage
+  responses:
+    '200':
+      description: 逐页 PNG 文件流
+      content:
+        image/png:
+          schema:
+            type: string
+            format: binary
+    '404':
+      $ref: ../components/responses/ErrorResponse.yaml

@@ -42,9 +42,29 @@ const draftName = ref('');
 const draftUri = ref('');
 const draftPreheatEnabled = ref(true);
 const saving = ref(false);
+const retrying = ref(false);
 const errorMessage = ref('');
 
 const isWebSource = computed(() => props.source?.source_type === 'web');
+const isPptWithImages = computed(() => props.source?.source_type === 'ppt' && props.source.playback_mode === 'slide_images');
+const canRetryPpt = computed(() => isPptWithImages.value &&
+  (!props.source?.preparation_state || props.source.preparation_state === 'failed'));
+
+async function retryPptImages(): Promise<void> {
+  if (!props.source || !canRetryPpt.value) return;
+  retrying.value = true;
+  errorMessage.value = '';
+  try {
+    const updated = await sourceStore.retryPptImages(props.source.id);
+    toast.info(t('sources.editDrawer.pptQueued'), updated.name);
+    emit('updated', updated);
+    emit('update:open', false);
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('sources.editDrawer.pptRetryFail');
+  } finally {
+    retrying.value = false;
+  }
+}
 
 const isOpen = computed({
   get: () => props.open,
@@ -121,6 +141,13 @@ function close(): void {
       <p v-if="source" class="edit-source__desc">{{ t('sources.editDrawer.desc', { name: source.name }) }}</p>
 
       <template v-if="source">
+        <n-alert v-if="isPptWithImages" :type="source.preparation_state === 'ready' ? 'success' : source.preparation_state === 'failed' || source.preparation_state === 'uncertain' ? 'warning' : 'info'"
+          class="edit-source__preparation">
+          {{ t('sources.editDrawer.pptStatus', { status: source.preparation_state || t('sources.editDrawer.pptMissing'), pages: source.page_count ?? 0 }) }}
+          <n-button v-if="canRetryPpt" size="small" :loading="retrying" @click="retryPptImages">
+            {{ t('sources.editDrawer.pptRetry') }}
+          </n-button>
+        </n-alert>
         <n-form-item :label="t('sources.editDrawer.displayName')" required :feedback="t('sources.editDrawer.displayNameHint')">
           <n-input v-model:value="draftName" :placeholder="t('sources.editDrawer.displayNamePlaceholder')" :disabled="saving" />
         </n-form-item>
@@ -165,6 +192,8 @@ function close(): void {
   color: var(--colorNeutralForeground2);
   font-size: var(--fontSizeBase200);
 }
+
+.edit-source__preparation { margin-bottom: var(--spacingVerticalM); }
 
 .edit-source__actions {
   display: inline-flex;

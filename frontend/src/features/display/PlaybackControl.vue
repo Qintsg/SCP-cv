@@ -43,7 +43,7 @@ const sessionStore = useSessionStore();
 const sourceStore = useSourceStore();
 
 const category = computed(() => sourceStore.resolveCategory(props.session.source_type));
-const isPdfMode = computed(() => props.session.playback_mode === 'pdf');
+const isStaticSlideMode = computed(() => props.session.playback_mode === 'pdf' || props.session.playback_mode === 'slide_images');
 const currentSource = computed(() => sourceStore.findById(props.session.source_id) ?? null);
 const canAdjustWindowAudio = computed(() => (
   Boolean(props.session.source_id)
@@ -269,6 +269,9 @@ const errorBarDescription = computed(() => {
             <n-tag v-if="category === 'ppt' && session.playback_mode === 'pdf'" type="info" round size="small">
               {{ t('playback.pdfBadge') }}
             </n-tag>
+            <n-tag v-else-if="category === 'ppt' && session.playback_mode === 'slide_images'" type="info" round size="small">
+              {{ t('playback.slideImagesBadge') }}
+            </n-tag>
             <n-tag v-else-if="category === 'ppt' && session.playback_mode === 'powerpoint'" type="warning" round size="small">
               {{ t('playback.powerpointBadge') }}
             </n-tag>
@@ -329,7 +332,7 @@ const errorBarDescription = computed(() => {
         {{ pptError }}
       </n-alert>
 
-      <div v-if="!isPdfMode && currentResource && currentResource.media_items.length > 0" class="playback-control__media">
+      <div v-if="!isStaticSlideMode && currentResource && currentResource.media_items.length > 0" class="playback-control__media">
         <h4 class="playback-control__media-title">{{ t('playback.currentMedia') }}</h4>
         <ul class="playback-control__media-list">
           <li v-for="media in currentResource.media_items" :key="media.id" class="playback-control__media-item">

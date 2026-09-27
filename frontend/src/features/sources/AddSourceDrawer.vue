@@ -144,7 +144,11 @@ async function uploadFile(): Promise<void> {
       folderId: props.folderId,
       onProgress: handleUploadProgress,
     });
-    toast.success(t('sources.add.uploadedSaved'), t('sources.add.sourceNameDetail', { name: result.name }));
+    if (result.source_type === 'ppt' && result.preparation_state === 'queued') {
+      toast.info(t('sources.add.pptQueued'), t('sources.add.pptQueuedDetail', { name: result.name }));
+    } else {
+      toast.success(t('sources.add.uploadedSaved'), t('sources.add.sourceNameDetail', { name: result.name }));
+    }
     emit('added');
     reset();
     close();

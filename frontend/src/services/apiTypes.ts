@@ -28,7 +28,7 @@ export interface MediaSourceItem {
    */
   preheat_enabled: boolean;
   keep_alive: boolean;
-  /** 演示文稿播放模式：pdf / powerpoint；其它类型为空字符串。 */
+  /** 演示文稿默认模式：pdf / slide_images；会话另报告实际模式。 */
   playback_mode: string;
   preparation_state?: string;
   page_count?: number;
@@ -55,7 +55,7 @@ export interface SessionSnapshot {
   source_type: string;
   source_type_label: string;
   source_uri: string;
-  /** 演示文稿播放模式：pdf / powerpoint；其它类型为空字符串。 */
+  /** 演示文稿实际模式：pdf / slide_images / powerpoint；其它类型为空字符串。 */
   playback_mode: string;
   playback_state: string;
   playback_state_label: string;
@@ -180,6 +180,12 @@ export interface VideoWallLayoutState {
   active_preset: 'single' | 'double';
 }
 
+export interface PowerPointSettingsItem {
+  experimental_enabled: boolean;
+  available: boolean;
+  detail: string;
+}
+
 export interface DeviceItem {
   name: string;
   device_type: 'splice_screen' | 'tv_left' | 'tv_right';
@@ -217,43 +223,6 @@ export interface ApiStatePayload {
   background_audio?: BackgroundAudioSnapshot;
 }
 
-export interface PhysicalSmokeRequest {
-  windows?: number[];
-  source_ids?: Record<string, number>;
-  settle_seconds?: number;
-  timeout_seconds?: number;
-  ppt_timeout_seconds?: number;
-  stream_timeout_seconds?: number;
-  total_timeout_seconds?: number;
-  reset_after?: boolean;
-}
-
-export interface PhysicalSmokeStepResult {
-  window_id: number;
-  source_type: string;
-  source_id: number;
-  source_name: string;
-  status: 'ok' | 'failed';
-  open_elapsed: number;
-  close_elapsed: number;
-  error_message: string;
-  open_error: string;
-  close_error: string;
-}
-
-export interface PhysicalSmokeResult {
-  success: boolean;
-  started_at: string;
-  finished_at: string;
-  elapsed_seconds: number;
-  total_timeout_seconds: number;
-  windows: number[];
-  source_ids: Record<string, number>;
-  summary: { total: number; passed: number; failed: number };
-  results: PhysicalSmokeStepResult[];
-  reset: { status: 'ok' | 'failed' | 'skipped'; elapsed: number; error_message: string };
-  sessions: SessionSnapshot[];
-}
 
 export interface UploadOptions {
   onProgress?: (percent: number) => void;
