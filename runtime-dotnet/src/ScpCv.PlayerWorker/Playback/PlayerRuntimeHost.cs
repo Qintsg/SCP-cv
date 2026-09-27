@@ -69,6 +69,7 @@ public sealed partial class PlayerRuntimeHost(
         _current = null;
         foreach (var resource in resources) await resource.DisposeAsync();
         _warmWebResources.Clear();
+        DisposeVlcInstance();
     }
 
     private async Task<WorkerExecutionResult> ExecuteCoreAsync(

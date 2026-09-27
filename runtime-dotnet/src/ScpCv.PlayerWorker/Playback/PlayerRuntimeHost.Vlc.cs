@@ -10,14 +10,29 @@ namespace ScpCv.PlayerWorker.Playback;
 
 public sealed partial class PlayerRuntimeHost
 {
+    private LibVLC? _libVlc;
+
+    private LibVLC GetOrCreateLibVlc()
+    {
+        if (_libVlc is not null) return _libVlc;
+        Core.Initialize();
+        return _libVlc = new LibVLC();
+    }
+
+    private void DisposeVlcInstance()
+    {
+        _libVlc?.Dispose();
+        _libVlc = null;
+    }
+
     private Task<SurfaceResource> OpenVlcAsync(
         string uri,
         bool autoplay,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        Core.Initialize();
-        var libVlc = new LibVLC();
+        // 一个 PlayerWorker 生命周期只创建一个 LibVLC 实例，切源时只替换 MediaPlayer。
+        var libVlc = GetOrCreateLibVlc();
         var player = new VlcMediaPlayer(libVlc);
         var localPath = LocalPath(uri);
         var media = File.Exists(localPath)
@@ -34,12 +49,12 @@ public sealed partial class PlayerRuntimeHost
         var view = new VideoView { MediaPlayer = player };
         if (autoplay && !player.Play())
         {
-            ReleaseVlcResource(player, Ended, view, media, libVlc);
+            ReleaseVlcResource(player, Ended, view, media);
             throw new InvalidOperationException("LibVLC 无法开始播放媒体。");
         }
         return Task.FromResult(new SurfaceResource("vlc", view, () =>
         {
-            ReleaseVlcResource(player, Ended, view, media, libVlc);
+            ReleaseVlcResource(player, Ended, view, media);
             return ValueTask.CompletedTask;
         }, player));
     }
@@ -48,8 +63,7 @@ public sealed partial class PlayerRuntimeHost
         VlcMediaPlayer player,
         EventHandler<EventArgs> ended,
         VideoView view,
-        Media media,
-        LibVLC libVlc)
+        Media media)
     {
         player.EndReached -= ended;
         player.Stop();
@@ -58,7 +72,6 @@ public sealed partial class PlayerRuntimeHost
         view.Dispose();
         media.Dispose();
         player.Dispose();
-        libVlc.Dispose();
     }
 
     private async Task HandleVlcEndedAsync(VlcMediaPlayer player, long generation)

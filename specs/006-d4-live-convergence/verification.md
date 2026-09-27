@@ -81,7 +81,9 @@
 - D4 正式运行组协作 shutdown 后，精确 DataRoot 状态文件消失，ControlHost 停止；拉取 `d28e881` 后确认仓库配置 `writeQueueSize: 512`，重启后默认 8554/8890/9997 端口属于正式 MediaMTX。受控 SRT 发布源分别通过正式 RTSP/SRT 地址打开窗口 1/2，两张交互桌面 1920×1080 截图均可见相同时间附近的动态测试图，无串台。两窗同时播放时独立 FFmpeg 并发读 30 秒：RTSP 0 条 H.264 告警、SRT 0 条 H.264 告警；后者仍有 832 条 libSRT `INVALID SIZE` 告警。另起新版 MediaMTX v1.21.1 对照，SRT 10 秒仍有 284 条相同告警，故不把它误归因于产品 v1.17.1 或宣称已解决。
 - D4 `GET /api/sessions/3/`、`/4/` 均返回 400；实体运行组仍仅有 player-1/2。未向旧窗口发送打开命令。
 - 从现有视频的只读副本生成 4 秒测试片（D4 忽略目录），源 48 在窗口 1 关闭循环后由 `playing` 自然转为 `stopped`、总时长 4000 ms；开启循环后仍 `playing`，进度重新开始。用同源反复打开/关闭 10 次，每次等实际 `playing` 和 `idle` 后采样，PlayerWorker 1 私有内存从第 2 次 278.1 MB 增至第 10 次 469.6 MB，句柄 860→972，近似每轮 +24 MB/+14 句柄，不能判为稳定。
-- 代码检查发现 `PlayerRuntimeHost` 只置空 `VideoView.MediaPlayer`，却未调用 `VideoView.Dispose()`；LibVLCSharp.WPF 的本地 API 文档明确此方法负责释放前景窗口。修复现拆至 `PlayerRuntimeHost.Vlc.cs`，在从视觉树移除后显式释放 view、媒体、播放器、LibVLC，并使关闭/宿主停机先换黑场再释放旧资源。当前仅本机非 Physical 304/304 通过；D4 同条件 10+ 次的修复后资源曲线尚待更新部署，不能提前认定泄漏闭环。
+- 代码检查发现 `PlayerRuntimeHost` 只置空 `VideoView.MediaPlayer`，却未调用 `VideoView.Dispose()`；LibVLCSharp.WPF 的本地 API 文档明确此方法负责释放前景窗口。第一轮修复拆至 `PlayerRuntimeHost.Vlc.cs`，先从视觉树移除再显式释放 view、媒体、播放器与 LibVLC；本机非 Physical 304/304 通过。
+- D4 更新到 `175b8fc` 后同源再跑 20 次，私有内存第 6/8/10 次为 255.1/258.8/260.3 MB，停播 15 秒回落到 169.3 MB；但句柄仍从第 2 次 827 升到第 20 次 1040，15 秒后仍为 1038，**第一轮修复不完整**。微软签名的 Sysinternals Handle（只读诊断）显示再做 5 次后 Semaphore 160→200、Thread 75→88、Event 312→329，确认存在内核句柄增长而非仅 GC 峰值。
+- 官方 LibVLCSharp 最佳实践建议应用生命周期仅创建一个 `LibVLC` 实例；原实现每开一次视频都新建/销毁一次。下一轮修复改为每个 PlayerWorker 复用单一 `LibVLC`，仅在 Worker 停机时释放；每次切源仍单独释放 MediaPlayer/Media/VideoView。D4 同样 10+ 次句柄曲线尚待再次更新部署；不能把第一轮内存回落当作全面通过。
 
 ## 待执行门禁
 
