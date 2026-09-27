@@ -81,7 +81,8 @@ public sealed partial class PlayerRuntimeHost
         if (action == VlcEndAction.Replay)
         {
             // Stop() 会同步等待 VLC 线程；即使已投递到 WPF Dispatcher，结束回调未完全退出时仍可死锁。
-            // Ended 状态直接 Play() 会从媒体起点重新播放，不必先同步停止。
+            // Ended 状态直接 Play() 会停在末帧，须先把播放位置复位，但不能同步 Stop()。
+            player.Time = 0;
             if (player.Play()) return;
             _state = "error";
             _errorMessage = "video_loop_restart_failed";
