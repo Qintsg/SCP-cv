@@ -84,6 +84,8 @@
 - 代码检查发现 `PlayerRuntimeHost` 只置空 `VideoView.MediaPlayer`，却未调用 `VideoView.Dispose()`；LibVLCSharp.WPF 的本地 API 文档明确此方法负责释放前景窗口。第一轮修复拆至 `PlayerRuntimeHost.Vlc.cs`，先从视觉树移除再显式释放 view、媒体、播放器与 LibVLC；本机非 Physical 304/304 通过。
 - D4 更新到 `175b8fc` 后同源再跑 20 次，私有内存第 6/8/10 次为 255.1/258.8/260.3 MB，停播 15 秒回落到 169.3 MB；但句柄仍从第 2 次 827 升到第 20 次 1040，15 秒后仍为 1038，**第一轮修复不完整**。微软签名的 Sysinternals Handle（只读诊断）显示再做 5 次后 Semaphore 160→200、Thread 75→88、Event 312→329，确认存在内核句柄增长而非仅 GC 峰值。
 - 官方 LibVLCSharp 最佳实践建议应用生命周期仅创建一个 `LibVLC` 实例；原实现每开一次视频都新建/销毁一次。下一轮修复改为每个 PlayerWorker 复用单一 `LibVLC`，仅在 Worker 停机时释放；每次切源仍单独释放 MediaPlayer/Media/VideoView。D4 同样 10+ 次句柄曲线尚待再次更新部署；不能把第一轮内存回落当作全面通过。
+- D4 再次协作停机、快进到 `b63327d` 并零错误构建后拉起新的两窗运行组，窗口 1 用同一个 4 秒视频每轮等待 `playing→idle` 完成 20 次。第 2/4/6/8/10 次句柄全为 **832**；第 12/14/16/18/20 次为 838/838/840/847/847，停播 15 秒后回到 **837**，远小于第一轮第 2→20 次的 827→1040。私有内存第 2→10 次 263.5→270.3 MB、第 20 次 297.3 MB，停播 15 秒回落到 178.3 MB。未触发命令/会话错误，固定 Worker PID 50124 未重启。此对照支持句柄泄漏已消除；仍需 T027 的自动回归及 T030 的 60 分钟混合长稳，不能以 20 轮替代。
+- 为避免以后只看内存峰值，新增受 `HardwareNote` 门禁的 `runtime-dotnet/scripts/test-vlc-resource-stability.ps1`：从状态文件锁定交互会话 Worker PID，每次确认真实 `playing→idle`，记录私有内存/句柄和停播后的增长阈值。脚本语法已本机解析，D4 自身运行结果待补；T027 的 Windows.Tests 视频生命周期回归仍需完善。
 
 ## 待执行门禁
 

@@ -68,7 +68,7 @@
 - [ ] T025 [US4] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Scenarios/ScenarioService.cs` 修复预案音量只落库的假成功，复用硬件控制边界并处理墙面、音量与状态的失败顺序；若获准，在 D4 记录并恢复系统音量后实体复测。
 - [ ] T026 [P] [US4] 在 D4 `.validation/` 用受控 RTSP/SRT 源做独立解码与窗口 1/2 实体播放，对旧报告的损坏帧和 `INVALID SIZE` 告警定位到发布端、MediaMTX、传输或 VLC；在相关 `runtime-dotnet/src/ScpCv.Infrastructure/Streams/`、`ScpCv.PlayerWorker/` 或配置中修复并复测。
 - [ ] T027 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Windows.Tests/` 为视频自然结束、循环、同源重开与释放增加回归；D4 重做短视频重复切源并采集私有内存、句柄、画面帧变化，定位旧增长。
-- [ ] T028 [US4] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/Adapters/` 与 `Playback/PlayerRuntimeHost.cs` 修复 T027 证实的视频资源保留或状态假成功，并在 D4 同条件复测。
+- [X] T028 [US4] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/Adapters/` 与 `Playback/PlayerRuntimeHost.cs` 修复 T027 证实的视频资源保留或状态假成功，并在 D4 同条件复测。
 - [ ] T029 [US4] 用已改成两窗的 `runtime-dotnet/scripts/benchmark-commands.ps1` 在 D4 执行普通写命令 1000 样本和健康热切换 100 样本，记录 p95/最大/失败数及原始证据到 `verification.md`。
 - [ ] T030 [US4] 在 D4 运行至少 60 分钟窗口 1/2 混合媒体与重复切源，按分钟记录画面、会话、命令、资源、Office/MediaMTX 与流错误；发现问题先诊断修复再同场景复跑。
 - [ ] T031 [US4] 在 D4 测试播放器失联、源文件暂失、转换失败及协作重启/停机，核对旧命令不重放、两个播放器退出、状态文件与日志如实更新。
