@@ -10,6 +10,42 @@ namespace ScpCv.Integration.Tests;
 public sealed class RuntimeWorkerSessionTests
 {
     [Fact]
+    public async Task ServerShutdownCompletesLoopWithoutCancellingCallerToken()
+    {
+        var pipeName = $"scp-cv-shutdown-test-{Guid.NewGuid():N}";
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var runFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var serverTask = Task.Run(async () =>
+        {
+            await using var server = CreateServer(pipeName);
+            await server.WaitForConnectionAsync(timeout.Token);
+            await AcceptWorkerAsync(server, timeout.Token);
+            var claim = await ReadAsync(server, timeout.Token);
+            await WriteAsync(server, Response(claim, "no_work", new NoWorkDto
+            {
+                Reason = "empty", RetryAfterMs = 1000,
+            }, ownerEpoch: 7), timeout.Token);
+            await WriteAsync(server, new IpcFrameDto
+            {
+                MessageType = "shutdown_request",
+                MessageId = Guid.NewGuid(),
+                OwnerEpoch = 7,
+                Payload = JsonSerializer.SerializeToElement(new { reason = "test_stop" }),
+            }, timeout.Token);
+            await runFinished.Task.WaitAsync(timeout.Token);
+        }, timeout.Token);
+
+        await using var session = CreateSession(pipeName, Guid.NewGuid());
+        try
+        {
+            await session.RunAsync((_, _) => throw new InvalidOperationException("停机用例不应执行命令"), timeout.Token);
+            Assert.False(timeout.IsCancellationRequested);
+        }
+        finally { runFinished.TrySetResult(); }
+        await serverTask;
+    }
+
+    [Fact]
     public async Task IdleWorkerPublishesLiveProgressWithoutAnotherControlCommand()
     {
         var pipeName = $"scp-cv-progress-test-{Guid.NewGuid():N}";

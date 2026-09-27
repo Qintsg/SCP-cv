@@ -1,3 +1,4 @@
+// PowerPointHost 的交互会话握手、Office 请求、传输心跳与自有实例协作退出。
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
@@ -128,6 +129,7 @@ try
     }
     finally
     {
+        stop.Cancel();
         try { await heartbeatTask.ConfigureAwait(false); } catch (OperationCanceledException) { }
     }
 

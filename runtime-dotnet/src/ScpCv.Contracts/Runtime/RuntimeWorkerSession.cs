@@ -143,6 +143,10 @@ public sealed class RuntimeWorkerSession(
                 }
             }
         }
+        catch (OperationCanceledException) when (_shutdown.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            // 服务器的协作退出是正常结束；调用方取消仍保持 OperationCanceledException 语义。
+        }
         finally
         {
             _shutdown.Cancel();

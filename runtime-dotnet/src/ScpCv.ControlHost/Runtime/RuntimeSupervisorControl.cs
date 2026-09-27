@@ -21,7 +21,8 @@ public sealed class RuntimeSupervisorControl(
     RuntimeSupervisorOptions options,
     NamedPipeServer? pipeServer = null,
     IRuntimeReadinessGate? readinessGate = null,
-    BigScreenOutputOptions? bigScreenOutputs = null)
+    BigScreenOutputOptions? bigScreenOutputs = null,
+    IRuntimeShutdownNotifier? shutdownNotifier = null)
 {
     private readonly BigScreenOutputOptions _bigScreenOutputs = bigScreenOutputs ?? new BigScreenOutputOptions();
     public bool IsConfigured => !string.IsNullOrWhiteSpace(options.ExecutablePath);
@@ -51,6 +52,9 @@ public sealed class RuntimeSupervisorControl(
         {
             return new SupervisorLaunchResult(false, "supervisor_unavailable", $"Supervisor 不存在：{executable}");
         }
+
+        if (normalizedAction is "stop" or "restart" && shutdownNotifier is not null)
+            await shutdownNotifier.NotifyRuntimeShutdownAsync($"supervisor_{normalizedAction}", cancellationToken).ConfigureAwait(false);
 
         var arguments = new List<string>
         {

@@ -226,7 +226,14 @@
 - **症状**：两窗循环 4 秒视频承受 1000 条窗口音量命令时，窗口 2 变黑、心跳超时、最后一条命令 Pending，进程 PID 仍在；性能样本约半数被折叠、排空超时，不能把低 p95 当作通过。
 - **根因**：`HandleVlcEndedAsync` 收到自然结束后在 UI 线程执行 `MediaPlayer.Stop()`。只读 `dotnet-stack` 明确该线程卡在原生 Stop；官方 LibVLCSharp 文档说明 Stop 同步等待 VLC 线程，来自回调时会死锁。投递到 Dispatcher 不保证与原生结束回调完全错开。
 - **检出方式**：同时检查实体画面、心跳、队列 Pending、进程 CPU 与托管线程栈；进程存活或命令部分完成不足以排除冻结。短视频连续循环比单次播放更容易触发。
-- **现状**：直接 `Play()` 和 `Time=0` 再 `Play()` 均是状态假成功；`Play(media)` 后 D4 实际回绕、1000 命令全完成，但循环原生句柄仍涨。下一版用线程池异步等待 Stop，让 Dispatcher 处理 HWND 清理，并串行化媒体命令/结束回调/释放；关窗也异步清理。须重测循环句柄、两窗命令压力与协作停机。
+- **现状**：直接 `Play()` 和 `Time=0` 再 `Play()` 均是状态假成功；`Play(media)` 后实际回绕但原生句柄仍涨。线程池异步等待 Stop、串行化媒体操作后，D4 两窗 1000 命令全完成、p95 18.4 ms；停播后句柄回落 854/897，20 次开关的预热后增长 +5/-4。60 分钟混合仍待执行。
+
+### 坑 28 - 有 shutdown 接收分支却没有生产发送方，Office 空闲实例残留（2026-09-28 修复待复测）
+
+- **症状**：D4 实验性 PPT 两窗顺序出画/翻页/关闭均成功；运行组 shutdown 后 Worker 和状态文件已消失，项目创建的 POWERPNT 仍存在。
+- **根因**：broker 未发送任何 `shutdown_request`，Supervisor 对隐藏窗口/控制台的 `CloseMainWindow` 不可靠，超时强退 OfficeHost 导致 COM Dispose 无机会执行；OfficeHost 的接收分支还在 break 后等待未取消的心跳任务。
+- **检出方式**：反查消息类型的生产发送方，不把“有接收分支”当接线完成；停机同时核对自有 Office PID/启动时间及用户文稿，而非只看 .NET Host 退出。
+- **现状**：broker 先对已认证当前 Worker 发协作退出，再由 Supervisor 按自有 PID 兜底；OfficeHost 取消心跳后只退出自有且无用户文稿的 Application。真实管道回归先红后绿、本机非 Physical 309/309；D4 新版 Office 残留复测待完成。
 
 ## 3. 相关沉淀点（不在这里重复）
 

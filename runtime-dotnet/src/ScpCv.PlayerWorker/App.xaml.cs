@@ -93,6 +93,8 @@ public partial class App : System.Windows.Application, IAsyncDisposable
         {
             await RuntimeStartGate.WaitAsync(startGate, cancellationToken: cancellationToken);
             await session.RunAsync(runtime.ExecuteAsync, runtime.SampleProgressAsync, cancellationToken);
+            await DisposeAsync();
+            await Dispatcher.InvokeAsync(() => Shutdown());
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception)

@@ -11,32 +11,14 @@ using ScpCv.Infrastructure.Runtime;
 
 namespace ScpCv.ControlHost.Ipc;
 
-/// <summary>ControlHost 托管的并发本机管道 broker；持久命令仍是真源，Wake 仅为提示。</summary>
-public interface IRuntimeReadinessGate
-{
-    Task<RuntimeReadinessResult> WaitForRuntimeReadyAsync(
-        long groupEpoch,
-        TimeSpan timeout,
-        CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// 延迟解析管道 broker，避免 Hardware 启动时形成
-/// broker → 音频完成处理 → 命令协调器 → wake notifier → broker 的单例构造环。
-/// </summary>
-public sealed class RuntimeCommandWakeNotifier(IServiceProvider services) : ICommandWakeNotifier
-{
-    public ValueTask WakeAsync(CommandWakeSignal signal, CancellationToken cancellationToken = default) =>
-        services.GetRequiredService<RuntimePipeBroker>().WakeAsync(signal, cancellationToken);
-}
-
+/// <summary>本机管道 broker；持久命令是真源，Wake 和协作退出仅通知已认证连接。</summary>
 public sealed partial class RuntimePipeBroker(
     NamedPipeServer server,
     RegisteredProcessRegistry processRegistry,
     RuntimeMessageDispatcher dispatcher,
     RuntimeAuthorityRepository authority,
     ILogger<RuntimePipeBroker> logger,
-    PresentationCoordinator? presentations = null) : BackgroundService, ICommandWakeNotifier, IRuntimeReadinessGate
+    PresentationCoordinator? presentations = null) : BackgroundService, ICommandWakeNotifier, IRuntimeReadinessGate, IRuntimeShutdownNotifier
 {
     private static readonly string[] RequiredRuntimeRoles =
         ["player-1", "player-2", "audio", "office"];
