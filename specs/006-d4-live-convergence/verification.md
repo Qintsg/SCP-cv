@@ -24,6 +24,38 @@
 - `benchmark-commands.ps1` 原先默认轮询 1–4，D4 又没有 `sqlite3` 命令，旧基准不能直接用于当前两窗。先写回归使 2/2 失败，再修为仅 1/2、从 ACL 私有文件或环境变量取口令、可显式指定 SQLite CLI 与保存原始样本；回归 2/2、PowerShell 5.1 语法解析通过，UTF-8 BOM 保留。
 - `docs/qa/003-workstation-runbook.md` 的现行操作段已改为两窗和正确的 DataRoot 停机入口，早期四窗观测保留并标明历史。D4 SQLite CLI 的实际部署与 1000/100 样本执行仍待 T029，不能把脚本改动算作性能通过。
 
+## D4 代码与构建（2026-09-27）
+
+- 本机将 `15087a5`（两窗基准/口令）与 `d4c69ed`（006 规范）推送 GitHub `origin` 和内网 `gitlab`。D4 在干净 `main` 上从其内网 `origin` fetch、`merge --ff-only`，由 `6fdbca7` 更新到 `d4c69ed`，再次检查无跟踪文件改动。
+- D4 使用 `D:\dotnet\dotnet.exe` 对 `runtime-dotnet/ScpCv.sln` 执行 `restore --locked-mode` 与 Debug `build --no-restore`，两者退出码均为 0。`D:\nodejs\pnpm.cmd --dir frontend install` 和 `build:web` 退出码均为 0；Vite 仍提示主 chunk 超过 500 kB，不把该提醒写成构建失败。
+- 这一步只更新和编译 D4 文件，没有启动 ControlHost、Worker、前端或改变墙面/电源。下一步先验证无 Worker 的 Hardware 控制面及交互桌面的真实显示拓扑。
+
+## D4 Hardware 控制面（尚未启动播放器）
+
+- 首次在 SSH PowerShell 直接调用脚本被本机 ExecutionPolicy 拒绝；改用**仅进程范围** Bypass 后，`run-headless.ps1 -Detach` 成功创建任务 `ScpCvHeadless-b3089cd7`。任务拉起 ControlHost PID 51192，`SessionId=1`，`/health/ready=200`；日志明确“未指定 `-StartWorkers`，跳过 Worker 编排”。此前一次调用后的 `LASTEXITCODE=0` 是 PowerShell 保留的旧 native 返回值，不作为成功证据。
+- 交互会话的 `/api/displays/` 返回五块实体显示：窗口 1 绑定 `DISPLAY2`（1920×1080，x=0）、窗口 2 绑定 `DISPLAY3`（1920×1080，x=1920），两者标为 playback target；`DISPLAY4/5` 和 1920×1200 的 `DISPLAY1` 不在播放目标。历史 D4 记录确认 `DISPLAY1` 为控制屏；实体画面和窗口真实落位仍待 T006/T011。
+- 旧 DataRoot 启动后，`/api/runtime/` 保持 `double`，`/api/sessions/` 恰好两会话，实验性 PowerPoint 设置默认关闭，布局接口可读；这表明新合同与数据库迁移路径可用，尚不证明任何实体画面。
+
+## D4 两窗启动与交互桌面像素（epoch 55）
+
+- `POST /api/system/restart/` 返回“全部 Worker 已就绪”，epoch 55。PID/Session：ControlHost 51192、Supervisor 50836、PlayerWorker 1=8688、PlayerWorker 2=48020、AudioWorker 46268、PowerPointHost 28084、MediaMTX 51504，全部位于交互 session 1；没有 3/4 播放器。`runtime-processes.json` 恢复存在，两会话分别绑定 `DISPLAY2/3`。
+- 在 D4 DataRoot 的本轮测试目录登记两个只读本地 PNG 源 ID 39/40（QA-006-LEFT/RIGHT），API 打开后两会话均为 `playing`、`player_online=true`、无待处理命令/错误。测试源位于 `D:\SCP-cv\.validation\t129-workstation\qa-006\`，原有源 ID 1/2 未改动。
+- 交互会话计划任务 `ScpCvQaCapture006` 运行本轮 QA 截图脚本，结果码 0，JSON 记录 `session_id=1`、两个 1920×1080 目标、Worker PID/私有内存/句柄。基线空闲截图分别是黑场；打开源后 `DISPLAY2` 截图显示“QA IMAGE STABILITY”图卡，`DISPLAY3` 截图显示另一张控制台测试图，左右无串台。原始证据保存在 D4 `.validation\qa-006\` 及本机 `.validation\qa-d4-006\remote\`，不提交。Windows `Get-Process.MainWindowHandle` 在此任务仍为 0，故没有用它单独推断窗口位置；以受管命令行目标、会话和目标输出像素交叉证明。
+- 这证明 D4 Windows 两路播放输出可出画，不等于已观察到关机状态的拼接墙面实际点亮，也不替代两个固定预设的实体切换测试。
+
+## 直播源登记缺口的本机红→绿回归
+
+- D4 旧构建对 `POST /api/sources/streams/` 返回 405；源码中已有流类型枚举和 VLC 打开分支，却只有文件/网页登记入口，`StreamDiscoveryService` 也未接入 RTSP/SRT 创建链路。根因在媒体登记的 REST→模型接口缺失，不是单纯少一个页面按钮。
+- `MediaEndpointTests` 先红后绿覆盖 RTSP、SRT、自定义 HTTP 媒体流登记、下次打开的流地址修改、无效协议/内嵌凭据拒绝且不新增源、匿名请求拒绝。新源只标 `stream_status=unverified`，`is_available` 仅表示可以尝试播放，不表示在线。
+- 本机真实 Chromium 在桌面与 390px 视口验证“添加源 → 直播流”、三种协议选择、源列表“直播 · 待验证”、地址编辑及错误地址 HTTP 400 的原文反馈；无页面异常或横向溢出。页面截图在忽略目录 `.validation/qa-big-screen-20260927/stream-*.png`，本机临时 ControlHost/Vite 均按 PID 停止。D4 实际流画面仍待更新部署和 T011/T026，不能把登记回归写成已出画。
+
+## D4 多源画面矩阵（仍在旧运行组二进制，2026-09-28）
+
+- 将桌面 `Resources/机械臂.mp4` 只读复制成 ASCII 名称测试副本，SCP 传至 D4 DataRoot 的 `qa-006/`；本机副本与原件以及 D4 副本的 SHA-256 均为 `32B725D36D334AF0E5B226CF6C2875A6EB75AD0F9FEDED39491C6B8860DC4EDF`。三页 PDF 取本机既有 QA 测试文件，上传到 D4 忽略目录；未改动原始素材。
+- D4 登记视频 ID 41、PDF ID 42、网页 ID 43。窗口 1 打开视频后，会话为 `playing`，两次交互输出截图（`window1-20260928-042340.png` 与 `...042405.png`）呈现不同机械臂画面，证明不只是 HTTP 受理。但会话持续报告 `position_ms=0/duration_ms=0`，与实际视频帧变化不一致，留给 T027 定位，不把进度功能判为通过。
+- PDF ID 42 在窗口 1 `playing/pdf`，页码经打开、next、goto 依次为 1/3、2/3、3/3；三个 D4 输出截图分别为蓝/绿/红的 `QA PDF PAGE 1/2/3`，与本机独立渲染源 PDF 的三页一致。网页 ID 43 打开本机 ControlHost 公开健康页后，窗口 1 截图实际显示 `Healthy`，会话为 `playing`。窗口 2 始终保持独立测试图，未观察到串台。
+- 在两个窗口持续播放时，D4 把旧源 ID 1 的 9 页测试 PPT 原件作为只读输入重新上传到 `media/QA-006-PPT-20260928/AllinOne.pptx`，新源 ID 44 返回 201 且原件目录正确，随后超过 45 秒仍 `queued`。代码追踪确定 `MediaPreparationService.ClaimNextAsync` 对**所有**作业要求两窗全空闲，现场长期播放导致 PPT 作业饥饿。新增“窗口 1 正在播图时仍可领取 PPT 转换”回归先红后绿；本机全部非 Physical .NET 302/302、前端 42/42、类型检查/Web 构建、Redocly 与 Spec Kit 校验通过。D4 更新到修复后须在仍有画面的条件下证明页图真实生成。
+
 ## 待执行门禁
 
 - [x] D4 数据快照

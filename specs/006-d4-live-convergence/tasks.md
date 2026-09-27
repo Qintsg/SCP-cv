@@ -16,10 +16,10 @@
 
 **Goal**: D4 与本机版本一致，交互桌面中的两窗运行组可被安全启停和观察。
 
-- [ ] T004 在 D4 `D:\SCP-cv` 从内网 GitLab 以快进方式取得当前 `main`，确认本机与 D4 HEAD 一致、工作区无意外改动；D4 执行 .NET locked restore/build 与 `pnpm` 前端构建，结果写入 `verification.md`。
-- [ ] T005 在 D4 使用 `runtime-dotnet/scripts/run-headless.ps1` 先启动无 Worker 的 Hardware ControlHost，核对 DataRoot 迁移、`/health/ready`、`/api/displays/` 的交互会话真实设备名和窗口 1/2 绑定；失败先停止并诊断，不直接开全部 Worker。
-- [ ] T006 在 D4 通过协作重启启动仅 player1/2 的运行组，核对 PID/启动时间/epoch、两个会话及控制桌面未被占用；增加 `runtime-dotnet/tests/ScpCv.Integration.Tests/` 的启动/停机回归（如发现缺口）。
-- [ ] T007 [P] 在 D4 `.validation/` 建立只记录本轮窗口 1/2 的画面、会话、命令、进程内存/句柄和日志的验证脚本或清单；证据格式遵守 `contracts/validation-contract.md`，不提交媒体或截图。
+- [X] T004 在 D4 `D:\SCP-cv` 从内网 GitLab 以快进方式取得当前 `main`，确认本机与 D4 HEAD 一致、工作区无意外改动；D4 执行 .NET locked restore/build 与 `pnpm` 前端构建，结果写入 `verification.md`。
+- [X] T005 在 D4 使用 `runtime-dotnet/scripts/run-headless.ps1` 先启动无 Worker 的 Hardware ControlHost，核对 DataRoot 迁移、`/health/ready`、`/api/displays/` 的交互会话真实设备名和窗口 1/2 绑定；失败先停止并诊断，不直接开全部 Worker。
+- [X] T006 在 D4 通过协作重启启动仅 player1/2 的运行组，核对 PID/启动时间/epoch、两个会话及控制桌面未被占用；增加 `runtime-dotnet/tests/ScpCv.Integration.Tests/` 的启动/停机回归（如发现缺口）。
+- [X] T007 [P] 在 D4 `.validation/` 建立只记录本轮窗口 1/2 的画面、会话、命令、进程内存/句柄和日志的验证脚本或清单；证据格式遵守 `contracts/validation-contract.md`，不提交媒体或截图。
 
 ## Phase 3: User Story 1 - 两块大屏可靠播出 (P1)
 
@@ -27,9 +27,9 @@
 
 **Independent Test**: 在 D4 窗口 1/2 分别开/关图片、视频、网页、PDF、PPT 页图及直播；切换两个固定预设后恢复，未知布局只预览不下发。
 
-- [ ] T008 [P] [US1] 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/MediaEndpointTests.cs` 与 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/` 先写直播源登记、URL/协议校验、错误状态及修改回归；在 `frontend/scripts/` 补添加源类型合同测试。
-- [ ] T009 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.Streams.cs` 和 `runtime-dotnet/src/ScpCv.ControlHost/Endpoints/MediaEndpoints.cs` 实现受认证 RTSP/SRT/自定义流登记与更新，复用现有 `MediaSource`，明确区分“可尝试连接”与“已出画”。
-- [ ] T010 [US1] 在 `frontend/src/features/sources/AddSourceDrawer.vue`、`frontend/src/stores/sources.ts`、`frontend/src/services/api.ts` 增加直播源登记和失败反馈；更新 `docs/openapi.yaml` 及分拆合同，保留两块大屏为唯一播放目标。
+- [X] T008 [P] [US1] 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/MediaEndpointTests.cs` 与 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/` 先写直播源登记、URL/协议校验、错误状态及修改回归；在 `frontend/scripts/` 补添加源类型合同测试。
+- [X] T009 [US1] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.Streams.cs` 和 `runtime-dotnet/src/ScpCv.ControlHost/Endpoints/MediaEndpoints.cs` 实现受认证 RTSP/SRT/自定义流登记与更新，复用现有 `MediaSource`，明确区分“可尝试连接”与“已出画”。
+- [X] T010 [US1] 在 `frontend/src/features/sources/AddSourceDrawer.vue`、`frontend/src/stores/sources.ts`、`frontend/src/services/api.ts` 增加直播源登记和失败反馈；更新 `docs/openapi.yaml` 及分拆合同，保留两块大屏为唯一播放目标。
 - [ ] T011 [US1] 在 D4 交互桌面对窗口 1/2 逐类执行打开、导航/循环或进度、关闭，交叉核对截图、会话、命令完成及目标 PID；把每项结论写入 `verification.md`。
 - [ ] T012 [US1] 在已获准的拼接屏电源条件下对 D4 执行两个既有预设的实体映射并恢复，保存左右/全屏画面证据；手动笔记本/IP 布局仅保存预览并核对零未知帧下发。
 - [ ] T013 [US1] 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/LegacyHttpContractTests.cs` 与 D4 请求中复核窗口 3/4 全入口拒绝，确保本轮直播源或显示器修改不重新引入旧窗。

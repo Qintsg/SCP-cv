@@ -137,6 +137,7 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 - [.NET 重构规范](specs/003-dotnet-runtime-refactor/spec.md)
 - [视频墙控制规范](specs/004-video-wall-control/spec.md)
 - [大屏专用与媒体整理规范](specs/005-big-screen-only/spec.md)
+- [D4 两窗实机收敛规范](specs/006-d4-live-convergence/spec.md)
 - [变更记录](docs/CHANGELOG.md)
 
 ## 许可证
