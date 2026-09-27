@@ -76,6 +76,8 @@ paths:
     $ref: './paths/sources_local_.yaml'
   /sources/web/:
     $ref: './paths/sources_web_.yaml'
+  /sources/streams/:
+    $ref: './paths/sources_streams_.yaml'
   /sources/{source_id}/move/:
     $ref: './paths/sources_{source_id}_move_.yaml'
   /sources/{source_id}/download/:

@@ -1,4 +1,4 @@
-// 受保护媒体上传、移动、下载和 PPT 页图合同回归。
+// 受保护媒体上传、直播源登记、移动、下载和 PPT 页图合同回归。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text;
@@ -11,6 +11,128 @@ namespace ScpCv.ControlHost.Tests;
 
 public sealed class MediaEndpointTests
 {
+    [Fact]
+    public async Task OperatorCanRegisterRtspStreamAndFindItInMediaLibrary()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        using var register = CreateJsonRequest(HttpMethod.Post, "/api/sources/streams/", csrf,
+            new { source_type = "rtsp_stream", url = "rtsp://192.0.2.10:8554/live", name = "测试摄像头" });
+
+        using var created = await client.SendAsync(register);
+        using var body = await ReadJsonAsync(created);
+
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var source = body.RootElement.GetProperty("source");
+        Assert.Equal("rtsp_stream", source.GetProperty("source_type").GetString());
+        Assert.Equal("rtsp://192.0.2.10:8554/live", source.GetProperty("uri").GetString());
+        using var listed = await client.GetAsync("/api/sources/?source_type=rtsp_stream");
+        using var library = await ReadJsonAsync(listed);
+        Assert.Contains(library.RootElement.GetProperty("sources").EnumerateArray(), item =>
+            item.GetProperty("id").GetInt64() == source.GetProperty("id").GetInt64());
+    }
+
+    [Fact]
+    public async Task OperatorCanRegisterSrtStreamWithoutClaimingItIsOnline()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        using var register = CreateJsonRequest(HttpMethod.Post, "/api/sources/streams/", csrf,
+            new { source_type = "srt_stream", url = "srt://192.0.2.11:8890?streamid=read:demo", name = "课堂推流" });
+
+        using var created = await client.SendAsync(register);
+        using var body = await ReadJsonAsync(created);
+
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var source = body.RootElement.GetProperty("source");
+        Assert.Equal("srt_stream", source.GetProperty("source_type").GetString());
+        Assert.Equal("srt://192.0.2.11:8890/?streamid=read:demo", source.GetProperty("uri").GetString());
+        Assert.Equal("unverified", source.GetProperty("metadata").GetProperty("stream_status").GetString());
+    }
+
+    [Fact]
+    public async Task OperatorCanRegisterHttpMediaStreamDistinctFromWebPage()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        using var register = CreateJsonRequest(HttpMethod.Post, "/api/sources/streams/", csrf,
+            new { source_type = "custom_stream", url = "http://192.0.2.12:8080/live.ts", name = "现场编码器" });
+
+        using var created = await client.SendAsync(register);
+        using var body = await ReadJsonAsync(created);
+
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var source = body.RootElement.GetProperty("source");
+        Assert.Equal("custom_stream", source.GetProperty("source_type").GetString());
+        Assert.Equal("http://192.0.2.12:8080/live.ts", source.GetProperty("uri").GetString());
+    }
+
+    [Fact]
+    public async Task OperatorCanChangeStreamAddressForNextOpening()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        using var register = CreateJsonRequest(HttpMethod.Post, "/api/sources/streams/", csrf,
+            new { source_type = "srt_stream", url = "srt://192.0.2.11:8890/live", name = "课堂推流" });
+        using var created = await client.SendAsync(register);
+        using var createdBody = await ReadJsonAsync(created);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var sourceId = createdBody.RootElement.GetProperty("source").GetProperty("id").GetInt64();
+        using var edit = CreateJsonRequest(HttpMethod.Patch, $"/api/sources/{sourceId}/", csrf,
+            new { uri = "srt://192.0.2.22:9000/live" });
+
+        using var updated = await client.SendAsync(edit);
+        using var body = await ReadJsonAsync(updated);
+
+        Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
+        Assert.Equal("srt://192.0.2.22:9000/live", body.RootElement.GetProperty("source").GetProperty("uri").GetString());
+    }
+
+    [Theory]
+    [InlineData("rtsp_stream", "http://192.0.2.10/live")]
+    [InlineData("srt_stream", "srt://user:secret@192.0.2.11:8890/live")]
+    [InlineData("custom_stream", "file:///C:/private.txt")]
+    public async Task InvalidStreamUrlIsRejectedWithoutAddingSource(string sourceType, string url)
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        using var beforeResponse = await client.GetAsync("/api/sources/");
+        using var before = await ReadJsonAsync(beforeResponse);
+        var count = before.RootElement.GetProperty("sources").GetArrayLength();
+        using var register = CreateJsonRequest(HttpMethod.Post, "/api/sources/streams/", csrf,
+            new { source_type = sourceType, url, name = "无效直播源" });
+
+        using var rejected = await client.SendAsync(register);
+        using var afterResponse = await client.GetAsync("/api/sources/");
+        using var after = await ReadJsonAsync(afterResponse);
+
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        Assert.Equal(count, after.RootElement.GetProperty("sources").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task AnonymousClientCannotRegisterStreamSource()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        using var request = HttpRequestMessageForAnonymousStream();
+
+        using var response = await client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private static HttpRequestMessage HttpRequestMessageForAnonymousStream() =>
+        new(HttpMethod.Post, "/api/sources/streams/")
+        {
+            Content = JsonContent.Create(new { source_type = "rtsp_stream", url = "rtsp://192.0.2.10/live" }),
+        };
+
     [Fact]
     public async Task PreparedPptSlideImageRequiresSessionAndReturnsPublishedPng()
     {

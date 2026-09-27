@@ -1,11 +1,11 @@
-// 媒体文件夹、上传、预览和下载的 REST 入口。
+// 媒体文件夹、上传、直播源、预览和下载的 REST 入口。
 using System.Globalization;
 using System.Text.Json;
 using ScpCv.Infrastructure.Media;
 
 namespace ScpCv.ControlHost.Endpoints;
 
-public static class MediaEndpoints
+public static partial class MediaEndpoints
 {
     public static IEndpointRouteBuilder MapMediaEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -18,6 +18,7 @@ public static class MediaEndpoints
         api.MapPost("/sources/upload/", UploadSourceAsync).DisableAntiforgery();
         api.MapPost("/sources/local/", AddLocalSourceAsync);
         api.MapPost("/sources/web/", AddWebSourceAsync);
+        api.MapPost("/sources/streams/", AddStreamSourceAsync);
         api.MapPatch("/sources/{sourceId:long}/move/", MoveSourceAsync);
         api.MapGet("/sources/{sourceId:long}/download/", DownloadSourceAsync);
         api.MapGet("/sources/{sourceId:long}/preview/", PreviewSourceAsync);

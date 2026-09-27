@@ -1,0 +1,28 @@
+type: object
+required:
+  - source_type
+  - url
+properties:
+  source_type:
+    type: string
+    enum:
+      - rtsp_stream
+      - srt_stream
+      - custom_stream
+    description: RTSP、SRT 或 VLC 支持的自定义 IP 媒体流；不能将网页 URL 静默当作视频流
+  url:
+    type: string
+    format: uri
+    description: |
+      RTSP 源使用 rtsp://，SRT 源使用 srt://；自定义流当前支持
+      http(s)://、udp://、rtp:// 或 rtmp:// 主机地址。内嵌用户名和密码会被拒绝。
+  name:
+    type: string
+    description: 操作员可识别的名称；省略时以地址作为名称
+  folder_id:
+    type: integer
+    nullable: true
+  preheat_enabled:
+    type: boolean
+    default: false
+    description: 是否在播放器启动时尝试预热；登记本身不探测流，也不代表已出画

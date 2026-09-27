@@ -206,6 +206,19 @@ public sealed partial class MediaSourceService(
                     source.Uri = normalized;
                     source.SourceRevision = checked(source.SourceRevision + 1);
                 }
+                else if (uri is not null && source.SourceType is
+                         (MediaSourceType.RtspStream or MediaSourceType.SrtStream or MediaSourceType.CustomStream))
+                {
+                    var scheme = source.SourceType switch
+                    {
+                        MediaSourceType.RtspStream => "rtsp",
+                        MediaSourceType.SrtStream => "srt",
+                        _ => string.Empty,
+                    };
+                    source.Uri = ValidateStreamUrl(uri, scheme);
+                    source.MetadataJson = "{\"stream_status\":\"unverified\"}";
+                    source.SourceRevision = checked(source.SourceRevision + 1);
+                }
 
                 if (preheatEnabled is not null)
                 {

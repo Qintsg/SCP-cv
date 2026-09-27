@@ -4,7 +4,7 @@ properties:
     type: string
   uri:
     type: string
-    description: 仅网页源允许通过本接口修改 URL
+    description: 网页或直播源可修改 URL，流地址变更仅影响后续打开；文件原件路径不能在此修改
   preheat_enabled:
     type: boolean
     description: 是否在播放器启动时预热该媒体源

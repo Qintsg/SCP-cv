@@ -1,0 +1,25 @@
+post:
+  tags:
+    - sources
+  summary: 登记直播媒体流
+  description: 保存可尝试打开的流地址；返回的 is_available 不表示已经连通，metadata.stream_status 为 unverified，实际结果以播放会话与画面为准。
+  operationId: addStreamSource
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/StreamSourceCreateRequest.yaml
+  responses:
+    '201':
+      description: 登记成功，尚未验证播出
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SourceResponse.yaml
+    '400':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '403':
+      $ref: ../components/responses/ErrorResponse.yaml

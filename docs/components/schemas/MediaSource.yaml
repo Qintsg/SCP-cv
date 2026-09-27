@@ -28,6 +28,7 @@ properties:
     type: string
   is_available:
     type: boolean
+    description: 对直播源表示配置可尝试播放，并非已连通或已出画；实际状态以目标播放会话为准
   stream_identifier:
     type: string
     nullable: true
@@ -52,6 +53,7 @@ properties:
     description: |
       媒体源扩展元数据。PPT/PPTX 源的 `slide_images` 记录逐页图片准备状态、
       原件摘要、制品路径与页数；原始文稿仍保留在 `uri`。
+      直播源的 `stream_status=unverified` 表示登记时未探测连通性。
   keep_alive:
     type: boolean
     deprecated: true
