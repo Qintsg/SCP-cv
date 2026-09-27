@@ -27,8 +27,8 @@ readTimeout: 3s
 writeTimeout: 3s
 # Size of the queue of outgoing packets.
 # A higher value allows to increase throughput, a lower value allows to save RAM.
-# 低延迟优化：从默认 512 降至 8，减少内部缓冲，适合实时播放场景
-writeQueueSize: 8
+# D4 实测 8 会导致 H.264 RTSP 读取丢包、花屏或空白；512 经并发读流验证无解码告警。
+writeQueueSize: 512
 # Maximum size of outgoing UDP payloads.
 # It defaults to the maximum packet size on ethernet (1500) minus IPv6 and UDP headers (48).
 # This can be decreased to avoid fragmentation on networks with a low MTU.

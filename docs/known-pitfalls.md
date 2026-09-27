@@ -22,7 +22,7 @@
 | PPT 上传转换 / 实验性 PowerPoint 放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 重试；`PATCH /api/settings/powerpoint/` 显式开启后才允许原生放映 | `PptConversionHostedService` → `PowerPointHost` STA 导出 PNG；播放器默认 `slide_images`，实验开关只影响后续打开 | Simulation 不启动 Office，作业保持待处理 | `PowerPointSlideExportTests`、`PptConversionHostedServiceTests`、`PowerPointSettingsEndpointTests`；D4 实机转换/放映仍待复测 |
 | 背景音频（独立列表） | `POST\|PATCH\|DELETE /api/background-audio/*` | `BackgroundAudioService` → 命令队列（`CommandTargetKind.Audio`）→ Named Pipe → `AudioWorker` | `QueuedCommandWakeNotifier`（仅排队） | `docs/实机测试结论.md` 背景音乐段 |
 | 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 2026-09-27 已在用户授权后发送拼接屏 ON→OFF→ON 与电视各两次 toggle；API 只确认写出，物理电源状态未独立读回，见 `docs/qa/003-full-regression-20260927.md`；`appsettings.json` §Devices |
-| MediaMTX 推拉流 / 直播 | `POST /api/sources/local\|web/`、`GET /sources/{id}/`（在线探测） | MediaMTX 进程（流端口 `8890`/`9997`/`8554`）、`stream-probe` HttpClient | 无进程，探测失败即离线 | `docs/qa/003-runtime-lifecycle.md` |
+| MediaMTX 推拉流 / 直播 | `POST /api/sources/streams/` 登记、`PATCH /api/sources/{id}/` 更新、`POST /api/playback/{windowId}/open/` 打开；在线探测不代表出画 | MediaMTX 进程（`8890`/`9997`/`8554`）→ VLC PlayerWorker×2；写队列影响 RTSP 完整性 | 无进程，探测失败即离线 | `specs/006-d4-live-convergence/verification.md`；D4 独立解码与交互桌面截图 |
 | 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×2 / AudioWorker / PowerPointHost / MediaMTX | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `docs/qa/003-workstation-runbook.md` |
 
 核对程度说明：表内 `file:line` 是 2026-09-19 逐个 grep 出来的代码位置。其中「拼接屏画面映射」「系统音量」「显示器拓扑」「设备电源」四行我读到了完整链路（入口 → 接口 → 实现 → 目标地址）；「播放器窗口内容」「PowerPoint」「背景音频」「MediaMTX」「进程组生命周期」五行的**下游部件**列来自 003 规范与既有 QA 记录，只核到了入口与 Hardware 注册，未逐行走完进程侧链路——首次改动这几条时请顺便复核本表。
@@ -206,6 +206,13 @@
 - **根因**：Worker 的 VLC 时间读取只出现在命令完成快照和自然结束事件；空闲循环只发传输心跳，未上报媒体进度。
 - **检出方式**：播放期间先不发控制命令，间隔读取会话进度并核对实际变化帧；再发一条无视觉影响的控制命令观察进度跳变。仅靠 `player_online=true` 会漏掉。
 - **现状**：在既有单连接、相关 ID 路由的管道空闲循环加入可选状态采样，播放器只在 VLC 资源存在时从 UI 线程取得带 source generation 的样本；真实 Named Pipe 集成测试先红后绿。D4 连续进度与长稳内存仍待新二进制复测。
+
+### 坑 25 - 直播会话显示 playing 而 RTSP 空白或损坏（2026-09-28 配置修复待正式端口复测）
+
+- **症状**：SRT 窗口可见测试图，RTSP 窗口空白；独立 FFmpeg 读 RTSP 有 `Invalid level prefix`、缺参考帧等告警，MediaMTX 路径仍是 `ready=true`。
+- **根因**：仓库 MediaMTX v1.17.1 配置把 `writeQueueSize` 从默认 512 压到 8，过小队列在本机回环读流也会丢 H.264 包。新版 v1.21.1 的默认队列可用，但控制版本变量后，同一旧版只改队列到 512 同样可用。
+- **检出方式**：同一发布源并行比较旧版队列 8/512，分别看独立解码错误数与交互桌面截图；不可只凭 `playing`、`ready` 或 FFmpeg 退出码 0 宣称画面正常。
+- **现状**：仓库配置恢复 512；D4 独立旧版队列 512 的 10 秒/30 秒解码均 0 H.264 告警，窗口 1 有画面。正式运行组默认端口复测及 SRT 告警长稳仍待完成，见 006 验证记录。
 
 ## 3. 相关沉淀点（不在这里重复）
 
