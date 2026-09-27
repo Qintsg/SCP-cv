@@ -70,10 +70,14 @@ public sealed partial class MediaPreparationService(
         writes.ExecuteAsync(
             async (database, token) =>
             {
-                var showing = await database.PlaybackSessions.AnyAsync(
-                    item => item.WindowId <= WindowId.Maximum && item.PlaybackState == PlaybackState.Playing,
-                    token).ConfigureAwait(false);
-                if (showing) return null;
+                if (kind != PreparationJobKind.PptImages)
+                {
+                    var showing = await database.PlaybackSessions.AnyAsync(
+                        item => item.WindowId <= WindowId.Maximum && item.PlaybackState == PlaybackState.Playing,
+                        token).ConfigureAwait(false);
+                    if (showing) return null;
+                }
+                // 上传转页图不能等待现场两块大屏都空闲；Office 原生放映冲突由独立槽位门禁处理。
                 var now = _timeProvider.GetUtcNow();
                 var job = await database.MediaPreparationJobs
                     .Where(item => item.Status == OperationStatus.Queued &&

@@ -54,6 +54,35 @@ public sealed class MediaPreparationTests
     }
 
     [Fact]
+    public async Task PptUploadCanStartConversionWhileOtherMediaContinuesPlaying()
+    {
+        var root = CreateTemporaryRoot();
+        try
+        {
+            var factory = await CreateInitializedFactoryAsync(root);
+            using var writes = new WriteCoordinator(factory);
+            var media = new MediaSourceService(factory, writes, factory, new MediaStorageOptions());
+            await using var imageBytes = new MemoryStream("image"u8.ToArray());
+            var image = await media.AddUploadedAsync(imageBytes, "on-air.png", null, null, null, null, false, false);
+            await writes.ExecuteAsync(async (database, token) =>
+            {
+                var session = await database.PlaybackSessions.SingleAsync(item => item.WindowId == 1, token);
+                session.MediaSourceId = image.Id;
+                session.PlaybackState = PlaybackState.Playing;
+            });
+            await using var pptBytes = new MemoryStream("ppt-while-on-air"u8.ToArray());
+            var ppt = await media.AddUploadedAsync(pptBytes, "new-deck.pptx", null, null, null, null, false, false);
+            var preparation = new MediaPreparationService(factory, writes, new DataRootOptions { RootPath = root });
+
+            var job = await preparation.ClaimNextAsync(PreparationJobKind.PptImages);
+
+            Assert.NotNull(job);
+            Assert.Equal(ppt.Id, job.SourceId);
+        }
+        finally { DeleteTemporaryRoot(root); }
+    }
+
+    [Fact]
     public async Task FailedPptCanBeRetriedWithNewOperationIdButUncertainPptCannot()
     {
         var root = CreateTemporaryRoot();
