@@ -119,6 +119,7 @@ else
     builder.Services.AddSingleton<IVideoWallController, TcpVideoWallController>();
 }
 builder.Services.AddSingleton<RuntimeStateService>();
+builder.Services.AddSingleton<VideoWallLayoutService>();
 builder.Services.AddSingleton<PresentationCoordinator>();
 builder.Services.AddSingleton<ScenarioService>();
 builder.Services.AddSingleton<BackgroundAudioService>();
@@ -187,6 +188,7 @@ app.MapGet(
 app.MapAuthEndpoints();
 app.MapMediaEndpoints();
 app.MapPlaybackEndpoints();
+app.MapVideoWallLayoutEndpoints();
 app.MapPresentationEndpoints();
 app.MapScenarioEndpoints();
 app.MapSystemEndpoints();

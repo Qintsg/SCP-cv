@@ -677,6 +677,13 @@ namespace ScpCv.Infrastructure.Persistence.Migrations
                     b.Property<bool>("VolumeMuted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("WallLayoutDraftJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("WallLayoutDraftRevision")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.ToTable("runtime_state", null, t =>

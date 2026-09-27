@@ -1,6 +1,8 @@
 // 数据库初始化、旧数据保留与退役窗口命令清理回归。
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Configuration;
 using ScpCv.Infrastructure.Persistence;
@@ -161,6 +163,37 @@ public sealed class DatabaseInitializerTests
             Assert.Equal(CommandStatus.Superseded, retiredCommand.Status);
             Assert.Equal("retired_window", retiredCommand.ResultCode);
             Assert.Equal(3, await check.PlaybackSessions.CountAsync());
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task ExistingRuntimeStateMigratesLayoutDraftWithoutLosingModeOrVolume()
+    {
+        var root = CreateTemporaryRoot();
+        try
+        {
+            var factory = CreateFactory(root);
+            Directory.CreateDirectory(factory.Layout.RootPath);
+            await using (var legacy = factory.CreateDbContext())
+            {
+                var migrator = legacy.Database.GetService<IMigrator>();
+                await migrator.MigrateAsync("20260910011645_AddAudioGenerationFence");
+                await legacy.Database.ExecuteSqlRawAsync(
+                    "INSERT INTO runtime_state (Id, BigScreenMode, VolumeLevel, VolumeMuted, UpdatedAt) VALUES (1, 'Double', 77, 0, 0)");
+            }
+
+            await new DatabaseInitializer(factory).InitializeAsync();
+
+            await using var current = factory.CreateDbContext();
+            var runtime = await current.RuntimeStates.SingleAsync();
+            Assert.Equal(BigScreenMode.Double, runtime.BigScreenMode);
+            Assert.Equal(77, runtime.VolumeLevel);
+            Assert.Equal("{}", runtime.WallLayoutDraftJson);
+            Assert.Equal(0, runtime.WallLayoutDraftRevision);
         }
         finally
         {

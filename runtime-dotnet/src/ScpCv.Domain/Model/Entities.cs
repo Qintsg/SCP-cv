@@ -1,3 +1,4 @@
+// 用户、媒体、播放、预案和运行组的持久化领域实体。
 namespace ScpCv.Domain.Model;
 
 public sealed class UserAccount
@@ -97,6 +98,8 @@ public sealed class RuntimeState
     public BigScreenMode BigScreenMode { get; set; } = BigScreenMode.Single;
     public int VolumeLevel { get; set; } = 100;
     public bool VolumeMuted { get; set; }
+    public string WallLayoutDraftJson { get; set; } = "{}";
+    public long WallLayoutDraftRevision { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
 }
 

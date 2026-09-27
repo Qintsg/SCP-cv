@@ -168,3 +168,15 @@ public sealed record VideoWallLayoutDto
     [JsonPropertyName("unavailable_reason")]
     public string UnavailableReason { get; init; } = string.Empty;
 }
+
+public sealed record VideoWallLayoutStateDto
+{
+    [JsonPropertyName("draft")]
+    public VideoWallLayoutDto? Draft { get; init; }
+
+    [JsonPropertyName("draft_revision")]
+    public long DraftRevision { get; init; }
+
+    [JsonPropertyName("active_preset")]
+    public string ActivePreset { get; init; } = "single";
+}
