@@ -3,7 +3,7 @@
   普通控制命令的端到端“开始执行”基准（SC-006：1000 样本 p95 ≤ 1000 ms）。
 
 .DESCRIPTION
-  通过真实 ControlHost 提交 N 条窗口音量命令，默认在 4 个窗口之间轮询并留出提交间隔，
+  通过真实 ControlHost 提交 N 条窗口音量命令，默认在大屏窗口 1/2 间轮询并留出提交间隔，
   避免同目标“后到意图覆盖先前意图”的折叠把样本吃掉。完成后从命令表读取
   CreatedAt → StartedAt 的真实间隔作为“开始执行”延迟。
 
@@ -15,14 +15,16 @@ param(
     [string]$BaseUrl = 'http://localhost:18444',
     [string]$DatabasePath = '',
     [string]$Username = 'qa-admin',
-    [Parameter(Mandatory = $true)][string]$Password,
+    [string]$PasswordFile = '',
+    [string]$SqliteExecutable = 'sqlite3',
     [int]$Samples = 1000,
-    [int[]]$Targets = @(1, 2, 3, 4),
+    [int[]]$Targets = @(1, 2),
     [int]$DelayMilliseconds = 50,
     [int]$DrainTimeoutSeconds = 180,
     [double]$MaxSupersededRatio = 0.2,
     [string]$HardwareNote = '',
-    [string]$OutputPath = ''
+    [string]$OutputPath = '',
+    [string]$RawSamplesPath = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -32,6 +34,29 @@ if ([string]::IsNullOrWhiteSpace($DatabasePath)) {
 }
 if (-not (Test-Path -LiteralPath $DatabasePath)) {
     throw "命令表不存在：$DatabasePath"
+}
+if ($Samples -le 0) { throw '样本数必须大于 0。' }
+$targetList = @($Targets | Select-Object -Unique | Sort-Object)
+if ($targetList.Count -eq 0) { throw '至少指定一个大屏窗口。' }
+foreach ($target in $targetList) {
+    if ($target -lt 1 -or $target -gt 2) { throw "窗口号必须在 1..2：$target" }
+}
+
+$resolvedSqlite = Get-Command -Name $SqliteExecutable -ErrorAction SilentlyContinue
+if ($null -eq $resolvedSqlite) {
+    throw "未找到 sqlite3 可执行文件：$SqliteExecutable；可通过 -SqliteExecutable 指定忽略目录中的工具。"
+}
+if (-not [string]::IsNullOrWhiteSpace($PasswordFile)) {
+    if (-not (Test-Path -LiteralPath $PasswordFile -PathType Leaf)) {
+        throw "开发账号口令文件不存在：$PasswordFile"
+    }
+    $Password = (Get-Content -LiteralPath $PasswordFile -Raw).TrimEnd("`r", "`n")
+}
+else {
+    $Password = [Environment]::GetEnvironmentVariable('SCP_CV_DEVELOPMENT_PASSWORD')
+}
+if ([string]::IsNullOrWhiteSpace($Password)) {
+    throw '未提供开发账号口令：使用 -PasswordFile 或 SCP_CV_DEVELOPMENT_PASSWORD。'
 }
 
 function Get-Percentile {
@@ -46,7 +71,7 @@ function Get-Percentile {
 
 function Invoke-Sqlite {
     param([string]$Sql)
-    $result = & sqlite3 -readonly $DatabasePath $Sql
+    $result = & $resolvedSqlite.Source -readonly $DatabasePath $Sql
     if ($LASTEXITCODE -ne 0) { throw "sqlite3 查询失败：$Sql" }
     return $result
 }
@@ -59,11 +84,6 @@ $csrf = (Invoke-RestMethod -Uri "$BaseUrl/api/auth/csrf/" -WebSession $session -
 Invoke-RestMethod -Method Post -Uri "$BaseUrl/api/auth/login/" -WebSession $session -Headers $headers `
     -ContentType 'application/json' -Body (@{ username = $Username; password = $Password } | ConvertTo-Json) | Out-Null
 $headers['X-CSRFToken'] = $csrf
-
-$targetList = @($Targets | Select-Object -Unique | Sort-Object)
-foreach ($target in $targetList) {
-    if ($target -lt 1 -or $target -gt 4) { throw "窗口号必须在 1..4：$target" }
-}
 
 $startId = [long](Invoke-Sqlite 'SELECT COALESCE(MAX(Id), 0) FROM command_records;')
 Write-Host ("基准起点 command id = {0}；样本 {1}；目标窗口 {2}；间隔 {3} ms" -f $startId, $Samples, ($targetList -join '/'), $DelayMilliseconds) -ForegroundColor Cyan
@@ -100,6 +120,10 @@ $drainWatch.Stop()
 
 # --- 取样 ---
 $raw = Invoke-Sqlite "SELECT Id, StartedAt - CreatedAt FROM command_records WHERE Id > $startId AND StartedAt IS NOT NULL ORDER BY Id;"
+if ($RawSamplesPath) {
+    @('command_id|started_after_ticks') + @($raw) |
+        Set-Content -LiteralPath $RawSamplesPath -Encoding utf8
+}
 $startedMs = @($raw | Where-Object { $_ -match '^\d+\|' } | ForEach-Object { [double]($_ -split '\|')[1] / 10000.0 })
 $enqueued = [int](Invoke-Sqlite "SELECT COUNT(*) FROM command_records WHERE Id > $startId;")
 $superseded = [int](Invoke-Sqlite "SELECT COUNT(*) FROM command_records WHERE Id > $startId AND Status = 'Superseded';")

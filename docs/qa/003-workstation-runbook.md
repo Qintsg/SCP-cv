@@ -1,8 +1,8 @@
 # 工作站实验手册
 
-用途：在具备四屏、Office、VLC 素材、MediaMTX 与真实音频的工作站上，一次性收口 T050/T115/T116/T128/T129。
+用途：记录 D4 工作站的历史部署经验与当前两块大屏验证入口。2026-09-27 起，实体收敛按 `specs/006-d4-live-convergence/quickstart.md` 和 `verification.md` 执行；下文 2026-09-11 至 09-24 的四窗结果均为历史证据，不能当作当前两窗验收。
 
-## 0.1 当前目标工作站（2026-09-17，`D4` / `192.168.5.194`）
+## 0.1 目标工作站历史安装记录（2026-09-17，`D4` / `192.168.5.194`）
 
 当前活动工作站为 `D4`，源码目录为 `D:\SCP-cv`，从内网仓库直接拉取：
 
@@ -68,8 +68,8 @@ cd /d D:\SCP-cv\frontend
 ### 0.1.3 开发机到 D4 的网络坑
 
 开发机默认路由被代理 TUN 网卡接管，且没有 `192.168.5.0/24` 的具体路由，表现为**任意端口都能三次握手、但没有任何数据**（这会把普通端口探测误判成“服务在跑”）。可用做法是绑定源地址：
-2026-09-24 开发机当前源地址为 `192.168.1.104`，使用 `ssh -o BindAddress=192.168.1.104 ...`、`curl --interface 192.168.1.104 ...`；
-旧记录的 `192.168.1.109` 不再作为当前值，使用 `.ssh/config` 的 `d4` 别名前应检查其绑定地址。
+2026-09-27 开发机 WLAN 2 为 `192.168.1.103`，使用 `ssh -o BindAddress=<当前源地址> ...`、`curl --interface <当前源地址> ...`；
+旧记录的 `.104` 和 `.109` 不作为稳定常量，使用 `.ssh/config` 的 `d4` 别名前应检查实际地址。
 GitHub 在 D4 上不可达时，也可用 `ssh -R 7890:127.0.0.1:7890 d4` 把开发机代理临时映射给 D4。
 
 ## 0.2 已归档 D2 部署记录（2026-09-11 至 2026-09-14）
@@ -113,7 +113,7 @@ dotnet build ScpCv.sln -c Debug --no-restore
 
 ## 0. 前置条件
 
-- Windows x64 交互桌面，四个显示输出已接线并被系统识别；显示器名可在 `/api/displays/` 查看。
+- Windows x64 交互桌面，两块大屏输出已接线并被系统识别；其它输出只作诊断。显示器名须从交互会话的 `/api/displays/` 查看，SSH 的虚拟桌面枚举无效。
 - 已构建运行时：`dotnet build runtime-dotnet/ScpCv.sln`。
 - `tools/third_party/mediamtx/mediamtx.exe` 存在。
 - 已准备真实素材：需要放映的 `.pptx`/`.pdf`、一段视频、一个 SRT/RTSP 流、一个网页源、一个音频文件。
@@ -142,8 +142,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\run-h
 - `-Detach` 经一次性计划任务启动，SSH 关闭后 `ControlHost` 继续运行；不加 `-Detach` 则前台运行。
 - 停止（不需要口令）：`run-headless.ps1 -Stop -DataRoot 'D:\SCP-cv\.validation\t129-workstation'`，会结束 ControlHost 并清理计划任务。
 - 上面的安全冒烟命令**没有** `-StartWorkers`，只启动 ControlHost；读取健康、显示拓扑与 Core Audio 状态不会改变大屏或音量。
-- 真正执行 T115/T116/T129 时才添加 `-StartWorkers`。它会通过 `/api/system/restart/` 拉起 4 个 PlayerWorker / AudioWorker / PowerPointHost / MediaMTX。
-  4 个播放窗口是无边框全屏窗口，**会覆盖四块屏幕**，请在真正开始实验时再加。
+- 真正执行 006 实体测试时才添加 `-StartWorkers`。它会通过 `/api/system/restart/` 拉起 2 个 PlayerWorker / AudioWorker / PowerPointHost / 按需 MediaMTX。
+  两个播放窗口会占用配置的两块大屏，不得落到控制桌面或小电视输出。
 - HTTPS 监听需要为 Kestrel 配置并信任证书；首次可先用 HTTP 做局域网冒烟，再配置受信证书供 Electron/Capacitor 客户端使用。
 
 局域网 HTTP/IP 直连仅开放私网 TCP 18443。工作站当前使用下面的防火墙规则；不要改成任意端口或公网来源：
@@ -208,9 +208,9 @@ $h['X-CSRFToken'] = $csrf
 Invoke-RestMethod -Method Post https://localhost:18443/api/system/restart/ -WebSession $s -Headers $h
 ```
 
-期望：`detail` 为“Supervisor restart 的全部 Worker 已就绪。”，且状态文件含 7 个角色。
+期望：`detail` 为“Supervisor restart 的全部 Worker 已就绪。”，且就绪角色只含 player1/2、audio、office；MediaMTX 若纳入编排需另核对 PID。状态文件以当前 DataRoot 为准。
 
-> 注意：4 个 PlayerWorker 是无边框全屏窗口。若在开发机上误关任意一个窗口，会按 FR-018 触发整组协作停止；工作站上请把这些窗口放到各自的输出上并避免误操作。
+> 注意：两个 PlayerWorker 是无边框全屏窗口。误关任意一个会触发运行组协作停止；操作前先核对窗口 1/2 的进程身份与显示器目标。
 
 ## 3. T115 普通命令基准
 
@@ -218,13 +218,16 @@ Invoke-RestMethod -Method Post https://localhost:18443/api/system/restart/ -WebS
 powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\benchmark-commands.ps1 `
   -BaseUrl https://localhost:18443 `
   -DatabasePath $data\control.db `
-  -Password '<开发账号口令>' `
-  -Samples 1000 -Targets 1,2,3,4 -DelayMilliseconds 50 `
-  -HardwareNote '四屏 1920x1080 + 本地千兆；无外部流' `
-  -OutputPath docs\qa\003-performance-commands.md
+  -PasswordFile 'D:\SCP-cv\.validation\private\development-password.txt' `
+  -SqliteExecutable 'D:\SCP-cv\.validation\tools\sqlite3.exe' `
+  -Samples 1000 -Targets 1,2 -DelayMilliseconds 50 `
+  -HardwareNote '两块大屏 + 本地千兆；记录实际媒体条件' `
+  -OutputPath 'D:\SCP-cv\.validation\006-performance-summary.md' `
+  -RawSamplesPath 'D:\SCP-cv\.validation\006-performance-raw.txt'
 ```
 
 判读：脚本自身的 `verdict` 为 `通过` 才算 SC-006 的普通命令一半；`测量无效` 时必须先解决折叠或 Worker 离线问题再重跑。
+当前 D4 Shell 未安装 `sqlite3` 命令；先将可信的 x64 SQLite CLI 放入上例的忽略目录、核对版本和 SHA-256，或把 `-SqliteExecutable` 指向已核验的其它绝对路径。不得把基准工具和原始样本提交到仓库。
 
 ## 4. T115 健康热切换基准
 
@@ -235,13 +238,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\bench
 
 ## 5. T116 60 分钟混合运行
 
-按下面顺序铺排并连续运行 60 分钟，每 5 分钟记录一次：
+按下面顺序铺排并连续运行 60 分钟，每分钟记录状态、画面与资源：
 
-- 四屏各自播放不同内容（视频 / 图片 / PDF / 网页），确认互不串台。
-- 打开一个真实 PPT：确认进入 PowerPoint 模式；随后打开第二个 PPT：确认按策略转为 PDF 回退。
-- 播放 SRT 与 RTSP 各一次，确认自动发现可用。
+- 两块大屏分别播放视频 / 图片 / PDF / 网页 / PPT 页图，确认互不串台。
+- 上传 PPT 后默认用逐页图片播出，不应打开 Office 放映；实验性原生模式单独开关并验证进程归属。
+- 从页面登记 SRT 与 RTSP 各一项，核对独立解码与实体画面；TCP 可达或短时退出码 0 不代表无损坏帧。
 - 后台音频播放、切歌、自动下一首，确认音量/静音/循环保持。
-- 设备控制（开/关机、切换）走真实 `192.168.5.x` 端点或注明未接线。
+- 本轮不操作两台小电视电源；拼接屏电源与系统音量的实体动作需按本轮授权边界记录并恢复。
 
 记录项：每次异常的时间点、ControlHost/Worker 日志、内存与句柄、残留进程、最终 `runtime-processes.json`。
 
@@ -253,7 +256,9 @@ Web 端另需确认受保护下载在浏览器会话内返回 200 且字节与�
 ## 7. 收尾
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\runtime.ps1 -Action stop
+# 先经受认证 API /api/system/shutdown/ 协作停止 Worker，再执行：
+powershell -NoProfile -ExecutionPolicy Bypass -File runtime-dotnet\scripts\run-headless.ps1 `
+  -Stop -DataRoot 'D:\SCP-cv\.validation\t129-workstation'
 Get-Process -Name 'ScpCv.*','mediamtx' -ErrorAction SilentlyContinue
 ```
 

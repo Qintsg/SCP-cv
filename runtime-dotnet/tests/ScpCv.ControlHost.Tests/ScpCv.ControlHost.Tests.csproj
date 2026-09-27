@@ -30,6 +30,9 @@
     <None Include="..\..\scripts\run-headless.ps1"
           Link="scripts\run-headless.ps1"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\scripts\benchmark-commands.ps1"
+          Link="scripts\benchmark-commands.ps1"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

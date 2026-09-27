@@ -217,6 +217,11 @@ docs/qa/003-web-controlhost.png
 .playwright-cli/
 .ruff_cache/
 requirements*.txt
+.vscode/
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
 media/*
 !media/.gitkeep
 logs/*
