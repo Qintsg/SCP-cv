@@ -1,3 +1,4 @@
+// 预案三态、旧窗口兼容与实体副作用前的安全校验。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Http;
@@ -131,7 +132,9 @@ public sealed class ScenarioService(
             async (database, token) =>
             {
                 var runtime = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
-                var sessions = await database.PlaybackSessions.OrderBy(item => item.WindowId).ToListAsync(token).ConfigureAwait(false);
+                var sessions = await database.PlaybackSessions
+                    .Where(item => item.WindowId <= WindowId.Maximum)
+                    .OrderBy(item => item.WindowId).ToListAsync(token).ConfigureAwait(false);
                 var targets = sessions.Select(session => new ScenarioTargetDto
                 {
                     WindowId = session.WindowId,
@@ -178,6 +181,14 @@ public sealed class ScenarioService(
                 ?? throw new ScenarioServiceException($"预案 id={scenarioId} 不存在", isNotFound: true);
         }
 
+        var targets = DeserializeTargets(scenario.TargetsJson);
+        var retiredTarget = targets.FirstOrDefault(target =>
+            target.WindowId is < WindowId.Minimum or > WindowId.Maximum && target.SourceState != "unset");
+        if (retiredTarget is not null)
+            throw new ScenarioServiceException(
+                $"预案仍包含已退役的窗口 {retiredTarget.WindowId} 目标；请编辑预案并明确清除该目标后再激活。",
+                code: "scenario_legacy_window");
+
         if (scenario.BigScreenModeState == ScenarioValueState.Set)
         {
             // 旧 Python 的 activate_scenario 走 set_big_screen_mode，同样先切视频墙、失败即中止整个激活。
@@ -195,12 +206,13 @@ public sealed class ScenarioService(
         await writes.ExecuteAsync(async (database, token) =>
         {
             var runtime = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
-            var sessions = await database.PlaybackSessions.ToListAsync(token).ConfigureAwait(false);
+            var sessions = await database.PlaybackSessions
+                .Where(item => item.WindowId <= WindowId.Maximum).ToListAsync(token).ConfigureAwait(false);
             var runtimeChanged = false;
             if (scenario.BigScreenModeState == ScenarioValueState.Set)
             {
                 runtime.BigScreenMode = scenario.BigScreenMode;
-                var mutedWindows = scenario.BigScreenMode == BigScreenMode.Single ? new HashSet<int> { 2, 3, 4 } : new HashSet<int> { 3, 4 };
+                var mutedWindows = scenario.BigScreenMode == BigScreenMode.Single ? new HashSet<int> { 2 } : [];
                 foreach (var session in sessions) session.IsMuted = mutedWindows.Contains(session.WindowId);
                 runtimeChanged = true;
             }
@@ -212,12 +224,15 @@ public sealed class ScenarioService(
             if (runtimeChanged) runtime.UpdatedAt = _timeProvider.GetUtcNow();
         }, cancellationToken).ConfigureAwait(false);
 
-        var targets = DeserializeTargets(scenario.TargetsJson);
         await using var snapshotDb = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        var snapshot = await snapshotDb.PlaybackSessions.AsNoTracking().ToDictionaryAsync(item => item.WindowId, cancellationToken).ConfigureAwait(false);
+        var snapshot = await snapshotDb.PlaybackSessions.AsNoTracking()
+            .Where(item => item.WindowId <= WindowId.Maximum)
+            .ToDictionaryAsync(item => item.WindowId, cancellationToken).ConfigureAwait(false);
         foreach (var target in targets)
         {
-            if (target.WindowId is < 1 or > 4 || target.SourceState == "unset" || !snapshot.TryGetValue(target.WindowId, out var session)) continue;
+            if (target.SourceState == "unset") continue;
+            if (!snapshot.TryGetValue(target.WindowId, out var session))
+                throw new ScenarioServiceException($"预案窗口 {target.WindowId} 会话不存在。");
             if (target.SourceState == "empty")
             {
                 await EnqueueDisplayCommandAsync(target.WindowId, "CLOSE", "{}", async (database, current, command, token) =>
@@ -303,6 +318,7 @@ public sealed class ScenarioService(
     {
         await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
         var sessions = await database.PlaybackSessions.AsNoTracking().Include(session => session.MediaSource)
+            .Where(session => session.WindowId <= WindowId.Maximum)
             .OrderBy(session => session.WindowId).ToListAsync(cancellationToken).ConfigureAwait(false);
         return sessions.Select(item => RuntimeStateService.ToSessionDto(item, _timeProvider.GetUtcNow())).ToArray();
     }
@@ -370,7 +386,10 @@ public sealed class ScenarioService(
         var seen = new HashSet<int>();
         foreach (var target in targets)
         {
-            if (target.WindowId is < 1 or > 4 || !seen.Add(target.WindowId)) continue;
+            if (target.WindowId is < WindowId.Minimum or > WindowId.Maximum)
+                throw new ScenarioServiceException($"窗口 {target.WindowId} 已退役，预案只支持窗口 1 和 2。", code: "scenario_legacy_window");
+            if (!seen.Add(target.WindowId))
+                throw new ScenarioServiceException($"预案窗口 {target.WindowId} 重复。");
             var state = target.SourceState.Trim().ToLowerInvariant();
             if (state is not ("unset" or "empty" or "set")) throw new ScenarioServiceException($"无效的目标状态：{state}");
             long? sourceId = null;
@@ -405,4 +424,11 @@ public sealed class ScenarioService(
 
 public sealed record ScenarioWriteModel(string Name, string Description, string BigScreenModeState, string BigScreenMode, string VolumeState, int VolumeLevel, IReadOnlyList<ScenarioTargetDto> Targets);
 public sealed record ScenarioPatchModel(string? Name, string? Description, string? BigScreenModeState, string? BigScreenMode, string? VolumeState, int? VolumeLevel, IReadOnlyList<ScenarioTargetDto>? Targets);
-public sealed class ScenarioServiceException(string message, bool isNotFound = false) : Exception(message) { public bool IsNotFound { get; } = isNotFound; }
+public sealed class ScenarioServiceException(
+    string message,
+    bool isNotFound = false,
+    string code = "scenario_error") : Exception(message)
+{
+    public bool IsNotFound { get; } = isNotFound;
+    public string Code { get; } = code;
+}

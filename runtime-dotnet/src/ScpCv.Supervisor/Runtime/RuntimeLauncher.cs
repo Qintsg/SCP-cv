@@ -1,3 +1,4 @@
+// 运行组只启动两个大屏播放器及共用服务。
 using System.Diagnostics;
 using ScpCv.Supervisor.Processes;
 
@@ -9,19 +10,27 @@ public sealed class RuntimeLauncher(ProcessRegistry registry)
         string runtimeRoot,
         string? mediaMtxPath = null,
         string? controlPipe = null,
-        string? startGate = null)
+        string? startGate = null,
+        string? display1 = null,
+        string? display2 = null)
     {
+        if (string.IsNullOrWhiteSpace(display1) || string.IsNullOrWhiteSpace(display2) ||
+            display1.Contains('"', StringComparison.Ordinal) || display2.Contains('"', StringComparison.Ordinal) ||
+            string.Equals(display1, display2, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Supervisor 缺少两块不同的大屏显示器设备名。");
         var root = Path.GetFullPath(runtimeRoot);
         var started = new List<OwnedProcess>();
         try
         {
-            for (var windowId = 1; windowId <= 4; windowId++)
+            for (var windowId = 1; windowId <= 2; windowId++)
             {
                 var instanceId = Guid.NewGuid();
+                var displayName = windowId == 1 ? display1 : display2;
                 started.Add(StartProcess(
                     $"player-{windowId}",
                     ResolveBinary(root, "ScpCv.PlayerWorker.exe"),
-                    RuntimeArguments(controlPipe, instanceId, startGate, $"--window-id {windowId}"),
+                    RuntimeArguments(controlPipe, instanceId, startGate,
+                        $"--window-id {windowId} --display-name \"{displayName}\""),
                     instanceId));
             }
             var audioInstanceId = Guid.NewGuid();

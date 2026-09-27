@@ -1,5 +1,7 @@
+// ControlHost 对 Supervisor 的受控启动、停机及两块大屏参数传递。
 using System.Diagnostics;
 using ScpCv.ControlHost.Ipc;
+using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.Runtime;
 
@@ -18,8 +20,10 @@ public sealed class RuntimeSupervisorOptions
 public sealed class RuntimeSupervisorControl(
     RuntimeSupervisorOptions options,
     NamedPipeServer? pipeServer = null,
-    IRuntimeReadinessGate? readinessGate = null)
+    IRuntimeReadinessGate? readinessGate = null,
+    BigScreenOutputOptions? bigScreenOutputs = null)
 {
+    private readonly BigScreenOutputOptions _bigScreenOutputs = bigScreenOutputs ?? new BigScreenOutputOptions();
     public bool IsConfigured => !string.IsNullOrWhiteSpace(options.ExecutablePath);
 
     public Task<SupervisorLaunchResult> LaunchAsync(
@@ -63,6 +67,14 @@ public sealed class RuntimeSupervisorControl(
         {
             arguments.Add("--control-pipe");
             arguments.Add(pipeServer.PipeName);
+        }
+        if (normalizedAction is "start" or "restart" && _bigScreenOutputs.HardwareBindingRequired)
+        {
+            _bigScreenOutputs.ValidateHardware();
+            arguments.Add("--display-1");
+            arguments.Add(_bigScreenOutputs.ForWindow(1));
+            arguments.Add("--display-2");
+            arguments.Add(_bigScreenOutputs.ForWindow(2));
         }
 
         var startInfo = new ProcessStartInfo

@@ -1,16 +1,17 @@
+// 大屏播放、媒体与运行组的领域基础值。
 namespace ScpCv.Domain.Model;
 
-/// <summary>固定的四个播放输出窗口之一。</summary>
+/// <summary>固定的两个大屏播放输出窗口之一。</summary>
 public readonly record struct WindowId
 {
     public const int Minimum = 1;
-    public const int Maximum = 4;
+    public const int Maximum = 2;
 
     public WindowId(int value)
     {
         if (value is < Minimum or > Maximum)
         {
-            throw new ArgumentOutOfRangeException(nameof(value), value, "窗口编号必须在 1 到 4 之间。");
+            throw new ArgumentOutOfRangeException(nameof(value), value, "窗口编号必须在 1 到 2 之间。");
         }
 
         Value = value;

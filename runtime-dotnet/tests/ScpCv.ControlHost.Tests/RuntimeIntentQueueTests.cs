@@ -167,27 +167,35 @@ public sealed class RuntimeIntentQueueTests
         using var client = factory.CreateHttpsClient();
         var csrf = await AuthenticateAsync(client);
 
-        using var request = Request(
+        using var doubleRequest = Request(
             HttpMethod.Patch,
             "/api/runtime/",
             csrf,
             new { big_screen_mode = "double" });
-        using var response = await client.SendAsync(request);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doubleResponse = await client.SendAsync(doubleRequest);
+        Assert.Equal(HttpStatusCode.OK, doubleResponse.StatusCode);
+
+        using var singleRequest = Request(
+            HttpMethod.Patch,
+            "/api/runtime/",
+            csrf,
+            new { big_screen_mode = "single" });
+        using var singleResponse = await client.SendAsync(singleRequest);
+        Assert.Equal(HttpStatusCode.OK, singleResponse.StatusCode);
 
         await using var database = await ContextAsync(factory);
         var commands = await database.CommandRecords
             .Where(candidate => candidate.TargetKind == CommandTargetKind.Display)
             .OrderBy(candidate => candidate.TargetId)
             .ToArrayAsync();
-        Assert.Equal([3, 4], commands.Select(command => command.TargetId));
+        Assert.Equal([2], commands.Select(command => command.TargetId));
         Assert.All(commands, command =>
         {
             Assert.Equal("SET_MUTE", command.Command);
             Assert.True(JsonDocument.Parse(command.ArgsJson).RootElement.GetProperty("muted").GetBoolean());
         });
         var sessions = await database.PlaybackSessions
-            .Where(candidate => candidate.WindowId >= 3)
+            .Where(candidate => candidate.WindowId == 2)
             .OrderBy(candidate => candidate.WindowId)
             .ToArrayAsync();
         Assert.All(sessions, session =>

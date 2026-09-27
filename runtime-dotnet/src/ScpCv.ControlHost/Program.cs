@@ -1,3 +1,4 @@
+// ControlHost 的依赖装配、认证与硬件安全边界。
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
@@ -39,6 +40,10 @@ var safetyMode = SafetyModeOptions.Parse(builder.Configuration["SafetyMode"]);
 var controlDbFactory = new ControlDbContextFactory(dataRootOptions, builder.Environment.ContentRootPath);
 var mediaOptions = builder.Configuration.GetSection(MediaStorageOptions.SectionName)
     .Get<MediaStorageOptions>() ?? new MediaStorageOptions();
+var bigScreenOutputs = builder.Configuration.GetSection(BigScreenOutputOptions.SectionName)
+    .Get<BigScreenOutputOptions>() ?? new BigScreenOutputOptions();
+bigScreenOutputs.HardwareBindingRequired = !safetyMode.IsSimulation;
+bigScreenOutputs.ValidateHardware();
 var deviceOptions = builder.Configuration.GetSection(DeviceOptions.SectionName)
     .Get<DeviceOptions>() ?? new DeviceOptions();
 var sseOptions = builder.Configuration.GetSection("Sse")
@@ -49,6 +54,7 @@ var supervisorOptions = builder.Configuration.GetSection(RuntimeSupervisorOption
 builder.Services.AddSingleton(dataRootOptions);
 builder.Services.AddSingleton(safetyMode);
 builder.Services.AddSingleton(mediaOptions);
+builder.Services.AddSingleton(bigScreenOutputs);
 builder.Services.AddSingleton(deviceOptions);
 builder.Services.AddSingleton(sseOptions);
 builder.Services.AddSingleton(supervisorOptions);
@@ -86,11 +92,12 @@ else
 }
 builder.Services.AddSingleton<RuntimeSupervisorControl>(services =>
     safetyMode.IsSimulation
-        ? new RuntimeSupervisorControl(supervisorOptions)
+        ? new RuntimeSupervisorControl(supervisorOptions, bigScreenOutputs: bigScreenOutputs)
         : new RuntimeSupervisorControl(
             supervisorOptions,
             services.GetRequiredService<NamedPipeServer>(),
-            services.GetRequiredService<RuntimePipeBroker>()));
+            services.GetRequiredService<RuntimePipeBroker>(),
+            bigScreenOutputs));
 builder.Services.AddSingleton<CommandCoordinator>();
 builder.Services.AddSingleton<CommandLeaseService>();
 builder.Services.AddSingleton<CommandResultService>();

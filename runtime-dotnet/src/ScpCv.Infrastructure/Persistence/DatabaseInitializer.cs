@@ -1,3 +1,4 @@
+// 初始化业务库、两块大屏会话与退役窗口的历史命令状态。
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
@@ -100,13 +101,44 @@ public sealed class DatabaseInitializer(
             .Select(session => session.WindowId)
             .ToHashSetAsync(cancellationToken)
             .ConfigureAwait(false);
-        foreach (var windowId in Enumerable.Range(1, 4).Where(windowId => !existingWindows.Contains(windowId)))
+        foreach (var windowId in Enumerable.Range(1, 2).Where(windowId => !existingWindows.Contains(windowId)))
         {
             context.PlaybackSessions.Add(new PlaybackSession
             {
                 WindowId = windowId,
                 LastUpdatedAt = now,
             });
+        }
+
+        var retiredCommands = await context.CommandRecords
+            .Where(command => command.TargetKind == CommandTargetKind.Display &&
+                              command.TargetId > WindowId.Maximum &&
+                              (command.Status == CommandStatus.Pending || command.Status == CommandStatus.Processing))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var command in retiredCommands)
+        {
+            command.Status = CommandStatus.Superseded;
+            command.ConsumerInstanceId = null;
+            command.ClaimToken = null;
+            command.LeaseExpiresAt = null;
+            command.CompletedAt = now;
+            command.ResultCode = "retired_window";
+            command.LastError = "窗口 3/4 已退役，旧命令保留审计但不再重放。";
+        }
+
+        var retiredSessions = await context.PlaybackSessions
+            .Where(session => session.WindowId > WindowId.Maximum &&
+                              (session.PendingCommand != string.Empty ||
+                               session.PlaybackState == PlaybackState.Loading ||
+                               session.PlaybackState == PlaybackState.Playing ||
+                               session.PlaybackState == PlaybackState.Paused))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var session in retiredSessions)
+        {
+            session.PlaybackState = PlaybackState.Error;
+            session.ErrorMessage = "播放窗口已退役。";
+            session.PendingCommand = string.Empty;
+            session.LastUpdatedAt = now;
         }
 
         await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

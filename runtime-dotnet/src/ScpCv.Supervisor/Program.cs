@@ -17,14 +17,16 @@ var runtimeRoot = Path.GetFullPath(GetOption(args, "runtime-root") ?? Path.Combi
 var statePath = Path.GetFullPath(GetOption(args, "state") ?? Path.Combine(AppContext.BaseDirectory, "runtime-processes.json"));
 var mediaMtxPath = GetOption(args, "mediamtx");
 var controlPipe = GetOption(args, "control-pipe");
+var display1 = GetOption(args, "display-1");
+var display2 = GetOption(args, "display-2");
 
 try
 {
     return action switch
     {
-        "start" => await StartAsync(runtimeRoot, statePath, mediaMtxPath, controlPipe),
+        "start" => await StartAsync(runtimeRoot, statePath, mediaMtxPath, controlPipe, display1, display2),
         "stop" => await StopAsync(statePath),
-        "restart" => await RestartAsync(runtimeRoot, statePath, mediaMtxPath, controlPipe),
+        "restart" => await RestartAsync(runtimeRoot, statePath, mediaMtxPath, controlPipe, display1, display2),
         "status" => await StatusAsync(statePath),
         _ => Fail($"未知 Supervisor 动作：{action}。可用值：start、stop、restart、status。"),
     };
@@ -35,7 +37,13 @@ catch (Exception exception) when (exception is not OperationCanceledException)
     return 1;
 }
 
-static async Task<int> StartAsync(string runtimeRoot, string statePath, string? mediaMtxPath, string? controlPipe)
+static async Task<int> StartAsync(
+    string runtimeRoot,
+    string statePath,
+    string? mediaMtxPath,
+    string? controlPipe,
+    string? display1,
+    string? display2)
 {
     var existing = SupervisorStateStore.Read(statePath);
     if (existing.Any(IsAlive))
@@ -46,7 +54,7 @@ static async Task<int> StartAsync(string runtimeRoot, string statePath, string? 
 
     var registry = new ProcessRegistry();
     using var startGate = RuntimeStartGateHandle.Create(controlPipe);
-    var owned = new RuntimeLauncher(registry).Start(runtimeRoot, mediaMtxPath, controlPipe, startGate?.Name);
+    var owned = new RuntimeLauncher(registry).Start(runtimeRoot, mediaMtxPath, controlPipe, startGate?.Name, display1, display2);
     try
     {
         var supervisorInstanceId = Guid.NewGuid();
@@ -116,10 +124,16 @@ static async Task<int> StopAsync(string statePath)
     return 0;
 }
 
-static async Task<int> RestartAsync(string runtimeRoot, string statePath, string? mediaMtxPath, string? controlPipe)
+static async Task<int> RestartAsync(
+    string runtimeRoot,
+    string statePath,
+    string? mediaMtxPath,
+    string? controlPipe,
+    string? display1,
+    string? display2)
 {
     await StopAsync(statePath);
-    return await StartAsync(runtimeRoot, statePath, mediaMtxPath, controlPipe);
+    return await StartAsync(runtimeRoot, statePath, mediaMtxPath, controlPipe, display1, display2);
 }
 
 static async Task<RuntimePipeClient> RegisterWithControlHostAsync(

@@ -1,3 +1,4 @@
+// 显控 REST 合同与非法窗口的副作用边界回归。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -13,7 +14,7 @@ public sealed class PlaybackEndpointTests
     private const string InitialPassword = "Old-password-123";
 
     [Fact]
-    public async Task RuntimeAndVolumeMutationsPreserveFourWindowPolicyAndResponseShape()
+    public async Task RuntimeAndVolumeMutationsPreserveTwoBigScreenPolicyAndResponseShape()
     {
         using var factory = new ControlHostApplicationFactory();
         using var client = factory.CreateHttpsClient();
@@ -24,8 +25,8 @@ public sealed class PlaybackEndpointTests
         using var modeBody = await Json(modeResponse);
         Assert.Equal(HttpStatusCode.OK, modeResponse.StatusCode);
         Assert.Equal("double", modeBody.RootElement.GetProperty("runtime").GetProperty("big_screen_mode").GetString());
-        Assert.Equal([3, 4], modeBody.RootElement.GetProperty("runtime").GetProperty("muted_windows").EnumerateArray().Select(item => item.GetInt32()));
-        Assert.Equal(4, modeBody.RootElement.GetProperty("sessions").GetArrayLength());
+        Assert.Empty(modeBody.RootElement.GetProperty("runtime").GetProperty("muted_windows").EnumerateArray());
+        Assert.Equal(2, modeBody.RootElement.GetProperty("sessions").GetArrayLength());
 
         using var volumeRequest = Request(HttpMethod.Patch, "/api/volume/", csrf, new { level = 42, muted = true });
         using var volumeResponse = await client.SendAsync(volumeRequest);
@@ -113,6 +114,28 @@ public sealed class PlaybackEndpointTests
         using var invalidBody = await Json(invalid);
         Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         Assert.Equal("invalid_window", invalidBody.RootElement.GetProperty("code").GetString());
+
+        foreach (var retiredWindow in new[] { 3, 4 })
+        {
+            using var retired = await client.GetAsync($"/api/sessions/{retiredWindow}/");
+            using var retiredBody = await Json(retired);
+            Assert.Equal(HttpStatusCode.BadRequest, retired.StatusCode);
+            Assert.Equal("invalid_window", retiredBody.RootElement.GetProperty("code").GetString());
+
+            using var openRequest = Request(
+                HttpMethod.Post,
+                $"/api/playback/{retiredWindow}/open/",
+                csrf,
+                new { source_id = 1 });
+            using var opened = await client.SendAsync(openRequest);
+            using var openedBody = await Json(opened);
+            Assert.Equal(HttpStatusCode.BadRequest, opened.StatusCode);
+            Assert.Equal("invalid_window", openedBody.RootElement.GetProperty("code").GetString());
+        }
+
+        var databaseFactory = factory.Services.GetRequiredService<IDbContextFactory<ControlDbContext>>();
+        await using var database = await databaseFactory.CreateDbContextAsync();
+        Assert.False(await database.CommandRecords.AnyAsync(item => item.TargetId == 3 || item.TargetId == 4));
     }
 
     private static async Task<long> SeedPresentationAsync(ControlHostApplicationFactory factory)

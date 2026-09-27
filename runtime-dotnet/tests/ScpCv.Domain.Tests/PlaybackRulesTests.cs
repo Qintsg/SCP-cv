@@ -1,3 +1,4 @@
+// 大屏播放规则与窗口边界回归。
 using ScpCv.Domain.Model;
 using ScpCv.Domain.Rules;
 
@@ -7,19 +8,24 @@ public sealed class PlaybackRulesTests
 {
     [Theory]
     [InlineData(BigScreenMode.Single, 2, true)]
-    [InlineData(BigScreenMode.Single, 3, true)]
-    [InlineData(BigScreenMode.Single, 4, true)]
     [InlineData(BigScreenMode.Single, 1, false)]
     [InlineData(BigScreenMode.Double, 1, false)]
     [InlineData(BigScreenMode.Double, 2, false)]
-    [InlineData(BigScreenMode.Double, 3, true)]
-    [InlineData(BigScreenMode.Double, 4, true)]
-    public void RuntimeMuteRuleMatchesExistingFourWindowLayout(
+    public void RuntimeMuteRuleMatchesTwoBigScreenWindows(
         BigScreenMode mode,
         int windowId,
         bool expected)
     {
         Assert.Equal(expected, PlaybackRules.IsMutedByRuntime(new WindowId(windowId), mode));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void RetiredOrInvalidWindowIdIsRejected(int windowId)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => new WindowId(windowId));
     }
 
     [Theory]

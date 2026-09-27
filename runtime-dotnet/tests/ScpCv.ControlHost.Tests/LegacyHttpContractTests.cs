@@ -1,3 +1,4 @@
+// 旧客户端合同与两窗口兼容性回归。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -48,7 +49,7 @@ public sealed class LegacyHttpContractTests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             AssertObjectHasExactly(body.RootElement, "success", "folders");
             var folder = Assert.Single(body.RootElement.GetProperty("folders").EnumerateArray());
-            AssertObjectHasExactly(folder, "id", "name", "parent_id", "created_at", "updated_at");
+            AssertObjectHasExactly(folder, "id", "name", "parent_id", "relative_path", "created_at", "updated_at");
         }
 
         using (var response = await client.GetAsync("/api/sources/"))
@@ -62,7 +63,8 @@ public sealed class LegacyHttpContractTests
                 source,
                 "id", "source_type", "name", "uri", "is_available", "stream_identifier", "folder_id",
                 "original_filename", "file_size", "mime_type", "is_temporary", "expires_at", "metadata",
-                "keep_alive", "preheat_enabled", "playback_mode", "created_at", "preview_url",
+                "keep_alive", "preheat_enabled", "playback_mode", "preparation_state", "page_count",
+                "created_at", "preview_url",
                 "thumbnail_url", "preview_kind", "preview_label");
             Assert.Equal("ppt", source.GetProperty("source_type").GetString());
             Assert.Equal("pdf", source.GetProperty("playback_mode").GetString());
@@ -74,8 +76,8 @@ public sealed class LegacyHttpContractTests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             AssertObjectHasExactly(body.RootElement, "success", "sessions");
             var sessions = body.RootElement.GetProperty("sessions").EnumerateArray().ToArray();
-            Assert.Equal(4, sessions.Length);
-            Assert.Equal([1, 2, 3, 4], sessions.Select(item => item.GetProperty("window_id").GetInt32()));
+            Assert.Equal(2, sessions.Length);
+            Assert.Equal([1, 2], sessions.Select(item => item.GetProperty("window_id").GetInt32()));
             AssertPlaybackSessionShape(sessions[0]);
             Assert.Equal("pdf", sessions[0].GetProperty("playback_mode").GetString());
         }

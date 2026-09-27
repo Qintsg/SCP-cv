@@ -1,3 +1,4 @@
+// 媒体源、文件夹和准备制品的 HTTP 合同。
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -13,6 +14,9 @@ public sealed record MediaFolderDto
 
     [JsonPropertyName("parent_id")]
     public long? ParentId { get; init; }
+
+    [JsonPropertyName("relative_path")]
+    public string RelativePath { get; init; } = string.Empty;
 
     [JsonPropertyName("created_at")]
     public string CreatedAt { get; init; } = string.Empty;
@@ -70,6 +74,12 @@ public sealed record MediaSourceDto
 
     [JsonPropertyName("playback_mode")]
     public string PlaybackMode { get; init; } = string.Empty;
+
+    [JsonPropertyName("preparation_state")]
+    public string PreparationState { get; init; } = string.Empty;
+
+    [JsonPropertyName("page_count")]
+    public int PageCount { get; init; }
 
     [JsonPropertyName("preview_url")]
     public string PreviewUrl { get; init; } = string.Empty;

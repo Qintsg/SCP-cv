@@ -1,3 +1,4 @@
+// 预案管理与激活的 REST 合同。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Http;
@@ -151,7 +152,7 @@ public static class ScenarioEndpoints
 
     private static IResult Error(ScenarioServiceException exception, bool notFoundAs404 = false) => ApiEndpointSupport.Error(
         exception.Message,
-        "scenario_error",
+        exception.Code,
         exception.IsNotFound && notFoundAs404 ? StatusCodes.Status404NotFound : StatusCodes.Status400BadRequest);
 
     private static async Task<BodyResult> ReadBodyAsync(HttpRequest request, CancellationToken cancellationToken)

@@ -1,6 +1,7 @@
+// 大屏显示窗口的命令意图合并规则。
 namespace ScpCv.Domain.Commands;
 
-/// <summary>四个显示窗口的意图合并规则。</summary>
+/// <summary>两个大屏显示窗口的意图合并规则。</summary>
 public static class DisplayCommandPolicy
 {
     private static readonly HashSet<string> ReplacementCommands =

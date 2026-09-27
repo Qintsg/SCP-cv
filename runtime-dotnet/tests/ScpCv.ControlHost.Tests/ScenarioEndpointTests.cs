@@ -1,3 +1,4 @@
+// 两块大屏预案三态、捕获与旧目标拒绝回归。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -75,7 +76,26 @@ public sealed class ScenarioEndpointTests
     }
 
     [Fact]
-    public async Task CaptureStoresRuntimeAndAllFourWindowStates()
+    public async Task NewScenarioRejectsRetiredWindowTargetInsteadOfSilentlyDroppingIt()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+
+        using var request = Request(HttpMethod.Post, "/api/scenarios/", csrf, new
+        {
+            name = "旧窗口目标",
+            targets = new[] { new { window_id = 3, source_state = "unset" } },
+        });
+        using var response = await client.SendAsync(request);
+        using var body = await Json(response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("scenario_legacy_window", body.RootElement.GetProperty("code").GetString());
+    }
+
+    [Fact]
+    public async Task CaptureStoresRuntimeAndBothBigScreenWindowStates()
     {
         using var factory = new ControlHostApplicationFactory();
         using var client = factory.CreateHttpsClient();
@@ -104,7 +124,7 @@ public sealed class ScenarioEndpointTests
             HttpMethod.Post,
             "/api/scenarios/capture/",
             csrf,
-            new { name = "当前状态", description = "四窗捕获" });
+            new { name = "当前状态", description = "双窗捕获" });
         using var captureResponse = await client.SendAsync(captureRequest);
         using var captureBody = await Json(captureResponse);
 
@@ -115,19 +135,18 @@ public sealed class ScenarioEndpointTests
         Assert.Equal("set", scenario.GetProperty("volume_state").GetString());
         Assert.Equal(43, scenario.GetProperty("volume_level").GetInt32());
         var targets = scenario.GetProperty("targets").EnumerateArray().OrderBy(TargetWindow).ToArray();
-        Assert.Equal(4, targets.Length);
+        Assert.Equal(2, targets.Length);
         Assert.Equal("set", targets[0].GetProperty("source_state").GetString());
         Assert.Equal(sourceId, targets[0].GetProperty("source_id").GetInt64());
         Assert.All(targets[1..], target => Assert.Equal("empty", target.GetProperty("source_state").GetString()));
     }
 
     [Fact]
-    public async Task ActivateHonorsUnsetEmptySetResumeAndAutoplayWithoutInferringPlaybackMode()
+    public async Task ActivateHonorsUnsetAndEmptyWithoutInferringPlaybackMode()
     {
         using var factory = new ControlHostApplicationFactory();
         using var client = factory.CreateHttpsClient();
         var firstSourceId = await SeedSourceAsync(factory, "原源");
-        var secondSourceId = await SeedSourceAsync(factory, "新源");
         await SeedActiveSessionsAsync(factory, firstSourceId);
         var csrf = await AuthenticateAsync(client);
 
@@ -146,8 +165,6 @@ public sealed class ScenarioEndpointTests
                 {
                     new { window_id = 1, source_state = "unset", source_id = (long?)null, autoplay = true, resume = true },
                     new { window_id = 2, source_state = "empty", source_id = (long?)null, autoplay = true, resume = true },
-                    new { window_id = 3, source_state = "set", source_id = secondSourceId, autoplay = false, resume = false },
-                    new { window_id = 4, source_state = "set", source_id = firstSourceId, autoplay = true, resume = true },
                 },
             });
         using var createResponse = await client.SendAsync(createRequest);
@@ -168,21 +185,48 @@ public sealed class ScenarioEndpointTests
         Assert.Equal("idle", sessions[2].GetProperty("playback_state").GetString());
         Assert.Equal("CLOSE", sessions[2].GetProperty("pending_command").GetString());
 
-        Assert.Equal(secondSourceId, sessions[3].GetProperty("source_id").GetInt64());
-        Assert.Equal("loading", sessions[3].GetProperty("playback_state").GetString());
-        Assert.Equal(string.Empty, sessions[3].GetProperty("playback_mode").GetString());
-        Assert.Equal("OPEN", sessions[3].GetProperty("pending_command").GetString());
-        Assert.False((await CommandArgsAsync(factory, 3)).GetProperty("autoplay").GetBoolean());
-
-        Assert.Equal(firstSourceId, sessions[4].GetProperty("source_id").GetInt64());
-        Assert.Equal("paused", sessions[4].GetProperty("playback_state").GetString());
-        Assert.Equal("pdf", sessions[4].GetProperty("playback_mode").GetString());
-        Assert.Equal(40, await DesiredGenerationAsync(factory, 4));
+        Assert.Equal(2, sessions.Count);
 
         using var runtimeResponse = await client.GetAsync("/api/runtime/");
         using var runtimeBody = await Json(runtimeResponse);
         Assert.Equal("double", runtimeBody.RootElement.GetProperty("runtime").GetProperty("big_screen_mode").GetString());
         Assert.Equal(55, runtimeBody.RootElement.GetProperty("runtime").GetProperty("volume_level").GetInt32());
+    }
+
+    [Fact]
+    public async Task ActivateSetRetainsResumeAndAutoplaySemanticsOnTwoWindows()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var firstSourceId = await SeedSourceAsync(factory, "原源");
+        var secondSourceId = await SeedSourceAsync(factory, "新源");
+        await SeedActiveSessionsAsync(factory, firstSourceId);
+        var csrf = await AuthenticateAsync(client);
+
+        using var createRequest = Request(HttpMethod.Post, "/api/scenarios/", csrf, new
+        {
+            name = "双窗指定源",
+            targets = new object[]
+            {
+                new { window_id = 1, source_state = "set", source_id = firstSourceId, autoplay = true, resume = true },
+                new { window_id = 2, source_state = "set", source_id = secondSourceId, autoplay = false, resume = false },
+            },
+        });
+        using var created = await client.SendAsync(createRequest);
+        using var createdBody = await Json(created);
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var scenarioId = createdBody.RootElement.GetProperty("scenario").GetProperty("id").GetInt64();
+
+        using var activateRequest = Request(HttpMethod.Post, $"/api/scenarios/{scenarioId}/activate/", csrf, new { });
+        using var activated = await client.SendAsync(activateRequest);
+        using var activatedBody = await Json(activated);
+        Assert.Equal(HttpStatusCode.OK, activated.StatusCode);
+        var sessions = activatedBody.RootElement.GetProperty("sessions").EnumerateArray().ToDictionary(SessionWindow);
+        Assert.Equal(firstSourceId, sessions[1].GetProperty("source_id").GetInt64());
+        Assert.Equal(10, await DesiredGenerationAsync(factory, 1));
+        Assert.Equal(secondSourceId, sessions[2].GetProperty("source_id").GetInt64());
+        Assert.Equal("loading", sessions[2].GetProperty("playback_state").GetString());
+        Assert.False((await CommandArgsAsync(factory, 2)).GetProperty("autoplay").GetBoolean());
     }
 
     private static async Task<long> CreateScenarioAsync(HttpClient client, string csrf, string name)
@@ -220,7 +264,7 @@ public sealed class ScenarioEndpointTests
         {
             session.MediaSourceId = sourceId;
             session.PlaybackMode = PlaybackMode.Pdf;
-            session.PlaybackState = session.WindowId == 4 ? PlaybackState.Paused : PlaybackState.Playing;
+            session.PlaybackState = PlaybackState.Playing;
             session.DesiredGeneration = session.WindowId * 10;
         }
         await database.SaveChangesAsync();

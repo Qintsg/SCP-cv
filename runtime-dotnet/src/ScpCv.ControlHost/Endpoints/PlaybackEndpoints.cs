@@ -1,3 +1,4 @@
+// 显控 REST 入口，统一将同步和异步服务错误转换为 HTTP 合同。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Infrastructure.Persistence;
@@ -252,7 +253,16 @@ public static class PlaybackEndpoints
     {
         _ = runtime;
         var body = await ReadBodyAsync(request, cancellationToken).ConfigureAwait(false);
-        return body.Error ?? await MutateValueAsync(operation(body.Value, cancellationToken), contextFactory, cancellationToken).ConfigureAwait(false);
+        if (body.Error is not null) return body.Error;
+        try
+        {
+            return await MutateValueAsync(operation(body.Value, cancellationToken), contextFactory, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (PlaybackServiceException exception)
+        {
+            return Error(exception);
+        }
     }
 
     private static async Task<IResult> MutateValueAsync(

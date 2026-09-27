@@ -1,3 +1,4 @@
+// Supervisor 枚举交互桌面的显示器与大屏输出。
 using System.Windows.Forms;
 
 namespace ScpCv.Supervisor.Windows;
@@ -20,10 +21,4 @@ public sealed class DisplayTopologyService
         .ThenBy(display => display.Y)
         .ToArray();
 
-    public static IReadOnlyDictionary<int, DisplayTopologyItem> AssignFourOutputs()
-    {
-        var displays = Enumerate();
-        if (displays.Count < 4) throw new InvalidOperationException($"需要 4 台显示器，当前仅检测到 {displays.Count} 台。");
-        return Enumerable.Range(1, 4).ToDictionary(windowId => windowId, windowId => displays[windowId - 1]);
-    }
 }

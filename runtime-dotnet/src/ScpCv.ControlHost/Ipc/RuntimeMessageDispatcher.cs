@@ -1,3 +1,4 @@
+// 管道消息的身份、目标与业务结果分派。
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
 using ScpCv.ControlHost.Events;
@@ -225,7 +226,7 @@ public sealed class RuntimeMessageDispatcher(
     {
         id = target?.Id ?? 0;
         return Enum.TryParse(target?.Kind, true, out kind) &&
-               (kind == CommandTargetKind.Display ? id is >= 1 and <= 4 : id == 1);
+               (kind == CommandTargetKind.Display ? id is >= 1 and <= 2 : id == 1);
     }
 
     private static long ReadGeneration(JsonElement state) =>

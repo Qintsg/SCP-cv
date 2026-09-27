@@ -89,7 +89,7 @@ public sealed class DeviceAndSystemEndpointTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal(detail, body.RootElement.GetProperty("detail").GetString());
-        Assert.Equal(4, body.RootElement.GetProperty("sessions").GetArrayLength());
+        Assert.Equal(2, body.RootElement.GetProperty("sessions").GetArrayLength());
         Assert.All(
             body.RootElement.GetProperty("sessions").EnumerateArray(),
             session =>

@@ -1,3 +1,4 @@
+// 控制端使用的播放、显示与大屏布局 HTTP 合同。
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -124,4 +125,46 @@ public sealed record DisplayTargetDto
 
     [JsonPropertyName("is_primary")]
     public bool IsPrimary { get; init; }
+
+    [JsonPropertyName("playback_role")]
+    public string PlaybackRole { get; init; } = string.Empty;
+
+    [JsonPropertyName("is_playback_target")]
+    public bool IsPlaybackTarget { get; init; }
+}
+
+public sealed record VideoWallInputDto
+{
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = string.Empty;
+
+    [JsonPropertyName("ip_address")]
+    public string IpAddress { get; init; } = string.Empty;
+}
+
+public sealed record VideoWallMappingDto
+{
+    [JsonPropertyName("region")]
+    public string Region { get; init; } = string.Empty;
+
+    [JsonPropertyName("input")]
+    public VideoWallInputDto Input { get; init; } = new();
+}
+
+public sealed record VideoWallLayoutDto
+{
+    [JsonPropertyName("name")]
+    public string Name { get; init; } = string.Empty;
+
+    [JsonPropertyName("preset")]
+    public string Preset { get; init; } = string.Empty;
+
+    [JsonPropertyName("mappings")]
+    public IReadOnlyList<VideoWallMappingDto> Mappings { get; init; } = [];
+
+    [JsonPropertyName("can_apply")]
+    public bool CanApply { get; init; }
+
+    [JsonPropertyName("unavailable_reason")]
+    public string UnavailableReason { get; init; } = string.Empty;
 }

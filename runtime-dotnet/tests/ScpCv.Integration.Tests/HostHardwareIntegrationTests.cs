@@ -1,3 +1,5 @@
+// Hardware 装配下的显示器、声卡、墙面与预案集成回归。
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Http;
 using ScpCv.Domain.Model;
@@ -11,6 +13,110 @@ namespace ScpCv.Integration.Tests;
 
 public sealed class HostHardwareIntegrationTests
 {
+    [Fact]
+    public async Task LegacyTelevisionTargetRejectsBeforeVideoWallOrDatabaseChanges()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var wall = new StubVideoWallController();
+        long scenarioId;
+        await using (var database = fixture.Database.CreateDbContext())
+        {
+            var scenario = new Scenario
+            {
+                Name = "旧四窗预案",
+                BigScreenModeState = ScenarioValueState.Set,
+                BigScreenMode = BigScreenMode.Double,
+                VolumeState = ScenarioValueState.Set,
+                VolumeLevel = 20,
+                TargetsJson = JsonSerializer.Serialize(new[]
+                {
+                    new ScenarioTargetDto { WindowId = 3, SourceState = "set", SourceId = 99 },
+                }),
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+            database.Scenarios.Add(scenario);
+            await database.SaveChangesAsync();
+            scenarioId = scenario.Id;
+        }
+
+        var service = CreateScenarios(fixture, wall);
+        var error = await Assert.ThrowsAsync<ScenarioServiceException>(() => service.ActivateAsync(scenarioId));
+
+        Assert.Equal("scenario_legacy_window", error.Code);
+        Assert.Empty(wall.Modes);
+        Assert.Equal(BigScreenMode.Single, await ReadBigScreenModeAsync(fixture));
+        await using var check = fixture.Database.CreateDbContext();
+        Assert.Equal(100, (await check.RuntimeStates.SingleAsync()).VolumeLevel);
+        Assert.Empty(await check.CommandRecords.ToArrayAsync());
+    }
+
+    [Fact]
+    public async Task LegacyUnsetTelevisionTargetDoesNotBlockBigScreenScenario()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var wall = new StubVideoWallController();
+        long scenarioId;
+        await using (var database = fixture.Database.CreateDbContext())
+        {
+            var scenario = new Scenario
+            {
+                Name = "旧目标未设置",
+                TargetsJson = JsonSerializer.Serialize(new[]
+                {
+                    new ScenarioTargetDto { WindowId = 3, SourceState = "unset" },
+                }),
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+            database.Scenarios.Add(scenario);
+            await database.SaveChangesAsync();
+            scenarioId = scenario.Id;
+        }
+
+        var sessions = await CreateScenarios(fixture, wall).ActivateAsync(scenarioId);
+
+        Assert.Equal([1, 2], sessions.Select(session => session.WindowId));
+        Assert.Empty(wall.Modes);
+    }
+
+    [Fact]
+    public async Task OnlyConfiguredBigScreenOutputsCanBeSelected()
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var topology = new StubDisplayTopologyProvider(new DisplayTopologySnapshot(
+            true,
+            [
+                Display(1, @"\\.\DISPLAY1", 0, 0, true),
+                Display(2, @"\\.\DISPLAY2", 1920, 0, false),
+                Display(3, @"\\.\DISPLAY3", 3840, 0, false),
+                Display(4, @"\\.\DISPLAY4", 5760, 0, false),
+            ],
+            "windows_display_topology"));
+        var outputs = new BigScreenOutputOptions
+        {
+            HardwareBindingRequired = true,
+            Window1 = @"\\.\DISPLAY2",
+            Window2 = @"\\.\DISPLAY3",
+        };
+        var runtime = CreateRuntime(fixture, topology, new SimulationSystemAudioController(), outputs: outputs);
+
+        var targets = runtime.ListDisplays();
+        Assert.Equal("big_left", targets[1].PlaybackRole);
+        Assert.Equal("big_right", targets[2].PlaybackRole);
+        Assert.False(targets[0].IsPlaybackTarget);
+        Assert.False(targets[3].IsPlaybackTarget);
+
+        await runtime.SelectDisplayAsync(1, "single", @"\\.\DISPLAY2");
+        await runtime.SelectDisplayAsync(2, "single", @"\\.\DISPLAY3");
+        var wrongWindow = await Assert.ThrowsAsync<PlaybackServiceException>(
+            () => runtime.SelectDisplayAsync(1, "single", @"\\.\DISPLAY3"));
+        var television = await Assert.ThrowsAsync<PlaybackServiceException>(
+            () => runtime.SelectDisplayAsync(2, "single", @"\\.\DISPLAY4"));
+        Assert.Equal("display_target_unavailable", wrongWindow.Code);
+        Assert.Equal("display_target_unavailable", television.Code);
+    }
+
     [Fact]
     public async Task PhysicalDisplayTopologyPreservesNegativeCoordinatesAndRejectsUnknownTarget()
     {
@@ -178,7 +284,8 @@ public sealed class HostHardwareIntegrationTests
         ControlHostFixture fixture,
         IDisplayTopologyProvider displays,
         ISystemAudioController audio,
-        IVideoWallController? videoWall = null)
+        IVideoWallController? videoWall = null,
+        BigScreenOutputOptions? outputs = null)
     {
         var coordinator = new CommandCoordinator(fixture.Commands, new NullCommandWakeNotifier());
         return new RuntimeStateService(
@@ -188,7 +295,8 @@ public sealed class HostHardwareIntegrationTests
             fixture.TimeProvider,
             displays,
             audio,
-            videoWall);
+            videoWall,
+            outputs);
     }
 
     private static ScenarioService CreateScenarios(ControlHostFixture fixture, IVideoWallController videoWall) =>

@@ -1,3 +1,4 @@
+// ControlHost 管道连接、受管角色与运行组就绪门禁。
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
@@ -38,7 +39,7 @@ public sealed partial class RuntimePipeBroker(
     PresentationCoordinator? presentations = null) : BackgroundService, ICommandWakeNotifier, IRuntimeReadinessGate
 {
     private static readonly string[] RequiredRuntimeRoles =
-        ["player-1", "player-2", "player-3", "player-4", "audio", "office"];
+        ["player-1", "player-2", "audio", "office"];
     private readonly ConcurrentDictionary<string, RuntimeConnection> _connections = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<Guid, OfficePendingRequest> _officePending = new();
     private readonly ConcurrentDictionary<Guid, OfficeCachedResult> _officeResults = new();
@@ -374,7 +375,7 @@ public sealed partial class RuntimePipeBroker(
 
     private static (CommandTargetKind Kind, int Id)? ResolveTarget(string role, IpcTargetDto? target)
     {
-        if (role.StartsWith("player-", StringComparison.Ordinal) && int.TryParse(role[7..], out var windowId) && windowId is >= 1 and <= 4 &&
+        if (role.StartsWith("player-", StringComparison.Ordinal) && int.TryParse(role[7..], out var windowId) && windowId is >= 1 and <= 2 &&
             target?.Kind.Equals("display", StringComparison.OrdinalIgnoreCase) == true && target.Id == windowId)
             return (CommandTargetKind.Display, windowId);
         if (role == "audio" && target?.Kind.Equals("audio", StringComparison.OrdinalIgnoreCase) == true && target.Id == 1)
@@ -383,7 +384,7 @@ public sealed partial class RuntimePipeBroker(
         throw new UnauthorizedAccessException("角色与命令目标不匹配。");
     }
 
-    private static bool IsKnownRole(string role) => role is "audio" or "office" or "supervisor" or "player-1" or "player-2" or "player-3" or "player-4";
+    private static bool IsKnownRole(string role) => role is "audio" or "office" or "supervisor" or "player-1" or "player-2";
 
     private string[] MissingRoles(long groupEpoch) =>
         RequiredRuntimeRoles

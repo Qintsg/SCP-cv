@@ -1,3 +1,4 @@
+// 运行组管道身份、就绪与命令闭环回归。
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Text.Json;
@@ -177,7 +178,7 @@ public sealed class RuntimePipeBrokerTests
 
         var before = await broker.WaitForRuntimeReadyAsync(starting.GroupEpoch, TimeSpan.FromMilliseconds(100));
         Assert.False(before.Ready);
-        Assert.Equal(6, before.MissingRoles.Count);
+        Assert.Equal(4, before.MissingRoles.Count);
 
         var clients = new List<NamedPipeClientStream>();
         NamedPipeClientStream? officeClient = null;
@@ -185,7 +186,7 @@ public sealed class RuntimePipeBrokerTests
         Guid officeInstanceId = Guid.Empty;
         try
         {
-            foreach (var role in new[] { "player-1", "player-2", "player-3", "player-4", "audio", "office" })
+            foreach (var role in new[] { "player-1", "player-2", "audio", "office" })
             {
                 var instanceId = Guid.NewGuid();
                 registry.Register(CurrentIdentity(process, role, instanceId));
@@ -232,7 +233,7 @@ public sealed class RuntimePipeBrokerTests
 
             var staleEpoch = await broker.WaitForRuntimeReadyAsync(starting.GroupEpoch + 1, TimeSpan.FromMilliseconds(100));
             Assert.False(staleEpoch.Ready);
-            Assert.Equal(6, staleEpoch.MissingRoles.Count);
+            Assert.Equal(4, staleEpoch.MissingRoles.Count);
 
             await officeClient.DisposeAsync();
             for (var attempt = 0; attempt < 50 && broker.GetRuntimeReadiness(starting.GroupEpoch).Ready; attempt++)

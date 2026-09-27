@@ -1,3 +1,4 @@
+// 与播放宿主无关的播放能力、预案与静音规则。
 using ScpCv.Domain.Model;
 
 namespace ScpCv.Domain.Rules;
@@ -9,7 +10,7 @@ namespace ScpCv.Domain.Rules;
 public static class PlaybackRules
 {
     public static bool IsMutedByRuntime(WindowId windowId, BigScreenMode mode) =>
-        windowId.Value is 3 or 4 || (mode == BigScreenMode.Single && windowId.Value == 2);
+        mode == BigScreenMode.Single && windowId.Value == 2;
 
     public static PlaybackCapability GetWindowCapabilities(
         MediaSourceType sourceType,

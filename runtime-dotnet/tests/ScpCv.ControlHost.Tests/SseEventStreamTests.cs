@@ -1,3 +1,4 @@
+// SSE 快照与增量广播的两窗口回归。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -26,7 +27,7 @@ public sealed class SseEventStreamTests
         Assert.Equal("playback_state", events.Current.EventName);
         using (var initial = JsonDocument.Parse(events.Current.Data))
         {
-            Assert.Equal(4, initial.RootElement.GetProperty("sessions").GetArrayLength());
+            Assert.Equal(2, initial.RootElement.GetProperty("sessions").GetArrayLength());
             Assert.Equal(JsonValueKind.Object, initial.RootElement.GetProperty("background_audio").ValueKind);
         }
 
@@ -57,9 +58,9 @@ public sealed class SseEventStreamTests
         Assert.True(await events.MoveNextAsync());
         Assert.Equal(currentRevision, events.Current.Id);
         using var snapshot = JsonDocument.Parse(events.Current.Data);
-        var thirdWindow = snapshot.RootElement.GetProperty("sessions").EnumerateArray()
-            .Single(session => session.GetProperty("window_id").GetInt32() == 3);
-        Assert.True(thirdWindow.GetProperty("is_muted").GetBoolean());
+        var sessions = snapshot.RootElement.GetProperty("sessions").EnumerateArray().ToArray();
+        Assert.Equal([1, 2], sessions.Select(session => session.GetProperty("window_id").GetInt32()));
+        Assert.False(sessions[1].GetProperty("is_muted").GetBoolean());
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+// 持久化命令入队、领取与完成状态管理。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
@@ -280,7 +281,7 @@ public sealed class CommandRepository(
     {
         var valid = targetKind switch
         {
-            CommandTargetKind.Display => targetId is >= 1 and <= 4,
+            CommandTargetKind.Display => targetId is >= 1 and <= 2,
             CommandTargetKind.Audio => targetId == 1,
             _ => false,
         };

@@ -1,3 +1,4 @@
+// 数据库初始化、旧数据保留与退役窗口命令清理回归。
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
@@ -42,7 +43,7 @@ public sealed class DatabaseInitializerTests
 
             Assert.True(File.Exists(factory.Layout.DatabasePath));
             await using var context = factory.CreateDbContext();
-            Assert.Equal(4, await context.PlaybackSessions.CountAsync());
+            Assert.Equal(2, await context.PlaybackSessions.CountAsync());
             Assert.Equal(1, await context.RuntimeStates.CountAsync());
             Assert.Equal(1, await context.BackgroundAudioStates.CountAsync());
             Assert.Equal(RuntimeGroupState.Stopped, (await context.RuntimeGroupControls.SingleAsync()).State);
@@ -113,6 +114,53 @@ public sealed class DatabaseInitializerTests
 
             await using var verification = factory.CreateDbContext();
             Assert.True(await verification.UserAccounts.AnyAsync(user => user.Username == "kept"));
+        }
+        finally
+        {
+            DeleteTemporaryRoot(root);
+        }
+    }
+
+    [Fact]
+    public async Task ReinitializeRetiresOldWindowCommandsWithoutDeletingHistory()
+    {
+        var root = CreateTemporaryRoot();
+        try
+        {
+            var factory = CreateFactory(root);
+            var initializer = new DatabaseInitializer(factory);
+            await initializer.InitializeAsync();
+            await using (var context = factory.CreateDbContext())
+            {
+                context.PlaybackSessions.Add(new PlaybackSession
+                {
+                    WindowId = 3,
+                    PlaybackState = PlaybackState.Playing,
+                    PendingCommand = "OPEN",
+                    LastUpdatedAt = DateTimeOffset.UtcNow,
+                });
+                context.CommandRecords.Add(new CommandRecord
+                {
+                    CommandId = Guid.NewGuid(),
+                    TargetKind = CommandTargetKind.Display,
+                    TargetId = 3,
+                    TargetSequence = 1,
+                    Command = "OPEN",
+                    Status = CommandStatus.Pending,
+                    CreatedAt = DateTimeOffset.UtcNow,
+                });
+                await context.SaveChangesAsync();
+            }
+
+            await initializer.InitializeAsync();
+
+            await using var check = factory.CreateDbContext();
+            var retiredSession = await check.PlaybackSessions.SingleAsync(item => item.WindowId == 3);
+            var retiredCommand = await check.CommandRecords.SingleAsync(item => item.TargetId == 3);
+            Assert.Equal(string.Empty, retiredSession.PendingCommand);
+            Assert.Equal(CommandStatus.Superseded, retiredCommand.Status);
+            Assert.Equal("retired_window", retiredCommand.ResultCode);
+            Assert.Equal(3, await check.PlaybackSessions.CountAsync());
         }
         finally
         {

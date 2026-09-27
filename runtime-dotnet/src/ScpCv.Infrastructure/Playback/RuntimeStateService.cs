@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-// 四窗口运行状态、媒体命令与硬件输出意图协调。
+// 两块大屏的运行状态、媒体命令与硬件输出意图协调。
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ScpCv.Contracts.Http;
@@ -11,27 +11,30 @@ using ScpCv.Infrastructure.VideoWall;
 
 namespace ScpCv.Infrastructure.Playback;
 
-public sealed class RuntimeStateService(
+public sealed partial class RuntimeStateService(
     IDbContextFactory<ControlDbContext> contextFactory,
     WriteCoordinator writes,
     CommandCoordinator commands,
     TimeProvider? timeProvider = null,
     IDisplayTopologyProvider? displayTopology = null,
     ISystemAudioController? systemAudio = null,
-    IVideoWallController? videoWall = null)
+    IVideoWallController? videoWall = null,
+    BigScreenOutputOptions? bigScreenOutputs = null)
 {
-    private static readonly int[] Windows = [1, 2, 3, 4];
+    private static readonly int[] Windows = [1, 2];
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
     private readonly IDisplayTopologyProvider _displayTopology = displayTopology ?? new SimulationDisplayTopologyProvider();
     private readonly ISystemAudioController _systemAudio = systemAudio ?? new SimulationSystemAudioController();
     private readonly IVideoWallController _videoWall = videoWall ?? new SimulationVideoWallController();
+    private readonly BigScreenOutputOptions _bigScreenOutputs = bigScreenOutputs ?? new BigScreenOutputOptions();
 
     public async Task<IReadOnlyList<PlaybackSessionDto>> GetSessionsAsync(CancellationToken cancellationToken = default)
     {
         await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
         var sessions = await database.PlaybackSessions.AsNoTracking()
             .Include(session => session.MediaSource)
+            .Where(session => session.WindowId <= WindowId.Maximum)
             .OrderBy(session => session.WindowId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
         return sessions.Select(session => ToSessionDto(session, _timeProvider.GetUtcNow())).ToArray();
@@ -81,7 +84,9 @@ public sealed class RuntimeStateService(
                 var runtime = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
                 runtime.BigScreenMode = mode;
                 runtime.UpdatedAt = _timeProvider.GetUtcNow();
-                var sessions = await database.PlaybackSessions.ToListAsync(token).ConfigureAwait(false);
+                var sessions = await database.PlaybackSessions
+                    .Where(session => session.WindowId <= WindowId.Maximum)
+                    .ToListAsync(token).ConfigureAwait(false);
                 var muted = MutedWindows(mode).ToHashSet();
                 return sessions
                     .Where(session => session.IsMuted != muted.Contains(session.WindowId))
@@ -94,42 +99,6 @@ public sealed class RuntimeStateService(
             await SetMuteAsync(changed.WindowId, changed.Muted, cancellationToken).ConfigureAwait(false);
         }
         return await GetRuntimeAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// 运行时重新就绪后，按已保存的 <see cref="PlaybackSession.TargetDisplayLabel"/> 重新下发
-    /// SELECT_DISPLAY。PlayerWorker 启动时按 <c>Screen.AllScreens</c> 顺序推断屏幕，与 ControlHost
-    /// 的 Per-Monitor-V2 枚举顺序不一致，不重发就会出现“某个窗口没上屏、露出桌面”。
-    /// 目标已失效时保留原记录且不阻断运行时启动。
-    /// </summary>
-    public async Task<int> ReapplyDisplayTargetsAsync(CancellationToken cancellationToken = default)
-    {
-        IReadOnlyList<(int WindowId, string Label)> targets;
-        await using (var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            targets = await database.PlaybackSessions.AsNoTracking()
-                .Where(session => session.TargetDisplayLabel != string.Empty)
-                .OrderBy(session => session.WindowId)
-                .Select(session => new ValueTuple<int, string>(session.WindowId, session.TargetDisplayLabel))
-                .ToListAsync(cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        var applied = 0;
-        foreach (var (windowId, label) in targets)
-        {
-            try
-            {
-                await SelectDisplayAsync(windowId, "single", label, cancellationToken).ConfigureAwait(false);
-                applied++;
-            }
-            catch (PlaybackServiceException)
-            {
-                // 现场显示器改过名或已拔除：保留记录，交由操作者重新选择。
-            }
-        }
-
-        return applied;
     }
 
     public async Task<SystemVolumeDto> GetSystemVolumeAsync(CancellationToken cancellationToken = default)
@@ -185,40 +154,6 @@ public sealed class RuntimeStateService(
                 runtime.VolumeMuted = muted ?? (runtime.VolumeLevel == 0 || runtime.VolumeMuted);
                 runtime.UpdatedAt = _timeProvider.GetUtcNow();
                 return ToVolumeDto(runtime);
-            },
-            cancellationToken);
-    }
-
-    public Task<IReadOnlyList<PlaybackSessionDto>> SelectDisplayAsync(
-        int windowId,
-        string displayMode,
-        string targetLabel,
-        CancellationToken cancellationToken = default)
-    {
-        ValidateWindow(windowId);
-        if (!string.Equals(displayMode, "single", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new PlaybackServiceException($"无效的显示模式：{displayMode}");
-        }
-
-        var topology = _displayTopology.GetCurrent();
-        if (!topology.Available)
-            throw new PlaybackServiceException(topology.Detail, "display_topology_unavailable");
-        if (string.IsNullOrWhiteSpace(targetLabel) ||
-            !topology.Targets.Any(target => string.Equals(target.Name, targetLabel, StringComparison.OrdinalIgnoreCase)))
-        {
-            throw new PlaybackServiceException($"显示器目标不可用：{targetLabel}", "display_target_unavailable");
-        }
-
-        return EnqueueDisplayAsync(
-            windowId,
-            "SELECT_DISPLAY",
-            JsonSerializer.Serialize(new { display_mode = "single", target_label = targetLabel }),
-            (session, command) =>
-            {
-                session.DisplayMode = DisplayMode.Single;
-                session.TargetDisplayLabel = targetLabel;
-                session.PendingCommand = command.Command;
             },
             cancellationToken);
     }
@@ -485,14 +420,6 @@ public sealed class RuntimeStateService(
     public Task<IReadOnlyList<PlaybackSessionDto>> ShowIdsAsync(CancellationToken cancellationToken = default) =>
         ShowIdsQueuedAsync(cancellationToken);
 
-    public IReadOnlyList<DisplayTargetDto> ListDisplays()
-    {
-        var topology = _displayTopology.GetCurrent();
-        if (!topology.Available)
-            throw new PlaybackServiceException(topology.Detail, "display_topology_unavailable");
-        return topology.Targets;
-    }
-
     private Task<IReadOnlyList<PlaybackSessionDto>> EnqueueDisplayAsync(
         int windowId,
         string commandName,
@@ -542,102 +469,6 @@ public sealed class RuntimeStateService(
             },
             cancellationToken).ConfigureAwait(false);
         return await GetSessionsAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<IReadOnlyList<PlaybackSessionDto>> ResetPowerPointQueuedAsync(CancellationToken cancellationToken)
-    {
-        int[] windows;
-        await using (var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
-        {
-            windows = await database.PlaybackSessions
-                .Where(session => session.PlaybackMode == PlaybackMode.PowerPoint)
-                .Select(session => session.WindowId)
-                .ToArrayAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        foreach (var windowId in windows)
-        {
-            await EnqueueDisplayAsync(windowId, "RESET_PPT", "{}", async (database, session, command, token) =>
-            {
-                var sourceId = session.MediaSourceId;
-                var sourceRevision = sourceId is null ? 0 : await database.MediaSources
-                    .Where(source => source.Id == sourceId.Value)
-                    .Select(source => source.SourceRevision).SingleOrDefaultAsync(token).ConfigureAwait(false);
-                session.MediaSourceId = null;
-                session.PlaybackMode = PlaybackMode.None;
-                session.PlaybackState = PlaybackState.Idle;
-                session.ErrorMessage = string.Empty;
-                session.PendingCommand = command.Command;
-                session.DesiredGeneration = checked(session.DesiredGeneration + 1);
-                session.CommandArgsJson = JsonSerializer.Serialize(new { source_id = sourceId });
-                command.ArgsJson = session.CommandArgsJson;
-                command.SourceGeneration = session.DesiredGeneration;
-                command.SourceRevision = sourceRevision;
-            }, cancellationToken).ConfigureAwait(false);
-        }
-
-        return await GetSessionsAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<IReadOnlyList<PlaybackSessionDto>> ResetAllQueuedAsync(CancellationToken cancellationToken)
-    {
-        for (var windowId = 1; windowId <= 4; windowId++)
-        {
-            await CloseAsync(windowId, cancellationToken).ConfigureAwait(false);
-        }
-
-        return await GetSessionsAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private async Task<IReadOnlyList<PlaybackSessionDto>> ShowIdsQueuedAsync(CancellationToken cancellationToken)
-    {
-        for (var windowId = 1; windowId <= 4; windowId++)
-        {
-            await EnqueueDisplayAsync(windowId, "SHOW_ID", "{}", (session, command) =>
-            {
-                session.PendingCommand = command.Command;
-            }, cancellationToken).ConfigureAwait(false);
-        }
-
-        return await GetSessionsAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    private Task<IReadOnlyList<PlaybackSessionDto>> MutateSessionAsync(
-        int windowId,
-        Action<PlaybackSession> mutation,
-        CancellationToken cancellationToken)
-    {
-        ValidateWindow(windowId);
-        return writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                var session = await database.PlaybackSessions.SingleAsync(
-                    item => item.WindowId == windowId,
-                    token).ConfigureAwait(false);
-                mutation(session);
-                session.LastUpdatedAt = NextTimestamp(session.LastUpdatedAt);
-                return await LoadSessionsAsync(database, token).ConfigureAwait(false);
-            },
-            cancellationToken);
-    }
-
-    private async Task<IReadOnlyList<PlaybackSessionDto>> LoadSessionsAsync(
-        ControlDbContext database,
-        CancellationToken cancellationToken)
-    {
-        await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        var sessions = await database.PlaybackSessions.Include(session => session.MediaSource)
-            .OrderBy(session => session.WindowId)
-            .ToListAsync(cancellationToken).ConfigureAwait(false);
-        return sessions.Select(session => ToSessionDto(session, _timeProvider.GetUtcNow())).ToArray();
-    }
-
-    private DateTimeOffset NextTimestamp(DateTimeOffset previous)
-    {
-        var now = _timeProvider.GetUtcNow();
-        return now.ToUnixTimeMilliseconds() > previous.ToUnixTimeMilliseconds()
-            ? now
-            : previous.AddMilliseconds(1);
     }
 
     public static PlaybackSessionDto ToSessionDto(PlaybackSession session, DateTimeOffset now)
@@ -698,13 +529,13 @@ public sealed class RuntimeStateService(
     };
 
     private static IReadOnlyList<int> MutedWindows(BigScreenMode mode) =>
-        mode == BigScreenMode.Single ? [2, 3, 4] : [3, 4];
+        mode == BigScreenMode.Single ? [2] : [];
 
     private static void ValidateWindow(int windowId)
     {
         if (!Windows.Contains(windowId))
         {
-            throw new PlaybackServiceException($"无效的窗口编号：{windowId}，有效范围 1-4", "invalid_window");
+            throw new PlaybackServiceException($"无效的窗口编号：{windowId}，有效范围 1-2", "invalid_window");
         }
     }
 

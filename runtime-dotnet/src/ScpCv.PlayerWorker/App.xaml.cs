@@ -1,3 +1,4 @@
+// 大屏播放器进程的启动参数与窗口生命周期。
 using System.Windows;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Runtime;
@@ -15,14 +16,23 @@ public partial class App : System.Windows.Application, IDisposable
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
-        var windowId = int.TryParse(Option(e.Args, "window-id"), out var parsed) && parsed is >= 1 and <= 4 ? parsed : 1;
+        var windowId = int.TryParse(Option(e.Args, "window-id"), out var parsed) && parsed is >= 1 and <= 2
+            ? parsed
+            : throw new ArgumentOutOfRangeException(nameof(e), "只允许启动大屏窗口 1 或 2。");
         var pipeName = Option(e.Args, "pipe-name");
         var startGate = Option(e.Args, "start-gate");
         var instanceId = Guid.TryParse(Option(e.Args, "instance-id"), out var id) ? id : Guid.NewGuid();
+        var displayName = Option(e.Args, "display-name") ?? string.Empty;
+        var display = PlayerDisplaySelection.Select(
+            displayName,
+            System.Windows.Forms.Screen.AllScreens.Select(screen => new PlayerDisplay(
+                screen.DeviceName,
+                screen.Bounds.X,
+                screen.Bounds.Y,
+                screen.Bounds.Width,
+                screen.Bounds.Height)));
         var window = new PlayerWindow();
-        var screens = System.Windows.Forms.Screen.AllScreens;
-        var screen = screens[Math.Min(windowId - 1, screens.Length - 1)].Bounds;
-        window.AssignBounds(screen.X, screen.Y, screen.Width, screen.Height);
+        window.AssignBounds(display.X, display.Y, display.Width, display.Height);
         window.Show();
         if (string.IsNullOrWhiteSpace(pipeName)) return;
 
