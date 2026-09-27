@@ -398,4 +398,4 @@ T132 偏差记录：D4 的 `以太网` 是 Public 配置文件，原 `-Profile P
 - [X] T140 修复背景音频首次 PAUSE 失效及 paused 状态仍有声卡输出；区分命令完成、LibVLC 实际状态和回录证据，补自动回归与 D4 实测 per FR-010, FR-018
 - [ ] T141 修复 PDF 播放关闭后源文件句柄仍被占用；补适配器生命周期回归与 D4 删除/替换复测 per FR-015 (partial)
 - [X] T142 修复文件夹空名称创建无提示关闭及“编辑”点击仅进入文件夹的前端交互；补表单/事件冒泡测试并用浏览器回归 per FR-003
-- [ ] T143 调查并修复 D4 动态 PowerPoint 打开时报 `slideshow_hwnd_unavailable`；保留用户 Office 归属保护，补 HWND/COM 诊断和实机复测 per FR-011–014 (partial)
+- [X] T143 调查 D4 动态 PowerPoint 打开时报 `slideshow_hwnd_unavailable` 的旧 Office 实例竞争；经用户授权清理旧实例后原有 9 页文稿在 3 号窗出画、导航/关闭通过，并修复 OPEN 初始页码 0 为实际 1-based 页码；保留并存用户文稿的 Office 归属保护，证据见 `docs/qa/003-office-interop.md` per FR-011–014（持续归属清理由 T133 继续承接）
