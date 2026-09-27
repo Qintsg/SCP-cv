@@ -21,7 +21,7 @@
 | 播放器窗口内容（四窗 / 置顶 / 物理像素铺满） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/`；切换大屏模式后的固定静音策略也走这条链路（`RuntimeStateService.cs:91-94` 逐个 `SetMuteAsync`） | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2） | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`（simulation 跨层）、`docs/qa/003-*.md` |
 | PowerPoint 放映（唯一 STA/COM 槽） | `POST /api/playback/{windowId}/navigate/`、`.../ppt-media/`、`/playback/reset-ppt/`、`GET\|PUT /sources/{id}/ppt-resources/` | 命令队列 → `PowerPointHost` 进程（唯一 STA、PDF 回退） | 无（Hardware 才有该进程） | `docs/qa/003-office-interop.md`、`docs/实机测试结论.md` |
 | 背景音频（独立列表） | `POST\|PATCH\|DELETE /api/background-audio/*` | `BackgroundAudioService` → 命令队列（`CommandTargetKind.Audio`）→ Named Pipe → `AudioWorker` | `QueuedCommandWakeNotifier`（仅排队） | `docs/实机测试结论.md` 背景音乐段 |
-| 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 未实际发送关机（`docs/实机测试结论.md` §3「外部设备电源」）；`appsettings.json` §Devices |
+| 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 2026-09-27 已在用户授权后发送拼接屏 ON→OFF→ON 与电视各两次 toggle；API 只确认写出，物理电源状态未独立读回，见 `docs/qa/003-full-regression-20260927.md`；`appsettings.json` §Devices |
 | MediaMTX 推拉流 / 直播 | `POST /api/sources/local\|web/`、`GET /sources/{id}/`（在线探测） | MediaMTX 进程（流端口 `8890`/`9997`/`8554`）、`stream-probe` HttpClient | 无进程，探测失败即离线 | `docs/qa/003-runtime-lifecycle.md` |
 | 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×4 / AudioWorker / PowerPointHost / MediaMTX | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `docs/qa/003-workstation-runbook.md` |
 
@@ -50,10 +50,10 @@
 
 ### 坑 2 - 硬件副作用只接了单条入口（**未修复**，待确认）
 
-- **症状（推断）**：Hardware 模式下激活带音量的预案（`volume_state=set`），运行态音量变了、物理系统音量没变。
+- **症状（2026-09-27 D4 实机复现）**：Hardware 模式下激活带音量的预案（`volume_state=set, level=20`）返回成功，运行态音量变为 20、物理系统音量仍为 100；直接 `PATCH /api/volume/` 能实际改变 Core Audio。
 - **根因**：`ISystemAudioController.Apply` 全仓库只有 `RuntimeStateService.SetSystemVolumeAsync`（`RuntimeStateService.cs:159`，入口 `PATCH /api/volume/`）会调用；`ScenarioService.ActivateAsync` 只把 `runtime.VolumeLevel` 写进库。清理前提交 `e822be9` 中的旧 Python `activate_scenario` 会调用物理音量设置。
 - **检出方式**：对每条硬件接口反查全部调用点，再对照旧实现的调用者数量——「旧实现有 N 个入口、新实现只有 1 个」就是漏接线。
-- **现状**：代码证据明确，**尚未实机验证，尚未修复**。修复前先按宪章 II 立规范条目（不并入 004）。
+- **现状**：代码与实机证据均明确，**尚未修复**，由 003/T137 承接；详情见 `docs/qa/003-full-regression-20260927.md`。
 
 ### 坑 3 - 两个「拼接屏」不是一回事
 
