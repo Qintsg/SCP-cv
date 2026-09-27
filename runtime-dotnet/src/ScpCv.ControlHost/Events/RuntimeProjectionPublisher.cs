@@ -1,3 +1,4 @@
+// 只接受归属与代次匹配的 Worker 状态，并投影到持久会话与 SSE。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Ipc;
@@ -162,6 +163,8 @@ public sealed class RuntimeProjectionPublisher(
     private static PlaybackMode ReadPlaybackMode(JsonElement state, PlaybackMode fallback)
     {
         var value = ReadString(state, "playback_mode", string.Empty);
+        if (value.Equals("slide_images", StringComparison.OrdinalIgnoreCase))
+            return PlaybackMode.SlideImages;
         return value.Equals("powerpoint", StringComparison.OrdinalIgnoreCase)
             ? PlaybackMode.PowerPoint
             : Enum.TryParse<PlaybackMode>(value, true, out var parsed) ? parsed : fallback;

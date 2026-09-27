@@ -71,7 +71,7 @@ public partial class App : System.Windows.Application, IDisposable
         try
         {
             await RuntimeStartGate.WaitAsync(startGate, cancellationToken: cancellationToken);
-            await session.RunAsync(runtime.ExecuteAsync, cancellationToken);
+            await session.RunAsync(runtime.ExecuteAsync, runtime.SampleProgressAsync, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception)

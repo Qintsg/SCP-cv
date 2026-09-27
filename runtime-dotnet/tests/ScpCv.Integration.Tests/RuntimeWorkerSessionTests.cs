@@ -1,3 +1,4 @@
+// Worker 管道会话的命令确认、异步事件与播出进度回归。
 using System.IO.Pipes;
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
@@ -8,6 +9,57 @@ namespace ScpCv.Integration.Tests;
 
 public sealed class RuntimeWorkerSessionTests
 {
+    [Fact]
+    public async Task IdleWorkerPublishesLiveProgressWithoutAnotherControlCommand()
+    {
+        var pipeName = $"scp-cv-progress-test-{Guid.NewGuid():N}";
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var reported = new TaskCompletionSource<StateReportDto>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var serverTask = Task.Run(async () =>
+        {
+            await using var server = CreateServer(pipeName);
+            await server.WaitForConnectionAsync(timeout.Token);
+            await AcceptWorkerAsync(server, timeout.Token);
+            while (!timeout.IsCancellationRequested)
+            {
+                var request = await ReadAsync(server, timeout.Token);
+                switch (request.MessageType)
+                {
+                    case "claim_request":
+                        await WriteAsync(server, Response(request, "no_work", new NoWorkDto
+                        {
+                            Reason = "empty", RetryAfterMs = 1000,
+                        }, ownerEpoch: 7), timeout.Token);
+                        break;
+                    case "health_report":
+                        await WriteAsync(server, Response(request, "health_accepted", new { accepted = true }, ownerEpoch: 7), timeout.Token);
+                        break;
+                    case "state_report":
+                        reported.SetResult(request.Payload.Deserialize<StateReportDto>()!);
+                        await WriteAsync(server, Response(request, "state_accepted", new { accepted = true }, ownerEpoch: 7), timeout.Token);
+                        try { await Task.Delay(Timeout.InfiniteTimeSpan, timeout.Token); }
+                        catch (OperationCanceledException) { }
+                        return;
+                    default:
+                        throw new InvalidOperationException($"未预期消息：{request.MessageType}");
+                }
+            }
+        }, timeout.Token);
+
+        await using var session = CreateSession(pipeName, Guid.NewGuid());
+        var run = session.RunAsync((_, _) => throw new InvalidOperationException("此用例不应执行命令"),
+            _ => Task.FromResult<WorkerStateSample?>(new WorkerStateSample(
+                11, JsonSerializer.SerializeToElement(new { source_generation = 11, position_ms = 2400 }))),
+            timeout.Token);
+        var state = await reported.Task.WaitAsync(timeout.Token);
+        timeout.Cancel();
+        await serverTask;
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+
+        Assert.Equal(11, state.SourceGeneration);
+        Assert.Equal(2400, state.State.GetProperty("position_ms").GetInt32());
+    }
+
     [Fact]
     public async Task LostResultAcknowledgementReconnectsAndReplaysWithoutExecutingAgain()
     {

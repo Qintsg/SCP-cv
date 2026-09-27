@@ -1,4 +1,5 @@
 // Worker 的认证管道会话、命令执行、状态与事件上报。
+// Worker 认证管道会话：命令领取、回执、心跳与带代次的实际进度上报。
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,6 +19,9 @@ public sealed record WorkerExecutionResult(
     string ResultCode,
     JsonElement ActualState,
     IReadOnlyDictionary<string, JsonElement>? Evidence = null);
+
+/// <summary>Worker 空闲轮询时可主动上报的真实播放状态样本。</summary>
+public sealed record WorkerStateSample(long SourceGeneration, JsonElement State);
 
 /// <summary>Worker 的通用握手、补偿领取、续租、完成确认与主动 Wake 消费循环。</summary>
 public sealed class RuntimeWorkerSession(
@@ -91,8 +95,13 @@ public sealed class RuntimeWorkerSession(
         }
     }
 
+    public Task RunAsync(
+        Func<CommandLeaseDto, CancellationToken, Task<WorkerExecutionResult>> execute,
+        CancellationToken cancellationToken = default) => RunAsync(execute, null, cancellationToken);
+
     public async Task RunAsync(
         Func<CommandLeaseDto, CancellationToken, Task<WorkerExecutionResult>> execute,
+        Func<CancellationToken, Task<WorkerStateSample?>>? sampleState,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(execute);
@@ -125,6 +134,8 @@ public sealed class RuntimeWorkerSession(
                     await WaitForWakeOrPollAsync(linked.Token).ConfigureAwait(false);
                     // 心跳只放在空闲路径，避免打断领取、执行与结果回放的既有帧顺序。
                     await SendTransportHeartbeatIfDueAsync(linked.Token).ConfigureAwait(false);
+                    if (sampleState is not null && await sampleState(linked.Token).ConfigureAwait(false) is { } sample)
+                        await ReportStateAsync(sample.SourceGeneration, sample.State, linked.Token).ConfigureAwait(false);
                 }
                 catch (IOException) when (!linked.IsCancellationRequested)
                 {
