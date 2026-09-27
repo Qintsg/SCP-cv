@@ -8,7 +8,7 @@
  */
 import { defineStore } from 'pinia';
 
-import { api, type MediaFolderItem, type MediaSourceItem, type MediaSourceUpdate, type UploadOptions } from '@/services/api';
+import { api, type MediaFolderItem, type MediaSourceItem, type MediaSourceUpdate, type StreamSourceCreate, type UploadOptions } from '@/services/api';
 
 /** UI 可视的源大类；与后端 source_type 不一一映射，直播由前端聚合。 */
 export type SourceCategory = 'all' | 'ppt' | 'video' | 'audio' | 'image' | 'web' | 'stream';
@@ -210,6 +210,12 @@ export const useSourceStore = defineStore('sources', {
     async addWebSource(url: string, name?: string, preheatEnabled: boolean = true, folderId: number | null = null): Promise<MediaSourceItem> {
       const payload = await api.addWebSource({ url, name, preheat_enabled: preheatEnabled, folder_id: folderId });
       // 网页源不会是 audio，直接前置即可。
+      this.sources = [payload.source, ...this.sources];
+      return payload.source;
+    },
+    /** 登记可尝试播放的流地址，实际连通与画面须由目标窗口验证。 */
+    async addStreamSource(input: StreamSourceCreate): Promise<MediaSourceItem> {
+      const payload = await api.addStreamSource(input);
       this.sources = [payload.source, ...this.sources];
       return payload.source;
     },

@@ -10,7 +10,7 @@ import { resolveCsrfToken } from '@/platform/csrf';
 import type {
   ApiStatePayload, BackgroundAudioPayload, DeviceItem, DisplayTargetItem, MediaFolderItem,
   MediaSourceItem, MediaSourceUpdate,
-  PptResourceItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload, UploadOptions,
+  PptResourceItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload, StreamSourceCreate, UploadOptions,
   VideoWallLayoutItem, VideoWallLayoutState,
 } from './apiTypes';
 export type {
@@ -18,7 +18,7 @@ export type {
   BackgroundAudioStateSnapshot, DeviceItem, DisplayTargetItem, MediaFolderItem, MediaSourceItem,
   MediaSourceUpdate,
   PlaybackWindowId, PptMediaItem, PptResourceItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload,
-  ScenarioTargetItem, SessionSnapshot, UploadOptions, VideoWallInputKind, VideoWallLayoutItem,
+  ScenarioTargetItem, SessionSnapshot, StreamSourceCreate, UploadOptions, VideoWallInputKind, VideoWallLayoutItem,
   VideoWallLayoutState, VideoWallMappingItem, VideoWallRegion,
   PowerPointSettingsItem,
 } from './apiTypes';
@@ -261,6 +261,8 @@ export const api = {
   uploadSource: (formData: FormData, options?: UploadOptions) => uploadFormData<{ success: boolean; source: MediaSourceItem }>('/api/sources/upload/', formData, options),
   addLocalSource: (payload: { path: string; name?: string; folder_id?: number | null }) => requestJson<{ success: boolean; source: MediaSourceItem }>('/api/sources/local/', { method: 'POST', body: JSON.stringify(payload) }),
   addWebSource: (payload: { url: string; name?: string; folder_id?: number | null; preheat_enabled?: boolean; keep_alive?: boolean }) => requestJson<{ success: boolean; source: MediaSourceItem }>('/api/sources/web/', { method: 'POST', body: JSON.stringify(payload) }),
+  addStreamSource: (payload: StreamSourceCreate) => requestJson<{ success: boolean; source: MediaSourceItem }>(
+    '/api/sources/streams/', { method: 'POST', body: JSON.stringify(payload) }),
   moveSource: (sourceId: number, folderId: number | null) => requestJson<{ success: boolean; source: MediaSourceItem }>(`/api/sources/${sourceId}/move/`, { method: 'PATCH', body: JSON.stringify({ folder_id: folderId }) }),
   updateSource: (sourceId: number, payload: MediaSourceUpdate) => requestJson<{ success: boolean; source: MediaSourceItem }>(`/api/sources/${sourceId}/`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteSource: (sourceId: number) => requestJson<{ success: boolean }>(`/api/sources/${sourceId}/`, { method: 'DELETE' }),

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 添加源 Drawer / Sheet：仅暴露「上传文件」「网页」两个 Tab，并统一提供预热开关。
+ * 添加源 Drawer / Sheet：上传文件、网页与直播流采用同一文件夹语义。
  * 文件上传统一保存为可管理媒体源；临时上传只在显示控制页“上传并打开”使用。
  */
 import { computed, ref } from 'vue';
@@ -13,6 +13,7 @@ import {
   NFormItem,
   NInput,
   NProgress,
+  NSelect,
   NSwitch,
   NTabs,
   NTabPane,
@@ -21,6 +22,7 @@ import {
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
 import { useSourceStore } from '@/stores/sources';
+import type { StreamSourceCreate } from '@/services/api';
 import { pickUploadFile } from '@/platform/files';
 import { getNativePlatformAdapter } from '@/platform/native';
 
@@ -34,7 +36,7 @@ const { t } = useI18n();
 const sourceStore = useSourceStore();
 const toast = useToast();
 
-type TabId = 'file' | 'web';
+type TabId = 'file' | 'web' | 'stream';
 
 const acceptedFileTypes = [
   '.pdf', '.pptx', '.ppt', '.pps', '.ppsx', '.pptm', '.ppsm', '.pot', '.potx', '.potm', '.odp',
@@ -51,6 +53,10 @@ const filePreheatEnabled = ref(true);
 const webUrl = ref('');
 const webName = ref('');
 const webPreheatEnabled = ref(true);
+const streamType = ref<StreamSourceCreate['source_type']>('rtsp_stream');
+const streamUrl = ref('');
+const streamName = ref('');
+const streamPreheatEnabled = ref(false);
 const uploadProgress = ref(0);
 const uploading = ref(false);
 const uploadPhase = ref<'uploading' | 'processing'>('uploading');
@@ -80,6 +86,14 @@ const uploadStatusText = computed(() =>
     ? t('sources.add.processing')
     : t('sources.add.uploading'),
 );
+const streamProtocolOptions = computed(() => [
+  { label: t('sources.add.streamRtsp'), value: 'rtsp_stream' },
+  { label: t('sources.add.streamSrt'), value: 'srt_stream' },
+  { label: t('sources.add.streamCustom'), value: 'custom_stream' },
+]);
+const streamUrlPlaceholder = computed(() => streamType.value === 'srt_stream'
+  ? 'srt://192.168.5.194:8890?streamid=read:demo'
+  : streamType.value === 'custom_stream' ? 'http://192.168.5.10:8080/live.ts' : 'rtsp://192.168.5.194:8554/demo');
 
 function handleUploadProgress(percent: number): void {
   uploadProgress.value = percent >= 99 ? 100 : percent;
@@ -97,6 +111,10 @@ function reset(): void {
   webUrl.value = '';
   webName.value = '';
   webPreheatEnabled.value = true;
+  streamType.value = 'rtsp_stream';
+  streamUrl.value = '';
+  streamName.value = '';
+  streamPreheatEnabled.value = false;
   uploadProgress.value = 0;
   uploading.value = false;
   uploadPhase.value = 'uploading';
@@ -180,6 +198,33 @@ async function addWebSource(): Promise<void> {
     uploading.value = false;
   }
 }
+
+async function addStreamSource(): Promise<void> {
+  const url = streamUrl.value.trim();
+  if (!url) {
+    errorMessage.value = t('sources.add.streamUrlRequired');
+    return;
+  }
+  uploading.value = true;
+  errorMessage.value = '';
+  try {
+    await sourceStore.addStreamSource({
+      source_type: streamType.value,
+      url,
+      name: streamName.value.trim() || undefined,
+      folder_id: props.folderId ?? null,
+      preheat_enabled: streamPreheatEnabled.value,
+    });
+    toast.info(t('sources.add.streamAddedOk'), t('sources.add.streamAddedDetail'));
+    emit('added');
+    reset();
+    close();
+  } catch (error) {
+    errorMessage.value = error instanceof Error ? error.message : t('sources.add.streamAddFail');
+  } finally {
+    uploading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -235,6 +280,25 @@ async function addWebSource(): Promise<void> {
             </n-switch>
           </n-form-item>
         </n-tab-pane>
+
+        <n-tab-pane name="stream" :tab="t('sources.add.tabStream')">
+          <n-form-item :label="t('sources.add.streamProtocol')" required>
+            <n-select v-model:value="streamType" :options="streamProtocolOptions"
+              :aria-label="t('sources.add.streamProtocol')" :disabled="uploading" />
+          </n-form-item>
+          <n-form-item :label="t('sources.add.streamUrl')" required>
+            <n-input v-model:value="streamUrl" :placeholder="streamUrlPlaceholder"
+              :input-props="{ 'aria-label': t('sources.add.streamUrl') }" :disabled="uploading" />
+          </n-form-item>
+          <n-form-item :label="t('sources.add.displayName')">
+            <n-input v-model:value="streamName" :placeholder="t('sources.add.streamNamePlaceholder')"
+              :input-props="{ 'aria-label': t('sources.add.displayName') }" :disabled="uploading" />
+          </n-form-item>
+          <n-form-item :label="t('sources.add.preheat')">
+            <n-switch v-model:value="streamPreheatEnabled" :disabled="uploading" />
+          </n-form-item>
+          <n-alert type="info" :show-icon="true">{{ t('sources.add.streamHint') }}</n-alert>
+        </n-tab-pane>
       </n-tabs>
 
       <n-alert v-if="errorMessage" type="error" :title="t('sources.add.cantComplete')">
@@ -250,8 +314,11 @@ async function addWebSource(): Promise<void> {
               {{ t('sources.add.uploadSave') }}
             </n-button>
           </template>
-          <n-button v-else type="primary" :disabled="uploading" :loading="uploading" @click="addWebSource">
+          <n-button v-else-if="activeTab === 'web'" type="primary" :disabled="uploading" :loading="uploading" @click="addWebSource">
             {{ t('sources.add.addWeb') }}
+          </n-button>
+          <n-button v-else type="primary" :disabled="uploading" :loading="uploading" @click="addStreamSource">
+            {{ t('sources.add.addStream') }}
           </n-button>
         </div>
       </template>

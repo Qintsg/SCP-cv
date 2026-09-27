@@ -3,7 +3,7 @@
  * 媒体源「编辑」抽屉。
  * 仅暴露安全可改写的字段：
  *   - 显示名称（所有源类型可编辑）；
- *   - URL（仅网页源；本地文件 / 流类型禁止改 URI 以防误改文件路径）；
+ *   - URL（网页与直播流；本地文件禁止改 URI 以防误改文件路径）；
  *   - 预热（所有源类型均可参与播放器启动预加载）。
  *
  * 使用 PATCH /api/sources/{id}/，仅传递发生变更的字段，避免误覆盖后端持久值。
@@ -46,6 +46,8 @@ const retrying = ref(false);
 const errorMessage = ref('');
 
 const isWebSource = computed(() => props.source?.source_type === 'web');
+const isStreamSource = computed(() => ['rtsp_stream', 'srt_stream', 'custom_stream'].includes(props.source?.source_type ?? ''));
+const isUrlSource = computed(() => isWebSource.value || isStreamSource.value);
 const isPptWithImages = computed(() => props.source?.source_type === 'ppt' && props.source.playback_mode === 'slide_images');
 const canRetryPpt = computed(() => isPptWithImages.value &&
   (!props.source?.preparation_state || props.source.preparation_state === 'failed'));
@@ -91,7 +93,7 @@ function buildPatch(): MediaSourceUpdate | null {
   if (trimmedName && trimmedName !== props.source.name) {
     patch.name = trimmedName;
   }
-  if (isWebSource.value) {
+  if (isUrlSource.value) {
     const trimmedUri = draftUri.value.trim();
     if (trimmedUri && trimmedUri !== props.source.uri) {
       patch.uri = trimmedUri;
@@ -152,9 +154,11 @@ function close(): void {
           <n-input v-model:value="draftName" :placeholder="t('sources.editDrawer.displayNamePlaceholder')" :disabled="saving" />
         </n-form-item>
 
-        <template v-if="isWebSource">
-          <n-form-item :label="t('sources.editDrawer.url')" required :feedback="t('sources.editDrawer.urlHint')">
-            <n-input v-model:value="draftUri" placeholder="https://" :disabled="saving" :aria-label="t('sources.editDrawer.url')" />
+        <template v-if="isUrlSource">
+          <n-form-item :label="isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url')" required
+            :feedback="isStreamSource ? t('sources.editDrawer.streamUrlHint') : t('sources.editDrawer.urlHint')">
+            <n-input v-model:value="draftUri" :placeholder="isStreamSource ? 'rtsp:// 或 srt://' : 'https://'"
+              :disabled="saving" :input-props="{ 'aria-label': isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url') }" />
           </n-form-item>
         </template>
 
@@ -165,7 +169,7 @@ function close(): void {
           </n-switch>
         </n-form-item>
 
-        <n-alert v-if="!isWebSource" type="info" :closable="false">
+        <n-alert v-if="!isUrlSource" type="info" :closable="false">
           {{ t('sources.editDrawer.nonWebInfo') }}
         </n-alert>
       </template>

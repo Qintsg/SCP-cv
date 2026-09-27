@@ -39,6 +39,15 @@ export interface MediaSourceItem {
   created_at: string;
 }
 
+/** 直播源登记只保存配置；实际连通与出画由播放会话判定。 */
+export interface StreamSourceCreate {
+  source_type: 'rtsp_stream' | 'srt_stream' | 'custom_stream';
+  url: string;
+  name?: string;
+  folder_id?: number | null;
+  preheat_enabled?: boolean;
+}
+
 /** PATCH /api/sources/{id}/ 可编辑字段子集。 */
 export interface MediaSourceUpdate {
   name?: string;

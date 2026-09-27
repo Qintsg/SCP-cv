@@ -1,3 +1,4 @@
+/* 媒体源的类型、图标与状态标签投影，供列表和选源入口共用。 */
 import { t } from '@/locales';
 import type { MediaSourceItem } from '@/services/api';
 import { SOURCE_TYPE_TO_CATEGORY, type SourceCategory } from '@/stores/sources';
@@ -24,7 +25,9 @@ export function sourceCategoryLabel(source: MediaSourceItem): string {
     case 'web':
       return t('sources.typeLabel.web');
     case 'stream':
-      return t('sources.typeLabel.stream');
+      return source.metadata?.stream_status === 'unverified'
+        ? t('sources.typeLabel.streamUnverified')
+        : t('sources.typeLabel.stream');
     default:
       return t('sources.typeLabel.other');
   }
@@ -50,7 +53,7 @@ export function sourceCategoryIcon(source: MediaSourceItem): string {
   }
 }
 
-/** 媒体源类型标签色彩，直播源额外体现在线状态。 */
+/** 媒体源类型标签色彩；登记可用不冒充直播已出画。 */
 export function sourceCategoryTone(source: MediaSourceItem): SourceTagType {
   switch (resolveSourceCategory(source)) {
     case 'ppt':
