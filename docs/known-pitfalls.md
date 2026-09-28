@@ -228,12 +228,12 @@
 - **检出方式**：同时检查实体画面、心跳、队列 Pending、进程 CPU 与托管线程栈；进程存活或命令部分完成不足以排除冻结。短视频连续循环比单次播放更容易触发。
 - **现状**：直接 `Play()` 和 `Time=0` 再 `Play()` 均是状态假成功；`Play(media)` 后实际回绕但原生句柄仍涨。线程池异步等待 Stop、串行化媒体操作后，D4 两窗 1000 命令全完成、p95 18.4 ms；停播后句柄回落 854/897，20 次开关的预热后增长 +5/-4。60 分钟混合仍待执行。
 
-### 坑 28 - 有 shutdown 接收分支却没有生产发送方，Office 空闲实例残留（2026-09-28 修复待复测）
+### 坑 28 - 有 shutdown 接收分支却没有生产发送方，Office 空闲实例残留（2026-09-28 修复）
 
 - **症状**：D4 实验性 PPT 两窗顺序出画/翻页/关闭均成功；运行组 shutdown 后 Worker 和状态文件已消失，项目创建的 POWERPNT 仍存在。
 - **根因**：broker 未发送任何 `shutdown_request`，Supervisor 对隐藏窗口/控制台的 `CloseMainWindow` 不可靠，超时强退 OfficeHost 导致 COM Dispose 无机会执行；OfficeHost 的接收分支还在 break 后等待未取消的心跳任务。
 - **检出方式**：反查消息类型的生产发送方，不把“有接收分支”当接线完成；停机同时核对自有 Office PID/启动时间及用户文稿，而非只看 .NET Host 退出。
-- **现状**：broker 先对已认证当前 Worker 发协作退出，再由 Supervisor 按自有 PID 兜底；OfficeHost 取消心跳后只退出自有且无用户文稿的 Application。真实管道回归先红后绿、本机非 Physical 309/309；D4 新版 Office 残留复测待完成。
+- **现状**：broker 先对已认证当前 Worker 发协作退出，再由 Supervisor 按自有 PID 兜底；OfficeHost 取消心跳后只退出自有且无用户文稿的 Application。真实管道回归先红后绿、本机非 Physical 309/309；D4 新版在原生测试文稿仍放映时组停机，OfficeHost 与项目 POWERPNT 均退出、PowerPoint 数 0，没有额外强杀 Office。用户文稿并存与超时矩阵仍待测。
 
 ## 3. 相关沉淀点（不在这里重复）
 

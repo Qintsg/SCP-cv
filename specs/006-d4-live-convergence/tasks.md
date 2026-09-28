@@ -41,7 +41,7 @@
 **Independent Test**: 多页 PPT 上传、页图、翻页与关闭在窗口 1/2 均有实体证据；打开/关闭实验开关时核对 Office PID 和用户文稿。
 
 - [ ] T014 [P] [US2] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/PptConversionHostedServiceTests.cs` 与 `runtime-dotnet/tests/ScpCv.Windows.Tests/PowerPointSlideExportTests.cs` 补转换失败、停止、原件移动、用户 Office 并存和放映归属回归。
-- [ ] T015 [US2] 在 D4 使用 `C:\Users\qintsg\Desktop\Resources` 的只读副本或等价测试文稿上传，核对原件 SHA-256、页数、PNG 顺序和图片端点；在窗口 1/2 默认模式验证第一页、前后/指定页和无 Office 放映窗口。
+- [X] T015 [US2] 在 D4 使用 `C:\Users\qintsg\Desktop\Resources` 的只读副本或等价测试文稿上传，核对原件 SHA-256、页数、PNG 顺序和图片端点；在窗口 1/2 默认模式验证第一页、前后/指定页和无 Office 放映窗口。
 - [ ] T016 [US2] 在 D4 显式启停 `PowerPointSettingsService` 的实验模式，验证两个目标窗口的原生放映、关闭、失败状态与用户文稿保护；定位真实 Office/HWND/STA 缺陷并在 `ScpCv.PowerPointHost/Interop/`、`ScpCv.ControlHost/Ipc/` 修复。
 - [ ] T017 [US2] 在 `runtime-dotnet/src/ScpCv.Supervisor/Runtime/ShutdownCoordinator.cs` 与 `ScpCv.PowerPointHost/Interop/PowerPointComAdapter.cs` 核对项目 Office 自有实例的协作退出、超时和共享用户文稿保护，并把 PID/启动时间与残留证据写入 `docs/qa/003-office-interop.md`。
 - [ ] T018 [US2] 在 `frontend/src/features/sources/`、`frontend/src/features/settings/` 与真实浏览器验证转换状态、重试、默认页图与实验警告，不以 Simulation 的排队态代替 D4 转换成功。
@@ -68,7 +68,7 @@
 - [ ] T025 [US4] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Scenarios/ScenarioService.cs` 修复预案音量只落库的假成功，复用硬件控制边界并处理墙面、音量与状态的失败顺序；若获准，在 D4 记录并恢复系统音量后实体复测。
 - [ ] T026 [P] [US4] 在 D4 `.validation/` 用受控 RTSP/SRT 源做独立解码与窗口 1/2 实体播放，对旧报告的损坏帧和 `INVALID SIZE` 告警定位到发布端、MediaMTX、传输或 VLC；在相关 `runtime-dotnet/src/ScpCv.Infrastructure/Streams/`、`ScpCv.PlayerWorker/` 或配置中修复并复测。
 - [ ] T027 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Windows.Tests/` 为视频自然结束、循环、同源重开与释放增加回归；D4 重做短视频重复切源并采集私有内存、句柄、画面帧变化，定位旧增长。
-- [ ] T028 [US4] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/Adapters/` 与 `Playback/PlayerRuntimeHost.cs` 修复 T027 证实的视频资源保留或状态假成功，并在 D4 同条件复测。
+- [X] T028 [US4] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/Adapters/` 与 `Playback/PlayerRuntimeHost.cs` 修复 T027 证实的视频资源保留或状态假成功，并在 D4 同条件复测。
 - [ ] T029 [US4] 用已改成两窗的 `runtime-dotnet/scripts/benchmark-commands.ps1` 在 D4 执行普通写命令 1000 样本和健康热切换 100 样本，记录 p95/最大/失败数及原始证据到 `verification.md`。
 - [ ] T030 [US4] 在 D4 运行至少 60 分钟窗口 1/2 混合媒体与重复切源，按分钟记录画面、会话、命令、资源、Office/MediaMTX 与流错误；发现问题先诊断修复再同场景复跑。
 - [ ] T031 [US4] 在 D4 测试播放器失联、源文件暂失、转换失败及协作重启/停机，核对旧命令不重放、两个播放器退出、状态文件与日志如实更新。
@@ -80,6 +80,7 @@
 - [ ] T034 在 D4 协作停机并核对精确项目 PID/端口/Office、墙面预设、电源和系统音量恢复测试前状态；仅清理本轮已登记测试数据，原始媒体和完整快照保留。
 - [ ] T035 对 `spec.md`、`plan.md`、`tasks.md` 与实际结果执行规范收敛/一致性复核，未满足项继续追加并实现；不得把未知墙面帧或缺失实机证据标为完成。
 - [ ] T036 检查 `git diff --check`、文件头/行数、忽略数据与敏感信息；按独立可审查块提交并推送既有 `origin`、`gitlab`，记录提交与剩余外部依赖到 `verification.md`。
+- [ ] T037 在 `runtime-dotnet/scripts/runtime.ps1` 补独立入口的明确状态路径、两个显示器参数及缺参拒绝回归，或明确退役已被 `run-headless.ps1` 与认证 API 替代的启动入口；现有脚本不能继续宣称可直接启动当前两窗运行组。
 
 ## Dependencies & Execution Order
 

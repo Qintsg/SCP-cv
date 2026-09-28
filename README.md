@@ -124,6 +124,8 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 
 本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、两块大屏/Office/VLC/MediaMTX/音频长稳测试和性能基准需要专用工作站，不能用 Simulation 结果替代。未知协议的手动墙面映射只能保存与预览，不能向实体节点下发；仅“窗口 1 全屏”和“窗口 1 左、窗口 2 右”两个已知预设可执行。
 
+当前 D4 两窗实测、修复前后对照及未完成门禁见 [006 验证记录](specs/006-d4-live-convergence/verification.md)。短时出画或 1000 普通命令通过不等于 60 分钟混合长稳已完成。
+
 ## 数据边界
 
 新的运行数据默认位于 `data/dotnet/`，验证数据应放在 `.validation/`。不要自动删除或覆盖旧 `db.sqlite3`、上传媒体、日志、凭据或其它未跟踪数据；如需清空数据，必须先停止运行时并单独确认精确目标。

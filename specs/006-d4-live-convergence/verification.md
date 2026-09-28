@@ -102,8 +102,12 @@
 - 测前 PowerPoint 进程数 0、两窗 idle，实验开关 false。显式开启后窗口 1 打开源 45，经 loading 转为 `playing/powerpoint/1/9`；交互桌面截图实际显示第一张文稿，NEXT=2/9、GOTO=3/9，无会话错误。关闭窗口 1 后 idle，再在窗口 2 打开同一原件，`playing/powerpoint/1/9`；窗口 2 第一页输出截图 SHA-256 与窗口 1 第一页完全相同，NEXT=2/9。两次均来自项目本轮源，不涉及用户桌面文稿。
 - 关闭窗口 2 并恢复实验开关 false 后，两窗 idle；项目创建的 POWERPNT PID 4904（session 1，启动于 07:34:50）仍作为空闲自动化实例存在。受认证运行组 shutdown 用时 5.51 秒，状态文件移除、两个 PlayerWorker/OfficeHost/MediaMTX 均退出，却仍保留该 POWERPNT。原生放映与导航可用，**Office 停机清理不完整**，T017 保持未完成。
 - 根因追踪：Worker/OfficeHost 已有 `shutdown_request` 接收分支，但生产 broker 没有发送方，Supervisor 对隐藏 WPF/控制台进程只靠 `CloseMainWindow` 后定向强退；OfficeHost 无机会执行自有 Application 的 COM 退出。另有 OfficeHost 收到 shutdown 后等待永不取消的心跳任务的问题。新增真实管道退出回归先因 `OperationCanceledException` 失败，修复后 5 条目标用例通过；本机全套非 Physical 309/309 通过。新实现先向已认证当前角色发退出帧，再由 Supervisor 兜底；OfficeHost 取消心跳并只对自有且无用户文稿的实例 Quit，PlayerWorker 异步释放后退出。D4 原 PID 4904 的精确清理及新版退出复测待执行，不按名称强杀其它 Office。
+- 核对旧 PID 4904 的进程名、session 1、启动时间 `20260928073450` 后，仅终止该上轮项目自有测试实例；没有关闭其它 Office。D4 更新到 `2b47b1e` 并构建退出码 0，重启后再次实验放映源 45，PowerPoint 新 PID 45376、1/9 `playing/powerpoint`。在测试文稿仍放映时恢复开关 false 并执行组 shutdown，约 5.47 秒后状态文件消失，PlayerWorker 39724/49160、AudioWorker 40572、OfficeHost 44824、MediaMTX 52188 与 POWERPNT 45376 全退出，实际 PowerPoint 数 0；此次没有对 Office PID 额外强杀。5 秒整体耗时不能证明所有组件都走协作退出（MediaMTX 仍靠 Supervisor 兜底），但项目 Office 残留的新版实机对照已通过；用户文稿并存保护与异常超时矩阵仍待 T014/T017。
+- 再启运行组，实验开关 false 时窗口 1/2 同时打开源 45，均 `playing/slide_images/1/9`，PowerPoint 进程数持续 0。窗口 1 NEXT=2、PREVIOUS=1、GOTO=3；窗口 2 GOTO=9、PREVIOUS=8、FIRST=1，全无命令/会话错误。窗口 2 第 9 页实机截图与导出的 `page-0009.png` 逐一视觉一致，原件 SHA-256 仍为 `2401652F7CD610DFCDFE4B5F2F32CD112D9645F1E30CEF44ECB3D716B82A55F0`；随后两窗正常关闭为 idle，Office 0。T015 的原件/页图/默认两窗播出已完成，实验模式更广故障测试仍未完成。
 
 ## 待执行门禁
+
+文档收敛另发现独立 `runtime-dotnet/scripts/runtime.ps1` 仍把状态文件写在脚本目录，且 `start/restart` 不传两个显示器参数，会被新版 Supervisor 缺参拒绝。现场仍用已验证的 `run-headless.ps1` + 认证 API；该历史入口的修复/明确退役由新增 T037 承接，不能以改文档代替修代码。
 
 - [x] D4 数据快照
 - [ ] D4 更新与构建
