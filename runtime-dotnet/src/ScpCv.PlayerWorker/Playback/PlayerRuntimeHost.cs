@@ -191,6 +191,11 @@ public sealed partial class PlayerRuntimeHost(
             _currentSlide = slides.CurrentPage;
             _totalSlides = slides.PageCount;
         }
+        else if (next.Kind != "powerpoint")
+        {
+            _currentSlide = 0;
+            _totalSlides = 0;
+        }
         _state = autoplay ? "playing" : "paused";
         _window.SetSurface(next.Surface);
         if (previous is not null && !ReferenceEquals(previous, next) && previous.Kind != "web")
