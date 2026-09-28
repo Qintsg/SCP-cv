@@ -39,7 +39,8 @@ def attempt_locked_delete(page: Page, source_id: int, name: str) -> None:
     assert deleted.value.status == 400, deleted.value.text()
     assert refreshed.value.status == 200, refreshed.value.text()
     assert any(item["id"] == source_id for item in refreshed.value.json()["sources"])
-    page.get_by_text("媒体原件被占用或没有删除权限，删除未生效", exact=False).wait_for()
+    page.get_by_text("媒体原件被占用或没有删除权限，删除未生效", exact=False).last.wait_for()
+    page.locator(".n-modal").wait_for(state="hidden")
     page.get_by_role("button", name=f"{name} 的操作菜单").wait_for()
 
 
@@ -70,11 +71,15 @@ def main() -> None:
         page.wait_for_load_state("networkidle")
         assert "/login" not in page.url
         attempt_locked_delete(page, args.source_id, args.source_name)
+        page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(args.output / "delete-locked-desktop.png"), full_page=True)
         page.set_viewport_size({"width": 390, "height": 844})
         attempt_locked_delete(page, args.source_id, args.source_name)
+        assert page.locator(".n-notification").count() == 1
         assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        page.evaluate("window.scrollTo(0, 0)")
         page.screenshot(path=str(args.output / "delete-locked-mobile.png"), full_page=True)
+        page.screenshot(path=str(args.output / "delete-locked-mobile-viewport.png"))
         assert not errors, errors
         context.close()
         browser.close()

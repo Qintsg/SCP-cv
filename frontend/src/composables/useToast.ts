@@ -4,6 +4,7 @@
  *  - 成功 Toast 自动消失（默认 3.2 s）；
  *  - 错误 Toast 不自动消失，必须可手动关闭并提供「重试」入口（可选）；
  *  - 同时最多展示 3 条；超出按 FIFO 替换最早一条；
+ *  - 相同且没有操作按钮的持久错误合并，避免重复失败遮挡手机界面；
  *  - 移动端由布局层将容器位置切到顶部居中；这里只产出语义数据。
  *
  * 不直接挂载 DOM；DOM 由 layouts 层的 ToastHost 渲染。
@@ -50,16 +51,21 @@ export const useToastStore = defineStore('toast', {
   }),
   actions: {
     /**
-     * 推送一条 Toast，超过上限时丢弃最早一条。
-     * @param payload Toast 内容
-     * @return 该 Toast 的 id，便于外部主动关闭
+     * 推送通知；相同持久错误复用，超过上限时丢弃最早一条。
+     * :param payload: Toast 内容。
+     * :returns: 通知 id，便于外部主动关闭。
      */
     push(payload: Omit<ToastItem, 'id' | 'duration'> & { duration?: number }): number {
-      const id = nextToastId++;
       const computedDuration = payload.duration
         ?? (payload.level === 'error' ? 0
           : payload.level === 'warning' ? WARNING_DURATION_MS
           : payload.level === 'success' ? SUCCESS_DURATION_MS : INFO_DURATION_MS);
+      if (payload.level === 'error' && computedDuration === 0 && !payload.action) {
+        const duplicate = this.items.find((item) => item.level === 'error' && item.duration === 0
+          && !item.action && item.message === payload.message && item.description === payload.description);
+        if (duplicate) return duplicate.id;
+      }
+      const id = nextToastId++;
       const item: ToastItem = {
         id,
         level: payload.level,
