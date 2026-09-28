@@ -4,11 +4,10 @@
  */
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
-import { fileURLToPath } from 'node:url';
 import test, { after, afterEach, before } from 'node:test';
 import { Window } from 'happy-dom';
+import { createDomTestServer } from './dom-test-server.mjs';
 
-const frontendRoot = fileURLToPath(new URL('../', import.meta.url));
 const browser = new Window({ url: 'http://localhost:5173/sources' });
 const globalNames = ['window', 'document', 'navigator', 'HTMLElement', 'HTMLInputElement',
   'HTMLTextAreaElement', 'Element', 'Node', 'SVGElement', 'Document', 'MutationObserver',
@@ -34,29 +33,12 @@ let folders;
 const originalFetch = globalThis.fetch;
 
 before(async () => {
-  const [{ createServer }, { compileScript, parse }, ts, vueModule, piniaModule] = await Promise.all([
-    import('vite'), import('vue/compiler-sfc'), import('typescript'), import('vue'), import('pinia'),
+  const [vueModule, piniaModule, testServer] = await Promise.all([
+    import('vue'), import('pinia'), createDomTestServer(),
   ]);
   vue = vueModule;
   createPinia = piniaModule.createPinia;
-  server = await createServer({
-    configFile: false,
-    root: frontendRoot,
-    server: { middlewareMode: true, hmr: false, watch: null },
-    resolve: { alias: { '@': `${frontendRoot.replaceAll('\\', '/')}/src` } },
-    optimizeDeps: { noDiscovery: true, include: [] },
-    plugins: [{
-      name: 'test-client-sfc',
-      transform(contents, filename) {
-        if (!filename.endsWith('.vue')) return;
-        const { descriptor } = parse(contents, { filename });
-        const script = compileScript(descriptor, { id: filename, inlineTemplate: true });
-        return ts.default.transpileModule(script.content, {
-          compilerOptions: { target: ts.default.ScriptTarget.ESNext, module: ts.default.ModuleKind.ESNext },
-        }).outputText;
-      },
-    }],
-  });
+  server = testServer;
   ({ default: SourcesView } = await server.ssrLoadModule('/src/features/sources/SourcesView.vue'));
   ({ default: EmergencyMenu } = await server.ssrLoadModule('/src/layouts/EmergencyMenu.vue'));
   ({ useSourceStore } = await server.ssrLoadModule('/src/stores/sources.ts'));
@@ -67,7 +49,7 @@ afterEach(async () => {
   app?.unmount();
   app = undefined;
   browser.document.body.replaceChildren();
-  browser.happyDOM.abort();
+  await browser.happyDOM.abort();
   globalThis.fetch = originalFetch;
 });
 

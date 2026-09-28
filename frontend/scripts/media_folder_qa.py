@@ -105,6 +105,18 @@ def choose_submenu(page: Page, parent: str, destination: str) -> None:
     target.click()
 
 
+def screenshot_stable(page: Page, path: Path, full_page: bool = False) -> None:
+    """等待弹层与通知过渡完成再保存视觉证据。
+
+    :param page: 已完成业务断言的页面。
+    :param path: 本轮忽略目录中的图片。
+    :param full_page: 是否保存整页。
+    :returns: None
+    """
+    page.wait_for_function("document.getAnimations().every(animation => animation.playState !== 'running')")
+    page.screenshot(path=str(path), full_page=full_page)
+
+
 def main() -> None:
     """仅修改新建 QA 夹具，失败保留证据，成功清理自己的源与目录。
 
@@ -199,13 +211,13 @@ def main() -> None:
             expect(page.get_by_role("navigation", name="文件夹路径")).to_contain_text(target_name)
             download(page, names[1], digest, args.output / "moved-download.png")
             summary["checks"].append("source move, parent rename and subtree move refresh")
-            page.screenshot(path=str(args.output / "folders-desktop.png"), full_page=True)
+            screenshot_stable(page, args.output / "folders-desktop.png", full_page=True)
             page.set_viewport_size({"width": 390, "height": 844})
             download(page, names[1], digest, args.output / "mobile-download.png")
             assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
             page.evaluate("window.scrollTo(0, 0)")
-            page.screenshot(path=str(args.output / "folders-mobile.png"), full_page=True)
-            page.screenshot(path=str(args.output / "folders-mobile-viewport.png"))
+            screenshot_stable(page, args.output / "folders-mobile.png", full_page=True)
+            screenshot_stable(page, args.output / "folders-mobile-viewport.png")
             summary["checks"].append("mobile download and no horizontal overflow")
             if args.ppt:
                 ppt_name = f"QA-006-UI-PPT-{suffix}"
@@ -217,7 +229,7 @@ def main() -> None:
                 page.get_by_text("编辑", exact=True).last.click()
                 expect(page.locator(".n-drawer")).to_contain_text("queued")
                 expect(page.locator(".n-drawer")).to_contain_text("原始 PPT 文件仍保留")
-                page.screenshot(path=str(args.output / "ppt-queued-mobile.png"))
+                screenshot_stable(page, args.output / "ppt-queued-mobile.png")
                 page.locator(".n-drawer").get_by_role("button", name="取消", exact=True).click()
                 page.locator(".n-drawer").wait_for(state="hidden")
                 summary["checks"].append("PPT upload queued and retained-original feedback")
