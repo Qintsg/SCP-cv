@@ -12,6 +12,36 @@ namespace ScpCv.ControlHost.Tests;
 public sealed class MediaEndpointTests
 {
     [Fact]
+    public async Task LockedSourceMoveReturnsReadableErrorAndPreservesDownload()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        var media = factory.Services.GetRequiredService<MediaSourceService>();
+        var folder = await media.CreateFolderAsync("移动目标", null);
+        await using var bytes = new MemoryStream("original-move-content"u8.ToArray());
+        var source = await media.AddUploadedAsync(bytes, "locked-move.png", null, null, null, null, false, false);
+        using var fileLock = new FileStream(source.Uri, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var request = CreateJsonRequest(HttpMethod.Patch, $"/api/sources/{source.Id}/move/", csrf,
+            new { folder_id = folder.Id });
+
+        using var response = await client.SendAsync(request);
+        using var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("media_error", body.RootElement.GetProperty("code").GetString());
+        Assert.Contains("移动未生效", body.RootElement.GetProperty("detail").GetString());
+        var preserved = Assert.Single(await media.ListSourcesAsync(null, null), item => item.Id == source.Id);
+        Assert.Equal(source.Uri, preserved.Uri);
+        Assert.Null(preserved.FolderId);
+        using var download = await client.GetAsync($"/api/sources/{source.Id}/download/");
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal("original-move-content", await download.Content.ReadAsStringAsync());
+        Assert.True(File.Exists(source.Uri));
+    }
+
+    [Fact]
     public async Task SingleSourceDeletionReportsLockedFileAndKeepsItInLibrary()
     {
         if (!OperatingSystem.IsWindows()) return;

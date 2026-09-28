@@ -19,6 +19,13 @@ patch:
           schema:
             $ref: ../components/schemas/SourceResponse.yaml
     '400':
-      $ref: ../components/responses/ErrorResponse.yaml
+      description: 原件正在播放、转换、被占用或缺少移动权限；拒绝移动且保留原路径及内容
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+          example:
+            code: media_error
+            detail: 媒体原件被占用或没有移动权限，移动未生效。
     '404':
       $ref: ../components/responses/ErrorResponse.yaml

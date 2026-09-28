@@ -166,7 +166,7 @@ public sealed partial class MediaSourceService(
                 return ToSourceDto(source);
             }, cancellationToken).ConfigureAwait(false);
         }
-        catch
+        catch (Exception exception)
         {
             if (originalPath is not null && targetPath is not null && File.Exists(targetPath) && !File.Exists(originalPath))
             {
@@ -176,6 +176,8 @@ public sealed partial class MediaSourceService(
                 if (committed?.UploadedFile == targetPath) return ToSourceDto(committed);
                 File.Move(targetPath, originalPath);
             }
+            if (exception is IOException or UnauthorizedAccessException)
+                throw new MediaServiceException($"媒体原件被占用或没有移动权限，移动未生效：{exception.Message}");
             throw;
         }
     }
