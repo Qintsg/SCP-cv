@@ -70,7 +70,7 @@ export default {
     openedOk: '已在窗口 {id} 打开 {name}',
     openFail: '打开到窗口失败',
     deleteTitle: '删除 {name}？',
-    deleteDesc: '该源会被永久移除；正在使用此源的窗口将停止播放。此操作不可恢复。',
+    deleteDesc: '该源会被永久移除；若正在播放或转换，请先停止相关任务。原件被占用或只读时删除会被拒绝。',
     deletedOk: '源已删除',
     deleteFail: '删除失败',
     cat: {
