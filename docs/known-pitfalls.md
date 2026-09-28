@@ -318,22 +318,25 @@
 - **根因**：只看开始数量与延迟、容许折叠，没有核对本轮请求关联和真正完成。
 - **现状**：普通模式逐 HTTP 请求关联唯一目标 SET_VOLUME，最终只读精确自有 ID；全部完成、有效摘要/时间/实例及零失败、状态不明、折叠、未排空才通过。显式热切换模式另核实际源、generation、owner 和完成状态，前后异源、首错停发，CSV 保留原始证据。29 条受控脚本测试通过；两个指标是开始延迟与控制完成延迟，不宣称视觉出帧延迟或 D4 1000/100 已通过。
 
-### 坑 42 - 旧 Worker 可借重连或延迟首次握手认领新组（2026-09-28 修复待实机更新）
+### 坑 42 - 旧 Worker 可借重连或延迟首次握手认领新组（2026-09-28 修复并实机复测）
 
 - **症状/证据**：player-1/player-2/audio/office 在新 Starting/Armed 仍能 welcome、Ready和恢复Online；旧group claim虽拒绝，采用welcome的新group却能由旧instance领取新命令，旧generation状态也能落库。真实管道重连10/10红、旧Supervisor已登记但延迟首次hello4/4红。
 - **根因**：只有 Supervisor 绑定原group，Worker相同instance登记会恢复Online；源generation不能替代进程组身份。
 - **现状**：统一五类角色的 immutable instance/group，在当前Supervisor子进程登记阶段即绑定、hello早于ownership/连接替换校验；同组重连与新组新实例保留。23/23针对性、Integration154/154、Host152/152；本机`b6ff30b`已提交，D4门禁由006/T043承接。
+- **D4复测**：`0727363` 的epoch103正常两窗启动，精确player-1退出后组Faulted/两窗error-offline；显式restart105恢复两窗源39/40，捕获完成后的真实输出图已目视核对。更广故障矩阵仍属T031，不把本条等同全部故障完成。
 
-### 坑 43 - 成功非文稿切源仍带旧页码（2026-09-28 修复待实机更新）
+### 坑 43 - 成功非文稿切源仍带旧页码（2026-09-28 修复并实机复测）
 
 - **症状**：D4 PPT第9页切到短视频，实际源为video且OPEN已完成，API仍current_slide/total_slides=9/9。
 - **现状**：只在新资源成功发布后清理非PDF/页图/原生PPT的页码；保留原生Open写入页码及页图切源失败旧状态。公共隐藏STA回归(2,2)先红后绿、Windows68/68；前端外层ppt category有守卫，不能推断视频UI一定出现页码条。D4新版复测由T044承接。
+- **D4复测**：`570540d` 两窗PPT第9页/PDF第2页→短视频/图片，OPEN4483–4486按各窗generation644→645/401→402完成，非文稿API页码0/0；四张实际输出图与对应源一致，T044闭环。
 
-### 坑 44 - VLC 的 Play 受理不等于异步流可播（2026-09-28 定位，修复中）
+### 坑 44 - VLC 的 Play 受理不等于异步流可播（2026-09-28 修复并有限实机复测）
 
 - **症状**：D4不存在的RTSP路径独立解码立即404，OPEN命令却Completed/ok，会话长期playing/空错误、实际灰场。
 - **根因/检出**：原生产仅订阅EndReached并缓存_state；官方固定版本及原生有限探针证明Play True后EncounteredError/Stopped、最终Ended，轮询Error也可能错过。公共隐藏Host+真实OPTIONS200/DESCRIBE404回归先红，样本5秒仍playing。
 - **边界**：T045修复以本资源/不可变attempt保存异步错误并经既有fenced采样/SSE报告；不能按time0判失败、在脱离视觉树时阻塞等Playing或把旧错误送到新源。原生回调不Stop/Dispose，健康同源Playing/Paused保持原进度；正式D4失效/恢复和长稳仍待验证。
+- **新版结论**：`570540d` 非Physical523/523、显式CPU/dummy原生6/6；D4 source74同URI正确error并给原因，换有效RTSP46/SRT47两窗恢复playing/进度增长，两次截图均为变化帧。测试-only硬解禁用不改产品默认GPU路径；最终原生日志仍有H.264错误记录，旧D3D11 Aborted证据保留，默认GPU25秒循环不替代60分钟。
 
 ## 3. 相关沉淀点（不在这里重复）
 

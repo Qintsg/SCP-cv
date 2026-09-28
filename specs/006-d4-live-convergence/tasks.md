@@ -69,7 +69,7 @@
 - [ ] T026 [P] [US4] 在 D4 `.validation/` 用受控 RTSP/SRT 源做独立解码与窗口 1/2 实体播放，对旧报告的损坏帧和 `INVALID SIZE` 告警定位到发布端、MediaMTX、传输或 VLC；在相关 `runtime-dotnet/src/ScpCv.Infrastructure/Streams/`、`ScpCv.PlayerWorker/` 或配置中修复并复测。
 - [ ] T027 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Windows.Tests/` 为视频自然结束、循环、同源重开与释放增加回归；D4 重做短视频重复切源并采集私有内存、句柄、画面帧变化，定位旧增长。
 - [X] T028 [US4] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/Adapters/` 与 `Playback/PlayerRuntimeHost.cs` 修复 T027 证实的视频资源保留或状态假成功，并在 D4 同条件复测。
-- [ ] T029 [US4] 用已改成两窗的 `runtime-dotnet/scripts/benchmark-commands.ps1` 在 D4 执行普通写命令 1000 样本和健康热切换 100 样本，记录 p95/最大/失败数及原始证据到 `verification.md`。
+- [X] T029 [US4] 用已改成两窗的 `runtime-dotnet/scripts/benchmark-commands.ps1` 在 D4 执行普通写命令 1000 样本和健康热切换 100 样本，记录 p95/最大/失败数及原始证据到 `verification.md`。
 - [ ] T030 [US4] 在 D4 运行至少 60 分钟窗口 1/2 混合媒体与重复切源，按分钟记录画面、会话、命令、资源、Office/MediaMTX 与流错误；发现问题先诊断修复再同场景复跑。
 - [ ] T031 [US4] 在 D4 测试播放器失联、源文件暂失、转换失败及协作重启/停机，核对旧命令不重放、两个播放器退出、状态文件与日志如实更新。
 
@@ -107,12 +107,18 @@
 
 ## Phase 7: Convergence
 
-- [ ] T043 CRITICAL 依据 FR-007、FR-008、US4/AC2 与宪章 IV（contradicts），在 `runtime-dotnet/src/ScpCv.ControlHost/Ipc/RuntimePipeBroker.cs` 与组身份相关 partial 中把 immutable instance/group 绑定扩展至 player-1/player-2/audio/office/supervisor，并在已认证 Supervisor 的子进程登记阶段绑定原组代次；旧登记的延迟首次握手、跨组重连、Ready、状态报告和命令领取均不得认领新组。以 `runtime-dotnet/tests/ScpCv.Integration.Tests/RuntimePipeBrokerTests.StaleWorkerReconnect.cs` 的真实管道 10/10 红例及延迟首次握手回归先红后绿，保持合法同组重连和新实例启动；D4 更新后复核两窗启动、精确 player 退出故障报告和显式恢复，不把源 generation 当作组身份门禁。
+- [X] T043 CRITICAL 依据 FR-007、FR-008、US4/AC2 与宪章 IV（contradicts），在 `runtime-dotnet/src/ScpCv.ControlHost/Ipc/RuntimePipeBroker.cs` 与组身份相关 partial 中把 immutable instance/group 绑定扩展至 player-1/player-2/audio/office/supervisor，并在已认证 Supervisor 的子进程登记阶段绑定原组代次；旧登记的延迟首次握手、跨组重连、Ready、状态报告和命令领取均不得认领新组。以 `runtime-dotnet/tests/ScpCv.Integration.Tests/RuntimePipeBrokerTests.StaleWorkerReconnect.cs` 的真实管道 10/10 红例及延迟首次握手回归先红后绿，保持合法同组重连和新实例启动；D4 更新后复核两窗启动、精确 player 退出故障报告和显式恢复，不把源 generation 当作组身份门禁。
 
 ## Phase 8: Convergence
 
-- [ ] T044 依据 FR-002、FR-008、US1/AC1 与 US4/AC3（partial），在 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/PlayerRuntimeHost.cs` 修复成功从 PDF/PPT 页图切到图片、视频、网页或直播后仍返回旧 current_slide/total_slides 的元数据；保留原生 PowerPoint 打开设置的页码和打开失败时旧资源信息，不用前端隐藏或新增 DTO 字段掩盖。以 `runtime-dotnet/tests/ScpCv.Windows.Tests/PlayerRuntimeHostSlideStateTests.cs` 的公共 ExecuteAsync、隐藏 STA 和自有 PNG 先红后绿，无真实 VLC/Office 初始化；D4 复跑 PPT 第 9 页→短视频同条件及默认两窗文稿/非文稿切换，核对完成回执、会话、generation 和实际画面。
+- [X] T044 依据 FR-002、FR-008、US1/AC1 与 US4/AC3（partial），在 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/PlayerRuntimeHost.cs` 修复成功从 PDF/PPT 页图切到图片、视频、网页或直播后仍返回旧 current_slide/total_slides 的元数据；保留原生 PowerPoint 打开设置的页码和打开失败时旧资源信息，不用前端隐藏或新增 DTO 字段掩盖。以 `runtime-dotnet/tests/ScpCv.Windows.Tests/PlayerRuntimeHostSlideStateTests.cs` 的公共 ExecuteAsync、隐藏 STA 和自有 PNG 先红后绿，无真实 VLC/Office 初始化；D4 复跑 PPT 第 9 页→短视频同条件及默认两窗文稿/非文稿切换，核对完成回执、会话、generation 和实际画面。
 
 ## Phase 9: Convergence
 
-- [ ] T045 CRITICAL 依据 FR-002、FR-008、FR-011、US1/AC5、US4/AC2 与宪章 I（contradicts），在 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/` 修复 VLC 启动受理后异步连接/解码失败仍持续上报 playing 的假状态；每个资源/播放 attempt 的 EncounteredError 保留失败证据，原生回调不 Stop/Dispose，周期快照与既有 fenced IPC/SSE 上报真实 loading/playing/error。旧 player/attempt 错误不能污染新源，合法同源重试和循环仍可恢复；不以直播 position=0 判断失败，不在脱离视觉树时阻塞等待 Playing。拆分超过 500 行的状态实现，补非 Physical 纯状态/迟到回归与显式 Physical 的有限回环 RTSP 404 公共 ExecuteAsync/SampleProgress 回归，保持隐藏窗口、无音视频输出；D4 重做 source74 无发布路径的失败反馈、有效 RTSP/SRT 恢复及两窗画面，登记状态与 HTTP 受理不冒充已播出。
+- [X] T045 CRITICAL 依据 FR-002、FR-008、FR-011、US1/AC5、US4/AC2 与宪章 I（contradicts），在 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/` 修复 VLC 启动受理后异步连接/解码失败仍持续上报 playing 的假状态；每个资源/播放 attempt 的 EncounteredError 保留失败证据，原生回调不 Stop/Dispose，周期快照与既有 fenced IPC/SSE 上报真实 loading/playing/error。旧 player/attempt 错误不能污染新源，合法同源重试和循环仍可恢复；不以直播 position=0 判断失败，不在脱离视觉树时阻塞等待 Playing。拆分超过 500 行的状态实现，补非 Physical 纯状态/迟到回归与显式 Physical 的有限回环 RTSP 404 公共 ExecuteAsync/SampleProgress 回归，保持隐藏窗口、无音视频输出；D4 重做 source74 无发布路径的失败反馈、有效 RTSP/SRT 恢复及两窗画面，登记状态与 HTTP 受理不冒充已播出。
+
+## Phase 10: Convergence
+
+- [ ] T046 依据 FR-008、FR-011、SC-006 与 US1/AC5（contradicts），在 `frontend/src/features/display/PlaybackControl.vue`、`SourcePicker.vue` 及必要父级中修复 error/loading/offline仍显示“直播中”或“正在播出”的假标签；选中源保留选中语义，不代替实际播出。离线SourcePicker和视频Seek不可操作且无HTTP/恢复后重放，保留store既有拒绝门禁；手机长错误与再次打开按钮不重叠、不被底栏拦截，通过正常触屏点击可恢复。以 `frontend/scripts/playback_state_qa.py` 的真实桌面/390px渲染、HTTP/SSE受控边界先红后绿，检查console/overflow/稳定截图，不force绕过；后续D4浏览器按真实error和恢复返回复核。
+- [ ] T047 依据 FR-008、SC-006、plan:共享控制台与可读状态（partial），在 `frontend/src/features/display/SourcePicker.vue` 修复max-height滚动列表的flex条目收缩导致名称/状态徽标裁切；按500行规则拆出独立scoped CSS或子组件，保留中文目录/源选择/键盘语义。以9项长列表的桌面/手机几何和截图验证内容完整、控件可达、无横向溢出，不通过隐藏徽标解决。
+- [ ] T048 依据 FR-004、FR-005、FR-008 与 US2/AC4（partial），在 `frontend/src/features/sources/EditSourceDrawer.vue` 及对应准备状态逻辑提供 `missing` PPT原件的显式重试转换入口，与 `POST /api/sources/{id}/prepare/` 恢复能力一致；failed/missing可人工重试，queued/running/uncertain不得盲目重放Office，原件保留并清晰说明。补实际DOM/受控HTTP与桌面/手机drawer回归，确保一次点击一请求、等待防重入、成功后刷新真实准备状态；D4旧有效/暂失恢复路径据实复核，不用Simulation queued宣称转换完成。

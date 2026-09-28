@@ -242,3 +242,34 @@ ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进
 - 真实回环服务器仅OPTIONS200/DESCRIBE404，无音视频载荷，隐藏Host的公共Execute/Sample回归先红：预期error、实际playing。独立原生探针记录Play True、NothingSpecial→Opening→Ended、EncounteredError与Stopped；没有假称周期轮询捕获到了短暂Error。当前两个404回归及纯状态/页码/生命周期子集转绿，但还不是完整交付。
 - 同源重开／STOP→PLAY后循环的首个fixture同时`--no-video/--no-audio`禁用了所有ES，时间轴为0并立即结束，误名`native-loop-and-reopen-green.trx`实际2/4失败，明确排除。改为测试-only CPU解码＋dummy输出后，`native-cpu-dummy-valid-batch.trx`仅有两个RTSP Passed，testhost发生原生崩溃、整体Aborted/退出1；不能当4/4绿，也不能在尚未区分测试配置/WPF/生命周期原因时宣称产品已修好。
 - 原生测试均Category Physical、显式选类，本机不Show/无真实声卡或图像输出，产品默认LibVLC配置未改。草稿保持未提交/未部署，正做逐例隔离／crash证据及独立只读寿命复审；正式两窗恢复、热切换及60分钟保持未执行。
+
+### T043 新组归属的 D4 更新复测（`0727363`）
+
+- 新代码已部署并构建0警告/错误。epoch103正常拉起两个播放器后，按状态文件角色、PID53216、启动时间和session1精确结束player-1；持久组正确成为 `Faulted|103`，StopReason为已认证Supervisor退出证据，两窗error/offline，状态文件消失。不是由管道EOF推定整组退出。
+- 显式重启为epoch105，两窗恢复源39/40、playing/online、pending空；完成捕获任务后取得唯一capture JSON，再读取两张实际输出图，均与左侧测试图/右侧登录截图对应。原始记录在D4 `qa-006/group-identity-fixed-0727363/`，本机截图归档在 `.validation/qa-d4-006/group-identity-0727363-stable/`。与真实管道的旧instance/延迟首hello回归共同闭环T043；较广故障矩阵T031仍未整体完成。
+
+### T045 交付版本与统一本机门禁（`570540d`）
+
+- Release构建0警告/错误；完整非Physical **523/523、0跳过**（Domain41、Contracts18、Infrastructure80、ControlHost152、Windows78、Integration154）。六份TRX在 `.validation/t033-20260928-vlc-final/`，对应实际重构建后的代码，不能与旧488门禁混用。
+- `.validation/vlc-failure-006/physical-vlc-valid-final.trx` 整体Completed、**6/6**。除回环404外，实测同源位置900→900、暂停同源重开位置保持并恢复到1209ms、准备态autoplay=false→true后时间增长至401ms、STOP→PLAY后两次自然循环。测试使用per-player `EnableHardwareDecoding=false` 与dummy/no-audio；产品构造默认仍是 `new LibVLC()`，没有更改D4 GPU/vout路径。
+- 历史“CPU”批次实际仍启用D3D11VA，纯native Stop/Play也出现 `D3D11.DLL_unloaded/0xc0000005`、整体Aborted；这些原始结果保留，不改名为通过。官方VLC3.0.23的 `avcodec-hw` 创建不继承instance配置，测试需明确per-player禁用硬解。此测试差分不是产品GPU崩溃已修复的结论。
+- 最终6/6原生日志仍有三组H.264 `get_buffer/thread_get_buffer/decode_slice_header/no frame` 记录；缺少阶段关联，不能断言均为停机噪声，也不能将断言绿色写为零解码错误。正式默认硬解循环与长稳仍由T027/T030承接。
+
+### T045 D4失效直播与有效恢复（`570540d`，epoch107）
+
+- D4已快进 `570540d`、构建0警告/错误；不存在的source74仍保留同一URI，现会话为error/online、pending空、页码0/0，明确返回“VLC 媒体连接或解码失败；请检查源地址、在线状态和格式支持。”既有OPEN完成表示启动受理，不再把它投影为持续playing。
+- 新建本轮有界发布器PID25616/session0、启动23:51:22，使用已登记18秒合成TS循环，发布限时6600秒；MediaMTX路径ready后，将窗口1从失败源恢复为RTSP46、窗口2打开SRT47。两窗playing/online、错误/pending空，约33秒后进度33440/31239ms，两个目标仍仅DISPLAY2/3。
+- 等待两次捕获分别完成、每次唯一JSON后复制归档；主代理逐张目视四张输出图：RTSP计数277→200、SRT279→205（合成18秒源已循环），运动图案变化、无灰场/桌面泄露。证据在 `.validation/qa-d4-006/vlc-stream-recovery-570540d/`，包含失败DTO、恢复DTO、后续进度及a/b真实像素。该有限恢复闭环T045，不代替60分钟、实体墙体映射或第三方较新SRT peer的互操作修复。
+
+### T044 两窗页码及默认视频循环有限复测（`570540d`）
+
+- 首次新版同条件PPT45 goto9→video48已在 `0727363` 证明页码0/0。再在 `570540d` 两窗同时打开PPT45第9页、PDF42第2页，等待实际完成捕获；随后窗口1切短视频48、窗口2切图片40，两个会话均playing/online、pending空、页码0/0。主代理逐张目视文稿/非文稿四张输出图，依次为原第9页拼图、绿色PDF第2页、机械臂视频和已登记登录截图，没有用前端隐藏旧数字。
+- OPEN4483/4484分别为窗口1/2、generation644/401；切源OPEN4485/4486为generation645/402，均Completed/ok且有开始/完成时间、consumer/owner和结果摘要。完成证据在D4 `qa-006/pages-transition-command-evidence-570540d.json`，前后会话/四张图在本机 `.validation/qa-d4-006/pages-transition-570540d/`；T044完成。
+- 默认GPU短视频48循环25秒取得98个约250ms间隔样本：90 playing、8 loading、0 error，进度多次回绕且恢复增长，原PID保持。两段loading各约1秒、position0，其中一段duration瞬态0；保留原始状态，不能写成连续playing或从这一有限样本宣称零瞬时黑帧/内存无增长。截图已目视为对应视频画面，证据 `.validation/qa-d4-006/video-loop-570540d/`。长稳helper原强制held Playing会误报合法重载；将预先验证的有限视频循环Loading限时单独记录，其余身份/代次/错误守卫不放宽，先pilot再正式长跑。
+
+### T029 两窗正式100/1000命令基准（2026-09-29，`570540d`）
+
+- 同一epoch107独占两窗写入，实验开关false、loopfalse、默认GPU；有限PowerShell PID5228/session0于00:00:41启动、00:04:18完成。先100次健康热切换，再1000次窗口音量SET_VOLUME，未同时运行长稳/浏览器写入。两个CSV均只含窗口1/2、热切换100次前后异源。
+- 热切换源39/40/42/45/41/43/46/47覆盖图片、PDF/PPT页图、长视频、网页与RTSP/SRT；**100/100健康完成、失败0、未尝试0**，命令创建→控制完成p95 **466.501ms**、最大 **1533.632ms**，请求→完成观测p95 **1543.87ms**。每次核唯一OPEN、consumer/owner、代次、实际源与API状态；不是视觉出帧延迟或100张截图验收。
+- 普通写命令**1000/1000 Completed**，Failed/Uncertain/Superseded/未完成/无效回执全部0，精确自有命令ID4590–5589；创建→Started p95 **13ms**、最大 **38.7ms**，HTTP p95 **17.4ms**。脚本保持50ms提交间隔，并逐请求前后只读SQLite关联，因此不是无间隔压测吞吐结论。
+- root复制后重新核两个原始CSV的数量、状态、目标及无同源热切换；CLIXML stderr为模块准备/Host信息、error记录0，没有把文件非空误报进程失败。结束后两个窗口音量均显式恢复100并等待pending空，未改系统音量/墙面/电源。原始CSV、报告、stdout/CLIXML、前后会话与结束截图保留于 `.validation/qa-d4-006/benchmark-570540d-evidence/`；T029完成，60分钟T030仍未执行。
