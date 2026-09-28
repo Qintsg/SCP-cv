@@ -11,16 +11,18 @@ using ScpCv.Infrastructure.VideoWall;
 
 namespace ScpCv.Infrastructure.Scenarios;
 
-public sealed class ScenarioService(
+public sealed partial class ScenarioService(
     IDbContextFactory<ControlDbContext> contextFactory,
     WriteCoordinator writes,
     CommandCoordinator commands,
     TimeProvider? timeProvider = null,
-    IVideoWallController? videoWall = null)
+    IVideoWallController? videoWall = null,
+    ISystemAudioController? systemAudio = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
     private readonly IVideoWallController _videoWall = videoWall ?? new SimulationVideoWallController();
+    private readonly ISystemAudioController _systemAudio = systemAudio ?? new SimulationSystemAudioController();
 
     public async Task<IReadOnlyList<ScenarioDto>> ListAsync(CancellationToken cancellationToken = default)
     {
@@ -212,40 +214,7 @@ public sealed class ScenarioService(
             }
         }
 
-        if (scenario.BigScreenModeState == ScenarioValueState.Set)
-        {
-            // 旧 Python 的 activate_scenario 走 set_big_screen_mode，同样先切视频墙、失败即中止整个激活。
-            // 放在写事务之前：网络重试最长可达数十秒，不能占着数据库写锁。
-            try
-            {
-                await _videoWall.DispatchAsync(EnumName(scenario.BigScreenMode), cancellationToken).ConfigureAwait(false);
-            }
-            catch (VideoWallException exception)
-            {
-                throw new ScenarioServiceException(exception.Message);
-            }
-        }
-
-        await writes.ExecuteAsync(async (database, token) =>
-        {
-            var runtime = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
-            var sessions = await database.PlaybackSessions
-                .Where(item => item.WindowId <= WindowId.Maximum).ToListAsync(token).ConfigureAwait(false);
-            var runtimeChanged = false;
-            if (scenario.BigScreenModeState == ScenarioValueState.Set)
-            {
-                runtime.BigScreenMode = scenario.BigScreenMode;
-                var mutedWindows = scenario.BigScreenMode == BigScreenMode.Single ? new HashSet<int> { 2 } : [];
-                foreach (var session in sessions) session.IsMuted = mutedWindows.Contains(session.WindowId);
-                runtimeChanged = true;
-            }
-            if (scenario.VolumeState == ScenarioValueState.Set)
-            {
-                runtime.VolumeLevel = scenario.VolumeLevel;
-                runtimeChanged = true;
-            }
-            if (runtimeChanged) runtime.UpdatedAt = _timeProvider.GetUtcNow();
-        }, cancellationToken).ConfigureAwait(false);
+        await ApplyRuntimeAsync(scenario, cancellationToken).ConfigureAwait(false);
 
         await using var snapshotDb = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
         var snapshot = await snapshotDb.PlaybackSessions.AsNoTracking()

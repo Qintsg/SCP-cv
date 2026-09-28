@@ -4,6 +4,12 @@ post:
   tags:
     - scenarios
   summary: 激活预案
+  description: >-
+    先验证媒体与两窗目标；指定固定预设时先下发墙面，再设置指定系统音量，
+    保存真实读回的音量及现有静音，运行态提交完成后才派发媒体命令。
+    unset/empty 音量保持不变。硬件不可用返回 system_audio_unavailable；
+    状态提交回执异常返回 scenario_state_persistence_failed 并报告已经发生的动作，
+    不自动补偿或继续派发媒体。失败后应先核对实际硬件和持久状态，避免盲目重复激活。
   operationId: activateScenario
   responses:
     '200':
