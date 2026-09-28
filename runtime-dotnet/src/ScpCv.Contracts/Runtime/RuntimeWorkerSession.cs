@@ -99,6 +99,14 @@ public sealed class RuntimeWorkerSession(
         Func<CommandLeaseDto, CancellationToken, Task<WorkerExecutionResult>> execute,
         CancellationToken cancellationToken = default) => RunAsync(execute, null, cancellationToken);
 
+    /// <summary>
+    /// 执行命令与进度轮询；服务端协作退出正常完成，调用方取消始终报告取消。
+    /// :param execute: 执行已领取命令的回调。
+    /// :param sampleState: 可选的实际播放状态采样回调。
+    /// :param cancellationToken: 调用方控制运行循环的取消令牌。
+    /// :returns: 运行循环与通知消费结束后的任务。
+    /// :raises OperationCanceledException: 调用方取消运行循环。
+    /// </summary>
     public async Task RunAsync(
         Func<CommandLeaseDto, CancellationToken, Task<WorkerExecutionResult>> execute,
         Func<CancellationToken, Task<WorkerStateSample?>>? sampleState,
@@ -152,6 +160,9 @@ public sealed class RuntimeWorkerSession(
             _shutdown.Cancel();
             try { await notifications.ConfigureAwait(false); } catch (OperationCanceledException) { }
         }
+
+        // 循环边界或退出清理期间的调用方取消，也必须在正常返回前报告。
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     public async Task SendAudioFinishedAsync(
