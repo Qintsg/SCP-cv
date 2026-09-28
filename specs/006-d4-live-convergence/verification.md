@@ -125,15 +125,82 @@
 - 目录循环（12 移到其子目录 11）、重名重命名和同名创建都返回 400 及明确原因，记录与实体路径不变。另对源 54 持有禁止 Delete 共享的文件锁，源移动返回**空的 HTTP 500**；原 URI/文件/摘要虽仍正确，错误反馈不可用。真实端点回归复现 `File.Move → IOException → WriteCoordinator → MoveSourceAsync → REST` 原样穿透；移动模块仅捕获补偿后重抛，与删除模块显式转换文件错误的行为不同。
 - 最小修复保留已有路径补偿和提交结果核对，仅把占用/权限异常转换为已有 400 `media_error`，明确“移动未生效”；回归同时验证库列表、原路径与下载字节。目标测试先红后绿，完整 .NET 非 Physical **318/318**；D4 新版同条件复测、PPT 原件移动/活跃拒绝及目录浏览器仍待执行，T021/T022/T023 保持未完成。
 
+## 目录/PPT 移动复测与暂停恢复检查点（2026-09-28）
+
+- D4 更新到 `130c368` 后，对源 54 重新持有禁止 Delete 共享的原件句柄：移动返回 400 `media_error`，明确说明占用/权限且“移动未生效”；源 URI、实体路径、下载 SHA-256 都不变。该同条件实机对照已补，不把最初空 500 当作最终结果。
+- 已准备源 45 原件移入 `media/QA-006-目标已整理/PPT文件/AllinOne.pptx`，原始/下载 SHA-256 保持 `2401652F...`，缓存目录未变，页 1/9 PNG 与资源清单仍可读（9 页）。默认两窗分别显示 1/9 `playing/slide_images`、Office 0；播放期间移动源与重命名所属目录均返回 400，路径/摘要不变。
+- 实屏归档 `ppt-moved-evidence-130c368.zip` 已从 D4 复制到本机忽略目录并逐张视觉复核，独立 fresh-eyes 再核对解码像素：窗口 1 与页 1 全部相同，窗口 2 与页 9 仅一个不可见微小像素差异。无新增裁切/拉伸/错页/黑屏或桌面泄露；页 1 图内右边缘内容截断、页 9 扫描小字模糊均参考导出已存在，不修改用户原稿。
+- 在两窗页图播出时上传源 56 后最终 9 页 ready、作业 Succeeded、Office 0。早期 20 秒轮询只见 queued，未观察 Running，也没有实际提交转换中移动请求；因此**不能**将“转换中移动拒绝”的 D4 证据标为完成，T022 仍留该缺口。
+- 用户要求暂停时，09:18 已认证组 shutdown=200，精确 DataRoot 停止控制面，项目/MediaMTX/POWERPNT 进程与 18443/5173/8554/9997 监听全部为 0，状态文件无（正常停机），捕获任务 Ready；原媒体、目录和快照保留。
+- 用户恢复后再次只读核验 D4 干净 `main/130c368`、console session 1、项目/Office/监听无残留；18:39 只启动无 Worker 的 Hardware ControlHost（ready=200），随后启动本轮隐藏 Vite PID 40604 供真实目录页面 QA。未发送墙面/电视电源或系统音量写操作。
+
+## 本轮非 Physical 红→绿与全量门禁（2026-09-28）
+
+- 后台转换测试扩为 19/19：转换失败/异常、显式重试、有序有效 PNG、停止/遗留作业、源和中文目录移动、转换中移动拒绝、暂时 Office 拒绝后恢复及 uncertain 禁止重试。此处是真实服务/SQLite加外部 converter 替身，不启动 Office。
+- 原生 Adapter 新增 15 条归属回归：复用及可重入用户并入、PID/启动时间错配、Run/Close 失败、补偿槽位保留、共享/不可读集合保护。相关缺陷均有红→绿对照；外部 STA/COM/Win32 边界替身不启动 WPF/Office。类型库固定 DispId 的真实调用由 T016/T017 实机承接。
+- 预案音量新增 11 条真实 Host 装配/SQLite故障回归，先证实控制器调用为空、部分完成消息缺失与提交异常穿透，再修为墙面→音量→原子提交→媒体命令；保存真实音量/静音读回。提交不明不盲目补偿或派媒体。音量实体写入/恢复尚未获得本轮授权，T025 未整体完成。
+- 独立 `runtime.ps1` 统一明确退役，四动作与默认查询均非零失败并给当前认证流程。7 条受控脚本合同先 6 失败、修后 7/7，PS5.1 语法与 UTF-8 BOM/LF通过；没有启动真实 Supervisor。
+- 本机完整 Release build 0 警告/0 错误；重构建后的非 Physical 全套 **369/369、0 跳过**（Domain 41、Contracts 18、Infrastructure 80、ControlHost 89、Windows 41、Integration 100）。前端目录 DOM/浏览器及最终 D4 部署尚在进行，不以本机绿色替代实机。
+- 后端四个独立提交 `02e170d`、`6591c90`、`30d1cdd`、`ad31e73` 已推送 GitHub 与内网 GitLab；本机直连 GitLab 502/空回复后，经临时 D4 SSH SOCKS 通道推送成功，未改远端配置。D4 服务停止后从内网 origin 快进到 `ad31e73`，Debug 构建 0 警告/0 错误、non-Physical 同样 **369/369、0 跳过**。
+- D4 重新启动控制面、API 拉起两窗 epoch 81，再显式开启实验模式打开源 45：返回受理后会话终态为 `error/office_process_unavailable`，两窗 Worker 均在线且无 pending，项目 POWERPNT PID 46088/session 1 已出现。说明新版 Application HWND 取证尚不可用，**不能**把本机 15 条 fake 归属绿色当作原生出画通过；继续记录 COM 证据诊断，不回退全局窗口猜测。
+- 此次失败后恢复实验开关 false 并认证 shutdown，重新以 JSON 查进程仅剩 ControlHost 47432，Office/Worker/MediaMTX 为 0，运行组状态文件消失。没有按进程名强杀 Office。诊断信息不得只写不可见的 WPF stderr，下一轮通过安全 OfficeResult Detail 取证。
+
 ## 待执行门禁
 
-文档收敛另发现独立 `runtime-dotnet/scripts/runtime.ps1` 仍把状态文件写在脚本目录，且 `start/restart` 不传两个显示器参数，会被新版 Supervisor 缺参拒绝。现场仍用已验证的 `run-headless.ps1` + 认证 API；该历史入口的修复/明确退役由新增 T037 承接，不能以改文档代替修代码。
+### 最新统一门禁与 D4 对照（截至 12f0094）
+
+- 本机 Release 0 警告/0 错误，完整 non-Physical **420/420、0 跳过**（Domain41、Contracts18、Infrastructure80、ControlHost124、Windows53、Integration104）；前端 **65/65**、typecheck/Web build通过，主 chunk >500 kB提醒仍未消除。Spec Kit/Redocly通过。独立变更均已推送 GitHub/GitLab，D4快进到12f0094并构建0；前一统一b35dd50的D4 non-Physical为417/417、前端65/65，typed新增3个ABI回归不以本机结果替代D4原生调用。
+- T041 的 caller取消在循环边界遗漏由真实pipe同步采样取消4/4红复现，补退出清理后的caller检查；服务端shutdown正常返回不变。8用例10轮80/80、相关16/16，本机全套后绿色。T042 同步/异步factory清全进程池使另一工厂TEMP标记消失2/2红；改为关主机后仅ClearPool自有实际连接串，HTTP认证并发回归与ControlHost默认并行124两轮均绿，未关闭并行或skip。此前native sqlite3释放异常与该竞态相符，但稳定红例直接证明的是清理越界。
+- T039 缺准备/过期/空摘要/畸形JSON不假报默认可用，各CRUD投影读取同一持久实验设置。32公开DTO/REST/SQLite回归通过；旧摘要流读取置于写门禁外，独立写等待测试先红后绿，事务内重核URI/版本/未决作业，同源匹配排队保持幂等。D4源1/2初始均false/0页，源45/56仍true/ready9；源1显式prepare后补摘要，作业2CE8CD66…Succeeded、ready9，原URI保持uploads/78f0…、原件SHA2401652F…不变；默认在窗口1实际显示第一页，Office0，未修改无效旧源2。
+- T022 再上传独立副本源72/73。首轮捕获Running但PS5 HttpClient无PatchAsync，实际未发移动，不算通过；第二轮改标准SendAsync，源73的真实作业Queued→Running（21:22:36），当场PATCH move到根=400 media_error，说明播放/转换中不可移动。后续作业Succeeded/ready9、URI仍目录9、SHA2401652F…，默认窗口2第9页实屏与参考一致、Office0。仅源72/73测试原件通过API删除，原源1/2及其快照保留；缓存图和截图作为证据留在忽略目录。
+- T040 D4第三轮目录浏览器完整通过；通知真实矩形最高bottom300.5，底栏top774.625，无相交；编辑态通知bottom170.5、按钮区top796，无相交且取消/保存可见。图片截图前新增complete/naturalWidth/decode：缩略图1920×1080完成、预览200，黑块消失，不修改缩略图生产逻辑。新夹具源69–71/目录33–36已清理。
+- 原生窗口取证先在D4确认dispatch-only getter与同对象raw2031均80020003，而该对象TypeInfo确含FRESTRICTED成员；现用已有完整PIA的Dual getter，经No-PIA正规Csc/link嵌入（无新包/版本/资产）。默认完整接口槽45/20与D4偏移360/160一致，不依赖未用office/Vbe/GAC。12f0094窗口1实际1/9→NEXT2，关闭后窗口2实际1/9→GOTO9；两张实屏分别与页图1/9对照一致，无桌面/Office功能区泄露。玩家仅x0与1920两块输出；Office编辑Frame x364/y71在DISPLAY2范围，没有控制桌面x7680或其它输出占用。源45仍SHA2401652F…；恢复实验false并组shutdown后Office0，无额外强杀。实际用户文稿并存/超时/混合DPI尚未全部复测，T016/T017仍留边界。
+
+### SRT 控制包的新因果证据（本机，不替代 D4 长稳）
+
+原日志UMSG6/负载0对应ACKACK而非H264数据或接收buffer。[协议草案](https://github.com/Haivision/srt-rfc/blob/main/draft-sharabayko-srt.md#ackack-acknowledgement-of-acknowledgement-ctrl-pkt-ackack)规定该包无CIF；[libSRT检查提交](https://github.com/Haivision/srt/commit/fcae57145c000a9e7b72aa777adb8f85c2463242)要求控制负载非零且4字节对齐，与gosrt无填充实现形成互操作冲突，不能简单称Go侧违反协议。相同SHA589E50B7…的FFmpeg与18秒合成fixture本机A/B：MTX→FFmpeg12秒300帧/0H264，抓335个16字节ACKACK/0负载，恰335条尺寸告警；FFmpeg→FFmpeg同300帧/0H264，311个20字节/4零填充ACKACK，0告警。透明relay收发长度/包数一致、无发送错/意外peer，不改媒体字节；记录在`.validation/qa-srt-interop-006/run-20260928-205816/`，所有自有进程/端口已清理。参考发布端在限时读端结束后I/O退出-5，未写成双端全成功。该证据支持控制包互操作根因，不证明正式VLC链路受同影响、D4/60分钟稳定或已修第三方库；未改正式二进制/配置、未降低日志级别，T026继续承接。
+
+### 当前目录页面与跨 Node 测试边界
+
+- D4 `c80067e` 安装 happy-dom 成功、Web 构建成功（66.3 秒）；原 Node 24.13 前端测试实际为 48 通过/13 hook 失败，不能以逐项绿勾忽略退出码 1。首次错误是 SSR 外部化的 Naive UI CJS 缺少 NTag，另有 24678 WebSocket 冲突。
+- 本机 Node 24.15 与 D4 24.13 的 CJS 分析差异有官方版本依据；[Node 24.14 发布记录](https://nodejs.org/en/blog/release/v24.14.0) 记载分析器替换。用校验过 SHA 的官方 24.13 单 exe 在本机准确复现 13 条失败，再以共享真实组件加载器只解析 naive-ui/vueuc ESM、ws=false 改为完整 61/61；24.15 也为 61/61、类型检查通过。该对照支持环境差异根因，D4 新加载器复测仍待部署。
+- 真实 Chromium 在 D4 控制面无 Worker 条件下，以 `media_folder_qa.py` 连跑两轮：中文根/两级目录、同名上传不覆盖、源移动、父目录重命名、子树搬迁后页面刷新与三次下载摘要、空名/同名 400反馈、手机无横向溢出、PPT queued/原件保留说明均通过；每个 UI move/rename PATCH 恰好一条。两轮仅清理各自新建的源 63–68、目录 25–32，原源/目录/快照保持。
+- 截图等待过渡后，PPT 编辑抽屉已完整进入视口，先前半截是 QA 截取过早。稳定帧仍有手机通知遮挡底栏/抽屉 footer，T040 承接；缩略图黑块需先核图像 decode，不据此声称实体播放黑屏。T021/T038 完成，T023 更广视觉矩阵未完成。
+- D4 旧源 1/2（没有准备状态、页数 0）却返回 is_available=true，默认 OPEN 才拒绝；旧源元数据、空摘要与显式重试恢复由 T039 承接，没有删除原件或启动静默批迁。
+- Office `edae159` 精确实机证据为 application/com_hwnd 的 COMException `0x80020003`，而不是 cast/IsWindow 阶段；D4 只读 MSPPT.OLB 与本机一致（2.12/SYS_WIN32、2031/2010 PROPERTYGET/FRESTRICTED/VT_I4）。下一步只在同一对象比较 raw Invoke/TypeInfo，保持原拒绝，不以 ABI 诊断成功替代归属验证。
+
+前端新增目录 5 条、菜单 8 条真实 Vue/Naive UI DOM 回归，均有红→绿对照。目录输入
+原生 aria、pending 回车重入和删除失败保留已修复；菜单统一 action/select，鼠标/键盘一次、
+禁用零次，应急 HTTP 仅替身。完整 pnpm test **61/61**、typecheck 与 build:web 通过，
+主包 >500 kB 提醒仍保留。新增 happy-dom 仅用于测试；CERNET 跳转节点 tarball 404 后，
+获用户允许临时用官方源正常安装，仓库 `.npmrc` 始终仍是 CERNET，未提交 Node 锁文件。
+
+Office 安全 Detail 传播新增 4 条公共路径回归，本机完整重构建后非 Physical 为
+**373/373、0 跳过**；诊断版 `edae159` 已推送两处远端并在 D4 快进/构建（退出 0）。
+Application 真实证据失败的精确阶段尚待下一次 OPEN，门禁和取证顺序未放宽。
+
+目录浏览器进一步发现 Dropdown 动作重入：受控真实 Naive UI DOM 中鼠标事件为
+`select→action→action`，键盘为 `select→action`，禁用叶子仍触发一次 action。
+根因是 `option.props.onClick` 被 Dropdown 自身 mergeProps 执行，同时页面的 onSelect 又手动
+调用同一回调；媒体菜单和应急菜单均有此模式。D4 已停机，T038 登记修复；任何真实应急
+电源/重启按钮均未因本轮测试被点击。菜单稳定帧等待与此重复派发是两个不同问题。
+
+独立 `runtime-dotnet/scripts/runtime.ps1` 已按 T037 明确退役并经 7 条非物理合同验证，现场入口仍为 `run-headless.ps1` + 认证 API；D4 下次更新将取得同一退役脚本。
 
 - [x] D4 数据快照
-- [x] D4 更新与构建（截至本轮 `6537375`，后续改动须再次更新）
+- [x] D4 更新与构建（截至本轮 `12f0094`，后续代码改动须再次更新）
 - [ ] 窗口 1/2 实体显示器落位、停启和两个固定预设
 - [ ] 多源实体画面与直播源登记/解码
 - [ ] PPT 原件/页图/默认与实验放映、Office 归属
 - [ ] 目录/删除一致性与预案音量
 - [ ] 两窗 1000/100 基准和 60 分钟混合稳定性
 - [ ] 桌面/手机/可用封装端 UI、文档和停机恢复
+
+## 本轮收口停机检查点（2026-09-28 21:34）
+
+认证组shutdown后仅按已记录命令行停止本轮Vite PID54300，再按精确DataRoot停止
+ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进程0，
+18443/5173/8554/9997监听0，runtime-processes.json无（正常停机）；捕获任务未运行。
+本机和D4临时浏览器Cookie已移除，开发口令文件、原媒体、原快照和QA截图/控制包证据均保留。
+恢复实验false、两窗idle/volume100/loopfalse，不改系统音量或墙面/电视电源。
+这只是本轮恢复基线，不代替仍未完成的T029/T030/T031/T034最终门禁。

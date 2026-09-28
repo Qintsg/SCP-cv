@@ -16,14 +16,14 @@
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
 | 拼接屏画面映射（视频墙） | `PUT /api/video-wall/layout/` 保存草稿；`POST /api/video-wall/layout/apply/` 或 `/presets/{preset}/apply/`；预案兼容入口 | `VideoWallLayoutService`/`ScenarioService` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`；仅两个既有预设可下发，未知手动映射在下发前拒绝 | `SimulationVideoWallController`；未知布局同样拒绝 | `VideoWallLayoutServiceTests`、`VideoWallGoldenPacketsTests`、`HostHardwareIntegrationTests`；新映射帧待现场抓包，不能把本机预览或回环称为实体画面证据 |
-| 系统音量 / 系统静音 | `PATCH /api/volume/` | `RuntimeStateService.cs:159` → `ISystemAudioController.Apply` → `WindowsCoreAudioController` | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；**预案激活只落库不推硬件**，见坑 2 |
+| 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`；3/4 请求拒绝、旧命令不重放 |
 | PPT 上传转换 / 实验性 PowerPoint 放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 重试；`PATCH /api/settings/powerpoint/` 显式开启后才允许原生放映 | `PptConversionHostedService` → `PowerPointHost` STA 导出 PNG；播放器默认 `slide_images`，实验开关只影响后续打开 | Simulation 不启动 Office，作业保持待处理 | `PowerPointSlideExportTests`、`PptConversionHostedServiceTests`、`PowerPointSettingsEndpointTests`；D4 实机转换/放映仍待复测 |
 | 背景音频（独立列表） | `POST\|PATCH\|DELETE /api/background-audio/*` | `BackgroundAudioService` → 命令队列（`CommandTargetKind.Audio`）→ Named Pipe → `AudioWorker` | `QueuedCommandWakeNotifier`（仅排队） | `docs/实机测试结论.md` 背景音乐段 |
 | 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 2026-09-27 已在用户授权后发送拼接屏 ON→OFF→ON 与电视各两次 toggle；API 只确认写出，物理电源状态未独立读回，见 `docs/qa/003-full-regression-20260927.md`；`appsettings.json` §Devices |
 | MediaMTX 推拉流 / 直播 | `POST /api/sources/streams/` 登记、`PATCH /api/sources/{id}/` 更新、`POST /api/playback/{windowId}/open/` 打开；在线探测不代表出画 | MediaMTX 进程（`8890`/`9997`/`8554`）→ VLC PlayerWorker×2；写队列影响 RTSP 完整性 | 无进程，探测失败即离线 | `specs/006-d4-live-convergence/verification.md`；D4 独立解码与交互桌面截图 |
-| 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×2 / AudioWorker / PowerPointHost / MediaMTX | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `docs/qa/003-workstation-runbook.md` |
+| 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×2 / AudioWorker / PowerPointHost / MediaMTX；独立 `runtime.ps1` 已退役，避免旁路 | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `RuntimeScriptContractTests`、`docs/qa/003-workstation-runbook.md` |
 
 核对程度说明：表内 `file:line` 是 2026-09-19 逐个 grep 出来的代码位置。其中「拼接屏画面映射」「系统音量」「显示器拓扑」「设备电源」四行我读到了完整链路（入口 → 接口 → 实现 → 目标地址）；「播放器窗口内容」「PowerPoint」「背景音频」「MediaMTX」「进程组生命周期」五行的**下游部件**列来自 003 规范与既有 QA 记录，只核到了入口与 Hardware 注册，未逐行走完进程侧链路——首次改动这几条时请顺便复核本表。
 
@@ -48,12 +48,12 @@
   - 对每个硬件接口（`IVideoWallController`、`ISystemAudioController`、`IDisplayTopologyProvider`、`IDeviceCommandTransport`）列出实现与调用点；需要历史对照时查看清理前提交 `e822be9` 中的旧 Python 调用者。
 - **现状**：已修复（`runtime-dotnet/src/ScpCv.Infrastructure/VideoWall/VideoWallController.cs`），规范见 `specs/004-video-wall-control/`。
 
-### 坑 2 - 硬件副作用只接了单条入口（**未修复**，待确认）
+### 坑 2 - 硬件副作用只接了单条入口（2026-09-28 修复，D4 待复测）
 
 - **症状（2026-09-27 D4 实机复现）**：Hardware 模式下激活带音量的预案（`volume_state=set, level=20`）返回成功，运行态音量变为 20、物理系统音量仍为 100；直接 `PATCH /api/volume/` 能实际改变 Core Audio。
 - **根因**：`ISystemAudioController.Apply` 全仓库只有 `RuntimeStateService.SetSystemVolumeAsync`（`RuntimeStateService.cs:159`，入口 `PATCH /api/volume/`）会调用；`ScenarioService.ActivateAsync` 只把 `runtime.VolumeLevel` 写进库。清理前提交 `e822be9` 中的旧 Python `activate_scenario` 会调用物理音量设置。
 - **检出方式**：对每条硬件接口反查全部调用点，再对照旧实现的调用者数量——「旧实现有 N 个入口、新实现只有 1 个」就是漏接线。
-- **现状**：代码与实机证据均明确，**尚未修复**，由 003/T137 承接；详情见 `docs/qa/003-full-regression-20260927.md`。
+- **现状**：006/T024/T025 已补预案路径的真实 Host 装配和 SQLite 提交故障回归，新增 11/11。按墙面→系统音量→状态提交→媒体命令顺序执行，外部副作用不占数据库写锁；控制器不可用不落库，音量/静音保存读回值，三态 unset/empty 不写硬件。提交回执异常返回 `scenario_state_persistence_failed`，明确已发生动作，不盲目补偿或重放。历史复现见 `docs/qa/003-full-regression-20260927.md`；新版 D4 系统音量改变、读回与恢复仍待本轮授权，不能用假控制器绿色代替声卡证据。
 
 ### 坑 3 - 两个「拼接屏」不是一回事
 
@@ -158,12 +158,12 @@
 - **检出方式**：同时核对 OPEN 完成结果、API `current_slide`、实体首屏以及第一次 NEXT 的结果；只断言总页数或 `playing` 会漏掉错误。
 - **现状**：COM 在放映窗口就绪后读取实际 `CurrentShowPosition`，经 Office IPC 上报；Worker 无观测值时按 1-based 安全兜底。4 条投影回归与 D4 实机验证通过：OPEN 1/9、NEXT 2/9，CLOSE 后目标屏回黑。
 
-### 坑 18 - Office 进程由项目启动不等于退出时仍归项目独占（2026-09-27 待收敛）
+### 坑 18 - Office 进程由项目启动不等于退出时仍归项目独占（2026-09-28 补回归）
 
 - **症状**：运行组 shutdown 返回成功、七个自有进程全部退出，但 PowerPoint 自动化进程仍在；若仅凭它在项目 OPEN 时出现便强杀，可能中断后来加入的用户文稿。
 - **根因**：Office COM 可能让项目文稿和桌面用户文稿共享进程；启动时的 PID/时间只证明历史归属，不证明当前 `Presentations` 集合仍全部自有。SSH 所在 session 0 的 `MainWindowHandle=0` 也不能证明交互桌面没有窗口。
 - **检出方式**：停机后在交互会话只读枚举每份 Presentation 的路径、保存状态及放映窗口，和项目已登记源逐项比对；对用户文稿保留进程，不按名称或进程树杀 Office。
-- **现状**：D4 本轮确有两份桌面用户文稿加入同一 Office 实例，项目 shutdown 正确保留它；用户明确授权后才定向关闭该实例。T133 仍需在没有用户文稿的清洁条件下验证自有 Office 退出，并补自动化归属/超时回归。
+- **现状**：历史 D4 两份用户文稿共享实例时保留 Office，获准后才定向关闭。006 的清洁自有实例协作退出已实测；新增 15 条非 Physical 公共 Adapter 回归，每次 Open 及 COM 可重入阶段重查用户文稿，本次 Run 返回的窗口须匹配当前 Application PID/启动时间。Close 补偿失败保留自有槽位，集合不可读/用户并存不 Quit；不再全局猜测 HWND。固定 DispId 的真实 COM 调用及新版并存/超时矩阵仍由 T016/T017 承接。
 
 ### 坑 19 - 两窗运行组不能只缩减启动数量（2026-09-27 修复）
 
@@ -249,12 +249,61 @@
 - **检出方式**：截图前等待确认层 `hidden`、滚动回顶部；重复相同错误时定位最新消息，不能让严格定位器的重复文本异常冒充产品故障。
 - **现状**：D4 浏览器回归增加稳定帧条件及桌面/手机截图；重复持久错误遮挡手机是另一个真实 UX 问题，已用行为回归修为相同无按钮错误合并，新版 D4 连续两次相同失败仅一条通知，截图与真实响应均通过。
 
-### 坑 31 - 文件移动异常保住原件但穿透 REST 为无内容 500（2026-09-28 修复待 D4 复测）
+### 坑 31 - 文件移动异常保住原件但穿透 REST 为无内容 500（2026-09-28 修复）
 
 - **症状**：D4 文件锁定时移动源返回空 HTTP 500；磁盘和库路径没变，页面却只能看到泛化失败，无法判断是否已移动。
 - **根因**：`MoveSourceAsync` 的 `File.Move` 抛 IOException，补偿分支完成后原样重抛；REST 仅映射 `MediaServiceException`，没有进入可读 JSON 错误合同。
 - **检出方式**：用真实文件句柄锁定受管理上传原件，经 REST 移动，同时验证状态码、JSON 原因、列表 URI 和下载字节；不要以“原件没丢”掩盖错误反馈缺口。
-- **现状**：保留提交核对/补偿，文件占用/权限失败转换为已有 400 `media_error`，说明“移动未生效”；真实端点回归先红后绿，非 Physical 318/318。D4 新版本同条件和浏览器反馈仍待复测。
+- **现状**：保留提交核对/补偿，文件占用/权限失败转换为已有 400 `media_error`，说明“移动未生效”；真实端点回归先红后绿，非 Physical 318/318。D4 `130c368` 同条件移动源 54 返回可读 400，原 URI、原件摘要与下载保持不变；目录浏览器更广矩阵由 006/T023 承接。
+
+### 坑 32 - 旧独立运行组入口绕过当前身份与两窗门禁（2026-09-28 退役）
+
+- **症状**：`runtime.ps1` 把状态放脚本目录，启动不传明确的两个显示器；旧状态/停机与 ControlHost DataRoot 不同，容易误报或操作另一组。
+- **根因**：历史入口直接调用 Supervisor，没有 ControlHost 分配的 epoch、命名管道身份、Worker ready/arm 与协作退出通知。仅补显示器参数仍不能满足协议。
+- **检出方式**：受控替身截断所有进程/HTTP 操作，验证四动作及默认动作必须失败；同时检查源码不含 Supervisor 调用与状态读写、PS5.1 语法及 BOM/LF。
+- **现状**：独立入口统一非零失败并提示 `run-headless.ps1 -DataRoot` 加认证 API；新合同 7/7 先红后绿，没有启动真实运行组。当前启停与状态仍由 ControlHost 管理。
+
+### 坑 33 - 菜单 DOM 点击与语义选择同时执行业务（2026-09-28 修复）
+
+- **症状**：真实 Naive UI DOM 鼠标为 `select→action→action`，键盘仅一次；禁用叶子仍可能执行业务，媒体/目录及应急菜单均受影响。
+- **根因**：`option.props.onClick` 合并到 DOM 点击，页面的 `onSelect` 又调用同一函数。只给选项加 disabled 不会保护另一个外部点击回调。
+- **检出方式**：挂载实际 Vue/Naive UI，在外部 HTTP 边界记录请求；断言鼠标/键盘各一次、禁用零次，不能只校验最后列表状态。
+- **现状**：业务动作迁到独立 `action`，只由带 disabled/show 门禁的 select 派发，保留样式 props。8 条真实 DOM 回归先红后绿；应急测试全部替换 HTTP，没有操作现场电源/运行组。完整前端 61/61、类型与 Web 构建通过，D4 目录矩阵待继续。
+
+### 坑 34 - 目录输入属性和弹窗异步返回值落在错误层（2026-09-28 修复）
+
+- **症状**：原生 textbox 缺少 aria-label/aria-invalid；创建 pending 时回车再次 POST；删除失败时确认框自动关闭。
+- **根因**：输入 aria 属性落 wrapper，创建没有等待门禁，删除的 void positive 回调让组件库默认关闭。
+- **现状**：拆出 `FolderDialogs`，原生 input-props 承接输入属性，创建等待阻止回车重入，删除由业务成功状态关窗。5 条 DOM 行为回归先红后绿；首次级联菜单布局时序与此不同，QA 在父弹出完成后再悬停，不以强制点击冒充稳定。
+
+### 坑 35 - 旧 PPT 缺页图仍标可用，显式重试又不能恢复（2026-09-28 修复）
+
+- **症状**：D4 旧源1/2没有准备状态/页数0却is_available=true，默认打开才拒绝；空摘要或成功但损坏的清单重试无法恢复。
+- **现状**：投影复用默认选择器，全部CRUD读取同一实验门禁；畸形JSON、空摘要、过期/残缺清单明确未准备。显式重试单源补摘要在写门禁外流读，事务内核URI/版本/未决作业，并发匹配queued幂等，不启动时扫库。32公开回归绿；D4旧有效源1恢复ready9、默认出画且原件URI/SHA保持，无效源2未改。
+
+### 坑 36 - 取消只靠 await 抛异常会遗漏循环边界（2026-09-28 修复）
+
+- **症状**：caller取消有时正常返回，旧全套进度用例偶发未抛OCE；单独复跑却绿色。
+- **根因**：while条件看到linked取消直接退出，没有最终caller检查；测试也把server预算、caller取消和pipe关闭混在一起。
+- **现状**：正常退出清理后再次caller.ThrowIfCancellationRequested，服务器协作shutdown仍正常完成。公共pipe固定事件顺序旧代码4/4红，8用例10轮80/80；原严格取消断言保留，不接受“返回或取消都算成功”。
+
+### 坑 37 - 独立测试工厂释放时清理了全进程 SQLite 池（2026-09-28 修复）
+
+- **症状**：ControlHost并行套件在认证Open时偶发native sqlite3已释放，孤立复跑通过。
+- **根因/证据**：GUID独立库仍调用ClearAllPools，影响其它工厂；provider的pool借出/激活与泄漏回收存在可交错窗口。TEMP标记跨工厂释放稳定丢失2/2红，直接证明越界清池（不伪称确定性重放native异常）。
+- **现状**：先关自有主机、仅ClearPool实际自有连接串，精确目录清理幂等；含HTTP认证并发3/3，ControlHost默认并行124两轮绿，不串行化测试、不skip。
+
+### 坑 38 - 受限 Office HWND 成员不能走部分 dispatch-only 投影（2026-09-28 修复）
+
+- **症状**：精确对象getter与同对象raw IDispatch2031都80020003，而TypeInfo确有该成员。
+- **根因**：Application/SlideShowWindow HWND标FRESTRICTED；已有完整PIA使用Dual槽而非当前dispatch-only。只给getter加DispId或换语言不能解决已证实的同形态Invoke失败。
+- **现状**：使用仓库已有PIA完整getter，正规Csc/link嵌入TypeIdentifier/VtblGap，槽45/20与D4偏移360/160相符；无新包/资产，部署不依赖未用office/Vbe/GAC。D4两窗1/9及9/9实际出画/导航，恢复默认后协作shutdown Office0；仍只用本次Run对象并核PID/start/Count，不恢复全局猜窗。
+
+### 坑 39 - SRT 的 INVALID SIZE 不一定是媒体帧或 buffer 太小（2026-09-28 定位待 D4 长稳）
+
+- **症状**：独立解码0H264错但大量UMSG6/payload0告警，升级MediaMTX仍存在。
+- **证据/边界**：官方ACKACK草案无CIF，较新libSRT却前置拒绝零控制负载；同SHA FFmpeg本机A/B中MTX发335个16字节ACKACK对应335告警，FFmpeg对端发311个20字节填充包则0告警，同为300解码帧。不是pkt_size/rcvbuf的尺寸0；控制反馈丢弃也不能当纯噪声。完整primary链接、原始包/指标及未闭环项见006 verification。
+- **现状**：未降日志级别、未修改正式二进制/配置；该本机包级因果证据不等同D4/VLC/60分钟通过，继续T026。
 
 ## 3. 相关沉淀点（不在这里重复）
 

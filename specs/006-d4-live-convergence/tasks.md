@@ -40,7 +40,7 @@
 
 **Independent Test**: 多页 PPT 上传、页图、翻页与关闭在窗口 1/2 均有实体证据；打开/关闭实验开关时核对 Office PID 和用户文稿。
 
-- [ ] T014 [P] [US2] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/PptConversionHostedServiceTests.cs` 与 `runtime-dotnet/tests/ScpCv.Windows.Tests/PowerPointSlideExportTests.cs` 补转换失败、停止、原件移动、用户 Office 并存和放映归属回归。
+- [X] T014 [P] [US2] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/PptConversionHostedServiceTests.cs` 与 `runtime-dotnet/tests/ScpCv.Windows.Tests/PowerPointOwnershipTests.cs` 补转换失败、停止、原件移动、用户 Office 并存和放映归属非 Physical 回归；真实 COM 证据由 T016/T017 承接。
 - [X] T015 [US2] 在 D4 使用 `C:\Users\qintsg\Desktop\Resources` 的只读副本或等价测试文稿上传，核对原件 SHA-256、页数、PNG 顺序和图片端点；在窗口 1/2 默认模式验证第一页、前后/指定页和无 Office 放映窗口。
 - [ ] T016 [US2] 在 D4 显式启停 `PowerPointSettingsService` 的实验模式，验证两个目标窗口的原生放映、关闭、失败状态与用户文稿保护；定位真实 Office/HWND/STA 缺陷并在 `ScpCv.PowerPointHost/Interop/`、`ScpCv.ControlHost/Ipc/` 修复。
 - [ ] T017 [US2] 在 `runtime-dotnet/src/ScpCv.Supervisor/Runtime/ShutdownCoordinator.cs` 与 `ScpCv.PowerPointHost/Interop/PowerPointComAdapter.cs` 核对项目 Office 自有实例的协作退出、超时和共享用户文稿保护，并把 PID/启动时间与残留证据写入 `docs/qa/003-office-interop.md`。
@@ -54,8 +54,8 @@
 
 - [X] T019 [P] [US3] 在 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/MediaStorageLayoutTests.cs` 和 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/MediaEndpointTests.cs` 写单源删除文件占用/拒绝访问的失败回归，先证实现有“删库成功、文件残留”问题。
 - [X] T020 [US3] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.cs` 与相应 partial 文件中修复单源删除的文件/数据库一致性和可诊断清理语义，避免吞掉文件删除错误；补同条件复测。
-- [ ] T021 [US3] 在 D4 `D:\SCP-cv\.validation\t129-workstation\media/` 执行根目录、中文子目录、重复文件名、源移动与文件夹移动，逐步核对 D4 物理路径、下载摘要、旧路径及页面刷新。
-- [ ] T022 [US3] 在 D4 对已准备 PPT 先移动原件再验证页图、下载和再次播放；正在播放/转换时尝试移动，确认拒绝且原件与数据库仍一致。
+- [X] T021 [US3] 在 D4 `D:\SCP-cv\.validation\t129-workstation\media/` 执行根目录、中文子目录、重复文件名、源移动与文件夹移动，逐步核对 D4 物理路径、下载摘要、旧路径及页面刷新。
+- [X] T022 [US3] 在 D4 对已准备 PPT 先移动原件再验证页图、下载和再次播放；正在播放/转换时尝试移动，确认拒绝且原件与数据库仍一致。
 - [ ] T023 [US3] 在 `frontend/src/features/sources/SourcesView.vue` 及本机/D4 浏览器对目录树、真实路径、冲突、等待与错误反馈做桌面和手机布局回归，修复发现的可用性问题。
 
 ## Phase 6: User Story 4 - 长稳与故障恢复 (P1)
@@ -64,7 +64,7 @@
 
 **Independent Test**: 预案音量、流解码、视频资源、Office 归属与 60 分钟混合场景均有可复现前后对照；两窗 1000/100 基准无旧窗请求。
 
-- [ ] T024 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/HostHardwareIntegrationTests.cs` 与 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/` 写预案音量真实控制器调用/失败不落库回归；只做无物理副作用的自动化故障注入。
+- [X] T024 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/HostHardwareIntegrationTests.cs` 与 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/` 写预案音量真实控制器调用/失败不落库回归；只做无物理副作用的自动化故障注入。
 - [ ] T025 [US4] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Scenarios/ScenarioService.cs` 修复预案音量只落库的假成功，复用硬件控制边界并处理墙面、音量与状态的失败顺序；若获准，在 D4 记录并恢复系统音量后实体复测。
 - [ ] T026 [P] [US4] 在 D4 `.validation/` 用受控 RTSP/SRT 源做独立解码与窗口 1/2 实体播放，对旧报告的损坏帧和 `INVALID SIZE` 告警定位到发布端、MediaMTX、传输或 VLC；在相关 `runtime-dotnet/src/ScpCv.Infrastructure/Streams/`、`ScpCv.PlayerWorker/` 或配置中修复并复测。
 - [ ] T027 [P] [US4] 在 `runtime-dotnet/tests/ScpCv.Windows.Tests/` 为视频自然结束、循环、同源重开与释放增加回归；D4 重做短视频重复切源并采集私有内存、句柄、画面帧变化，定位旧增长。
@@ -80,7 +80,12 @@
 - [ ] T034 在 D4 协作停机并核对精确项目 PID/端口/Office、墙面预设、电源和系统音量恢复测试前状态；仅清理本轮已登记测试数据，原始媒体和完整快照保留。
 - [ ] T035 对 `spec.md`、`plan.md`、`tasks.md` 与实际结果执行规范收敛/一致性复核，未满足项继续追加并实现；不得把未知墙面帧或缺失实机证据标为完成。
 - [ ] T036 检查 `git diff --check`、文件头/行数、忽略数据与敏感信息；按独立可审查块提交并推送既有 `origin`、`gitlab`，记录提交与剩余外部依赖到 `verification.md`。
-- [ ] T037 在 `runtime-dotnet/scripts/runtime.ps1` 补独立入口的明确状态路径、两个显示器参数及缺参拒绝回归，或明确退役已被 `run-headless.ps1` 与认证 API 替代的启动入口；现有脚本不能继续宣称可直接启动当前两窗运行组。
+- [X] T037 在 `runtime-dotnet/scripts/runtime.ps1` 补独立入口的明确状态路径、两个显示器参数及缺参拒绝回归，或明确退役已被 `run-headless.ps1` 与认证 API 替代的启动入口；现有脚本不能继续宣称可直接启动当前两窗运行组。
+- [X] T038 在 `frontend/src/features/sources/` 与 `frontend/src/layouts/EmergencyMenu.vue` 修复 Dropdown DOM props 与 onSelect 双重派发及禁用绕过；以真实 Naive UI DOM 加受控动作回调先红后绿验证鼠标/键盘各一次、禁用零次，再继续 D4 目录浏览器矩阵，不在测试中点击真实应急电源入口。
+- [X] T039 依据 FR-004/FR-005/FR-008 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.Mapping.cs` 及独立公开接口回归修复旧 PPT 缺页图仍投影可用的问题，保持已准备页图/PDF/流及实验模式语义；D4 通过公开接口显式重试恢复旧有效原件并核对摘要，不删除原件或静默批量迁移。
+- [X] T040 依据 SC-006 在 `frontend/src/App.vue` 及通知布局相关组件修复手机稳定帧通知遮挡底栏/编辑抽屉按钮；复用导航/安全区令牌并保持桌面布局，以真实 DOM 回归和 D4 浏览器几何/截图复测，不将图片加载或过渡态黑块误报为播放失败。
+- [X] T041 依据 FR-007/FR-008 在 `runtime-dotnet/src/ScpCv.Contracts/Runtime/RuntimeWorkerSession.cs` 与公共 Named Pipe 回归消除调用方取消/服务端退出竞态，保持服务端协作 shutdown 正常完成、调用方取消契约明确，多轮及全套验证不可仅放宽断言。
+- [X] T042 依据 FR-008/SC-006 在 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/` 的测试工厂验证 SQLite pool 清理隔离，修复并行 Open/Dispose 偶发对象已释放；只清理自有池和精确临时目录，不串行化或跳过全套测试掩盖问题。
 
 ## Dependencies & Execution Order
 

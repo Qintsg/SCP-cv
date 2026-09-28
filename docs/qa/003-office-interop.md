@@ -1,6 +1,13 @@
 # 003 Office/窗口互操作验证记录
 
-状态：D4 已完成动态放映/导航/关闭的局部实机验证；用户 Office 并存时的持续归属清理、混合 DPI 和长导出仍待验证。
+状态：D4 当前12f0094已验证精确Dual窗口取证、两窗原生出画/导航与清洁自有实例协作退出；用户并存异常矩阵、混合 DPI 和长导出仍待验证。下方2026-09-25/27四窗记录是历史证据，当前仅使用大屏窗口1/2。
+
+## 2026-09-28 两窗当前实现与验证边界
+
+- 后台转换编排的非 Physical 回归为 19/19，包含失败重试、停止/遗留 running、原件移动、页序与暂时 Office 拒绝；默认两窗页图播出与下载摘要已有 D4 证据，详见 006 verification。
+- 原生 Adapter 新增 15/15 公共路径归属回归：复用 Application、Open/Run 可重入时用户并入都拒绝；只关闭本次自有文稿，失败补偿无法关闭则保留槽位供协作 Dispose 重试。用户文稿或集合不可读时不 Quit。
+- 从当前Application及本次`SlideShowSettings.Run()`返回对象读HWND，再核PID/启动时间。D4的2031/2010为受限成员：dispatch-only及raw Invoke均80020003，现使用已有完整PIA Dual槽45/20、编译器嵌入interop，未新增依赖/资产或全局猜窗。D4窗口1实际1/9→NEXT2、窗口2实际1/9→GOTO9，截图与参考对应，恢复实验false后shutdown Office0；用户并存与更广矩阵仍由006承接。
+- 无证据时明确返回 `office_process_unavailable`、`slideshow_hwnd_unavailable` 或 `slideshow_owner_mismatch`；不降低门禁。新版 D4 原生出画、用户文稿并存和超时/混合 DPI 由 006/T016/T017 继续承接。
 
 ## 已覆盖的软件边界
 
