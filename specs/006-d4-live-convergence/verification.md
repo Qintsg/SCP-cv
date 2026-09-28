@@ -234,3 +234,11 @@ ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进
 
 - 输出图已分别目视核对：图片75恢复为原“QA IMAGE STABILITY”，文稿76第9页为对应原末页拼图。早先`fault-player-2db189c-recovered`截图异步任务尚未完成就紧接切PPT，窗口1记录了黑色过渡，不能当稳定恢复成功或产品黑屏结论；随后在同一构建重开源39/40，等待捕获任务Ready且唯一capture JSON落盘，再做`fault-recovery-stable-2db189c-2306`，两窗稳定图均与预期源对应。这一QA时序问题不放宽实际播出门禁。
 - 当前构建旧窗口3/4共18次GET/open/control/close/loop/volume/mute/navigate/ppt-media均拒绝，前后command_records数量差0，结果在D4`qa-006/retired-window-http-2db189c.json`。该用例尚未覆盖旧预案/显示器选择的完整矩阵，T013保留未勾选。
+
+- 23:11 本轮受认证组shutdown后按同一DataRoot停止ControlHost PID52236、清理其启动任务；精确核对项目/MediaMTX/PowerPoint进程0，TCP18443/5173/8554/9997与UDP8890均0，状态文件无，capture/mixed任务Ready。两窗loopfalse/volume100与实验false保持，未触碰系统音量或墙面/电视。QA75/76副本已删除、失效流74保留供T045同条件复测，原件1/45和完整起点快照保留。
+
+### T045 本机显式原生回归的当前边界（未交付草稿）
+
+- 真实回环服务器仅OPTIONS200/DESCRIBE404，无音视频载荷，隐藏Host的公共Execute/Sample回归先红：预期error、实际playing。独立原生探针记录Play True、NothingSpecial→Opening→Ended、EncounteredError与Stopped；没有假称周期轮询捕获到了短暂Error。当前两个404回归及纯状态/页码/生命周期子集转绿，但还不是完整交付。
+- 同源重开／STOP→PLAY后循环的首个fixture同时`--no-video/--no-audio`禁用了所有ES，时间轴为0并立即结束，误名`native-loop-and-reopen-green.trx`实际2/4失败，明确排除。改为测试-only CPU解码＋dummy输出后，`native-cpu-dummy-valid-batch.trx`仅有两个RTSP Passed，testhost发生原生崩溃、整体Aborted/退出1；不能当4/4绿，也不能在尚未区分测试配置/WPF/生命周期原因时宣称产品已修好。
+- 原生测试均Category Physical、显式选类，本机不Show/无真实声卡或图像输出，产品默认LibVLC配置未改。草稿保持未提交/未部署，正做逐例隔离／crash证据及独立只读寿命复审；正式两窗恢复、热切换及60分钟保持未执行。
