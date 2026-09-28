@@ -41,7 +41,12 @@ public sealed partial class MediaSourceService(
         }
 
         var sources = await query.OrderBy(source => source.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
-        return sources.Select(ToSourceDto).ToArray();
+        var experimental = sources.Any(source => source.SourceType == MediaSourceType.Presentation &&
+                                                  !Path.GetExtension(source.Uri).Equals(".pdf", StringComparison.OrdinalIgnoreCase)) &&
+                           await database.RuntimeStates.AsNoTracking()
+                               .Select(state => state.ExperimentalPowerPointEnabled)
+                               .SingleAsync(cancellationToken).ConfigureAwait(false);
+        return sources.Select(source => ToSourceDto(source, experimental)).ToArray();
     }
 
     public async Task<MediaSourceDto> AddLocalAsync(
@@ -104,7 +109,7 @@ public sealed partial class MediaSourceService(
                 };
                 database.MediaSources.Add(source);
                 await database.SaveChangesAsync(token).ConfigureAwait(false);
-                return ToSourceDto(source);
+                return await ProjectSourceAsync(source, database, token).ConfigureAwait(false);
             },
             cancellationToken);
     }
@@ -147,7 +152,7 @@ public sealed partial class MediaSourceService(
                     _paths.EnsureNoReparsePoint(targetFolder);
                     if (source.FolderId == effectiveFolder &&
                         string.Equals(Path.GetDirectoryName(managed), targetFolder, StringComparison.OrdinalIgnoreCase))
-                        return ToSourceDto(source);
+                        return await ProjectSourceAsync(source, database, token).ConfigureAwait(false);
                     Directory.CreateDirectory(targetFolder);
                     var originalName = source.OriginalFilename.Length > 0
                         ? source.OriginalFilename
@@ -163,7 +168,7 @@ public sealed partial class MediaSourceService(
                     }
                 }
                 source.FolderId = effectiveFolder;
-                return ToSourceDto(source);
+                return await ProjectSourceAsync(source, database, token).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception exception)
@@ -173,7 +178,8 @@ public sealed partial class MediaSourceService(
                 await using var check = await contextFactory.CreateDbContextAsync(CancellationToken.None).ConfigureAwait(false);
                 var committed = await check.MediaSources.AsNoTracking().Include(source => source.PptResources)
                     .SingleOrDefaultAsync(source => source.Id == sourceId, CancellationToken.None).ConfigureAwait(false);
-                if (committed?.UploadedFile == targetPath) return ToSourceDto(committed);
+                if (committed?.UploadedFile == targetPath)
+                    return await ProjectSourceAsync(committed, check, CancellationToken.None).ConfigureAwait(false);
                 File.Move(targetPath, originalPath);
             }
             if (exception is IOException or UnauthorizedAccessException)
@@ -227,7 +233,7 @@ public sealed partial class MediaSourceService(
                     source.KeepAlive = preheatEnabled.Value;
                 }
 
-                return ToSourceDto(source);
+                return await ProjectSourceAsync(source, database, token).ConfigureAwait(false);
             },
             cancellationToken);
 

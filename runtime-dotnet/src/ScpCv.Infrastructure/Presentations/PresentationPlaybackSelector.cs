@@ -21,11 +21,14 @@ public static class PresentationPlaybackSelector
         try
         {
             using var metadata = JsonDocument.Parse(source.MetadataJson);
-            if (metadata.RootElement.TryGetProperty("slide_images", out var images) &&
+            if (metadata.RootElement.ValueKind == JsonValueKind.Object &&
+                metadata.RootElement.TryGetProperty("slide_images", out var images) &&
                 images.ValueKind == JsonValueKind.Object &&
                 ReadString(images, "status") == "ready" &&
+                !string.IsNullOrWhiteSpace(source.ContentDigest) &&
                 string.Equals(ReadString(images, "source_digest"), source.ContentDigest, StringComparison.OrdinalIgnoreCase) &&
-                images.TryGetProperty("page_count", out var count) && count.TryGetInt32(out var pages) &&
+                images.TryGetProperty("page_count", out var count) && count.ValueKind == JsonValueKind.Number &&
+                count.TryGetInt32(out var pages) &&
                 pages is >= 1 and <= 500)
             {
                 var directory = ReadString(images, "directory");

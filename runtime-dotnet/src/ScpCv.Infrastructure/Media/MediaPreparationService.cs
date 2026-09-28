@@ -20,9 +20,11 @@ public sealed partial class MediaPreparationService(
     IDbContextFactory<ControlDbContext> contextFactory,
     WriteCoordinator writes,
     DataRootOptions dataRootOptions,
-    TimeProvider? timeProvider = null)
+    TimeProvider? timeProvider = null,
+    IOriginalMediaDigestReader? originalDigestReader = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
+    private readonly IOriginalMediaDigestReader _originalDigestReader = originalDigestReader ?? new OriginalMediaDigestReader();
 
     public Task<MediaPreparationJob> EnqueueAsync(
         PrepareMediaRequest request,

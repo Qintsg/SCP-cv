@@ -4,10 +4,14 @@ post:
   tags: [sources]
   summary: 对失败或旧 PPT 源显式重新排队逐页图片转换
   operationId: retryPptSlideImagePreparation
-  description: 结果不确定的 Office 操作不会盲目重试；原件始终保留。
+  description: >-
+    结果不确定的 Office 操作不会盲目重试；原件始终保留。
+    缺少摘要的旧 PPT 仅在显式请求时从原件只读流补摘要，不在列表或启动时批量扫描。
+    文件读取在数据库写门禁外，提交前核对路径、版本及未决作业；变化时明确拒绝。
+    正常 queued/running 及可用的成功页图保持幂等，损坏/过期成功清单可显式重新排队。
   responses:
     '200':
-      description: 源状态已进入 queued，或原作业仍在进行
+      description: 源状态已进入 queued，或原作业仍在进行/成功页图仍有效；响应打开能力与持久实验设置一致
       content:
         application/json:
           schema:

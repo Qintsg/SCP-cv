@@ -114,7 +114,7 @@ public sealed partial class MediaSourceService
                         Priority = 10,
                         RecipeVersion = "ppt-images-v1",
                     });
-                return ToSourceDto(source);
+                return await ProjectSourceAsync(source, database, token).ConfigureAwait(false);
             }, cancellationToken).ConfigureAwait(false);
         }
         catch
@@ -127,7 +127,8 @@ public sealed partial class MediaSourceService
                     .Include(source => source.PptResources)
                     .SingleOrDefaultAsync(source => source.UploadedFile == destination, CancellationToken.None)
                     .ConfigureAwait(false);
-                if (committed is not null) return ToSourceDto(committed);
+                if (committed is not null)
+                    return await ProjectSourceAsync(committed, check, CancellationToken.None).ConfigureAwait(false);
                 TryDeleteFile(destination);
             }
             TryDeleteFile(staging);
@@ -193,7 +194,7 @@ public sealed partial class MediaSourceService
                         RecipeVersion = "ppt-images-v1",
                     });
                 }
-                return ToSourceDto(source);
+                return await ProjectSourceAsync(source, database, token).ConfigureAwait(false);
             },
             cancellationToken);
 }

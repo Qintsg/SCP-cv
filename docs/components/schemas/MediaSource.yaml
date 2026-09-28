@@ -28,7 +28,11 @@ properties:
     type: string
   is_available:
     type: boolean
-    description: 对直播源表示配置可尝试播放，并非已连通或已出画；实际状态以目标播放会话为准
+    description: >-
+      表示当前配置可尝试打开，不保证实际出画。默认 PPT 必须有匹配非空原件摘要的有效页图清单，
+      缺失/过期/失败时不可用；持久实验开关开启时可尝试原件。
+      列表和编辑/移动/上传/重试响应使用相同门禁。直播源仅表示配置可尝试连接，
+      实际连通、画面和错误以目标播放会话为准。
   stream_identifier:
     type: string
     nullable: true
@@ -71,7 +75,7 @@ properties:
     description: PPT/PPTX 默认 slide_images，PDF 为 pdf；实际原生放映需显式实验开关
   preparation_state:
     type: string
-    description: PPT 页图准备状态（queued/running/ready/failed/uncertain），其它媒体源为空
+    description: PPT 页图准备状态（queued/running/ready/failed/uncertain）；缺失、摘要过期或残缺的成功清单显示为空并可显式重试，其它媒体源为空
   page_count:
     type: integer
     minimum: 0
