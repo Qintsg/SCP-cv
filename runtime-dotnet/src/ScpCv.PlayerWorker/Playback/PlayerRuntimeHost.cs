@@ -134,9 +134,9 @@ public sealed partial class PlayerRuntimeHost(
                 if (currentPlayer.State == VLCState.Paused) currentPlayer.SetPause(false);
                 else if (currentPlayer.State is VLCState.Ended or VLCState.Stopped or VLCState.Error)
                 {
-                    await Task.Run(currentPlayer.Stop, CancellationToken.None);
-                    currentPlayer.Time = 0;
-                    if (!currentPlayer.Play()) throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
+                    if (!await VlcResourceLifecycle.ReplayAsync(
+                        currentPlayer.Stop, () => currentPlayer.Play(), () => currentPlayer.Time = 0))
+                        throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
                 }
             }
             else currentPlayer.SetPause(true);

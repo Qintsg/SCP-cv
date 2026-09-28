@@ -58,21 +58,18 @@ public sealed partial class PlayerRuntimeHost
         }, player);
     }
 
-    private static async ValueTask ReleaseVlcResourceAsync(
+    private static ValueTask ReleaseVlcResourceAsync(
         VlcMediaPlayer player,
         EventHandler<EventArgs> ended,
         VideoView view,
         Media media)
-    {
-        player.EndReached -= ended;
-        // 原生 Stop 会等待输出线程，必须让 UI Dispatcher 继续处理 HWND 消息。
-        await Task.Run(player.Stop, CancellationToken.None);
-        view.MediaPlayer = null;
-        // VideoView 持有 WPF 前景窗口和 HWND；仅清空 MediaPlayer 不会释放它们。
-        view.Dispose();
-        media.Dispose();
-        player.Dispose();
-    }
+        => VlcResourceLifecycle.ReleaseAsync(
+            () => player.EndReached -= ended,
+            player.Stop,
+            () => view.MediaPlayer = null,
+            view.Dispose,
+            media.Dispose,
+            player.Dispose);
 
     private async Task HandleVlcEndedAsync(VlcMediaPlayer player, Media media, long generation)
     {
@@ -86,8 +83,7 @@ public sealed partial class PlayerRuntimeHost
             if (action == VlcEndAction.Replay)
             {
                 // 先在线程池等待原生线程结束，UI 保持泵消息；媒体门禁阻止切源并发处置 player。
-                await Task.Run(player.Stop, CancellationToken.None);
-                if (player.Play(media)) return;
+                if (await VlcResourceLifecycle.ReplayAsync(player.Stop, () => player.Play(media))) return;
                 _state = "error";
                 _errorMessage = "video_loop_restart_failed";
             }
@@ -123,7 +119,7 @@ public sealed partial class PlayerRuntimeHost
         {
             case "play": _ = player.Play(); break;
             case "pause": player.SetPause(true); break;
-            case "stop": await Task.Run(player.Stop, CancellationToken.None); break;
+            case "stop": await VlcResourceLifecycle.StopAsync(player.Stop); break;
         }
         await Task.CompletedTask;
     }

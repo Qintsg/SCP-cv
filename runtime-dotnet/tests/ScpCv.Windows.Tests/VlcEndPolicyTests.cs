@@ -26,4 +26,29 @@ public sealed class VlcEndPolicyTests
         var player = new object();
         Assert.Equal(expected, VlcEndPolicy.Decide(player, player, 2, 2, loopEnabled));
     }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ClosedSurfaceIgnoresItsLateEndedEvent(bool loopEnabled)
+    {
+        Assert.Equal(VlcEndAction.Ignore, VlcEndPolicy.Decide(null, new object(), 3, 2, loopEnabled));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void SamePlayerReopenedInNewGenerationIgnoresPreviousCallback(bool loopEnabled)
+    {
+        var player = new object();
+        Assert.Equal(VlcEndAction.Ignore, VlcEndPolicy.Decide(player, player, 9, 8, loopEnabled));
+    }
+
+    [Fact]
+    public void DisablingLoopBeforeCurrentEndStopsInsteadOfReplaying()
+    {
+        var player = new object();
+        Assert.Equal(VlcEndAction.Replay, VlcEndPolicy.Decide(player, player, 4, 4, true));
+        Assert.Equal(VlcEndAction.Stop, VlcEndPolicy.Decide(player, player, 4, 4, false));
+    }
 }
