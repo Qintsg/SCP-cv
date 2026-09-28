@@ -305,6 +305,36 @@
 - **证据/边界**：官方ACKACK草案无CIF，较新libSRT却前置拒绝零控制负载；同SHA FFmpeg本机A/B中MTX发335个16字节ACKACK对应335告警，FFmpeg对端发311个20字节填充包则0告警，同为300解码帧。不是pkt_size/rcvbuf的尺寸0；控制反馈丢弃也不能当纯噪声。完整primary链接、原始包/指标及未闭环项见006 verification。
 - **现状**：未降日志级别、未修改正式二进制/配置；该本机包级因果证据不等同D4/VLC/60分钟通过，继续T026。
 
+### 坑 40 - Supervisor 已退出但控制库仍宣称 Armed（2026-09-28 修复）
+
+- **症状**：D4 精确结束唯一 player-1 后，Supervisor 停止整组并删除状态文件；超过一分钟仍 `Armed`、StopReason 空，两窗离线而缺少持久故障原因。
+- **根因**：子进程失败清理只在 Supervisor 内发生，broker 断开只移除 Ready，没有向 ControlHost 回传原生进程退出证据。
+- **检出方式**：分别观察实际 PID/start/session、状态文件、只读 group/ownership 表、会话及 SSE；不能把 EOF 当死亡，也不能由 Supervisor 死亡推导其它成员全已退出。真实管道回归先红后绿，提交失败另有 2/2 红例。
+- **现状**：只读持有已认证 Supervisor 原生句柄，当前代次退出原子标记 Faulted、撤销所有权并发布 SSE；不擅自 CompleteStop。首次持久化失败保留死亡证据并退避重试，提交回执丢失幂等补事件，旧组迟到和正常停机不覆盖新状态。D4 `2db189c` 精确 player-1 退出后正确为 `Faulted`、两窗 error/offline 并保留源；完整恢复及其它故障矩阵继续见 006/T031。
+
+### 坑 41 - 低延迟不代表命令成功或属于本轮（2026-09-28 基准修正）
+
+- **症状**：受控普通基准 10 条命令全 Failed，却因 Started/p95 10 ms 显示通过；旧统计 `Id > startId` 也会混入其它目标的并发记录。
+- **根因**：只看开始数量与延迟、容许折叠，没有核对本轮请求关联和真正完成。
+- **现状**：普通模式逐 HTTP 请求关联唯一目标 SET_VOLUME，最终只读精确自有 ID；全部完成、有效摘要/时间/实例及零失败、状态不明、折叠、未排空才通过。显式热切换模式另核实际源、generation、owner 和完成状态，前后异源、首错停发，CSV 保留原始证据。29 条受控脚本测试通过；两个指标是开始延迟与控制完成延迟，不宣称视觉出帧延迟或 D4 1000/100 已通过。
+
+### 坑 42 - 旧 Worker 可借重连或延迟首次握手认领新组（2026-09-28 修复待实机更新）
+
+- **症状/证据**：player-1/player-2/audio/office 在新 Starting/Armed 仍能 welcome、Ready和恢复Online；旧group claim虽拒绝，采用welcome的新group却能由旧instance领取新命令，旧generation状态也能落库。真实管道重连10/10红、旧Supervisor已登记但延迟首次hello4/4红。
+- **根因**：只有 Supervisor 绑定原group，Worker相同instance登记会恢复Online；源generation不能替代进程组身份。
+- **现状**：统一五类角色的 immutable instance/group，在当前Supervisor子进程登记阶段即绑定、hello早于ownership/连接替换校验；同组重连与新组新实例保留。23/23针对性、Integration154/154、Host152/152；本机`b6ff30b`已提交，D4门禁由006/T043承接。
+
+### 坑 43 - 成功非文稿切源仍带旧页码（2026-09-28 修复待实机更新）
+
+- **症状**：D4 PPT第9页切到短视频，实际源为video且OPEN已完成，API仍current_slide/total_slides=9/9。
+- **现状**：只在新资源成功发布后清理非PDF/页图/原生PPT的页码；保留原生Open写入页码及页图切源失败旧状态。公共隐藏STA回归(2,2)先红后绿、Windows68/68；前端外层ppt category有守卫，不能推断视频UI一定出现页码条。D4新版复测由T044承接。
+
+### 坑 44 - VLC 的 Play 受理不等于异步流可播（2026-09-28 定位，修复中）
+
+- **症状**：D4不存在的RTSP路径独立解码立即404，OPEN命令却Completed/ok，会话长期playing/空错误、实际灰场。
+- **根因/检出**：原生产仅订阅EndReached并缓存_state；官方固定版本及原生有限探针证明Play True后EncounteredError/Stopped、最终Ended，轮询Error也可能错过。公共隐藏Host+真实OPTIONS200/DESCRIBE404回归先红，样本5秒仍playing。
+- **边界**：T045修复以本资源/不可变attempt保存异步错误并经既有fenced采样/SSE报告；不能按time0判失败、在脱离视觉树时阻塞等Playing或把旧错误送到新源。原生回调不Stop/Dispose，健康同源Playing/Paused保持原进度；正式D4失效/恢复和长稳仍待验证。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 - `specs/003-dotnet-runtime-refactor/baseline.md` §易错语义：迁移前必须保住的**旧 Python 语义**（冻结在基线提交）。

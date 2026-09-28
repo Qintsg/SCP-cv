@@ -104,3 +104,15 @@
 1. 先取得可恢复 D4 基线并让窗口 1/2 实体出画，完成 US1 最小可用验收。
 2. 逐一完成 PPT、实体媒体目录和已知缺陷的针对性回归；每个独立块小提交。
 3. 最后执行两窗基准和 60 分钟混合门禁、真实浏览器 QA、停机恢复及文档/远端同步。未被证据证明的要求保持未完成。
+
+## Phase 7: Convergence
+
+- [ ] T043 CRITICAL 依据 FR-007、FR-008、US4/AC2 与宪章 IV（contradicts），在 `runtime-dotnet/src/ScpCv.ControlHost/Ipc/RuntimePipeBroker.cs` 与组身份相关 partial 中把 immutable instance/group 绑定扩展至 player-1/player-2/audio/office/supervisor，并在已认证 Supervisor 的子进程登记阶段绑定原组代次；旧登记的延迟首次握手、跨组重连、Ready、状态报告和命令领取均不得认领新组。以 `runtime-dotnet/tests/ScpCv.Integration.Tests/RuntimePipeBrokerTests.StaleWorkerReconnect.cs` 的真实管道 10/10 红例及延迟首次握手回归先红后绿，保持合法同组重连和新实例启动；D4 更新后复核两窗启动、精确 player 退出故障报告和显式恢复，不把源 generation 当作组身份门禁。
+
+## Phase 8: Convergence
+
+- [ ] T044 依据 FR-002、FR-008、US1/AC1 与 US4/AC3（partial），在 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/PlayerRuntimeHost.cs` 修复成功从 PDF/PPT 页图切到图片、视频、网页或直播后仍返回旧 current_slide/total_slides 的元数据；保留原生 PowerPoint 打开设置的页码和打开失败时旧资源信息，不用前端隐藏或新增 DTO 字段掩盖。以 `runtime-dotnet/tests/ScpCv.Windows.Tests/PlayerRuntimeHostSlideStateTests.cs` 的公共 ExecuteAsync、隐藏 STA 和自有 PNG 先红后绿，无真实 VLC/Office 初始化；D4 复跑 PPT 第 9 页→短视频同条件及默认两窗文稿/非文稿切换，核对完成回执、会话、generation 和实际画面。
+
+## Phase 9: Convergence
+
+- [ ] T045 CRITICAL 依据 FR-002、FR-008、FR-011、US1/AC5、US4/AC2 与宪章 I（contradicts），在 `runtime-dotnet/src/ScpCv.PlayerWorker/Playback/` 修复 VLC 启动受理后异步连接/解码失败仍持续上报 playing 的假状态；每个资源/播放 attempt 的 EncounteredError 保留失败证据，原生回调不 Stop/Dispose，周期快照与既有 fenced IPC/SSE 上报真实 loading/playing/error。旧 player/attempt 错误不能污染新源，合法同源重试和循环仍可恢复；不以直播 position=0 判断失败，不在脱离视觉树时阻塞等待 Playing。拆分超过 500 行的状态实现，补非 Physical 纯状态/迟到回归与显式 Physical 的有限回环 RTSP 404 公共 ExecuteAsync/SampleProgress 回归，保持隐藏窗口、无音视频输出；D4 重做 source74 无发布路径的失败反馈、有效 RTSP/SRT 恢复及两窗画面，登记状态与 HTTP 受理不冒充已播出。

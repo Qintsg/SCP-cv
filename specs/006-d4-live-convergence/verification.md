@@ -204,3 +204,33 @@ ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进
 本机和D4临时浏览器Cookie已移除，开发口令文件、原媒体、原快照和QA截图/控制包证据均保留。
 恢复实验false、两窗idle/volume100/loopfalse，不改系统音量或墙面/电视电源。
 这只是本轮恢复基线，不代替仍未完成的T029/T030/T031/T034最终门禁。
+
+## 2026-09-28 晚间继续：退出闭环、基准与失效流
+
+- 21:47 重新只读核对：本机/D4 同为干净 `fa0b840`，D4 项目/MediaMTX/PowerPoint 进程及 18443/5173/8554/9997/8890 均为 0，状态文件无。按明确 DataRoot 启动 Hardware ControlHost 与仅两个播放器，目标仍 DISPLAY2/3，控制 DISPLAY1 不在播放目标。
+- 完成 VLC 生命周期的生产时序提取与 13 条新增回归。所有 Stop 在线程池等待，返回 UI 上按 detach→VideoView→Media→MediaPlayer 顺序释放；同源重开和循环保持真实 Play 结果。同步 Stop／漏处置 VideoView 的受控反例各 1/1 红，恢复后 Windows 非 Physical 66/66。没有用替身宣称原生资源长期释放已被证明，T027/T030 的实机部分继续保留。
+- 普通基准受控 10 条命令全部 Failed，却因 10 ms Started 延迟被旧脚本判通过。新脚本只关联本轮精确请求 ID，全部完成、有效时间／摘要／实例且零失败、状态不明、折叠、未排空才通过；新增显式 HotSwitch，要求健康异源、真实完成和 owner/generation/actual_source 一致。29/29 脚本合同通过，真实独立 SQLite 查询排除了其它目标/动作。逐请求相关性 SQL 会改变提交节奏，新 1000 样本不得与旧快发条件无说明地等价比较；本轮 D4 1000/100 尚未执行。
+- 首次退出注入脚本把 ConvertFrom-Json 的整个数组当成一个管道项，误筛出本运行组五个成员；已明确保留为无效“单 player”用例。随后以显式数组展开、唯一整数 PID、原生启动时间／session 和终止错误块严格重跑，只结束 player-1 PID8112。整组退出、状态文件消失后超过两分钟仍 `Armed|93|`，确认缺少控制库退出回传，并非等待不足或混用 DataRoot。
+- ControlHost 现在只读持有已认证 Supervisor 的原生句柄，真实退出才把当前组原子标为 Faulted、撤销两窗/音频 ownership、保留源/命令诊断并通过现有 SSE 发布，不伪称整组 Stopped。EOF、取消、旧组迟到和正常停止不故障化。首次故障提交失败有 2/2 红例；修复保留确证证据、250 ms 指数退避至 5 s，回执丢失幂等补 SSE。该构建完整非 Physical **488/488**：Domain41、Contracts18、Infrastructure80、ControlHost152、Windows66、Integration131，0 跳过，总数由六份 TRX 相加，不依据口头增量推算。证据 `.validation/t033-20260928-after-retry/`，Release 0 警告/错误；前端 65/65、Web/类型、Redocly/Spec Kit 通过，主包 1,090.61 kB 的 >500 kB 提醒仍保留。
+- `2db189c` 已推送两远端、D4 干净快进并 Debug 构建 0 警告/错误。epoch97 精确 player-1 PID51708 退出后，仅 ControlHost PID52236 留存，状态文件无，库正确 `Faulted` 并有 Supervisor PID54860／实例原因，两窗 error/offline、源39/40保留。显式 restart 到 epoch99 后两窗可重新开图；原始 before/after/recovered 会话与成员记录在 D4 `qa-006/fault-player-2db189c/`，恢复截图在 `fault-player-2db189c-recovered/`。这只关闭该失败路径，不代表 T031 的文件暂失、转换失败和其它中断矩阵全部通过。
+- 独立真实管道又发现旧 player/audio/office 可跨组认领新身份：重连 10/10 红、Supervisor 旧登记延迟首次 hello 4/4 红。T043 将 immutable instance/group 绑定扩展全部五类角色，在子进程登记时即绑定；同组重连和新组新实例保留。针对性 23/23、Integration 154/154、Host 152/152；Host 首轮继承代理有单项 502，清本次进程代理后完整重跑绿、原 TRX 保留。`b6ff30b` 本机已提交，D4 尚待更新该块。
+- D4 默认页图源45 goto9→短视频48，OPEN完成且 source_type=video，却仍 current_slide/total_slides=9/9。T044 公共隐藏 STA 回归准确复现 (2,2)，新图片/source/generation/mode 其它断言均已正确；成功非文稿切入后清零，保留原生 PowerPoint 页码、页图切源失败旧状态。Windows 非 Physical 68/68，`b35c5fb` 已本机提交；D4 同条件新构建复测仍待进行。前端外层 ppt category 有守卫，不能由陈旧数字断言视频页面一定显示页码条。
+
+### 直播有限对照及当前未闭环失败
+
+- D4 `fa0b840` 两窗 RTSP46/SRT47 实际加载 NuGet 输出 `libvlc/win-x64`，插件 SHA 为 `D82A5B3972FD1A590CDA4DA70888FCD145CA2897F53C45DEA518AAAEC41B709D`，与本机 repo/NuGet/Release 相同。两组实际输出截图计数 375→447／2，证明各窗变化帧；约六分钟心跳和进度持续增长。辅助同 SHA FFmpeg 两路各 12 秒 300 帧、退出 0、H.264 错误 0，SRT 仍有 332 条尺寸告警；自有 90 分钟发布器截至停止时日志 0 告警，两有限读端已退出，发布器按精确 PID13916／启动时间停止。
+- 本机同发布源 VLC 的实际握手是 SRT1.5.3，而辅助 FFmpeg 是1.5.7；343 个16B ACKACK→VLC尺寸告警0、328个→FFmpeg告警328。VLC decoded170→400、dummy displayed76→191，corrupt/discontinuity0、lost2未继续增长；两条启动迟显告警保留。不能把 NEWS 历史1.4.4或证书 OID1.5.5当版本，也不能把当前 VLC 未复现告警说成 MTX 对较新外部 peer 已修复。完整 primary 来源、原始包与清理范围见 [独立记录](../../docs/qa/006-srt-interop.md)。
+- 窗口1网页43和窗口2 PDF42 第1/2页的输出截图已目视核对 Healthy／蓝绿页序，证据 `matrix-initial-fa0b840/`；两路直播图已目视核对并非纯黑。所有图仅是 DISPLAY2/3 交互输出像素，不代替关闭状态的墙体点亮/映射观察。
+- 混合采样脚本先有限 **1 分钟 pilot**，70.72秒、两个分钟样本、视频循环与图片保持，未报告采样错误。首版收尾快照截在 CLOSE/SET_LOOP尚未完成时，不把该请求侧快照当完成；随后 API 两窗 idle、进度0、pending空，新版 helper 增加等待清理完成。D4 `qa-006/mixed-pilot-fa0b840-2207/` 保留，**没有做60分钟**，T030不勾选。
+- D4新 QA source74 指向在线 MTX 的不存在路径 `rtsp://127.0.0.1:8554/qa006_missing_20260928`，独立 FFmpeg立即 DESCRIBE404并退出-875574520；命令4438却 Completed/ok，超过一分钟会话仍 playing/online、pos0、错误空，窗口1实际灰场、窗口2既有图不变。T045 承接：LibVLC Play返回只表示输入线程已启动，异步 EncounteredError 必须按当前资源/attempt保留和上报，Error可能瞬时转Ended，不能只轮询Error或把time0当失败。原始 API、解码日志和截图为 D4 `qa-006/offline-stream-74-*`／本机 `.validation/qa-d4-006/offline-stream-74-2db189c/`；该源仅用于可识别测试，尚未删除。
+
+当前继续实现/验证 T043–T045；原 T011–T036 未满足的实体、用户Office并存、较广UI、1000/100、60分钟和停机恢复门禁保持未完成。拼接屏实体电源/已知预设与系统音量本轮新确认问题尚无回复，当前未写这些状态、未操作电视。正式长稳会在这批假状态和归属缺口修复后开始，不用 pilot 或接口受理替代。
+
+### D4 文件暂失与转换失败恢复（仍为 `2db189c`）
+
+- 只通过上传 API 新建图片源75，暂移受管理原件到同仓库明确 QA held 路径，源39/40和原始桌面资源不动。OPEN75之后正确为 error／“图片文件不存在”、pending空；finally 无覆盖搬回原路径，SHA一致，同ID新OPEN正确playing。原始 before/missing/recovered 记录在 D4 `qa-006/fault-held-2db189c/`；随后切回源39，仅API删除源75的本轮上传副本，原39素材与证据保留。
+- 使用 pptx skill 的只读 ZIP/XML 核验旧有效原件，9个slide XML；停组但保留ControlHost后上传新QA副本76，状态queued。暂移该副本，再启动OfficeHost，作业 `8A5D1971-7B62-4B8A-870A-E60D861A2F0D` 正确Failed／“文稿原件文件不存在”，DTO failed、is_available=false、pages0，默认OPEN返回400，未假造页图。finally搬回且SHA不变，显式prepare产生新作业 `32D8468A-DAA5-4EA6-9624-B4E9CF543253` Succeeded／ready9。
+- 源76原URI及SHA `2401652F7CD610DFCDFE4B5F2F32CD112D9645F1E30CEF44ECB3D716B82A55F0` 保持。默认窗口2可打开并goto9，slide_images/playing/pending空，PowerPoint进程0；截图和完整恢复DTO保留在 `fault-ppt76-retry-page9-2db189c/`、`fault-held-2db189c/ppt-recovered-default-playback.json`。切回源40后仅删除源76测试副本，原件1/45及数据库起点快照保留。这证明本轮暂失/显式恢复路径，未将强断转换的uncertain、用户Office并存、T031整体或60分钟判为完成。
+
+- 输出图已分别目视核对：图片75恢复为原“QA IMAGE STABILITY”，文稿76第9页为对应原末页拼图。早先`fault-player-2db189c-recovered`截图异步任务尚未完成就紧接切PPT，窗口1记录了黑色过渡，不能当稳定恢复成功或产品黑屏结论；随后在同一构建重开源39/40，等待捕获任务Ready且唯一capture JSON落盘，再做`fault-recovery-stable-2db189c-2306`，两窗稳定图均与预期源对应。这一QA时序问题不放宽实际播出门禁。
+- 当前构建旧窗口3/4共18次GET/open/control/close/loop/volume/mute/navigate/ppt-media均拒绝，前后command_records数量差0，结果在D4`qa-006/retired-window-http-2db189c.json`。该用例尚未覆盖旧预案/显示器选择的完整矩阵，T013保留未勾选。
