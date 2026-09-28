@@ -1,7 +1,8 @@
-// 通过 Office 类型库的固定 DispId 读取指定 COM 窗口，拒绝全局猜测 HWND。
+// 通过既有完整 PIA 的 Dual ABI 读取指定 COM 窗口，拒绝全局猜测 HWND。
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using PowerPoint = Microsoft.Office.Interop.PowerPoint;
 
 namespace ScpCv.PowerPointHost.Interop;
 
@@ -24,7 +25,7 @@ internal sealed class WindowsPowerPointInterop : IPowerPointInterop
     }
 
     /// <summary>
-    /// 按类型库中 _Application.HWND 的 DispId 2031 读取当前 Application 窗口。
+    /// 通过既有完整 PIA 的 Dual 接口读取当前 Application HWND，避免受限制的 IDispatch 成员。
     /// :param application: PowerPoint Application COM 对象。
     /// :returns: 当前精确进程身份；无法读取时返回 null。
     /// </summary>
@@ -35,9 +36,9 @@ internal sealed class WindowsPowerPointInterop : IPowerPointInterop
         var stage = "com_interface";
         try
         {
-            var applicationWindow = (IApplicationWindow)application;
+            var applicationWindow = (PowerPoint._Application)application;
             stage = "com_hwnd";
-            var rawHandle = applicationWindow.HWND;
+            var rawHandle = PowerPointWindowHandleReader.ReadApplication(applicationWindow);
             WriteDiagnostic(source, stage, new { dispid = 2031, raw_hwnd = rawHandle });
             stage = "native_inspection";
             var evidence = InspectWindow(rawHandle, false, source);
@@ -52,7 +53,7 @@ internal sealed class WindowsPowerPointInterop : IPowerPointInterop
     }
 
     /// <summary>
-    /// 按类型库中 SlideShowWindow.HWND 的 DispId 2010 读取 Run 返回的窗口。
+    /// 通过既有完整 PIA 的 Dual 接口读取 Run 返回窗口，保持其完整 ABI 布局。
     /// :param slideShowWindow: 当前文稿 Run 返回的 COM 窗口。
     /// :returns: 可见放映窗口的精确进程身份；无法读取时返回 null。
     /// </summary>
@@ -63,9 +64,9 @@ internal sealed class WindowsPowerPointInterop : IPowerPointInterop
         var stage = "com_interface";
         try
         {
-            var currentWindow = (ISlideShowWindow)slideShowWindow;
+            var currentWindow = (PowerPoint.SlideShowWindow)slideShowWindow;
             stage = "com_hwnd";
-            var rawHandle = currentWindow.HWND;
+            var rawHandle = PowerPointWindowHandleReader.ReadSlideShow(currentWindow);
             WriteDiagnostic(source, stage, new { dispid = 2010, raw_hwnd = rawHandle });
             stage = "native_inspection";
             var evidence = InspectWindow(rawHandle, true, source);
@@ -189,19 +190,6 @@ internal sealed class WindowsPowerPointInterop : IPowerPointInterop
     private static bool IsUnavailable(Exception exception) =>
         exception is COMException or InvalidCastException or ArgumentException or InvalidOperationException
             or System.ComponentModel.Win32Exception or OverflowException;
-
-    // HWND 是 PowerPoint 类型库的隐藏成员；固定 DispId 绕开 GetIDsOfNames 的名称缺失。
-    [ComImport, Guid("91493442-5A91-11CF-8700-00AA0060263B"), InterfaceType(ComInterfaceType.InterfaceIsIDispatch)]
-    private interface IApplicationWindow
-    {
-        [DispId(2031)] int HWND { get; }
-    }
-
-    [ComImport, Guid("91493453-5A91-11CF-8700-00AA0060263B"), InterfaceType(ComInterfaceType.InterfaceIsIDispatch)]
-    private interface ISlideShowWindow
-    {
-        [DispId(2010)] int HWND { get; }
-    }
 
     [DllImport("user32.dll")] private static extern bool IsWindow(nint window);
     [DllImport("user32.dll")] private static extern bool IsWindowVisible(nint window);
