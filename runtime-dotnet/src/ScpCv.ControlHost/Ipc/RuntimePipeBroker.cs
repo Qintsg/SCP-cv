@@ -140,7 +140,7 @@ public sealed partial class RuntimePipeBroker(
             ValidateHello(identity, hello);
             var target = ResolveTarget(identity.Role, helloFrame.Target);
             var group = await authority.GetGroupAsync(stoppingToken).ConfigureAwait(false);
-            BindSupervisorEpoch(identity, group.GroupEpoch, group.State);
+            BindRuntimeEpoch(identity, group.GroupEpoch, group.State);
             var ownerEpoch = 0L;
             if (target is not null && group.State is RuntimeGroupState.Starting or RuntimeGroupState.Armed)
             {
@@ -265,7 +265,7 @@ public sealed partial class RuntimePipeBroker(
             var group = await authority.GetGroupAsync(cancellationToken).ConfigureAwait(false);
             if (group.GroupEpoch != connection.GroupEpoch || group.State is not (RuntimeGroupState.Starting or RuntimeGroupState.Armed))
                 return Response(frame, "registration_result", new RegistrationResultDto { Accepted = false, Reason = "group_fenced" });
-            return RegisterChild(frame);
+            return RegisterChild(frame, connection.GroupEpoch);
         }
 
         if (messageType is "health_report" or "worker_ready")
@@ -321,15 +321,6 @@ public sealed partial class RuntimePipeBroker(
         return await dispatcher.DispatchAsync(frame, cancellationToken).ConfigureAwait(false);
     }
 
-
-    private IpcFrameDto RegisterChild(IpcFrameDto frame)
-    {
-        var request = frame.Payload.Deserialize<RegisterProcessDto>() ?? new RegisterProcessDto();
-        if (!TryValidateChild(request, out var identity, out var reason))
-            return Response(frame, "registration_result", new RegistrationResultDto { Accepted = false, Reason = reason });
-        processRegistry.Register(identity!);
-        return Response(frame, "registration_result", new RegistrationResultDto { Accepted = true, Reason = "registered" });
-    }
 
     private static bool TryValidateChild(RegisterProcessDto request, out RegisteredProcessIdentity? identity, out string reason)
     {

@@ -8,16 +8,6 @@ public sealed partial class RuntimePipeBroker
 {
     private readonly IRuntimeProcessExitObserver _processExitObserver = processExitObserver ?? new WindowsRuntimeProcessExitObserver();
     private readonly ConcurrentDictionary<(Guid Instance, long Epoch), Task> _supervisorExitWatches = new();
-    private readonly ConcurrentDictionary<Guid, long> _supervisorEpochs = new();
-
-    /// <summary>同一 Supervisor 实例只属于其首次授权组，旧实例不得借重连认领新组。</summary>
-    private void BindSupervisorEpoch(RegisteredProcessIdentity identity, long groupEpoch, RuntimeGroupState state)
-    {
-        if (identity.Role != "supervisor" || state is not (RuntimeGroupState.Starting or RuntimeGroupState.Armed)) return;
-        if (_supervisorEpochs.GetOrAdd(identity.InstanceId, groupEpoch) != groupEpoch)
-            throw new UnauthorizedAccessException("Supervisor 实例已绑定旧 group epoch，拒绝跨代次重连。");
-    }
-
     /// <summary>只有已认证、已授权的 Supervisor 会被观察；同一组重连复用观察。</summary>
     private void ObserveSupervisorExit(RuntimeConnection connection, RuntimeGroupState state, CancellationToken stoppingToken)
     {
