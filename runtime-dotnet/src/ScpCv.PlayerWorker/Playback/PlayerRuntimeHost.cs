@@ -21,7 +21,9 @@ namespace ScpCv.PlayerWorker.Playback;
 public sealed partial class PlayerRuntimeHost(
     PlayerWindow window,
     int windowId,
-    RuntimeWorkerSession? officeSession = null) : IAsyncDisposable
+    RuntimeWorkerSession? officeSession = null,
+    Func<LibVLC>? libVlcFactory = null,
+    Action<VlcMediaPlayer>? configureVlcPlayer = null) : IAsyncDisposable
 {
     private readonly PlayerWindow _window = window;
     private readonly int _windowId = windowId;
@@ -96,9 +98,9 @@ public sealed partial class PlayerRuntimeHost(
                 case "OPEN": await OpenAsync(lease, cancellationToken); break;
                 case "CLOSE":
                 case "RESET_PPT": await CloseAsync(lease, cancellationToken); break;
-                case "PLAY": await CurrentControlAsync(lease, "play", cancellationToken); _state = "playing"; break;
-                case "PAUSE": await CurrentControlAsync(lease, "pause", cancellationToken); _state = "paused"; break;
-                case "STOP": await CurrentControlAsync(lease, "stop", cancellationToken); _state = "stopped"; break;
+                case "PLAY": await CurrentControlAsync(lease, "play", cancellationToken); break;
+                case "PAUSE": await CurrentControlAsync(lease, "pause", cancellationToken); break;
+                case "STOP": await CurrentControlAsync(lease, "stop", cancellationToken); break;
                 case "SEEK": await SeekAsync(Long(lease.Args, "position_ms"), cancellationToken); break;
                 case "NEXT": await NavigateAsync(lease, _currentSlide + 1, cancellationToken); break;
                 case "PREV": await NavigateAsync(lease, Math.Max(1, _currentSlide - 1), cancellationToken); break;
@@ -129,19 +131,10 @@ public sealed partial class PlayerRuntimeHost(
             sourceId == _sourceId && lease.SourceRevision == _sourceRevision &&
             string.Equals(uri, _sourceUri, StringComparison.Ordinal))
         {
-            if (autoplay)
-            {
-                if (currentPlayer.State == VLCState.Paused) currentPlayer.SetPause(false);
-                else if (currentPlayer.State is VLCState.Ended or VLCState.Stopped or VLCState.Error)
-                {
-                    if (!await VlcResourceLifecycle.ReplayAsync(
-                        currentPlayer.Stop, () => currentPlayer.Play(), () => currentPlayer.Time = 0))
-                        throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
-                }
-            }
-            else currentPlayer.SetPause(true);
+            var currentMedia = OwnedVlcMedia(currentPlayer);
+            if (!await ReopenVlcAttemptAsync(currentPlayer, currentMedia, lease.SourceGeneration, autoplay))
+                throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
             _generation = lease.SourceGeneration;
-            _state = autoplay ? "playing" : "paused";
             _errorMessage = string.Empty;
             return;
         }
@@ -158,7 +151,7 @@ public sealed partial class PlayerRuntimeHost(
             case "audio":
             case "custom_stream":
             case "rtsp":
-            case "srt": next = await OpenVlcAsync(uri, autoplay, cancellationToken); break;
+            case "srt": next = await OpenVlcAsync(uri, autoplay, lease.SourceGeneration, cancellationToken); break;
             case "ppt" when Path.GetExtension(LocalPath(uri)).Equals(".pdf", StringComparison.OrdinalIgnoreCase):
                 next = await OpenPdfAsync(uri, Int(lease.Args, "target_slide", 1), cancellationToken);
                 break;
@@ -196,7 +189,7 @@ public sealed partial class PlayerRuntimeHost(
             _currentSlide = 0;
             _totalSlides = 0;
         }
-        _state = autoplay ? "playing" : "paused";
+        _state = autoplay ? next.Kind == "vlc" ? "loading" : "playing" : "paused";
         _window.SetSurface(next.Surface);
         if (previous is not null && !ReferenceEquals(previous, next) && previous.Kind != "web")
             await previous.DisposeAsync();
@@ -409,24 +402,6 @@ public sealed partial class PlayerRuntimeHost(
         });
     }
 
-    private JsonElement Snapshot()
-    {
-        var position = _current?.Native is VlcMediaPlayer player ? Math.Max(0, player.Time) : 0;
-        var duration = _current?.Native is VlcMediaPlayer mediaPlayer ? Math.Max(0, mediaPlayer.Length) : 0;
-        return JsonSerializer.SerializeToElement(new
-        {
-            source_generation = _generation,
-            source_id = _sourceId == 0 ? (long?)null : _sourceId,
-            playback_state = _state,
-            playback_mode = _current?.Kind switch { "pdf" => "pdf", "slide_images" => "slide_images", "powerpoint" => "powerpoint", _ => "" },
-            adapter_kind = _current?.Kind ?? string.Empty,
-            current_slide = _currentSlide,
-            total_slides = _totalSlides,
-            position_ms = position,
-            duration_ms = duration,
-            error_message = _errorMessage,
-        });
-    }
 
     private static BitmapImage Bitmap(byte[] bytes)
     {

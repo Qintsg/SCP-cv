@@ -16,7 +16,7 @@ public sealed partial class PlayerRuntimeHost
     {
         if (_libVlc is not null) return _libVlc;
         Core.Initialize();
-        return _libVlc = new LibVLC();
+        return _libVlc = libVlcFactory?.Invoke() ?? new LibVLC();
     }
 
     private void DisposeVlcInstance()
@@ -28,69 +28,68 @@ public sealed partial class PlayerRuntimeHost
     private async Task<SurfaceResource> OpenVlcAsync(
         string uri,
         bool autoplay,
+        long generation,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         // 一个 PlayerWorker 生命周期只创建一个 LibVLC 实例，切源时只替换 MediaPlayer。
         var libVlc = GetOrCreateLibVlc();
         var player = new VlcMediaPlayer(libVlc);
+        try { configureVlcPlayer?.Invoke(player); }
+        catch { player.Dispose(); throw; }
         var localPath = LocalPath(uri);
         var media = File.Exists(localPath)
             ? new Media(libVlc, Path.GetFullPath(localPath), FromType.FromPath)
             : new Media(libVlc, uri, FromType.FromLocation);
         player.Media = media;
-        void Ended(object? _, EventArgs __)
-        {
-            var generation = Volatile.Read(ref _generation);
-            if (_window.Dispatcher.HasShutdownStarted) return;
-            _ = _window.Dispatcher.InvokeAsync(() => HandleVlcEndedAsync(player, media, generation));
-        }
-        player.EndReached += Ended;
+        _vlcMedia[player] = media;
+        BindVlcAttempt(player, media, generation);
         var view = new VideoView { MediaPlayer = player };
         if (autoplay && !player.Play())
         {
-            await ReleaseVlcResourceAsync(player, Ended, view, media);
+            await ReleaseVlcResourceAsync(player, view, media);
             throw new InvalidOperationException("LibVLC 无法开始播放媒体。");
         }
         return new SurfaceResource("vlc", view, async () =>
         {
-            await ReleaseVlcResourceAsync(player, Ended, view, media);
+            await ReleaseVlcResourceAsync(player, view, media);
         }, player);
     }
 
-    private static ValueTask ReleaseVlcResourceAsync(
+    private ValueTask ReleaseVlcResourceAsync(
         VlcMediaPlayer player,
-        EventHandler<EventArgs> ended,
         VideoView view,
         Media media)
         => VlcResourceLifecycle.ReleaseAsync(
-            () => player.EndReached -= ended,
+            () => { UnbindVlcAttempt(player); _vlcMedia.Remove(player); },
             player.Stop,
             () => view.MediaPlayer = null,
             view.Dispose,
             media.Dispose,
             player.Dispose);
 
-    private async Task HandleVlcEndedAsync(VlcMediaPlayer player, Media media, long generation)
+    private async Task HandleVlcEndedAsync(VlcMediaPlayer player, Media media, VlcPlaybackAttempt attempt)
     {
         if (Volatile.Read(ref _disposed) != 0) return;
         await _mediaGate.WaitAsync();
         try
         {
             if (Volatile.Read(ref _disposed) != 0) return;
-            var action = VlcEndPolicy.Decide(_current?.Native, player, _generation, generation, _loopEnabled);
+            if (!IsCurrentVlcAttempt(player, attempt)) return;
+            if (attempt.HasError) return;
+            var action = VlcEndPolicy.Decide(_current?.Native, player, _generation, attempt.SourceGeneration, _loopEnabled);
             if (action == VlcEndAction.Ignore) return;
             if (action == VlcEndAction.Replay)
             {
                 // 先在线程池等待原生线程结束，UI 保持泵消息；媒体门禁阻止切源并发处置 player。
-                if (await VlcResourceLifecycle.ReplayAsync(player.Stop, () => player.Play(media))) return;
+                if (await RestartVlcAttemptAsync(player, media, attempt.SourceGeneration, autoplay: true)) return;
                 _state = "error";
                 _errorMessage = "video_loop_restart_failed";
             }
             else _state = "stopped";
 
             if (_officeSession is null) return;
-            try { await _officeSession.ReportStateAsync(generation, Snapshot()); }
+            try { await _officeSession.ReportStateAsync(attempt.SourceGeneration, Snapshot()); }
             catch (Exception exception) when (exception is IOException or InvalidOperationException or OperationCanceledException)
             {
                 Console.Error.WriteLine($"视频自然结束状态上报失败：{exception.Message}");
@@ -112,14 +111,38 @@ public sealed partial class PlayerRuntimeHost
                 ["presentation_identity"] = JsonSerializer.SerializeToElement(_officePresentationIdentity),
                 ["action"] = JsonSerializer.SerializeToElement(action),
             }, cancellationToken);
+            _state = action switch { "play" => "playing", "pause" => "paused", _ => "stopped" };
             return;
         }
-        if (_current?.Native is not VlcMediaPlayer player) return;
+        if (_current?.Native is not VlcMediaPlayer player)
+        {
+            _state = action switch { "play" => "playing", "pause" => "paused", _ => "stopped" };
+            return;
+        }
         switch (action)
         {
-            case "play": _ = player.Play(); break;
-            case "pause": player.SetPause(true); break;
-            case "stop": await VlcResourceLifecycle.StopAsync(player.Stop); break;
+            case "play":
+                if (player.State == VLCState.Paused && _vlcBindings.TryGetValue(player, out var paused) && !paused.Attempt.HasError)
+                {
+                    player.SetPause(false);
+                    _state = "loading";
+                }
+                else if (player.State == VLCState.Playing && _vlcBindings.TryGetValue(player, out var playing) && !playing.Attempt.HasError)
+                    _state = "playing";
+                else
+                {
+                    var media = OwnedVlcMedia(player);
+                    if (!await RestartVlcAttemptAsync(player, media, _generation, autoplay: true))
+                        throw new InvalidOperationException("LibVLC 未接受当前媒体重播。");
+                }
+                break;
+            case "pause": player.SetPause(true); _state = "paused"; break;
+            case "stop":
+                UnbindVlcAttempt(player);
+                await VlcResourceLifecycle.StopAsync(player.Stop);
+                _state = "stopped";
+                _errorMessage = string.Empty;
+                break;
         }
         await Task.CompletedTask;
     }
