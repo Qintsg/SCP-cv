@@ -38,7 +38,8 @@ public sealed class PowerPointComAdapter : IDisposable
     /// 使用真实 Office STA 与 COM/Win32 互操作，保留原有调用入口。
     /// :param sta: Office 专属 STA 调度器。
     /// </summary>
-    public PowerPointComAdapter(OfficeStaDispatcher sta) : this(sta, new WindowsPowerPointInterop()) { }
+    public PowerPointComAdapter(OfficeStaDispatcher sta) : this(sta,
+        new DiagnosticPowerPointInterop(new WindowsPowerPointInterop(), new WindowsPowerPointDispatchProbe())) { }
 
     /// <summary>
     /// 从外部调度和互操作契约构造 Adapter；所有文稿规则仍经过相同执行路径。
