@@ -1,3 +1,4 @@
+// 认证 HTTP 合同回归与独立数据库测试主机的生命周期管理。
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ScpCv.Infrastructure.Auth;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Domain.Model;
@@ -271,6 +273,8 @@ internal sealed class ControlHostApplicationFactory : WebApplicationFactory<Prog
         Path.GetTempPath(),
         "scp-cv-control-host-tests",
         Guid.NewGuid().ToString("N"));
+    private string? _databaseConnectionString;
+    private bool _temporaryRootCleaned;
 
     public string TemporaryRoot => _temporaryRoot;
 
@@ -295,15 +299,25 @@ internal sealed class ControlHostApplicationFactory : WebApplicationFactory<Prog
         HandleCookies = true,
     });
 
+    /// <summary>保存主机实际使用的连接池键，避免释放时重新推导连接串。</summary>
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+        var contextFactory = host.Services.GetRequiredService<IDbContextFactory<ControlDbContext>>();
+        using var database = contextFactory.CreateDbContext();
+        _databaseConnectionString = database.Database.GetConnectionString();
+        return host;
+    }
+
+    /// <summary>先关闭自有主机，再清理其精确连接池和已核对的临时目录。</summary>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (!disposing)
+        if (!disposing || _temporaryRootCleaned)
         {
             return;
         }
 
-        SqliteConnection.ClearAllPools();
         var fullRoot = Path.GetFullPath(_temporaryRoot);
         var expectedParent = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "scp-cv-control-host-tests"));
         if (!string.Equals(Path.GetDirectoryName(fullRoot), expectedParent, StringComparison.OrdinalIgnoreCase))
@@ -311,10 +325,17 @@ internal sealed class ControlHostApplicationFactory : WebApplicationFactory<Prog
             throw new InvalidOperationException("拒绝清理测试根目录之外的路径。");
         }
 
+        if (_databaseConnectionString is not null)
+        {
+            using var connection = new SqliteConnection(_databaseConnectionString);
+            SqliteConnection.ClearPool(connection);
+        }
+
         if (Directory.Exists(fullRoot))
         {
             Directory.Delete(fullRoot, recursive: true);
         }
+        _temporaryRootCleaned = true;
     }
 
     private const string InitialPassword = "Old-password-123";
