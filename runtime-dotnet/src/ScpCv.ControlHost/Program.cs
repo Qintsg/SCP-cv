@@ -88,6 +88,7 @@ else
         logonSessionId,
         services.GetRequiredService<IRegisteredProcessRegistry>()));
     builder.Services.AddSingleton<RuntimePipeBroker>();
+    builder.Services.AddSingleton<IRuntimeProcessExitObserver, WindowsRuntimeProcessExitObserver>();
     builder.Services.AddSingleton<RuntimeCommandWakeNotifier>();
     builder.Services.AddSingleton<ICommandWakeNotifier>(services => services.GetRequiredService<RuntimeCommandWakeNotifier>());
     builder.Services.AddSingleton<IPptSlideConverter, BrokerPptSlideConverter>();

@@ -5,7 +5,7 @@ using ScpCv.Infrastructure.Persistence;
 
 namespace ScpCv.Infrastructure.Runtime;
 
-public sealed class RuntimeAuthorityRepository(
+public sealed partial class RuntimeAuthorityRepository(
     IDbContextFactory<ControlDbContext> contextFactory,
     WriteCoordinator writes,
     TimeProvider? timeProvider = null)
@@ -234,7 +234,8 @@ public sealed class RuntimeAuthorityRepository(
                     .ConfigureAwait(false);
                 if (ownership is null ||
                     ownership.WorkerInstanceId != workerInstanceId ||
-                    ownership.OwnerEpoch != ownerEpoch)
+                    ownership.OwnerEpoch != ownerEpoch ||
+                    ownership.Status != WorkerOwnershipState.Online)
                 {
                     return false;
                 }

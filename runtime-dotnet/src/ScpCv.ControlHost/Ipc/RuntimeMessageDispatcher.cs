@@ -17,6 +17,9 @@ public sealed class RuntimeMessageDispatcher(
     private readonly TimeSpan _leaseDuration = leaseDuration ?? TimeSpan.FromSeconds(30);
     private readonly AudioFinishedEventProcessor? _audioFinished = audioFinished;
 
+    /// <summary>故障事务提交后使用生产投影通道通知 SSE；没有可选空实现。</summary>
+    public long PublishRuntimeFault() => projections.PublishCommandResult();
+
     public async Task<IpcFrameDto> DispatchAsync(
         IpcFrameDto frame,
         CancellationToken cancellationToken = default)

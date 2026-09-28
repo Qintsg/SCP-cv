@@ -18,7 +18,8 @@ public sealed partial class RuntimePipeBroker(
     RuntimeMessageDispatcher dispatcher,
     RuntimeAuthorityRepository authority,
     ILogger<RuntimePipeBroker> logger,
-    PresentationCoordinator? presentations = null) : BackgroundService, ICommandWakeNotifier, IRuntimeReadinessGate, IRuntimeShutdownNotifier
+    PresentationCoordinator? presentations = null,
+    IRuntimeProcessExitObserver? processExitObserver = null) : BackgroundService, ICommandWakeNotifier, IRuntimeReadinessGate, IRuntimeShutdownNotifier
 {
     private static readonly string[] RequiredRuntimeRoles =
         ["player-1", "player-2", "audio", "office"];
@@ -139,6 +140,7 @@ public sealed partial class RuntimePipeBroker(
             ValidateHello(identity, hello);
             var target = ResolveTarget(identity.Role, helloFrame.Target);
             var group = await authority.GetGroupAsync(stoppingToken).ConfigureAwait(false);
+            BindSupervisorEpoch(identity, group.GroupEpoch, group.State);
             var ownerEpoch = 0L;
             if (target is not null && group.State is RuntimeGroupState.Starting or RuntimeGroupState.Armed)
             {
@@ -169,6 +171,7 @@ public sealed partial class RuntimePipeBroker(
                 await old.DisposeAsync().ConfigureAwait(false);
             }
             _connections[identity.Role] = connection;
+            ObserveSupervisorExit(connection, group.State, stoppingToken);
             var welcome = Response(helloFrame, "welcome", new WelcomeDto
             {
                 ServiceEpoch = Environment.TickCount64,
@@ -259,6 +262,9 @@ public sealed partial class RuntimePipeBroker(
         {
             if (!string.Equals(connection.Identity.Role, "supervisor", StringComparison.Ordinal))
                 return Response(frame, "registration_result", new RegistrationResultDto { Accepted = false, Reason = "role_forbidden" });
+            var group = await authority.GetGroupAsync(cancellationToken).ConfigureAwait(false);
+            if (group.GroupEpoch != connection.GroupEpoch || group.State is not (RuntimeGroupState.Starting or RuntimeGroupState.Armed))
+                return Response(frame, "registration_result", new RegistrationResultDto { Accepted = false, Reason = "group_fenced" });
             return RegisterChild(frame);
         }
 
@@ -435,39 +441,6 @@ public sealed partial class RuntimePipeBroker(
         Target = request.Target,
         Payload = JsonSerializer.SerializeToElement(payload),
     };
-
-    private sealed class RuntimeConnection(
-        NamedPipeServerStream stream,
-        RegisteredProcessIdentity identity,
-        (CommandTargetKind Kind, int Id)? target,
-        long ownerEpoch,
-        long groupEpoch) : IAsyncDisposable
-    {
-        private readonly SemaphoreSlim _sendGate = new(1, 1);
-        public RegisteredProcessIdentity Identity { get; } = identity;
-        public (CommandTargetKind Kind, int Id)? Target { get; } = target;
-        public long OwnerEpoch { get; } = ownerEpoch;
-        public long GroupEpoch { get; } = groupEpoch;
-
-        public async Task SendAsync(IpcFrameDto frame, CancellationToken cancellationToken)
-        {
-            await _sendGate.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                await IpcFrameCodec.WritePayloadAsync(stream, JsonSerializer.SerializeToUtf8Bytes(frame), cancellationToken).ConfigureAwait(false);
-            }
-            finally
-            {
-                _sendGate.Release();
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await stream.DisposeAsync().ConfigureAwait(false);
-            _sendGate.Dispose();
-        }
-    }
 
     [LoggerMessage(EventId = 2201, Level = LogLevel.Error, Message = "接受 Runtime Named Pipe 连接失败")]
     private static partial void LogAcceptFailed(ILogger logger, Exception exception);
