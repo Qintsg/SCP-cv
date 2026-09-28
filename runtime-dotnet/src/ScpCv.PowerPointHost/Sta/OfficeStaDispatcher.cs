@@ -1,9 +1,10 @@
+// Office 专属 STA 线程、Dispatcher 消息泵及操作去重。
 using System.Collections.Concurrent;
 using System.Windows.Threading;
 
 namespace ScpCv.PowerPointHost.Sta;
 
-public sealed class OfficeStaDispatcher : IDisposable
+public sealed class OfficeStaDispatcher : IOfficeStaDispatcher, IDisposable
 {
     private readonly Thread _thread;
     private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -22,6 +23,7 @@ public sealed class OfficeStaDispatcher : IDisposable
         _thread.Start();
     }
 
+    /// <inheritdoc />
     public async Task<T> InvokeAsync<T>(
         Guid operationId,
         Func<CancellationToken, T> operation,
