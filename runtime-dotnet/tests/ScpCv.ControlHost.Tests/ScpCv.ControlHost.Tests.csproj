@@ -27,6 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\scripts\runtime.ps1"
+          Link="scripts\runtime.ps1"
+          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\scripts\run-headless.ps1"
           Link="scripts\run-headless.ps1"
           CopyToOutputDirectory="PreserveNewest" />

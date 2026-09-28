@@ -10,7 +10,7 @@ dotnet build runtime-dotnet/ScpCv.sln
 dotnet test runtime-dotnet/ScpCv.sln --filter "Category!=Physical"
 ```
 
-现场使用 `scripts/run-headless.ps1` 启动明确 DataRoot 的控制面，再通过认证 API 启停运行组；完整参数见 `../docs/qa/003-workstation-runbook.md`。旧 `scripts/runtime.ps1` 采用脚本目录状态文件且尚未接入两窗绑定，不用于当前 ControlHost DataRoot 的现场启停。停机先通过已认证管道通知 Worker/OfficeHost 协作释放，再由 Supervisor 对 PID/start-time/session 匹配的自有进程兜底；Office 无法证明所有权时不强杀。开发数据库位于独立 DataRoot，Git 仅恢复代码与规范，不删除数据库、媒体和日志。
+现场使用 `scripts/run-headless.ps1` 启动明确 DataRoot 的控制面，再通过认证 API 启停运行组；完整参数见 `../docs/qa/003-workstation-runbook.md`。旧 `scripts/runtime.ps1` 已明确退役：四种旧动作和默认状态查询均失败并提示替代入口，不再读写脚本目录状态或直接启动 Supervisor。状态查询用 `GET /api/runtime/`，组启动/重启与停止分别用 `POST /api/system/restart/`、`POST /api/system/shutdown/`（已认证会话及 CSRF）。停机先通过已认证管道通知 Worker/OfficeHost 协作释放，再由 Supervisor 对 PID/start-time/session 匹配的自有进程兜底；Office 无法证明所有权时不强杀。开发数据库位于独立 DataRoot，Git 仅恢复代码与规范，不删除数据库、媒体和日志。
 
 `SafetyMode=Simulation` 使用单个虚拟显示器和数据库音量，不访问本机设备；
 `SafetyMode=Hardware` 要求 Windows 交互桌面，`/api/displays/` 枚举实际设备名、坐标与

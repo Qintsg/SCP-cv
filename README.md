@@ -95,14 +95,12 @@ powershell -NoProfile -ExecutionPolicy Bypass `
   -DevelopmentPasswordFile '<口令文件>'
 ```
 
-运行组状态与启停：
-
-```powershell
-powershell -File runtime-dotnet/scripts/runtime.ps1 -Action status
-powershell -File runtime-dotnet/scripts/runtime.ps1 -Action start
-powershell -File runtime-dotnet/scripts/runtime.ps1 -Action stop
-powershell -File runtime-dotnet/scripts/runtime.ps1 -Action restart
-```
+运行组状态与启停使用 ControlHost 的已认证会话：`GET /api/runtime/` 查询，
+`POST /api/system/restart/` 启动/重启，`POST /api/system/shutdown/` 协作停机；
+写请求必须携带 CSRF。先确认两块大屏绑定，停机确认 Worker/Office 退出后，再以同一绝对
+DataRoot 调用 `run-headless.ps1 -Stop` 停止控制面。完整流程见
+[工作站操作手册](docs/qa/003-workstation-runbook.md)。独立 `runtime.ps1` 已退役，所有旧动作
+均明确失败并提示迁移，不再读写另一份运行组状态文件。
 
 配置来源主要是 `runtime-dotnet/src/ScpCv.ControlHost/appsettings.json`、命令行参数和标准 ASP.NET Core 环境变量。默认 `SafetyMode=Simulation`；只有明确切到 `Hardware` 才会访问显示器、系统音量、设备和视频墙。
 
