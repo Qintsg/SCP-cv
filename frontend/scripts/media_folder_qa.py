@@ -113,8 +113,40 @@ def screenshot_stable(page: Page, path: Path, full_page: bool = False) -> None:
     :param full_page: 是否保存整页。
     :returns: None
     """
+    page.wait_for_function("""() => [...document.querySelectorAll('.source-thumbnail img')]
+        .filter(image => { const rect = image.getBoundingClientRect(); return rect.top < innerHeight && rect.bottom > 0; })
+        .every(image => image.complete && image.naturalWidth > 0)""")
+    image_states = page.locator(".source-thumbnail img").evaluate_all("""async images => {
+        const visible = images.filter(image => { const rect = image.getBoundingClientRect(); return rect.top < innerHeight && rect.bottom > 0; });
+        await Promise.all(visible.map(image => image.decode()));
+        return visible.map(image => ({ complete: image.complete, width: image.naturalWidth,
+            height: image.naturalHeight, src: image.currentSrc, loading: image.loading }));
+    }""")
+    path.with_suffix(".images.json").write_text(json.dumps(image_states, indent=2), encoding="utf-8")
     page.wait_for_function("document.getAnimations().every(animation => animation.playState !== 'running')")
     page.screenshot(path=str(path), full_page=full_page)
+
+
+def assert_notification_geometry(page: Page, output: Path) -> None:
+    """核对真实浏览器通知不覆盖底栏或当前编辑抽屉操作区。
+
+    :param page: 手机宽度、稳定帧页面。
+    :param output: 几何证据 JSON 路径。
+    :returns: None
+    :raises AssertionError: 通知遮挡关键操作区。
+    """
+    geometry = page.evaluate("""() => {
+        const rects = selector => [...document.querySelectorAll(selector)]
+            .filter(element => element.getBoundingClientRect().width > 0)
+            .map(element => element.getBoundingClientRect().toJSON());
+        return { notices: rects('.n-notification'), targets: rects('.app-shell__bottom, .edit-source__actions') };
+    }""")
+    output.write_text(json.dumps(geometry, indent=2), encoding="utf-8")
+    assert geometry["targets"], "手机底栏或编辑操作区应存在"
+    for notice in geometry["notices"]:
+        for target in geometry["targets"]:
+            overlap = min(notice["right"], target["right"]) > max(notice["left"], target["left"]) and min(notice["bottom"], target["bottom"]) > max(notice["top"], target["top"])
+            assert not overlap, f"通知覆盖关键操作区：{notice} / {target}"
 
 
 def main() -> None:
@@ -148,10 +180,12 @@ def main() -> None:
         page = context.new_page()
         errors: list[str] = []
         writes: list[str] = []
+        previews: list[dict] = []
         page.on("pageerror", lambda error: errors.append(str(error)))
         page.on("request", lambda request: writes.append(request.url.split("/api/", 1)[1]) if request.method == "PATCH" and "/api/" in request.url else None)
         page.on("response", lambda response: print("FOLDER_HTTP", response.request.method, response.status, flush=True) if "/api/folders/" in response.url else None)
         page.on("requestfailed", lambda request: print("FOLDER_REQUEST_FAILED", request.method, request.failure, flush=True) if "/api/folders/" in request.url else None)
+        page.on("response", lambda response: previews.append({"url": response.url, "status": response.status, "content_type": response.headers.get("content-type", "")}) if "/preview/" in response.url else None)
         try:
             page.goto(args.base.rstrip("/") + "/sources")
             page.wait_for_load_state("networkidle")
@@ -218,6 +252,7 @@ def main() -> None:
             page.evaluate("window.scrollTo(0, 0)")
             screenshot_stable(page, args.output / "folders-mobile.png", full_page=True)
             screenshot_stable(page, args.output / "folders-mobile-viewport.png")
+            assert_notification_geometry(page, args.output / "folders-mobile.geometry.json")
             summary["checks"].append("mobile download and no horizontal overflow")
             if args.ppt:
                 ppt_name = f"QA-006-UI-PPT-{suffix}"
@@ -230,6 +265,7 @@ def main() -> None:
                 expect(page.locator(".n-drawer")).to_contain_text("queued")
                 expect(page.locator(".n-drawer")).to_contain_text("原始 PPT 文件仍保留")
                 screenshot_stable(page, args.output / "ppt-queued-mobile.png")
+                assert_notification_geometry(page, args.output / "ppt-queued.geometry.json")
                 page.locator(".n-drawer").get_by_role("button", name="取消", exact=True).click()
                 page.locator(".n-drawer").wait_for(state="hidden")
                 summary["checks"].append("PPT upload queued and retained-original feedback")
@@ -237,6 +273,7 @@ def main() -> None:
             for path in (f"sources/{source_ids[0]}/move/", f"folders/{folder_ids[0]}/", f"folders/{child}/"):
                 assert writes.count(path) == 1, f"UI write must dispatch exactly once: {path} count={writes.count(path)}"
             summary["checks"].append("each UI move/rename dispatched exactly once")
+            summary["checks"].append("notification geometry avoids navigation and edit actions")
             csrf = context.request.get(args.base.rstrip("/") + "/api/auth/csrf/").json()["csrfToken"]
             headers = {"X-CSRFToken": csrf, "Origin": args.base.rstrip("/")}
             for source_id in source_ids:
@@ -248,6 +285,7 @@ def main() -> None:
             summary["checks"].append("owned fixtures cleaned")
             summary["passed"] = True
         finally:
+            summary["previews"] = previews
             if not summary.get("passed"):
                 page.screenshot(path=str(args.output / "failed-page.png"), full_page=True)
                 summary["failure_page"] = page.locator("body").inner_text()

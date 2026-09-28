@@ -15,7 +15,6 @@ import {
   NDialogProvider,
   NLoadingBarProvider,
   NMessageProvider,
-  NNotificationProvider,
   darkTheme,
   dateZhCN,
   zhCN,
@@ -25,6 +24,7 @@ import {
 import AppShell from '@/layouts/AppShell.vue';
 import FDialogHost from '@/design-system/FDialogHost.vue';
 import FToastHost from '@/design-system/FToastHost.vue';
+import FNotificationProvider from '@/design-system/FNotificationProvider.vue';
 import {
   fluentDarkOverrides,
   fluentLightOverrides,
@@ -110,14 +110,14 @@ onUnmounted(() => {
   >
     <n-loading-bar-provider>
       <n-message-provider>
-        <n-notification-provider placement="bottom-right">
+        <FNotificationProvider>
           <n-dialog-provider>
             <RouterView v-if="isFocusMode" />
             <AppShell v-else />
             <FDialogHost />
             <FToastHost />
           </n-dialog-provider>
-        </n-notification-provider>
+        </FNotificationProvider>
       </n-message-provider>
     </n-loading-bar-provider>
   </n-config-provider>
