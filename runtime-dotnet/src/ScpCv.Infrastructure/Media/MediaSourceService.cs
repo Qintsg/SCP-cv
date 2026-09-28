@@ -229,23 +229,6 @@ public sealed partial class MediaSourceService(
             },
             cancellationToken);
 
-    public async Task DeleteSourceAsync(long sourceId, CancellationToken cancellationToken = default)
-    {
-        var managedFile = await writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                var source = await FindSourceAsync(database, sourceId, token).ConfigureAwait(false);
-                var path = ManagedFileOrNull(source.UploadedFile);
-                database.MediaSources.Remove(source);
-                return path;
-            },
-            cancellationToken).ConfigureAwait(false);
-        if (managedFile is not null)
-        {
-            TryDeleteFile(managedFile);
-        }
-    }
-
     public async Task<MediaFileResult> GetDownloadAsync(long sourceId, CancellationToken cancellationToken = default)
     {
         var source = await GetSourceAsync(sourceId, cancellationToken).ConfigureAwait(false);
@@ -278,7 +261,8 @@ public sealed partial class MediaSourceService(
 
 public sealed record MediaFileResult(string Path, string ContentType, string FileName, bool Download);
 
-public sealed class MediaServiceException(string message, bool isNotFound = false) : Exception(message)
+public sealed class MediaServiceException(string message, bool isNotFound = false, bool cleanupPending = false) : Exception(message)
 {
     public bool IsNotFound { get; } = isNotFound;
+    public bool CleanupPending { get; } = cleanupPending;
 }

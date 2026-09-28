@@ -3,7 +3,7 @@ parameters:
 patch:
   tags:
     - sources
-  summary: 更新媒体源名称、网页 URL、预热开关或 PPT 后端
+  summary: 更新媒体源名称、网页或直播地址及预热开关
   operationId: updateSource
   requestBody:
     required: true
@@ -34,3 +34,18 @@ delete:
             $ref: ../components/schemas/SuccessResponse.yaml
     '404':
       $ref: ../components/responses/ErrorResponse.yaml
+    '400':
+      description: 原件被占用、只读、正在播放或转换；删除未生效且保留源记录
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    '503':
+      description: 删除事务结果不明或隔离区清理未完成，须按 detail 检查清单；不能当作完全删除成功
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+          example:
+            code: media_cleanup_pending
+            detail: 源记录已删除，但隔离原件清理未完成；清单保留在 media/.staging，请维护人员检查。

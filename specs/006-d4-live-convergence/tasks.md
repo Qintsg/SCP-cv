@@ -52,7 +52,7 @@
 
 **Independent Test**: 根目录和两级中文目录的重名上传、源/目录移动、下载 SHA-256、页图关联及活跃文件拒绝全部通过。
 
-- [ ] T019 [P] [US3] 在 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/MediaStorageLayoutTests.cs` 和 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/MediaEndpointTests.cs` 写单源删除文件占用/拒绝访问的失败回归，先证实现有“删库成功、文件残留”问题。
+- [X] T019 [P] [US3] 在 `runtime-dotnet/tests/ScpCv.Infrastructure.Tests/MediaStorageLayoutTests.cs` 和 `runtime-dotnet/tests/ScpCv.ControlHost.Tests/MediaEndpointTests.cs` 写单源删除文件占用/拒绝访问的失败回归，先证实现有“删库成功、文件残留”问题。
 - [ ] T020 [US3] 在 `runtime-dotnet/src/ScpCv.Infrastructure/Media/MediaSourceService.cs` 与相应 partial 文件中修复单源删除的文件/数据库一致性和可诊断清理语义，避免吞掉文件删除错误；补同条件复测。
 - [ ] T021 [US3] 在 D4 `D:\SCP-cv\.validation\t129-workstation\media/` 执行根目录、中文子目录、重复文件名、源移动与文件夹移动，逐步核对 D4 物理路径、下载摘要、旧路径及页面刷新。
 - [ ] T022 [US3] 在 D4 对已准备 PPT 先移动原件再验证页图、下载和再次播放；正在播放/转换时尝试移动，确认拒绝且原件与数据库仍一致。

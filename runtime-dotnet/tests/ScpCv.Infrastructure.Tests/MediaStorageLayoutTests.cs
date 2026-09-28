@@ -9,6 +9,40 @@ namespace ScpCv.Infrastructure.Tests;
 
 public sealed class MediaStorageLayoutTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SingleSourceDeletionRejectsLockedOrReadOnlyFileWithoutRemovingRecord(bool readOnly)
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var root = Path.Combine(Path.GetTempPath(), $"scp-cv-media-layout-{Guid.NewGuid():N}");
+        string? path = null;
+        try
+        {
+            var factory = new ControlDbContextFactory(new DataRootOptions { RootPath = root }, root);
+            await new DatabaseInitializer(factory).InitializeAsync();
+            using var writes = new WriteCoordinator(factory);
+            var media = new MediaSourceService(factory, writes, factory, new MediaStorageOptions());
+            await using var bytes = new MemoryStream("preserve-original"u8.ToArray());
+            var source = await media.AddUploadedAsync(bytes, "locked.png", null, null, null, null, false, false);
+            path = source.Uri;
+            using var fileLock = readOnly ? null : new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            if (readOnly) File.SetAttributes(path, FileAttributes.ReadOnly);
+
+            await Assert.ThrowsAsync<MediaServiceException>(() => media.DeleteSourceAsync(source.Id));
+
+            Assert.True(File.Exists(path));
+            Assert.Equal("preserve-original", await File.ReadAllTextAsync(path));
+            await using var check = factory.CreateDbContext();
+            Assert.Equal(path, (await check.MediaSources.SingleAsync(item => item.Id == source.Id)).UploadedFile);
+        }
+        finally
+        {
+            if (path is not null && File.Exists(path)) File.SetAttributes(path, FileAttributes.Normal);
+            DeleteRoot(root);
+        }
+    }
+
     [Fact]
     public async Task RootAndNamedFolderUploadsUseVisiblePathsAndNeverOverwrite()
     {

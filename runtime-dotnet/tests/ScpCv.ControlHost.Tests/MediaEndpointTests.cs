@@ -12,6 +12,29 @@ namespace ScpCv.ControlHost.Tests;
 public sealed class MediaEndpointTests
 {
     [Fact]
+    public async Task SingleSourceDeletionReportsLockedFileAndKeepsItInLibrary()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        var media = factory.Services.GetRequiredService<MediaSourceService>();
+        await using var bytes = new MemoryStream("locked-original"u8.ToArray());
+        var source = await media.AddUploadedAsync(bytes, "locked.png", null, null, null, null, false, false);
+        using var fileLock = new FileStream(source.Uri, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var request = CreateJsonRequest(HttpMethod.Delete, $"/api/sources/{source.Id}/", csrf, new { });
+
+        using var response = await client.SendAsync(request);
+        using var body = await ReadJsonAsync(response);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal("media_error", body.RootElement.GetProperty("code").GetString());
+        Assert.Contains("删除", body.RootElement.GetProperty("detail").GetString());
+        Assert.Contains(await media.ListSourcesAsync(null, null), item => item.Id == source.Id);
+        Assert.True(File.Exists(source.Uri));
+    }
+
+    [Fact]
     public async Task OperatorCanRegisterRtspStreamAndFindItInMediaLibrary()
     {
         using var factory = new ControlHostApplicationFactory();

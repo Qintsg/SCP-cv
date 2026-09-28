@@ -394,8 +394,9 @@ public static partial class MediaEndpoints
     private static IResult MediaError(MediaServiceException exception, bool notFoundForMissing = false) =>
         ApiEndpointSupport.Error(
             exception.Message,
-            "media_error",
-            exception.IsNotFound && notFoundForMissing ? StatusCodes.Status404NotFound : StatusCodes.Status400BadRequest);
+            exception.CleanupPending ? "media_cleanup_pending" : "media_error",
+            exception.CleanupPending ? StatusCodes.Status503ServiceUnavailable :
+                exception.IsNotFound && notFoundForMissing ? StatusCodes.Status404NotFound : StatusCodes.Status400BadRequest);
 
     private static async Task<BodyResult> ReadBodyAsync(HttpRequest request, CancellationToken cancellationToken)
     {

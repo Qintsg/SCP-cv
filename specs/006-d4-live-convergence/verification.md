@@ -105,6 +105,12 @@
 - 核对旧 PID 4904 的进程名、session 1、启动时间 `20260928073450` 后，仅终止该上轮项目自有测试实例；没有关闭其它 Office。D4 更新到 `2b47b1e` 并构建退出码 0，重启后再次实验放映源 45，PowerPoint 新 PID 45376、1/9 `playing/powerpoint`。在测试文稿仍放映时恢复开关 false 并执行组 shutdown，约 5.47 秒后状态文件消失，PlayerWorker 39724/49160、AudioWorker 40572、OfficeHost 44824、MediaMTX 52188 与 POWERPNT 45376 全退出，实际 PowerPoint 数 0；此次没有对 Office PID 额外强杀。5 秒整体耗时不能证明所有组件都走协作退出（MediaMTX 仍靠 Supervisor 兜底），但项目 Office 残留的新版实机对照已通过；用户文稿并存保护与异常超时矩阵仍待 T014/T017。
 - 再启运行组，实验开关 false 时窗口 1/2 同时打开源 45，均 `playing/slide_images/1/9`，PowerPoint 进程数持续 0。窗口 1 NEXT=2、PREVIOUS=1、GOTO=3；窗口 2 GOTO=9、PREVIOUS=8、FIRST=1，全无命令/会话错误。窗口 2 第 9 页实机截图与导出的 `page-0009.png` 逐一视觉一致，原件 SHA-256 仍为 `2401652F7CD610DFCDFE4B5F2F32CD112D9645F1E30CEF44ECB3D716B82A55F0`；随后两窗正常关闭为 idle，Office 0。T015 的原件/页图/默认两窗播出已完成，实验模式更广故障测试仍未完成。
 
+## 单源删除一致性红→绿（D4 复测待部署）
+
+- `DeleteSourceAsync` 原先先删除 SQLite 记录，再由 `TryDeleteFile` 吞掉 IOException/权限异常。临时 Windows 文件的占用、只读两条服务回归都因“未抛异常”失败；真实端点回归返回 200 而非 400，确认假成功而非测试误判。
+- 改为活跃源先拒绝、受管理原件先移到 `media/.staging/deleted-source-*` 并附原路径清单，再删除数据库。提交前异常查持久化记录并恢复原件；提交后回执异常按查询结果继续清理而不搬回旧路径。锁定/只读失败保留原件与记录；提交结果不明或隔离清理失败返回 503 `media_cleanup_pending` 并保留清单。源只是登记的本地路径时，不删除外部原件。
+- 新增提交前失败、已提交但回执异常、清理文件锁失败、活跃源拒绝、本地原件保留共 5 条故障回归；加上占用/只读与端点回归，完整非 Physical .NET **317/317**。前端删除失败后刷新真实列表但保留原始错误，3 条行为测试与原测试合计 **45/45**，类型检查和 Web 构建通过；主 chunk >500 kB 提醒仍存在。Redocly 和 Spec Kit 校验通过。D4 上传文件的占用/只读/正常删除及实际页面反馈仍待部署验证，T020 保持未完成。
+
 ## 待执行门禁
 
 文档收敛另发现独立 `runtime-dotnet/scripts/runtime.ps1` 仍把状态文件写在脚本目录，且 `start/restart` 不传两个显示器参数，会被新版 Supervisor 缺参拒绝。现场仍用已验证的 `run-headless.ps1` + 认证 API；该历史入口的修复/明确退役由新增 T037 承接，不能以改文档代替修代码。

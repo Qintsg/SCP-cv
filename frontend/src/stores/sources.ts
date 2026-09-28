@@ -3,10 +3,11 @@
  *
  *   - 文件夹支持层级组织，可创建、重命名、删除和移动源；
  *   - 直播源聚合 srt_stream / rtsp_stream / custom_stream 三种 source_type；
- *   - UI 只暴露「上传文件 / 网页」两种添加入口；
+ *   - UI 提供「上传文件 / 网页 / 直播流」三种添加入口；
  *   - audio 源作为背景音乐入口展示，不再复用窗口播放控制。
  */
 import { defineStore } from 'pinia';
+import { runSourceDeletion } from './sourceDeletion';
 
 import { api, type MediaFolderItem, type MediaSourceItem, type MediaSourceUpdate, type StreamSourceCreate, type UploadOptions } from '@/services/api';
 
@@ -234,9 +235,13 @@ export const useSourceStore = defineStore('sources', {
       this.sources = this.sources.map((item) => item.id === sourceId ? payload.source : item);
       return payload.source;
     },
-    /** 删除源；删除当前类型时若列表为空 UI 会自动展示空态。 */
+    /**
+     * 删除源；失败时同步真实列表并保留原始错误。
+     * :param sourceId: 媒体源主键。
+     * :returns: 删除完成或重新抛出错误。
+     */
     async deleteSource(sourceId: number): Promise<void> {
-      await api.deleteSource(sourceId);
+      await runSourceDeletion(async () => { await api.deleteSource(sourceId); }, () => this.refresh());
       this.sources = this.sources.filter((source) => source.id !== sourceId);
     },
     /**

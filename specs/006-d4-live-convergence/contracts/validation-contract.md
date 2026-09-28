@@ -10,7 +10,7 @@
 | 运行组 | `POST /api/system/restart/`、`shutdown/`，`GET /api/runtime/`、`GET /api/sessions/` | 2 个播放器就绪及精确 PID；停止后项目子进程 0 残留 |
 | 大屏预设/草稿 | `GET/PUT /api/video-wall/layout/`、`POST /api/video-wall/layout/apply/`、`POST /api/video-wall/presets/{preset}/apply/` | 固定预设实体画面正确；未知组合返回 `protocol_unavailable`，节点包 0 且活动预设不变 |
 | PPT 转换与设置 | `POST /api/sources/upload/`、`POST /api/sources/{id}/prepare/`、`GET /api/sources/{id}/slides/{page}/`、`GET/PATCH /api/settings/powerpoint/` | 原件/页图/页码/Office 进程及放映窗口相互印证；实验设置跨控制端一致 |
-| 媒体目录 | `GET/POST /api/folders/`、`PATCH/DELETE /api/folders/{id}/`、`PATCH /api/sources/{id}/move/`、`GET /api/sources/{id}/download/` | 真实相对路径、实体文件与 SHA-256 一致；失败不覆盖旧原件 |
+| 媒体目录 | `GET/POST /api/folders/`、`PATCH/DELETE /api/folders/{id}/`、`PATCH /api/sources/{id}/move/`、`DELETE /api/sources/{id}/`、`GET /api/sources/{id}/download/` | 真实相对路径、实体文件与 SHA-256 一致；失败不覆盖旧原件；单源被占用/只读时 400 且保留记录，清理残留/提交结果不明时 503 `media_cleanup_pending` 并保留隔离清单 |
 | 预案音量 | `POST /api/scenarios/{id}/activate/`、`GET /api/volume/` | Hardware 模式下实体 Core Audio 读回与预案目标一致；写失败返回明确错误，不能只改数据库 |
 
 ## 待补直播源登记合同
