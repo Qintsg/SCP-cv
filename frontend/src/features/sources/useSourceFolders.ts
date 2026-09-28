@@ -3,7 +3,7 @@
  */
 import { computed, h, ref, type Ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import type { DropdownOption } from 'naive-ui';
+import type { ActionDropdownOption } from '@/design-system/dropdownActions';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
@@ -117,37 +117,47 @@ export function useSourceFolders(refresh: () => Promise<void>, isLoading: Ref<bo
     return result;
   }
 
-  function buildFolderMenu(folder: MediaFolderItem): DropdownOption[] {
+  /**
+   * 构造文件夹菜单，独立动作不注册到 DOM 点击事件。
+   * :param folder: 当前文件夹。
+   * :returns: 经过禁用门禁的语义菜单。
+   */
+  function buildFolderMenu(folder: MediaFolderItem): ActionDropdownOption[] {
     const excluded = descendantsOf(folder.id);
-    const destinations: DropdownOption[] = [
+    const destinations: ActionDropdownOption[] = [
       { label: t('sources.moveToRoot'), key: `folder-root-${folder.id}`,
-        disabled: folder.parent_id === null, props: { onClick: () => moveFolder(folder, null) } },
+        disabled: folder.parent_id === null, action: () => moveFolder(folder, null) },
       ...store.folders.filter((candidate) => !excluded.has(candidate.id)).map((candidate) => ({
         label: candidate.relative_path || candidate.name,
         key: `folder-${folder.id}-to-${candidate.id}`,
         disabled: folder.parent_id === candidate.id,
-        props: { onClick: () => moveFolder(folder, candidate.id) },
+        action: () => moveFolder(folder, candidate.id),
       })),
     ];
     return [
       { label: t('sources.renameFolder'), key: 'rename-folder',
         icon: () => h(FIcon, { name: 'edit_24_regular', size: 18 }),
-        props: { onClick: () => renameFolder(folder) } },
+        action: () => renameFolder(folder) },
       { label: t('sources.moveFolder'), key: 'move-folder',
         icon: () => h(FIcon, { name: 'folder_24_regular', size: 18 }), children: destinations },
       { label: t('sources.deleteFolder'), key: 'delete-folder',
         icon: () => h(FIcon, { name: 'delete_24_regular', size: 18 }),
-        props: { onClick: () => deleteFolderConfirm(folder), style: 'color: var(--colorStatusDangerForeground1);' } },
+        action: () => deleteFolderConfirm(folder), props: { style: 'color: var(--colorStatusDangerForeground1);' } },
     ];
   }
 
-  function buildMoveToFolderOptions(source: MediaSourceItem): DropdownOption[] {
+  /**
+   * 构造源的目标目录列表，不将动作暴露为 DOM props。
+   * :param source: 当前媒体源。
+   * :returns: 可选择或明确禁用的目标目录。
+   */
+  function buildMoveToFolderOptions(source: MediaSourceItem): ActionDropdownOption[] {
     return [
       { label: t('sources.moveToRoot'), key: 'move-root', disabled: source.folder_id === null,
-        props: { onClick: () => moveSourceToFolder(source, null) } },
+        action: () => moveSourceToFolder(source, null) },
       ...store.folders.filter((folder) => folder.id !== source.folder_id).map((folder) => ({
         label: folder.relative_path || folder.name, key: `move-${folder.id}`,
-        props: { onClick: () => moveSourceToFolder(source, folder.id) },
+        action: () => moveSourceToFolder(source, folder.id),
       })),
     ];
   }

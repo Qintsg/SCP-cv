@@ -12,11 +12,9 @@ import {
   NAlert,
   NButton,
   NCard,
-  NCheckbox,
   NDropdown,
   NEmpty,
   NInput,
-  NModal,
   NSkeleton,
   NTabs,
   NTabPane,
@@ -25,8 +23,10 @@ import {
 } from 'naive-ui';
 
 import FIcon from '@/design-system/FIcon.vue';
+import { runDropdownAction, type ActionDropdownOption } from '@/design-system/dropdownActions';
 import AddSourceDrawer from './AddSourceDrawer.vue';
 import EditSourceDrawer from './EditSourceDrawer.vue';
+import FolderDialogs from './FolderDialogs.vue';
 import SourceThumbnail from './SourceThumbnail.vue';
 import { useSourceDownload } from './useSourceDownload';
 import { useSourceFolders } from './useSourceFolders';
@@ -142,21 +142,26 @@ function renderIcon(name: string) {
   return () => h(FIcon, { name, size: 18 });
 }
 
-function buildRowMenu(source: MediaSourceItem): DropdownOption[] {
+/**
+ * 构造源操作菜单，将业务动作与 DOM 展示属性分离。
+ * :param source: 当前媒体源。
+ * :returns: 只由 select 执行的菜单项。
+ */
+function buildRowMenu(source: MediaSourceItem): ActionDropdownOption[] {
   const isFileBased = !!source.file_size && source.file_size > 0;
-  const openOptions: DropdownOption[] = source.source_type === 'audio'
+  const openOptions: ActionDropdownOption[] = source.source_type === 'audio'
     ? [
       {
         label: t('sources.playAsBackgroundAudio'),
         key: 'play-background-audio',
         icon: renderIcon('play_24_regular'),
-        props: { onClick: () => playAsBackgroundAudio(source) },
+        action: () => playAsBackgroundAudio(source),
       },
       {
         label: t('sources.addToBackgroundAudio'),
         key: 'add-background-audio',
         icon: renderIcon('music_note_2_24_regular'),
-        props: { onClick: () => addToBackgroundAudio(source) },
+        action: () => addToBackgroundAudio(source),
       },
     ]
     : [
@@ -169,7 +174,7 @@ function buildRowMenu(source: MediaSourceItem): DropdownOption[] {
           label: t('sources.window', { id: windowId }),
           key: `open-${windowId}`,
           icon: renderIcon('open_24_regular'),
-          props: { onClick: () => openToWindow(source, windowId) },
+          action: () => openToWindow(source, windowId),
         })),
       },
     ];
@@ -180,7 +185,7 @@ function buildRowMenu(source: MediaSourceItem): DropdownOption[] {
       label: t('common.edit'),
       key: 'edit',
       icon: renderIcon('edit_24_regular'),
-      props: { onClick: () => startEdit(source) },
+      action: () => startEdit(source),
     },
     {
       label: t('sources.moveToFolder'),
@@ -193,14 +198,14 @@ function buildRowMenu(source: MediaSourceItem): DropdownOption[] {
       key: 'download',
       icon: renderIcon('arrow_download_24_regular'),
       disabled: !isFileBased,
-      props: { onClick: () => isFileBased && downloadSource(source) },
+      action: () => { if (isFileBased) void downloadSource(source); },
     },
     {
       label: t('sources.deleteSource'),
       key: 'delete',
       icon: renderIcon('delete_24_regular'),
+      action: () => deleteSource(source),
       props: {
-        onClick: () => deleteSource(source),
         style: 'color: var(--colorStatusDangerForeground1);',
       },
     },
@@ -228,9 +233,14 @@ function setCategory(value: SourceCategory): void {
   sourceStore.setCategory(value);
 }
 
-function handleMenuSelect(_key: string, option: DropdownOption): void {
-  const handler = (option.props as { onClick?: () => void } | undefined)?.onClick;
-  handler?.();
+/**
+ * 统一派发键盘或鼠标选中的源/目录动作。
+ * :param _key: Naive UI 选项键。
+ * :param option: 已选择的菜单项。
+ * :returns: 完成一次动作派发。
+ */
+function handleMenuSelect(_key: string | number, option: DropdownOption): void {
+  runDropdownAction(option);
 }
 
 const totalCaption = computed(() => {
@@ -455,36 +465,19 @@ const { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
       </section>
     </div>
 
-    <!-- 删除文件夹确认对话框 -->
-    <n-modal v-model:show="deleteFolderDialogOpen" preset="dialog"
-      :title="t('sources.deleteFolderTitle', { name: deleteFolderTarget?.name ?? '' })"
-      :positive-text="t('sources.deleteFolderOk')"
-      :negative-text="t('common.cancel')"
-      :positive-button-props="{ type: 'error', loading: deletingFolder }"
-      @positive-click="executeFolderDelete"
-      @negative-click="deleteFolderTarget = null">
-      <p style="margin: 0 0 var(--spacingVerticalS); color: var(--colorNeutralForeground2);">
-        {{ t('sources.deleteFolderDesc') }}
-      </p>
-      <n-checkbox v-model:checked="deleteFolderContents">
-        {{ t('sources.deleteFolderContentsCheckbox') }}
-      </n-checkbox>
-      <n-alert v-if="deleteFolderContents" type="warning" :closable="false" style="margin-top: var(--spacingVerticalS);">
-        {{ t('sources.deleteFolderContentsWarn') }}
-      </n-alert>
-    </n-modal>
-
-    <!-- 新建文件夹对话框 -->
-    <n-modal v-model:show="newFolderDialogOpen" preset="dialog" :title="t('sources.newFolder')"
-      :positive-text="t('sources.newFolderOk')" :negative-text="t('common.cancel')"
-      :loading="creatingFolder" @positive-click="createFolder">
-      <n-input v-model:value="newFolderName" :placeholder="t('sources.newFolderPlaceholder')"
-        :aria-label="t('sources.newFolderName')" :status="folderNameError ? 'error' : undefined"
-        :aria-invalid="folderNameError" @update:value="folderNameError = false" @keyup.enter="createFolder" />
-      <div v-if="folderNameError" class="sources-view__folder-error" role="alert">
-        {{ t('sources.newFolderNameRequired') }}
-      </div>
-    </n-modal>
+    <FolderDialogs
+      v-model:create-open="newFolderDialogOpen"
+      v-model:name="newFolderName"
+      v-model:name-error="folderNameError"
+      v-model:delete-open="deleteFolderDialogOpen"
+      v-model:delete-contents="deleteFolderContents"
+      :creating="creatingFolder"
+      :deleting="deletingFolder"
+      :delete-target="deleteFolderTarget"
+      :create-folder="createFolder"
+      :delete-folder="executeFolderDelete"
+      @delete-cancelled="deleteFolderTarget = null"
+    />
 
     <AddSourceDrawer v-model:open="drawerOpen" :folderId="sourceStore.currentFolderId" @added="refresh" />
     <EditSourceDrawer v-model:open="editDrawerOpen" :source="editingSource" @updated="refresh" />

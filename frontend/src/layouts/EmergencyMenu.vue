@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { NButton, NDropdown, type DropdownOption } from 'naive-ui';
 
 import FIcon from '@/design-system/FIcon.vue';
+import { runDropdownAction, type ActionDropdownOption } from '@/design-system/dropdownActions';
 import type { FluentIconName } from '@/design-system';
 import { useDialog } from '@/composables/useDialog';
 import { useToast } from '@/composables/useToast';
@@ -125,15 +126,15 @@ function renderIcon(name: FluentIconName): () => ReturnType<typeof h> {
   return () => h(FIcon, { name, size: 18 });
 }
 
-const options = computed<DropdownOption[]>(() => [
+const options = computed<ActionDropdownOption[]>(() => [
   {
     type: 'group',
     label: t('emergency.groupLabel'),
     key: 'group-main',
     children: [
-      { label: t('emergency.resetAll'), key: 'reset', icon: renderIcon('arrow_reset_24_regular'), props: { onClick: onResetAll } },
-      { label: t('emergency.resetPpt'), key: 'reset-ppt', icon: renderIcon('arrow_clockwise_24_regular'), props: { onClick: onResetPptPlayback } },
-      { label: t('emergency.showIds'), key: 'show-ids', icon: renderIcon('eye_24_regular'), props: { onClick: onShowWindowIds } },
+      { label: t('emergency.resetAll'), key: 'reset', icon: renderIcon('arrow_reset_24_regular'), action: onResetAll },
+      { label: t('emergency.resetPpt'), key: 'reset-ppt', icon: renderIcon('arrow_clockwise_24_regular'), action: onResetPptPlayback },
+      { label: t('emergency.showIds'), key: 'show-ids', icon: renderIcon('eye_24_regular'), action: onShowWindowIds },
     ],
   },
   { type: 'divider', key: 'divider-1' },
@@ -142,14 +143,15 @@ const options = computed<DropdownOption[]>(() => [
     key: 'restart-all',
     disabled: systemActionPending.value,
     icon: renderIcon('arrow_repeat_all_24_regular'),
-    props: { onClick: onRestartAll },
+    action: onRestartAll,
   },
   {
     label: t('emergency.shutdown'),
     key: 'shutdown',
     disabled: systemActionPending.value,
     icon: renderIcon('plug_disconnected_24_regular'),
-    props: { onClick: onShutdown, style: 'color: var(--colorStatusDangerForeground1);' },
+    action: onShutdown,
+    props: { style: 'color: var(--colorStatusDangerForeground1);' },
   },
 ]);
 
@@ -159,10 +161,9 @@ const options = computed<DropdownOption[]>(() => [
  * :param option: 被选择的下拉选项
  * :return: None
  */
-function handleSelect(_key: string, option: DropdownOption): void {
+function handleSelect(_key: string | number, option: DropdownOption): void {
   if (systemActionPending.value) return;
-  const handler = (option.props as { onClick?: () => void } | undefined)?.onClick;
-  handler?.();
+  runDropdownAction(option);
 }
 </script>
 

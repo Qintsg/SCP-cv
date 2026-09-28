@@ -36,6 +36,7 @@
     "@vitejs/plugin-vue": "6.0.8",
     "electron": "44.2.0",
     "electron-builder": "26.15.3",
+    "happy-dom": "20.14.5",
     "naive-ui": "2.44.1",
     "pinia": "4.0.2",
     "tailwindcss": "4.3.3",
