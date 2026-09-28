@@ -1,4 +1,6 @@
 // 通过公共 Adapter 验证 Office 共享文稿保护；替换全部 COM、Win32 与 STA 外部访问。
+using System.Text.Json;
+using ScpCv.Contracts.Ipc;
 using ScpCv.PowerPointHost.Interop;
 using ScpCv.PowerPointHost.Sta;
 
@@ -146,6 +148,53 @@ public sealed class PowerPointOwnershipTests
         Assert.Empty(fixture.Office.Presentations.Items);
     }
 
+    /// <summary>窗口取证失败必须通过结果携带受控诊断，不能只写不可见的控制台。</summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task MissingWindowEvidenceIncludesExternalFailureDetail(bool applicationEvidenceMissing)
+    {
+        using var fixture = new OfficeFixture();
+        const string diagnostic = "{\"source\":\"application\",\"stage\":\"com_hwnd\",\"hresult\":\"0x80004005\"}";
+        fixture.Interop.FailureDetail = diagnostic;
+        if (applicationEvidenceMissing) fixture.Interop.ApplicationWindow = null;
+        else fixture.Interop.ShowWindow = null;
+
+        var opened = await fixture.Adapter.OpenAsync(Guid.NewGuid(), fixture.Source);
+
+        Assert.False(opened.Succeeded);
+        Assert.Equal(diagnostic, opened.Detail);
+        Assert.Equal(applicationEvidenceMissing ? "office_process_unavailable" : "slideshow_hwnd_unavailable", opened.Code);
+    }
+
+    /// <summary>取证失败经过真实 Office 执行器传回诊断；没有详细证据时仍兼容错误码。</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FailedOfficeRequestReportsEvidenceDetailOrExistingCode(bool hasDetail)
+    {
+        using var fixture = new OfficeFixture();
+        fixture.Interop.ApplicationWindow = null;
+        const string diagnostic = "{\"source\":\"application\",\"stage\":\"is_window\",\"raw_hwnd\":0,\"is_window\":false}";
+        fixture.Interop.FailureDetail = hasDetail ? diagnostic : string.Empty;
+        var executor = new PowerPointOfficeRequestExecutor(fixture.Adapter, 1, 2);
+        var request = new OfficeRequestDto
+        {
+            OfficeOperationId = Guid.NewGuid(),
+            GroupEpoch = 1,
+            HostEpoch = 2,
+            SlotEpoch = 1,
+            Operation = "open",
+            Parameters = new() { ["path"] = JsonSerializer.SerializeToElement(fixture.Source) },
+        };
+
+        var result = await executor.ExecuteAsync(request);
+
+        Assert.Equal("failed", result.Status);
+        Assert.Equal("office_process_unavailable", result.ErrorCode);
+        Assert.Equal(hasDetail ? diagnostic : "office_process_unavailable", result.ErrorDetail);
+    }
+
     /// <summary>放映调用抛异常时，补偿只影响该次打开取得的对象。</summary>
     [Fact]
     public async Task RunFailureClosesOwnedPresentationAndKeepsConcurrentUserPresentation()
@@ -278,6 +327,7 @@ public sealed class PowerPointOwnershipTests
             System.Globalization.CultureInfo.InvariantCulture);
         public PowerPointWindowEvidence? ApplicationWindow { get; set; } = new((nint)10, 42, Start);
         public PowerPointWindowEvidence? ShowWindow { get; set; } = new((nint)20, 42, Start);
+        public string FailureDetail { get; set; } = string.Empty;
 
         /// <summary>:returns: 不连接真实 Office 的外部 Application 替身。</summary>
         public object CreateApplication() => application;

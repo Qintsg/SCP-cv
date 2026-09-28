@@ -7,6 +7,9 @@ public sealed record PowerPointWindowEvidence(nint Handle, int ProcessId, DateTi
 /// <summary>只封装外部 COM/Win32 访问；文稿归属决策由实际 Adapter 执行。</summary>
 public interface IPowerPointInterop
 {
+    /// <summary>最近一次窗口取证失败的安全诊断；默认无诊断，不包含文稿内容或路径。</summary>
+    string FailureDetail => string.Empty;
+
     /// <summary>
     /// 创建 PowerPoint Automation 对象；调用方仍须检查是否混入用户文稿。
     /// :returns: 当前 STA 拥有的外部 Application 对象。

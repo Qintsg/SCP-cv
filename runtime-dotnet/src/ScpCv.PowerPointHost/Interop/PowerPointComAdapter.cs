@@ -13,7 +13,8 @@ public sealed record PowerPointOpenResult(
     int SlideCount,
     int ProcessId = 0,
     DateTimeOffset ProcessStart = default,
-    int CurrentSlide = 1)
+    int CurrentSlide = 1,
+    string Detail = "")
 {
     public int ProjectedCurrentSlide => Math.Clamp(CurrentSlide, 1, Math.Max(1, SlideCount));
 }
@@ -322,7 +323,7 @@ public sealed class PowerPointComAdapter : IDisposable
             var applicationWindow = _interop.GetApplicationWindow((object)_application);
             if (applicationWindow is null || applicationWindow.Handle == 0 ||
                 applicationWindow.ProcessId <= 0 || applicationWindow.ProcessStart == default)
-                return new(false, "office_process_unavailable", 0, 0, 0);
+                return new(false, "office_process_unavailable", 0, 0, 0, Detail: _interop.FailureDetail);
             // IDispatch 后期绑定不支持命名参数：PowerPoint 不通过 GetIDsOfNames 暴露
             // 参数名，`Open(path, WithWindow: -1)` 会抛 MissingMemberException。
             // 按签名位置传参：Open(FileName, ReadOnly, Untitled, WithWindow)，
@@ -336,7 +337,7 @@ public sealed class PowerPointComAdapter : IDisposable
             showWindow = settings.Run();
             var window = _interop.GetSlideShowWindow((object)showWindow);
             if (window is null || window.Handle == 0 || window.ProcessId <= 0 || window.ProcessStart == default)
-                return new(false, "slideshow_hwnd_unavailable", 0, 0, 0);
+                return new(false, "slideshow_hwnd_unavailable", 0, 0, 0, Detail: _interop.FailureDetail);
             if (window.ProcessId != applicationWindow.ProcessId || window.ProcessStart != applicationWindow.ProcessStart)
                 return new(false, "slideshow_owner_mismatch", 0, 0, 0);
             var slides = (int)presentation.Slides.Count;

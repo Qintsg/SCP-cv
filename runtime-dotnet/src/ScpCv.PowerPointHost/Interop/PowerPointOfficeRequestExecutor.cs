@@ -89,7 +89,7 @@ public sealed class PowerPointOfficeRequestExecutor(
         var path = String(request.Parameters, "path");
         var opened = await adapter.OpenAsync(request.OfficeOperationId, path, cancellationToken).ConfigureAwait(false);
         if (!opened.Succeeded)
-            return Failed(request, opened.Code, opened.Code);
+            return Failed(request, opened.Code, string.IsNullOrWhiteSpace(opened.Detail) ? opened.Code : opened.Detail);
         onOpened?.Invoke(opened);
 
         var parent = (nint)Long(request.Parameters, "parent_hwnd");
