@@ -1,4 +1,4 @@
-using Microsoft.Data.Sqlite;
+// 真实 SQLite 集成夹具：拥有独立 GUID 目录和实际连接串池，释放不影响其它夹具。
 using ScpCv.Infrastructure.Commands;
 using ScpCv.Infrastructure.Configuration;
 using ScpCv.Infrastructure.Persistence;
@@ -9,13 +9,18 @@ namespace ScpCv.Integration.Tests.Fixtures;
 
 public sealed class ControlHostFixture : IAsyncDisposable
 {
+    private readonly string _databaseConnectionString;
+    private bool _temporaryRootCleaned;
+
     private ControlHostFixture(
         string temporaryRoot,
+        string databaseConnectionString,
         DeterministicTimeProvider timeProvider,
         ControlDbContextFactory database,
         WriteCoordinator writes)
     {
         TemporaryRoot = temporaryRoot;
+        _databaseConnectionString = databaseConnectionString;
         TimeProvider = timeProvider;
         Database = database;
         Writes = writes;
@@ -37,25 +42,26 @@ public sealed class ControlHostFixture : IAsyncDisposable
         var root = Path.Combine(Path.GetTempPath(), "scp-cv-integration", Guid.NewGuid().ToString("N"));
         var time = new DeterministicTimeProvider(new DateTimeOffset(2026, 9, 8, 0, 0, 0, TimeSpan.Zero));
         var database = new ControlDbContextFactory(new DataRootOptions { RootPath = root }, root);
-        await new DatabaseInitializer(database, time).InitializeAsync();
-        return new ControlHostFixture(root, time, database, new WriteCoordinator(database));
+        var connectionString = TestDatabaseLifetime.CaptureConnectionString(database);
+        try
+        {
+            await new DatabaseInitializer(database, time).InitializeAsync();
+            return new ControlHostFixture(root, connectionString, time, database, new WriteCoordinator(database));
+        }
+        catch
+        {
+            TestDatabaseLifetime.ClearOwnedPoolAndDeleteRoot(root, "scp-cv-integration", connectionString);
+            throw;
+        }
     }
 
     public ValueTask DisposeAsync()
     {
+        if (_temporaryRootCleaned) return ValueTask.CompletedTask;
         Writes.Dispose();
-        SqliteConnection.ClearAllPools();
-        var fullRoot = Path.GetFullPath(TemporaryRoot);
-        var expectedParent = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "scp-cv-integration"));
-        if (!string.Equals(Path.GetDirectoryName(fullRoot), expectedParent, StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("拒绝清理测试根目录之外的路径。");
-        }
-
-        if (Directory.Exists(fullRoot))
-        {
-            Directory.Delete(fullRoot, recursive: true);
-        }
+        TestDatabaseLifetime.ClearOwnedPoolAndDeleteRoot(
+            TemporaryRoot, "scp-cv-integration", _databaseConnectionString);
+        _temporaryRootCleaned = true;
 
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;

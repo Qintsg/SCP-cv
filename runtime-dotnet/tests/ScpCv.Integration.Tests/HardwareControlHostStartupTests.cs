@@ -1,8 +1,9 @@
+// 冷启动回归：子进程独占数据库池，父进程仅在退出后清理自有 GUID 目录。
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using Microsoft.Data.Sqlite;
+using ScpCv.Integration.Tests.Fixtures;
 
 namespace ScpCv.Integration.Tests;
 
@@ -82,13 +83,14 @@ public sealed class HardwareControlHostStartupTests
         {
             if (!process.HasExited) process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync();
-            SqliteConnection.ClearAllPools();
+            // SQLite 池属于已退出的子进程；父进程不能清理其它并行测试的池。
+            var fullRoot = TestDatabaseLifetime.ValidateTemporaryRoot(dataRoot, "scp-cv-hardware-startup-tests");
             // 被终止的子进程可能在退出后仍短暂持有 SQLite 文件句柄；清理按重试处理，不掩盖启动断言。
-            for (var attempt = 0; attempt < 20 && Directory.Exists(dataRoot); attempt++)
+            for (var attempt = 0; attempt < 20 && Directory.Exists(fullRoot); attempt++)
             {
                 try
                 {
-                    Directory.Delete(dataRoot, recursive: true);
+                    Directory.Delete(fullRoot, recursive: true);
                 }
                 catch (Exception exception) when (attempt < 19 &&
                                                   exception is IOException or UnauthorizedAccessException)

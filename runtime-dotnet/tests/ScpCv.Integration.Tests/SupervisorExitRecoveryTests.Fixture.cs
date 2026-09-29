@@ -67,11 +67,11 @@ public sealed partial class SupervisorExitRecoveryTests
         }
     }
 
-    /// <summary>独立测试库的 EF 故障 seam；没有伪造返回值或跳过事务。</summary>
-    private sealed class InterceptingFactory(string path, IInterceptor interceptor) : IDbContextFactory<ControlDbContext>
+    /// <summary>仅增加 EF 故障 seam，复用原夹具实际池键；没有伪造返回值或跳过事务。</summary>
+    private sealed class InterceptingFactory(string connectionString, IInterceptor interceptor) : IDbContextFactory<ControlDbContext>
     {
         public ControlDbContext CreateDbContext() => new(new DbContextOptionsBuilder<ControlDbContext>()
-            .UseSqlite($"Data Source={path};Foreign Keys=True").AddInterceptors(interceptor).Options);
+            .UseSqlite(connectionString).AddInterceptors(interceptor).Options);
     }
 
     /// <summary>只有原生观察变化；产品 broker、OS 管道认证与持久化均使用真实实现。</summary>
@@ -144,7 +144,8 @@ public sealed partial class SupervisorExitRecoveryTests
             var authority = fixture.RuntimeAuthority;
             if (faultInterceptor is not null)
             {
-                var factory = new InterceptingFactory(fixture.Database.Layout.DatabasePath, faultInterceptor);
+                var factory = new InterceptingFactory(
+                    TestDatabaseLifetime.CaptureConnectionString(fixture.Database), faultInterceptor);
                 _faultWrites = new WriteCoordinator(factory);
                 authority = new RuntimeAuthorityRepository(factory, _faultWrites, fixture.TimeProvider);
             }

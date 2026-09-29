@@ -1,3 +1,4 @@
+// 安全边界真实主机回归：测试工厂只释放其实际数据库连接串池与自有临时目录。
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Net;
@@ -6,10 +7,13 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using ScpCv.ControlHost.Ipc;
 using ScpCv.Infrastructure.Diagnostics;
 using ScpCv.Infrastructure.Media;
+using ScpCv.Infrastructure.Persistence;
 using ScpCv.Integration.Tests.Fixtures;
 
 namespace ScpCv.Integration.Tests;
@@ -119,6 +123,8 @@ internal sealed class SecurityApplicationFactory : WebApplicationFactory<Program
 {
     public const string AllowedOrigin = "https://console.example.test";
     private readonly string _temporaryRoot = Path.Combine(Path.GetTempPath(), "scp-cv-security-tests", Guid.NewGuid().ToString("N"));
+    private string? _databaseConnectionString;
+    private bool _temporaryRootCleaned;
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -130,11 +136,22 @@ internal sealed class SecurityApplicationFactory : WebApplicationFactory<Program
         builder.UseSetting("Authentication:DevelopmentAccount:Password", "Security-password-123");
     }
 
+    /// <summary>保存主机真实 EF 连接串，确保清池与该主机的实际配置一致。</summary>
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        var host = base.CreateHost(builder);
+        _databaseConnectionString = TestDatabaseLifetime.CaptureConnectionString(
+            host.Services.GetRequiredService<IDbContextFactory<ControlDbContext>>());
+        return host;
+    }
+
+    /// <summary>先关闭主机租用者，再只清理该工厂实际连接池和 GUID 临时目录。</summary>
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);
-        if (!disposing) return;
-        SqliteConnection.ClearAllPools();
-        if (Directory.Exists(_temporaryRoot)) Directory.Delete(_temporaryRoot, recursive: true);
+        if (!disposing || _temporaryRootCleaned) return;
+        TestDatabaseLifetime.ClearOwnedPoolAndDeleteRoot(
+            _temporaryRoot, "scp-cv-security-tests", _databaseConnectionString);
+        _temporaryRootCleaned = true;
     }
 }
