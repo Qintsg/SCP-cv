@@ -8,6 +8,10 @@
  *
  * 音量调节走 useThrottledSlider：拖动期间节流上报、抬手再 flush 一次，
  * 避免高频 PATCH 与 SSE 回写在拖动中竞态导致滑块回弹/卡顿。
+ * @Project : SCP-cv
+ * @File : PlaybackControl.vue
+ * @Author : Qintsg
+ * @Date : 2026-09-29
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -34,6 +38,7 @@ import { api, buildBackendUrl, type PptResourceItem, type SessionSnapshot } from
 import { supportsWindowAudioControls } from './playbackCapabilities';
 import { isCurrentPptResourceRequest } from './pptResourceRequest';
 import { usePlaybackErrorGate } from './usePlaybackErrorGate';
+import { isConfirmedPlayback } from './playbackObservation';
 
 const props = defineProps<{ session: SessionSnapshot }>();
 
@@ -135,6 +140,8 @@ const seekValue = computed(() => Math.min(props.session.duration_ms, Math.max(0,
 const videoSeek = useThrottledSlider(
   () => seekValue.value,
   {
+    scope: () => JSON.stringify([props.session.window_id, props.session.source_id, props.session.source_uri]),
+    isActive: () => props.session.player_online && category.value === 'video' && props.session.duration_ms > 0,
     commit: (positionMs: number) => sessionStore.navigate(props.session.window_id, 'seek', 0, positionMs),
     onError: (error) => toast.error(t('playback.seekFail'), error instanceof Error ? error.message : t('common.retry')),
   },
@@ -212,7 +219,17 @@ const pptProgressPercentage = computed(() => {
 
 const isPlaying = computed(() => props.session.playback_state === 'playing');
 const controlsDisabled = computed(() => !props.session.player_online);
+const streamStatusLabel = computed(() => {
+  if (controlsDisabled.value) return t('playback.playerOfflineTitle');
+  if (!props.session.source_uri) return t('playback.notStreaming');
+  if (isConfirmedPlayback(props.session)) return t('playback.live');
+  return props.session.playback_state_label || props.session.playback_state;
+});
 
+/**
+ * 由操作员显式重开当前源，播出结果继续等待 Worker 上报。
+ * :returns: 重开请求完成；离线或后端失败通过通知反馈。
+ */
 async function reopenCurrentSource(): Promise<void> {
   if (!props.session.source_id) return;
   try {
@@ -383,6 +400,7 @@ const errorBarDescription = computed(() => {
           :min="0"
           :max="session.duration_ms"
           :step="1000"
+          :disabled="controlsDisabled"
           :aria-label="t('playback.seekAria')"
           class="playback-control__seek"
           @update:value="videoSeek.handleInput"
@@ -405,8 +423,8 @@ const errorBarDescription = computed(() => {
     </section>
 
     <section v-else-if="category === 'stream'" class="playback-control__section">
-      <n-tag :type="session.source_uri ? 'warning' : 'default'" round size="small">
-        {{ session.source_uri ? t('playback.live') : t('playback.notStreaming') }}
+      <n-tag :type="controlsDisabled ? 'warning' : stateType" round size="small">
+        {{ streamStatusLabel }}
       </n-tag>
       <p v-if="session.source_uri" class="playback-control__uri">{{ session.source_uri }}</p>
       <n-button size="small" :disabled="!session.source_id || controlsDisabled" @click="refreshWebSource">

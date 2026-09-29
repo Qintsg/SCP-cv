@@ -4,6 +4,10 @@
  *   - 顶部搜索 + 类型筛选 Pill；
  *   - List/Detail 风格列表，点击行直接打开到当前窗口；
  *   - 折叠的「上传并打开」区域：创建临时源并立即打开，结束后由后端清理。
+ * @Project : SCP-cv
+ * @File : SourcePicker.vue
+ * @Author : Qintsg
+ * @Date : 2026-09-29
  */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -28,7 +32,8 @@ import type { MediaSourceItem } from '@/services/api';
 import { pickUploadFile } from '@/platform/files';
 import { getNativePlatformAdapter } from '@/platform/native';
 import SourceThumbnail from '../sources/SourceThumbnail.vue';
-import { sourceCategoryLabel } from '../sources/sourcePresentation';
+import { sourceAvailabilityLabel, sourceCategoryLabel } from '../sources/sourcePresentation';
+import { isConfirmedPlayback } from './playbackObservation';
 
 const props = defineProps<{ windowId: number }>();
 const emit = defineEmits<{ (event: 'opened'): void }>();
@@ -38,6 +43,15 @@ const sourceStore = useSourceStore();
 const backgroundAudioStore = useBackgroundAudioStore();
 const sessionStore = useSessionStore();
 const toast = useToast();
+const currentSession = computed(() => sessionStore.byWindowId(props.windowId));
+const controlsDisabled = computed(() => !currentSession.value?.player_online);
+const currentSourceIsPlaying = computed(() => isConfirmedPlayback(currentSession.value));
+const currentSourceStatus = computed(() => {
+  if (controlsDisabled.value) return t('playback.playerOfflineTitle');
+  return currentSourceIsPlaying.value
+    ? t('sourcePicker.onAir')
+    : currentSession.value?.playback_state_label || currentSession.value?.playback_state || t('playback.idle');
+});
 
 const filterValue = ref<SourceCategory>('all');
 const searchKeyword = ref('');
@@ -82,7 +96,13 @@ function handleUploadProgress(percent: number): void {
   uploadPhase.value = percent >= 99 ? 'processing' : 'uploading';
 }
 
+/**
+ * 在线时选择源，受理与真正播出分别由会话呈现。
+ * :param source: 当前媒体源记录。
+ * :returns: 打开请求完成，失败通过通知反馈。
+ */
 async function selectSource(source: MediaSourceItem): Promise<void> {
+  if (controlsDisabled.value) return;
   if (!source.is_available || switchingSourceId.value !== null) {
     if (!source.is_available) toast.warning(t('sourcePicker.offline'), t('sourcePicker.offlineHint'));
     return;
@@ -124,7 +144,12 @@ async function triggerFilePicker(): Promise<void> {
   }
 }
 
+/**
+ * 在线时上传并显式打开，不为离线恢复缓存动作。
+ * :returns: 上传和打开请求完成，失败保留可读原因。
+ */
 async function uploadAndOpen(): Promise<void> {
+  if (controlsDisabled.value) return;
   if (!fileToUpload.value) {
     uploadError.value = t('sourcePicker.pickFileFirst');
     return;
@@ -225,7 +250,7 @@ async function uploadOnly(): Promise<void> {
         :key="source.id"
         class="source-picker__item"
         :class="{
-          'source-picker__item--unavailable': !source.is_available,
+          'source-picker__item--unavailable': controlsDisabled || !source.is_available,
           'source-picker__item--active': isCurrentSource(source),
           'source-picker__item--switching': switchingSourceId === source.id,
         }"
@@ -233,7 +258,7 @@ async function uploadOnly(): Promise<void> {
         <button
           type="button"
           class="source-picker__item-button"
-          :disabled="!source.is_available || switchingSourceId !== null"
+          :disabled="controlsDisabled || !source.is_available || switchingSourceId !== null"
           :aria-current="isCurrentSource(source) ? 'true' : undefined"
           @click="selectSource(source)"
         >
@@ -241,9 +266,9 @@ async function uploadOnly(): Promise<void> {
           <div class="source-picker__meta">
             <p class="source-picker__name">{{ source.name }}</p>
             <p class="source-picker__sub">
-              <n-tag v-if="isCurrentSource(source)" type="success" size="small" round>{{ t('sourcePicker.onAir') }}</n-tag>
-              <n-tag :type="source.is_available ? 'default' : 'error'" size="small" round>
-                {{ source.is_available ? sourceCategoryLabel(source) : t('sourcePicker.offline') }}
+              <n-tag v-if="isCurrentSource(source)" :type="currentSourceIsPlaying ? 'success' : 'warning'" size="small" round>{{ currentSourceStatus }}</n-tag>
+              <n-tag :type="source.is_available ? 'default' : source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error'" size="small" round>
+                {{ source.is_available ? sourceCategoryLabel(source) : sourceAvailabilityLabel(source) }}
               </n-tag>
             </p>
           </div>
@@ -286,7 +311,7 @@ async function uploadOnly(): Promise<void> {
           <n-button :disabled="uploading || !fileToUpload" :loading="uploading" @click="uploadOnly">
             {{ t('sourcePicker.uploadOnly') }}
           </n-button>
-          <n-button type="primary" :disabled="uploading || !fileToUpload" :loading="uploading"
+          <n-button type="primary" :disabled="controlsDisabled || uploading || !fileToUpload" :loading="uploading"
             @click="uploadAndOpen">
             {{ t('sourcePicker.uploadOpen') }}
           </n-button>
@@ -300,231 +325,4 @@ async function uploadOnly(): Promise<void> {
   </n-card>
 </template>
 
-<style scoped>
-.source-picker {
-  height: 100%;
-}
-
-.source-picker__filter-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  margin: 0 calc(-1 * var(--spacingHorizontalS));
-  padding: 0 var(--spacingHorizontalS);
-}
-
-.source-picker__filter-scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.source-picker__filter-scroll :deep(.n-tabs-nav) {
-  flex-shrink: 0;
-}
-
-.source-picker__filter-scroll :deep(.n-tabs-tab) {
-  white-space: nowrap;
-  padding: 4px 10px;
-  font-size: 13px;
-}
-
-.source-picker__count {
-  font-size: var(--fontSizeBase200);
-  color: var(--colorNeutralForeground3);
-}
-
-.source-picker__list {
-  list-style: none;
-  margin: var(--spacingVerticalM) 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacingVerticalXS);
-  max-height: 420px;
-  overflow-y: auto;
-}
-
-.source-picker__empty {
-  padding: var(--spacingVerticalL);
-  text-align: center;
-  color: var(--colorNeutralForeground3);
-  font-size: var(--fontSizeBase200);
-}
-
-.source-picker__item {
-  border-radius: var(--borderRadiusMedium);
-  border: 1px solid var(--colorNeutralStroke2);
-  background: var(--colorNeutralBackground1);
-  overflow: hidden;
-}
-
-.source-picker__item-button {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--spacingHorizontalS);
-  padding: var(--spacingVerticalS) var(--spacingHorizontalM);
-  border: 0;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.source-picker__item:hover:not(.source-picker__item--unavailable) {
-  background: var(--colorBrandBackground2);
-  border-color: var(--colorBrandStroke1);
-}
-
-.source-picker__item:has(.source-picker__item-button:focus-visible) {
-  outline: none;
-  border-color: var(--colorBrandBackground);
-  box-shadow: 0 0 0 2px var(--colorBrandBackground2);
-}
-
-.source-picker__item--unavailable {
-  background: var(--colorNeutralBackground3);
-  opacity: 0.7;
-}
-
-.source-picker__item--unavailable .source-picker__item-button {
-  cursor: not-allowed;
-}
-
-.source-picker__item--active {
-  border-color: var(--colorStatusSuccessForeground1);
-  box-shadow: inset 3px 0 0 var(--colorStatusSuccessForeground1);
-}
-
-.source-picker__meta {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.source-picker__name {
-  margin: 0;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.source-picker__sub {
-  margin: 2px 0 0;
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacingHorizontalS);
-  flex-wrap: wrap;
-  color: var(--colorNeutralForeground2);
-  font-size: var(--fontSizeBase200);
-}
-
-.source-picker__upload {
-  border-top: 1px solid var(--colorNeutralStroke2);
-  padding-top: var(--spacingVerticalS);
-  margin-top: var(--spacingVerticalM);
-}
-
-.source-picker__upload-summary {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacingHorizontalS);
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--colorNeutralForeground2);
-}
-
-.source-picker__upload-body {
-  margin-top: var(--spacingVerticalS);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacingVerticalS);
-}
-
-.source-picker__file {
-  display: flex;
-  align-items: center;
-  gap: var(--spacingHorizontalS);
-  padding: var(--spacingVerticalS) var(--spacingHorizontalM);
-  border: 1px dashed var(--colorNeutralStroke1);
-  border-radius: var(--borderRadiusMedium);
-  background: var(--colorNeutralBackground2);
-}
-
-.source-picker__file:hover {
-  border-color: var(--colorBrandStroke1);
-  background: var(--colorNeutralBackground1);
-}
-
-.source-picker__file-row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacingHorizontalM);
-  width: 100%;
-}
-
-.source-picker__file-row .source-picker__file {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.source-picker__pdf-hint {
-  flex: 0 0 auto;
-  margin: 0;
-  max-width: 220px;
-  color: var(--colorBrandForeground1);
-  font-size: var(--fontSizeBase200);
-  line-height: var(--lineHeightBase200);
-}
-
-.source-picker__file > span {
-  flex: 1 1 auto;
-  color: var(--colorNeutralForeground2);
-  font-size: var(--fontSizeBase200);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.source-picker__upload-actions {
-  display: flex;
-  gap: var(--spacingHorizontalS);
-}
-
-@media (max-width: 767px) {
-  .source-picker__file-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .source-picker__pdf-hint {
-    max-width: none;
-  }
-}
-
-.source-picker__upload-error {
-  margin: 0;
-  color: var(--colorStatusDangerForeground1);
-  font-size: var(--fontSizeBase200);
-}
-
-.source-picker__upload-state {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacingHorizontalS);
-  margin: var(--spacingVerticalS) 0 0;
-  font-size: var(--fontSizeBase200);
-  color: var(--colorNeutralForeground2);
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-</style>
+<style scoped src="./SourcePicker.css"></style>

@@ -7,6 +7,10 @@
  *   - 预热（所有源类型均可参与播放器启动预加载）。
  *
  * 使用 PATCH /api/sources/{id}/，仅传递发生变更的字段，避免误覆盖后端持久值。
+ * @Project : SCP-cv
+ * @File : EditSourceDrawer.vue
+ * @Author : Qintsg
+ * @Date : 2026-09-29
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -23,6 +27,7 @@ import {
 import { useToast } from '@/composables/useToast';
 import { useSourceStore } from '@/stores/sources';
 import type { MediaSourceItem, MediaSourceUpdate } from '@/services/api';
+import { pptPreparationStateLabel } from './sourcePresentation';
 
 const props = defineProps<{
   open: boolean;
@@ -44,27 +49,52 @@ const draftPreheatEnabled = ref(true);
 const saving = ref(false);
 const retrying = ref(false);
 const errorMessage = ref('');
+const editScopeVersion = ref(0);
 
 const isWebSource = computed(() => props.source?.source_type === 'web');
 const isStreamSource = computed(() => ['rtsp_stream', 'srt_stream', 'custom_stream'].includes(props.source?.source_type ?? ''));
 const isUrlSource = computed(() => isWebSource.value || isStreamSource.value);
 const isPptWithImages = computed(() => props.source?.source_type === 'ppt' && props.source.playback_mode === 'slide_images');
 const canRetryPpt = computed(() => isPptWithImages.value &&
-  (!props.source?.preparation_state || props.source.preparation_state === 'failed'));
+  (!props.source?.preparation_state || ['missing', 'failed'].includes(props.source.preparation_state)));
 
+/**
+ * 旧请求只能更新其仍打开的原编辑周期，不能接管重开的同源或新源。
+ * :param sourceId: 发起请求时的源标识。
+ * :param scopeVersion: 发起请求时的编辑周期版本。
+ * :returns: 当前 UI 仍属于该请求时为真。
+ */
+function isCurrentRetryScope(sourceId: number, scopeVersion: number): boolean {
+  return props.open && props.source?.id === sourceId && editScopeVersion.value === scopeVersion;
+}
+
+/**
+ * 显式重试缺失或失败的页图，等待期间拒绝重复准备请求。
+ * :returns: 后端受理后展示真实准备状态；失败保留编辑抽屉。
+ */
 async function retryPptImages(): Promise<void> {
-  if (!props.source || !canRetryPpt.value) return;
+  if (!props.source || !canRetryPpt.value || retrying.value) return;
+  const sourceId = props.source.id;
+  const scopeVersion = editScopeVersion.value;
   retrying.value = true;
   errorMessage.value = '';
   try {
-    const updated = await sourceStore.retryPptImages(props.source.id);
-    toast.info(t('sources.editDrawer.pptQueued'), updated.name);
+    // 请求已受理后不承诺撤销；store 正常同步原源，UI 副作用单独检查归属。
+    const updated = await sourceStore.retryPptImages(sourceId);
+    if (!isCurrentRetryScope(sourceId, scopeVersion)) return;
+    // prepare 可以复用已有作业或制品；响应状态不证明新建了转换作业。
+    toast.info(
+      t(updated.preparation_state === 'queued' ? 'sources.editDrawer.pptQueued' : 'sources.editDrawer.pptStateUpdated'),
+      t('sources.editDrawer.pptStateDetail', { name: updated.name, status: pptPreparationStateLabel(updated.preparation_state) }),
+    );
     emit('updated', updated);
     emit('update:open', false);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('sources.editDrawer.pptRetryFail');
+    if (isCurrentRetryScope(sourceId, scopeVersion)) {
+      errorMessage.value = error instanceof Error ? error.message : t('sources.editDrawer.pptRetryFail');
+    }
   } finally {
-    retrying.value = false;
+    if (isCurrentRetryScope(sourceId, scopeVersion)) retrying.value = false;
   }
 }
 
@@ -76,6 +106,8 @@ const isOpen = computed({
 watch(
   () => [props.open, props.source?.id] as const,
   ([isOpenVal, sourceId]) => {
+    editScopeVersion.value += 1;
+    retrying.value = false;
     if (!isOpenVal || sourceId === undefined) return;
     const source = props.source!;
     draftName.value = source.name ?? '';
@@ -83,7 +115,7 @@ watch(
     draftPreheatEnabled.value = source.preheat_enabled ?? source.keep_alive ?? true;
     errorMessage.value = '';
   },
-  { immediate: true },
+  { immediate: true, flush: 'sync' },
 );
 
 function buildPatch(): MediaSourceUpdate | null {
@@ -145,8 +177,8 @@ function close(): void {
       <template v-if="source">
         <n-alert v-if="isPptWithImages" :type="source.preparation_state === 'ready' ? 'success' : source.preparation_state === 'failed' || source.preparation_state === 'uncertain' ? 'warning' : 'info'"
           class="edit-source__preparation">
-          {{ t('sources.editDrawer.pptStatus', { status: source.preparation_state || t('sources.editDrawer.pptMissing'), pages: source.page_count ?? 0 }) }}
-          <n-button v-if="canRetryPpt" size="small" :loading="retrying" @click="retryPptImages">
+          {{ t('sources.editDrawer.pptStatus', { status: pptPreparationStateLabel(source.preparation_state), pages: source.page_count ?? 0 }) }}
+          <n-button v-if="canRetryPpt" size="small" :disabled="retrying" :loading="retrying" @click="retryPptImages">
             {{ t('sources.editDrawer.pptRetry') }}
           </n-button>
         </n-alert>

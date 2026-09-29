@@ -1,6 +1,10 @@
 /*
  * 简体中文文案：sources 领域。
  * 由 zh-CN.ts 聚合导出，业务代码仍通过 vue-i18n 访问。
+ * @Project : SCP-cv
+ * @File : sources.ts
+ * @Author : Qintsg
+ * @Date : 2026-09-29
  */
 export default {
   sources: {
@@ -52,6 +56,15 @@ export default {
     prepareFailed: '页图转换失败',
     prepareUncertain: '转换状态待确认',
     prepareMissing: '页图尚未准备',
+    preparedSourceUnavailable: '当前源不可用；页图已就绪',
+    preparationState: {
+      queued: '排队等待转换',
+      running: '正在转换页图',
+      ready: '页图已就绪',
+      failed: '页图转换失败',
+      uncertain: '转换结果待人工确认',
+      missing: '页图尚未准备',
+    },
     onAirWindows: '正在窗口 {windows} 播出',
     unavailableCard: '当前不可用，请检查源文件或推流状态。',
     openToWindow: '打开到窗口',
@@ -174,7 +187,9 @@ export default {
       pptStatus: '逐页图片状态：{status}；已准备 {pages} 页。原始 PPT 文件仍保留。',
       pptMissing: '未准备',
       pptRetry: '重试转换',
-      pptQueued: '文稿逐页图片已重新排队',
+      pptQueued: '文稿页图正在排队等待',
+      pptStateUpdated: '文稿准备状态已更新',
+      pptStateDetail: '{name} · {status}',
       pptRetryFail: '重试文稿转换失败',
       cantSave: '无法保存',
       saveChanges: '保存修改',

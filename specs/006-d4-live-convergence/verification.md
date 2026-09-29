@@ -273,3 +273,19 @@ ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进
 - 热切换源39/40/42/45/41/43/46/47覆盖图片、PDF/PPT页图、长视频、网页与RTSP/SRT；**100/100健康完成、失败0、未尝试0**，命令创建→控制完成p95 **466.501ms**、最大 **1533.632ms**，请求→完成观测p95 **1543.87ms**。每次核唯一OPEN、consumer/owner、代次、实际源与API状态；不是视觉出帧延迟或100张截图验收。
 - 普通写命令**1000/1000 Completed**，Failed/Uncertain/Superseded/未完成/无效回执全部0，精确自有命令ID4590–5589；创建→Started p95 **13ms**、最大 **38.7ms**，HTTP p95 **17.4ms**。脚本保持50ms提交间隔，并逐请求前后只读SQLite关联，因此不是无间隔压测吞吐结论。
 - root复制后重新核两个原始CSV的数量、状态、目标及无同源热切换；CLIXML stderr为模块准备/Host信息、error记录0，没有把文件非空误报进程失败。结束后两个窗口音量均显式恢复100并等待pending空，未改系统音量/墙面/电源。原始CSV、报告、stdout/CLIXML、前后会话与结束截图保留于 `.validation/qa-d4-006/benchmark-570540d-evidence/`；T029完成，60分钟T030仍未执行。
+
+### T046–T049 前端真实渲染与在途边界（2026-09-29，本机）
+
+- 独立随机回环Vite/Chromium、封闭HTTP/EventSource夹具先红后绿；无D4/设备/Office调用。SourcePicker原9项徽标越界10.9px，拆scoped CSS并禁止条目收缩后桌面/390px全项几何完整；error/loading/offline标签不再冒充“直播中／正在播出”，离线选源／上传并打开／Seek禁用，手机长错误正常tap重开通过。
+- PPT missing/failed人工prepare一次请求、等待禁用；queued/running/uncertain/unknown不盲重试。已知状态中文、未知原码保留，PDF不可用不叫页图未准备，ready但源不可用保留两个事实。真实幂等ready/running响应原通知误称重新排队，8项通知红例后改用返回状态；不推断新建作业。
+- 旧A prepare的success原会关闭B或重开的A，error贴入B，finally影响B等待；以sourceId+编辑打开周期fence隔离，store仍可更新A。成功／错误／同A重开／B在途交错真实UI均绿，不用锁死取消按钮或声称撤销已受理请求。
+- 独立Seek两轮真红：2000在途、3000待发，offline→online或101→102后释放旧响应，5.2/6.6ms内无新操作却补发3000。修复可选active/scope的未发送缓冲与版本fence，Seek绑定窗口/源/URI/能力；卸载不续发，旧finally不碰新域在途，默认同域最终值保留。原独立harness `green3` 6场景通过，恢复后新手势可提交，未永久禁用。
+- 最终Node **77/77**、typecheck/Web build通过；主矩阵桌面 **73**／手机 **69** 判据全绿，console/pageerror/未知请求0，仅各1条预期HTTP400单列。代码/QA UTF8-LF、Black79/Ruff通过、文件均<500；主chunk **1092.94kB** 告警仍保留。根证据 `.validation/playback-browser-006/run27-full-scoped/` 与 `.validation/slider-flight-006/green3/`，早期红例与夹具/缓存/超时误判原结果保留。只证明真实Vue及受控协议，不证明真实SSE传输/D4出画；T047/T049完成，T046/T048的D4复核及更广手机长列表菜单仍未整体验收。
+
+### 长稳pilot的新增阻断（不是60分钟通过）
+
+- 正式100/1000之后并未自动启动60分钟。旧有界发布器已超过预设期限且不在进程列表；继续前只读确认无发布器，新建PID33072/session0、2026-09-29 07:45:26启动的6600秒发布器，日志独立，不重复启动或隐藏失效。
+- 新helper按固定有限源/代次、约250ms held采样、3秒Loading预算记录真实状态，截图和计划切源空档独立登记；不用瞬时duration0判有限视频失效，也不为截图挑Playing帧。原1分钟试跑取得2个分钟点，却在PS5.1有序字典 `Measure-Object -Property` 统计时退出，未关闭窗口；外层真实日志确认 `GenericMeasurePropertyNotFound`，根因同本机纯内存对照。改为索引数值并把清理移到统计前，随后又捕获非字符串字典键JSON序列化失败，已改为源ID/时长对象数组；两次失败归档均保留，不称播放器故障。
+- SHA `B0AECB9B...A53A7` 版第四个1分钟试跑69.06秒、179 held样本、一次已观测Loading上界1秒，清理实际Idle/空意图/loopfalse/pending空，但持久ActualSourceId仍48/39（generation704/460），严格收尾判为失败。Worker Snapshot正确发null，控制端通用数值fallback保留旧源；T050已补真实SQLite两窗2/2红和最小nullable投影修复，本机针对性24/24，D4新版本尚未复测。
+- 主代理已目视pilot的一张整屏浅灰与3秒后正常短视频；同SHA原短视频独立解码112帧、每帧YMIN0/YMAX255、无均匀亮度帧，灰场不是编码素材，不能宣称视觉连续通过。该循环重启显示缺口仍由T027/T030调查；采样结果显式 `visualContinuityProved=false`。
+- T050后重构建Release0警告/错误，全套实际 **543/544**：Integration新溢出值例在fixture初始化迁移报SQLitePCL对象已释放，未执行到投影断言，其它5项目全绿；`.validation/t033-20260929-actual-source-final/` 原6份TRX保留。Integration仍有4处ClearAllPools，T051承接确定性越界清池回归与修复，不能仅用孤立175绿色覆盖本次完整失败。

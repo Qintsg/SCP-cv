@@ -338,6 +338,18 @@
 - **边界**：T045修复以本资源/不可变attempt保存异步错误并经既有fenced采样/SSE报告；不能按time0判失败、在脱离视觉树时阻塞等Playing或把旧错误送到新源。原生回调不Stop/Dispose，健康同源Playing/Paused保持原进度；正式D4失效/恢复和长稳仍待验证。
 - **新版结论**：`570540d` 非Physical523/523、显式CPU/dummy原生6/6；D4 source74同URI正确error并给原因，换有效RTSP46/SRT47两窗恢复playing/进度增长，两次截图均为变化帧。测试-only硬解禁用不改产品默认GPU路径；最终原生日志仍有H.264错误记录，旧D3D11 Aborted证据保留，默认GPU25秒循环不替代60分钟。
 
+### 坑 45 - 当前在线检查不能阻止旧在途意图重放（2026-09-29 前端修复）
+
+- **症状/证据**：真实键盘Seek2000在途、3000待发，断线恢复或正常切到新源后释放旧响应，无新操作仍自动发送3000；两轮稳定复现。PPT旧准备响应也会关闭新抽屉、把旧错误贴到新源，或解除新请求的等待。
+- **根因**：静态disabled和store当前在线守卫只判断当下，节流finally仍续发；编辑请求只检查源，没有打开周期与旧响应归属。
+- **现状**：未发送Seek绑定操作域与active/version，断线/切源/卸载清缓冲，旧finally不推进新域；PPT按sourceId+编辑周期隔离success/catch/finally。正常最后值与新手势保留，已受理HTTP不声称撤销。Node77/77、主真实浏览器73/69、独立Seek6场景绿，D4/真实SSE未据此宣称通过。
+
+### 坑 46 - 可空实际源的null被当成“没有字段”（2026-09-29 修复待 D4）
+
+- **症状**：D4 CLOSE已完成、idle/空意图/pending空，持久ActualSourceId仍48/39；只看HTTP页面会漏掉。
+- **根因**：Worker正确发source_id:null，控制端通用数值读取却用旧值fallback。
+- **现状**：只对ActualSourceId区分明确null与缺失/畸形字段，保留身份/代次fencing与进度语义；真实SQLite两窗2/2红→绿、相关24/24。完整门禁和D4复核由T050/T051承接，不放宽空实际源的QA断言。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 - `specs/003-dotnet-runtime-refactor/baseline.md` §易错语义：迁移前必须保住的**旧 Python 语义**（冻结在基线提交）。

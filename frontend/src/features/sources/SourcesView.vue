@@ -5,6 +5,10 @@
  *   - 移动：顶部类型 Pills（横滑） + 卡片列表 + 右下 FAB（添加源 Sheet）。
  *
  * 行末菜单只保留：打开到大屏窗口 1/2、编辑、下载（仅文件型）、删除。
+ * @Project : SCP-cv
+ * @File : SourcesView.vue
+ * @Author : Qintsg
+ * @Date : 2026-09-29
  */
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -30,7 +34,8 @@ import FolderDialogs from './FolderDialogs.vue';
 import SourceThumbnail from './SourceThumbnail.vue';
 import { useSourceDownload } from './useSourceDownload';
 import { useSourceFolders } from './useSourceFolders';
-import { sourceCategoryLabel, sourceCategoryTone } from './sourcePresentation';
+import { sourceAvailabilityLabel, sourceCategoryLabel, sourceCategoryTone } from './sourcePresentation';
+import { isConfirmedPlayback } from '../display/playbackObservation';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useDialog } from '@/composables/useDialog';
 import { useToast } from '@/composables/useToast';
@@ -212,21 +217,18 @@ function buildRowMenu(source: MediaSourceItem): ActionDropdownOption[] {
   ];
 }
 
+/**
+ * 仅将在线且实际 playing 的窗口列为播出，不混入选中或历史状态。
+ * :param sourceId: 媒体源主键。
+ * :returns: 已确认播出窗口的标签，没有确认时为空。
+ */
 function activeWindowLabel(sourceId: number): string {
   const windows = sessionStore.sessions
-    .filter((session) => session.source_id === sourceId)
+    .filter((session) => session.source_id === sourceId && isConfirmedPlayback(session))
     .map((session) => session.window_id)
     .sort((left, right) => left - right)
     .join('、');
   return windows ? t('sources.onAirWindows', { windows }) : '';
-}
-
-/** 区分 PPT 转换状态与真正离线，避免把排队误报为源故障。 */
-function availabilityLabel(source: MediaSourceItem): string {
-  if (source.source_type !== 'ppt') return t('sources.offline');
-  if (source.preparation_state === 'queued' || source.preparation_state === 'running') return t('sources.preparing');
-  if (source.preparation_state === 'uncertain') return t('sources.prepareUncertain');
-  return t(source.preparation_state === 'failed' ? 'sources.prepareFailed' : 'sources.prepareMissing');
 }
 
 function setCategory(value: SourceCategory): void {
@@ -404,7 +406,7 @@ const { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
                   <td>
                     <n-tag :type="sourceCategoryTone(source)" round size="small">{{ sourceCategoryLabel(source) }}</n-tag>
                     <n-tag v-if="!source.is_available" :type="source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error'" round size="small" class="sources-view__chip">
-                      {{ availabilityLabel(source) }}
+                      {{ sourceAvailabilityLabel(source) }}
                     </n-tag>
                   </td>
                   <td class="sources-view__col--num">{{ source.file_size ? formatBytes(source.file_size) : t('common.none') }}</td>
@@ -456,7 +458,7 @@ const { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
                   <span>{{ formatRelativeTime(source.created_at) }}</span>
                 </div>
                 <n-alert v-if="!source.is_available" :type="source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error'" :closable="false">
-                  {{ availabilityLabel(source) }}
+                  {{ sourceAvailabilityLabel(source) }}
                 </n-alert>
               </n-card>
             </div>

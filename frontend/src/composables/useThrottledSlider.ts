@@ -9,6 +9,10 @@
  *   - 拖动期间维护本地 `value`，服务端推送在拖动 / 飞行 / 待发期间一律不覆盖；
  *   - 同一时刻只允许一发请求在飞，落地后若有 pending 立即续发；
  *   - 拖动结束（input.change）触发一次确定性 flush，确保最终值与 UI 一致。
+ * @Project : SCP-cv
+ * @File : useThrottledSlider.ts
+ * @Author : Qintsg
+ * @Date : 2026-09-29
  */
 import { onBeforeUnmount, ref, watch, type Ref } from 'vue';
 
@@ -20,6 +24,10 @@ export interface ThrottledSliderOptions {
   commit: (value: number) => Promise<unknown> | unknown;
   /** commit 抛错时的副作用，用于业务侧弹 Toast。 */
   onError?: (error: unknown) => void;
+  /** 可操作边界；从可操作变为不可操作时丢弃本地未发送缓冲。 */
+  isActive?: () => boolean;
+  /** 稳定的目标标识；源/窗口改变时旧缓冲不得转投新目标。 */
+  scope?: () => unknown;
 }
 
 /** 暴露给视图绑定的接口：value 用于显示，handleInput/handleChange 用于事件。 */
@@ -34,9 +42,9 @@ export interface ThrottledSliderHandle {
 
 /**
  * 创建一个滑块节流绑定。
- * @param getRemoteValue 取当前服务端值（用于 watch 实时反向同步）
- * @param options commit 函数与节流配置
- * @return ThrottledSliderHandle 视图层绑定句柄
+ * :param getRemoteValue: 取当前服务端值（用于实时反向同步）。
+ * :param options: 外部提交、节流以及可选操作域配置。
+ * :returns: 公开滑块句柄；仅取消未发送缓冲，不承诺撤销已受理 HTTP。
  */
 export function useThrottledSlider(
   getRemoteValue: () => number,
@@ -55,6 +63,38 @@ export function useThrottledSlider(
   let lastSentAt = 0;
   // 节流定时器引用。
   let throttleTimer: number | null = null;
+  let scopeVersion = 0;
+  let disposed = false;
+
+  /**
+   * 检查当前组件和外部操作边界是否仍允许新提交。
+   * :returns: 当前可操作时为真。
+   */
+  function canCommit(): boolean {
+    return !disposed && (options.isActive?.() ?? true);
+  }
+
+  /**
+   * 丢弃未发送缓冲，并隔离旧响应与当前作用域的状态推进。
+   * :returns: 本地缓冲已清理；在途 HTTP 仍由原调用方正常完成。
+   */
+  function discardPending(): void {
+    scopeVersion += 1;
+    pendingValue = null;
+    dragging = false;
+    inFlight = false;
+    lastSentAt = 0;
+    clearThrottleTimer();
+    value.value = getRemoteValue();
+  }
+
+  watch(
+    [() => options.scope?.(), () => options.isActive?.() ?? true],
+    ([scope, active], [previousScope]) => {
+      if (!active || scope !== previousScope) discardPending();
+    },
+    { flush: 'sync' },
+  );
 
   // 服务端值变化：仅在「不在拖动 + 没有飞行中请求 + 没有待发」时同步到本地。
   watch(getRemoteValue, (next: number): void => {
@@ -74,9 +114,10 @@ export function useThrottledSlider(
    *   - 距上一次发送不足 throttleMs：排定定时器，到期后再 flush；
    *   - 已超过 throttleMs：立即起飞；
    *   - 回程时若 pending 仍有新值，再走一遍 flush（自然保留最小间隔）。
+   * :returns: 当前作用域的一次提交完成或尚未满足提交条件。
    */
   async function flush(): Promise<void> {
-    if (pendingValue === null || inFlight) return;
+    if (!canCommit() || pendingValue === null || inFlight) return;
     const elapsed = Date.now() - lastSentAt;
     if (elapsed < throttleMs) {
       if (throttleTimer === null) {
@@ -91,12 +132,14 @@ export function useThrottledSlider(
     pendingValue = null;
     clearThrottleTimer();
     inFlight = true;
+    const requestScopeVersion = scopeVersion;
     lastSentAt = Date.now();
     try {
       await Promise.resolve(options.commit(next));
     } catch (error) {
-      options.onError?.(error);
+      if (requestScopeVersion === scopeVersion && canCommit()) options.onError?.(error);
     } finally {
+      if (requestScopeVersion !== scopeVersion || !canCommit()) return;
       inFlight = false;
       if (pendingValue !== null) {
         // 回程时仍有新值；若节流间隔尚未走完，flush 内部会自动改用 timer。
@@ -105,14 +148,25 @@ export function useThrottledSlider(
     }
   }
 
-  /** 拖动期间的事件入口：本地立即更新，提交走节流。 */
+  /**
+   * 当前操作域拖动期间立即更新本地值，提交走节流。
+   * :param next: 最新用户输入。
+   * :returns: 输入已缓存或因不可操作被拒绝。
+   */
   function schedule(next: number): void {
+    if (!canCommit()) return;
     pendingValue = next;
     value.value = next;
     void flush();
   }
 
+  /**
+   * 接收当前操作域的拖动输入。
+   * :param next: 期望值。
+   * :returns: 当前合法输入已处理。
+   */
   function handleInput(next: number): void {
+    if (!canCommit()) return;
     dragging = true;
     schedule(next);
   }
@@ -121,8 +175,11 @@ export function useThrottledSlider(
    * 抬手 / 键盘 commit：本地值立即更新；为确保最终值最快上报，
    * 把 lastSentAt 重置到 0，跳过节流间隔约束。
    * 若有飞行中请求，会在其回程时由 finally 路径自动续发到最终值。
+   * :param next: 用户最终确认值。
+   * :returns: 合法输入已提交或在当前域等待。
    */
   function handleChange(next: number): void {
+    if (!canCommit()) return;
     dragging = false;
     pendingValue = next;
     value.value = next;
@@ -133,7 +190,8 @@ export function useThrottledSlider(
   }
 
   onBeforeUnmount((): void => {
-    clearThrottleTimer();
+    disposed = true;
+    discardPending();
   });
 
   return { value, handleInput, handleChange };

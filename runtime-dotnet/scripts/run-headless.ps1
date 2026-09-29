@@ -5,7 +5,7 @@
 .DESCRIPTION
   “无头”指不在交互桌面上弹出控制台窗口：ControlHost 以隐藏窗口启动，
   stdout/stderr 分别写入 DataRoot 下的 control-host.out.log / control-host.err.log。
-  注意：PlayerWorker 的四块播放窗口本身就是播放输出，属于产品功能，不会被隐藏。
+  注意：PlayerWorker 的两块大屏播放窗口本身就是播放输出，属于产品功能，不会被隐藏。
 #>
 [CmdletBinding(DefaultParameterSetName = 'Start')]
 param(

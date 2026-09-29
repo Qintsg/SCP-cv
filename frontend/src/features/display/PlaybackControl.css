@@ -1,3 +1,10 @@
+/*
+ * 单窗播控的局部布局、错误恢复动作及移动触控样式。
+ * @Project : SCP-cv
+ * @File : PlaybackControl.css
+ * @Author : Qintsg
+ * @Date : 2026-09-29
+ */
 .playback-control {
   display: flex;
   flex-direction: column;
@@ -73,6 +80,23 @@
   margin: var(--spacingVerticalXS) 0 0;
   color: var(--colorNeutralForeground2);
   font-size: var(--fontSizeBase200);
+}
+
+/* 原因与恢复动作各自参与布局，长文本不能覆盖按钮。 */
+.playback-control__alert-body {
+  display: flex;
+  align-items: center;
+  gap: var(--spacingHorizontalM);
+}
+
+.playback-control__alert-body > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.playback-control__alert-body > :deep(button) {
+  flex-shrink: 0;
 }
 
 .playback-control__focus-link {
@@ -199,6 +223,16 @@
 }
 
 @media (max-width: 767px) {
+  .playback-control__alert-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacingVerticalS);
+  }
+
+  .playback-control__alert-body > :deep(button) {
+    min-height: 44px;
+  }
+
   .playback-control__heading {
     flex-direction: column;
     gap: var(--spacingVerticalS);

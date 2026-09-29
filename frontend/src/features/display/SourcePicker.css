@@ -1,0 +1,239 @@
+/*
+ * 选源面板的局部布局与滚动样式。
+ * @Project : SCP-cv
+ * @File : SourcePicker.css
+ * @Author : Qintsg
+ * @Date : 2026-09-29
+ */
+.source-picker {
+  height: 100%;
+}
+
+.source-picker__filter-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  margin: 0 calc(-1 * var(--spacingHorizontalS));
+  padding: 0 var(--spacingHorizontalS);
+}
+
+.source-picker__filter-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.source-picker__filter-scroll :deep(.n-tabs-nav) {
+  flex-shrink: 0;
+}
+
+.source-picker__filter-scroll :deep(.n-tabs-tab) {
+  white-space: nowrap;
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.source-picker__count {
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground3);
+}
+
+.source-picker__list {
+  list-style: none;
+  margin: var(--spacingVerticalM) 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingVerticalXS);
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.source-picker__empty {
+  padding: var(--spacingVerticalL);
+  text-align: center;
+  color: var(--colorNeutralForeground3);
+  font-size: var(--fontSizeBase200);
+}
+
+.source-picker__item {
+  /* 条目保持内容高度；超出列表上限时滚动，不压缩并裁掉状态。 */
+  flex-shrink: 0;
+  border-radius: var(--borderRadiusMedium);
+  border: 1px solid var(--colorNeutralStroke2);
+  background: var(--colorNeutralBackground1);
+  overflow: hidden;
+}
+
+.source-picker__item-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  padding: var(--spacingVerticalS) var(--spacingHorizontalM);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.source-picker__item-button:disabled {
+  cursor: not-allowed;
+}
+
+.source-picker__item:hover:not(.source-picker__item--unavailable) {
+  background: var(--colorBrandBackground2);
+  border-color: var(--colorBrandStroke1);
+}
+
+.source-picker__item:has(.source-picker__item-button:focus-visible) {
+  outline: none;
+  border-color: var(--colorBrandBackground);
+  box-shadow: 0 0 0 2px var(--colorBrandBackground2);
+}
+
+.source-picker__item--unavailable {
+  background: var(--colorNeutralBackground3);
+  opacity: 0.7;
+}
+
+.source-picker__item--unavailable .source-picker__item-button {
+  cursor: not-allowed;
+}
+
+.source-picker__item--active {
+  border-color: var(--colorStatusSuccessForeground1);
+  box-shadow: inset 3px 0 0 var(--colorStatusSuccessForeground1);
+}
+
+.source-picker__meta {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.source-picker__name {
+  margin: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-picker__sub {
+  margin: 2px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  flex-wrap: wrap;
+  color: var(--colorNeutralForeground2);
+  font-size: var(--fontSizeBase200);
+}
+
+.source-picker__upload {
+  border-top: 1px solid var(--colorNeutralStroke2);
+  padding-top: var(--spacingVerticalS);
+  margin-top: var(--spacingVerticalM);
+}
+
+.source-picker__upload-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--colorNeutralForeground2);
+}
+
+.source-picker__upload-body {
+  margin-top: var(--spacingVerticalS);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingVerticalS);
+}
+
+.source-picker__file {
+  display: flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  padding: var(--spacingVerticalS) var(--spacingHorizontalM);
+  border: 1px dashed var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusMedium);
+  background: var(--colorNeutralBackground2);
+}
+
+.source-picker__file:hover {
+  border-color: var(--colorBrandStroke1);
+  background: var(--colorNeutralBackground1);
+}
+
+.source-picker__file-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacingHorizontalM);
+  width: 100%;
+}
+
+.source-picker__file-row .source-picker__file {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.source-picker__pdf-hint {
+  flex: 0 0 auto;
+  margin: 0;
+  max-width: 220px;
+  color: var(--colorBrandForeground1);
+  font-size: var(--fontSizeBase200);
+  line-height: var(--lineHeightBase200);
+}
+
+.source-picker__file > span {
+  flex: 1 1 auto;
+  color: var(--colorNeutralForeground2);
+  font-size: var(--fontSizeBase200);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.source-picker__upload-actions {
+  display: flex;
+  gap: var(--spacingHorizontalS);
+}
+
+@media (max-width: 767px) {
+  .source-picker__file-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .source-picker__pdf-hint {
+    max-width: none;
+  }
+}
+
+.source-picker__upload-error {
+  margin: 0;
+  color: var(--colorStatusDangerForeground1);
+  font-size: var(--fontSizeBase200);
+}
+
+.source-picker__upload-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  margin: var(--spacingVerticalS) 0 0;
+  font-size: var(--fontSizeBase200);
+  color: var(--colorNeutralForeground2);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

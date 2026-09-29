@@ -124,6 +124,8 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 
 当前 D4 两窗实测、修复前后对照及未完成门禁见 [006 验证记录](specs/006-d4-live-convergence/verification.md)。短时出画或 1000 普通命令通过不等于 60 分钟混合长稳已完成。
 
+控制台区分选中源与实际播出；离线选源/Seek 禁用，断线恢复或换源不补发旧缓冲进度。PPT 页图 missing/failed 可显式重试，queued/running/uncertain 不盲重放，通知以返回的真实准备状态为准。
+
 ## 数据边界
 
 新的运行数据默认位于 `data/dotnet/`，验证数据应放在 `.validation/`。不要自动删除或覆盖旧 `db.sqlite3`、上传媒体、日志、凭据或其它未跟踪数据；如需清空数据，必须先停止运行时并单独确认精确目标。
