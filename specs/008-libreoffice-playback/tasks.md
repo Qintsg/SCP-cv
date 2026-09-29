@@ -10,11 +10,11 @@
 
 ## Phase 2: Foundational
 
-- [ ] T004 在 `.validation/libreoffice-integration-spike/` 用纯C#正常Frame证明去菜单/导航、只读、动画与真实媒体pause/resume；若二进制接口不能满足则说明阻断，禁止用Python/源码fork偷偷替代。
+- [ ] T004 在 `.validation/libreoffice-integration-spike/` 用纯C#正常Frame证明去菜单/导航、完整viewport、只读、动画和有界正常关闭。正常Frame基本显示已有限实测；专用MTA仍在第3轮无pause的media end超20秒无返回，强清失败/dump保留、停止第4轮。下一轮先分析失败证据，不靠延长timeout/跳过end制造正常退出。已接受统一媒体控制禁用，不豁免该门禁。
 - [X] T005 在 `runtime-dotnet/tests/ScpCv.Integration.Tests/ShutdownPendingIntentTests.cs` 及独立回归先红，覆盖两窗旧Pending、音频、重复停机、迟到结果和最后观测。
 - [X] T006 在 `runtime-dotnet/src/ScpCv.Infrastructure/Runtime/RuntimeAuthorityRepository.cs` 和partial修复确认停机后的Pending/Processing退役及投影，保留Actual/Observed，针对性19/19、加入排他后完整非Physical576/576；见 `verification.md`。
 - [X] T007 在 `runtime-dotnet/src/ScpCv.ControlHost/Endpoints/SystemEndpoints.cs` 修复重复Stopped仍入队CLOSE及重启过早确认：先真实stop成功，再CompleteStop/BeginStart/start；失败不启动新组，合同4/4红→绿、相关15/15已通过。独立复核追加 `RuntimeSystemOperationGate.cs` 和 `SystemOperationConcurrencyTests.cs`，真实HTTP并发4/4红→绿，第二个启停请求在任何状态/外部操作前409拒绝，包含完成后再试，相关19/19、全576/576。原生stop超时后迟到操作仍需T008/T010单独身份围栏，不能据此宣称全部并发安全。
-- [ ] T008 在 `runtime-dotnet/src/ScpCv.Presentation.Protocol/` 建立Net10/Net48可用纯值协议和身份/代次/完成指纹回归，不携带UNO/WPF对象。
+- [X] T008 在 `runtime-dotnet/src/ScpCv.Presentation.Protocol/` 建立Net10/Net48同源纯值协议、64KiB framing、快照后能力/身份门禁和完成指纹匹配；105/105纯回归、全非Physical681/681、真实Net48中文路径往返字节/SHA一致，无UNO/WPF/新包。不等于已接生产或真实OS/租约授权。
 
 ## Phase 3: User Story 1
 
@@ -22,11 +22,11 @@
 - [ ] T010 [US1] 在 `runtime-dotnet/src/ScpCv.Supervisor/Runtime/`、ControlHost/Ipc与状态文件加入impress1/2及converter角色、immutable身份、协作退出和精确子进程证明。
 - [ ] T011 [US1] 在 `runtime-dotnet/src/ScpCv.PlayerWorker/Presentations/` 实现fenced adapter与Frame承载，补打开/失败留旧画面/关闭/重开/晚结果回归，拆分近500行宿主。
 - [ ] T012 [US1] 在 `PresentationPlaybackSelector.cs`、OPEN参数、Snapshot/Progress及投影接入LibreOffice默认，PDF/页图显式模式，明确真实confirmed与desired。
-- [ ] T013 [US1] 在导航/媒体合同与adapter中实现动画步/跳页、统一媒体暂停恢复、mute/volume与真实位置；未验证动作明确unsupported而非假成功。
+- [ ] T013 [US1] 在导航/媒体合同与adapter中实现动画步/跳页及已验证能力；当前统一媒体暂停/恢复/定位capabilities=false、前端禁用、后端unsupported无副作用。mute/volume未验证也不启用，不伪造实际位置。
 
 ## Phase 4: User Story 2
 
-- [ ] T014 [US2] 在 `ScpCv.ControlHost/Media/PptConversionHostedService.cs` 及Presentations/移除PowerPoint转换，LibreOffice独立converter导出有序PNG/匹配PDF与页数，不改原件。
+- [ ] T014 [US2] 在 `ScpCv.ControlHost/Media/PptConversionHostedService.cs` 及Presentations/移除PowerPoint转换，LibreOffice独立converter导出有序PNG/匹配PDF与页数，不改原件。先解决/核验转换spike中oMath透明fallback黑块和严重重排，区分原件排版；PDF实含EmbeddedFile/Screen/Rendition不能直接标扁平静态，需剥离/禁用交互或明确page-render-only语义与体积预算。dirty标志只作内存诊断，RO/URL/实体SHA/锁/退出保护不放宽。
 - [ ] T015 [US2] 在 `ScpCv.Infrastructure/Media/` 解耦原件/native可用与静态准备，保留摘要/修订关联、uncertain手动确认、活跃文稿关闭证明前禁止移动/删除。
 - [ ] T016 [US2] 在上传/prepare/移动tests补原件、预览失败、转换晚到、中文文件夹与关闭在途，原件SHA和锁保持/释放真实。
 
@@ -50,7 +50,7 @@
 
 ## Dependencies & Parallel
 
-保存点/规范→interop门禁与停机安全→协议/宿主→两窗播放/转换/控制台→稳定/完整验证。T005–T007不依赖尚未通过的媒体门禁，可独立修复必要安全前置；核心宿主/默认路由须T004通过或明确用户调整后推进。不同目录可并行；所有.NET构建由root协调，真实桌面操作错开。
+保存点/规范→interop门禁与停机安全→协议/宿主→两窗播放/转换/控制台→稳定/完整验证。T005–T007已完成，T008可与T004关闭/显示诊断并行，无原生副作用；生产承载/默认路由仍须T004通过。统一媒体控制已获允许明确禁用，不豁免关闭/显示门禁。不同目录可并行；所有.NET构建由root协调，真实桌面操作错开。
 
 ## Implementation Strategy
 

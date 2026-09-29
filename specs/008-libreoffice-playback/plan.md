@@ -10,7 +10,7 @@
 
 **Language/Version**: 主运行时C#/.NET10/WPF；官方旧CLI UNO使用独立.NET Framework4.8 C#侧车；前端Vue3/TypeScript。
 
-**Primary Dependencies**: 已安装LibreOffice26.8.0.3的官方CLI/GAC程序集、URE/offapi类型配置；框架引用/协议序列化按仓库集中依赖管理；无生产Python。
+**Primary Dependencies**: 已安装LibreOffice26.8.0.3的官方CLI/GAC程序集、URE/offapi类型配置；框架引用/协议序列化按仓库集中依赖管理；无生产Python。纯值协议使用net48/net10.0双TFM及内置DataContract JSON，不引入第三方JSON包；Framework targeting pack须存在，缺失时明确配置失败。
 
 **Storage**: 原件/准备产物仍由ControlHost管理；每个引擎独占profile，身份含group/instance；SQLite只由ControlHost写。
 
@@ -32,7 +32,7 @@
 - 用户最新选择取代旧“单PowerPoint COM”技术约束，已写spec，治理同步单独任务，不覆盖原则或旧006结果。
 - 官方CLI引用RealProxy，.NET10直接加载已失败；纯C#Net48连接成功（显式uno.ini/URE_MORE_TYPES），不能塞进主进程或复制Python原型当生产。
 - 原生对象仅留侧车，WPF对象仅留Player；跨进程传递带身份/代次的纯值及验证过的OS窗口句柄。
-- 未通过去UI/真实媒体控制门禁前，不宣称完整路由可交付。无源代码fork例外。
+- 未通过去UI/有界正常关闭门禁前，不宣称完整路由可交付。用户接受统一媒体控制不支持；当前capabilities默认关闭暂停/恢复/定位，前后端拒绝且不触发原生动作。无源代码fork例外。
 
 ## Project Structure
 
@@ -55,7 +55,8 @@ frontend/src/features/settings/ & display/ & sources/
 - 原件可播放与静态产物准备分开；native失败明确error，静态仅人工选择。
 - 先修停机Pending旧命令与过早CompleteStop，再启动新宿主，防止跨组误操作。
 - IPC需父command/claim、group/owner、engine/document/source epochs、deadline及parentPID/start/session/DPI，晚结果不能更新新画面。
-- 统一媒体暂停须实际冻结/恢复时钟；公开二进制接口若不可达就是技术阻断，不以stopSound/静音假修。
+- 统一媒体暂停/恢复/定位当前明确不支持，不以stopSound/静音假修。未来若启用须实际冻结/恢复时钟；当前关闭仍须停止媒体并证明退出。
+- 在关闭/显示门禁诊断期间可并行完成T008纯值协议及无原生副作用回归；T009生产承载和默认路由仍须门禁通过。
 
 ## Complexity Tracking
 

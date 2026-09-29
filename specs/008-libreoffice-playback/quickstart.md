@@ -1,7 +1,7 @@
 # 实施门禁
 
 1. 保存点549c57f及源代码归档先于修改；不删除媒体、数据库或证据。
-2. `.validation/libreoffice-integration-spike/` 验证官方纯C#Net48连接、正常Frame去UI、真实媒体pause/resume和只读导出。没有通过不能宣称完整接入。
+2. `.validation/libreoffice-integration-spike/` 验证官方纯C#Net48连接、正常Frame去UI/完整viewport、有界正常关闭和只读导出。未支持的统一媒体控制已接受明确禁用；其余门禁未通过不能宣称完整接入。
 3. 先跑旧命令停机回归，再修改退役事务/重复停机/重启顺序，保证新宿主不领取旧意图。
 4. 按tasks依赖实现侧车/协议/Player/转换/前端/合同，所有过500行文件拆分。
 5. 本机同素材双窗、10轮切源关闭、100控制、用户LO共存/故障/媒体时钟/截图；不操作D4、电源或系统音量。

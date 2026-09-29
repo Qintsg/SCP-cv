@@ -40,7 +40,7 @@ paused=false，总exit47.160秒，其中end47.098秒。setModified/文稿close/d
 第一轮打开/退出同MTA线程，第二轮不同MTA线程，后续需专用串行线程及静态/媒体对照，不偷改为通过。
 分阶段原始日志/身份/清理见 `.validation/libreoffice-integration-spike/shutdown-diag/results.md`。
 
-媒体能力的范围调整仍待用户选择；没有切换默认路由，没有移除旧入口制造不能播放的中间版本。
+2026-09-29用户已接受统一媒体暂停/恢复/定位不支持时明确禁用，前后端拒绝不触发原生动作；这一失败不再阻断接入，但关闭/显示门禁仍未通过。没有切换默认路由，没有移除旧入口制造不能播放的中间版本。
 
 ## 3. 停机安全前置（T005–T007）
 
@@ -93,3 +93,114 @@ dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter 'Category!=P
 ## 4. 剩余工作
 
 T004去UI/真实媒体/正常关闭未通过，T008协议及生产Host尚未开始；默认LibreOffice、转换器、旧入口退役、运行组/前端/合同文档、两窗矩阵、故障注入、60分钟长稳均未完成。当前代码不可标为“完整LibreOffice已接入”。后续以tasks.md及明确范围答复推进，D4仍保持暂停。
+
+## 5. 继续实施范围澄清
+
+2026-09-29接受既有问题的答复1条，没有新增问题。`speckit-clarify`将答复写入spec的Clarifications、
+US1/AC3、FR-006、SC-003及Assumptions，并同步既有设计/任务/合同。requirements质量清单
+16/16→16/16，无新通过、回退或未勾选项；无扩展hooks。
+
+| 澄清分类 | 状态 |
+| --- | --- |
+| 功能范围与行为 | Resolved：未支持统一媒体控制可禁用 |
+| 领域与数据 | Clear |
+| 交互与反馈 | Resolved：能力禁用及unsupported、无副作用 |
+| 非功能质量 | Clear：关闭/显示门禁不放宽 |
+| 外部依赖 | Clear：官方二进制/纯C#、无源码fork |
+| 异常处理 | Clear：超时不明、禁止盲重放 |
+| 约束与取舍 | Resolved：接受媒体限制、不接受假成功 |
+| 术语一致性 | Clear |
+| 完成条件 | Resolved：声明支持才要求真实媒体控制通过 |
+| 占位/杂项 | Clear |
+
+继续`speckit-implement`的T004关闭/显示诊断；并行T008纯值协议，不提前启动生产原生宿主。
+上节“尚未开始”是前轮快照，后续实施结果逐轮追加，不将未完成任务提前勾选。
+
+## 6. 接受媒体限制后的显示与重复关闭
+
+主报告：`.validation/libreoffice-integration-spike/display-and-repeat-results.md`。
+公开正常Frame、纯C#Net48、专用持久MTA；只读inspector真实ReadOnly=true、原件URL为受控副本，
+页尺寸33867×19050、container/component1100×650。root实图显示约150%DPI的1652×1023窗口，
+帧内无LO编辑菜单/工具栏/导航，诊断host标题栏仍在；页6正文经两次next从隐藏变可见，
+页3视频1.5秒间隔出现实际变化帧。只对这个样本证明基本承载/顺序效果，不等于动画完全保真。
+
+被遮挡、最小化或工具用户输入guard阻止的图排除，不假定WGC能穿过遮挡。一次临时区域截图
+因捕获了非目标内容无效，已精确删除；有效实图由Computer Use在本对话内联返回，未重复解码/保存payload。
+root的Alt+Space系统菜单诊断键导致index0→1，已由fresh status核对并排除错页配图，
+不是API错页。后续只使用公开goto/next与只读截图。
+
+| 实际轮次 | presentation.end | 全exit | 原20秒门禁 | 清理 |
+| --- | --- | --- | --- | --- |
+| 专用MTA最初单样本 | 242ms | 315ms | 通过 | 正常、残留0 |
+| 可见显示轮 | 236ms | 340ms | 通过 | 正常、残留0 |
+| 不抢前台重复第2轮 | 239ms | 305ms | 通过 | 正常、残留0 |
+| 不抢前台重复第3轮 | 超20秒，追加观察仍无返回 | 无回执 | **失败** | 精确强清、残留0 |
+
+最后一轮只open→goto index2→next→exit，paused=false、没有媒体暂停/shape控制；
+context到end始终同MTA3/native52728，故线程一致性**不充分**。20秒失败后取证/协调时段很长，
+约236秒仍未返回，不算延长门禁或另一次复现。第4轮未启动；client63852/engine49260/launcher50104
+按PID/start/profile精确清理，62233空，原件SHA和文件锁恢复；强清不能算正常关闭。
+两份MiniDumpWriteDump线程证据保留于repeat-media-round3，尚无符号栈根因，不猜GPU/解码/某vendor函数。
+
+T004显示基本能力获得有限实证，但正常生命周期仍未通过；按speckit-implement暂停依赖它的
+生产承载/默认引擎替换，独立纯值协议/只读转换诊断继续，不能把前端禁用选项当完整接入。
+
+## 7. 纯值协议实现与双运行时验证（T008）
+
+新库net48/net10.0同源编译，不引用UNO/WPF、不加JSON或Framework引用包。
+固定DTO、角色与3种父身份、64KiB小端framing、严格UTF-8/对象数/深度配额，先捕获有限快照再
+对可信currentScope、期限与能力校验；统一媒体暂停/恢复/定位硬unsupported无executor调用。
+规范二进制字段顺序SHA、请求与结果指纹、所有11维scope、完成时间、确认观测与终态冲突匹配
+已实现；accepted/uncertain不更新画面，shutdown仅记生命周期回执，不证明OS退出。
+库只在Contracts.Tests引用，尚未接生产播放器、侧车、连接认证或运行组；不能拿整数/自报HWND
+或指纹冒充OS归属、租约真实性。细则见库README。
+
+| 验证 | 真实结果 | 原始证据 |
+| --- | --- | --- |
+| 首能力拒绝红例 | 1失败/0通过 | `.validation/008-protocol-red/` |
+| 首green | 1/1 | `.validation/008-protocol-first-green/` |
+| 参数policy红例 | 56通过/2失败（?及混合separator输出原件目录） | `.validation/008-protocol-policy-red/` |
+| 完整codec初测 | 101通过/1失败（尾部第二JSON根未拒绝） | `.validation/008-protocol-full-green/`，目录名误称green，失败TRX保留 |
+| 尾根/路径修复后 | 102/102 | `.validation/008-protocol-final-targeted/` |
+| 再纳入3条纯回归 | 105/105、0跳过 | `.validation/008-protocol-105-targeted/` |
+| 前次全套 | 678/678、0跳过，未含3条晚新增 | `.validation/008-protocol-full-nonphysical/` |
+| fresh build后全套 | 681/681、0跳过 | `.validation/008-protocol-681-full/` |
+| 双TFM全解build | 0警告/0错误 | root各轮构建 |
+
+纯回归包含EOF/半帧/短读/取消/过大长度/UTF-8/深JSON/mandatory/尾根/引号括号、默认禁用、
+参数安全、独立快照/超大可变输入有界、旧scope/指纹/确认观测和close/export/shutdown分类。
+目标105是纯值与内存流，不包含任何真实GUI/Office/D4副作用。
+全套计数：Domain41、Contracts123（原18+105）、Windows78、Infrastructure80、Integration199、Host160。
+
+真实CLR互操作在 `.validation/008-protocol-cross-runtime/`：Net10生成帧→Framework v4.0.30319
+实际exe解码/拒绝并重编码→Net10 v10.0.11核对，media_pause和open中文路径两fixture均返回0、
+wire bytes完全相同、请求/结果SHA一致、native callback计数0。
+最终中文open请求SHA `0C4ADB4C72A074A491C7D143D0A178C265725481FA2BC7473F15E6E9510D89AA`，
+结果SHA `7ACE28F8DDC2867F047E2955971BB42977AB76CA81EF2D31B62F6C06FC4DB699`。
+这是协议兼容，不是LibreOffice载入/播出/关闭完成。
+
+## 8. 独立转换结构与视觉门禁
+
+证据：`.validation/libreoffice-conversion-spike/limited-diagnostic-observations.json`；
+独立视觉评审：`.validation/conversion-visual-review.md`。未接生产转换。
+
+- AllinOne首批9张PNG均实际1920×1080、顺序无缺页，PDF真实9页；原件/副本SHA不变。
+  首轮复合URL/modified保护报红，缺返回值，原红保留。仅补日志的有界诊断证明21个状态
+  ReadOnly=true、URL完全相同且规范路径等价；modified在第7页PNG filter前false→后true，
+  PDF前已true。内存dirty不等于物理原件写入，不猜chart/oMath内部根因。
+  更正QA将dirty保留诊断，仍严格核RO/URL/实体SHA/锁/退出，没清标志来假绿。
+- TestPPT独立实例PNG7/7实际1920×1080、PDF真实7页；所有modified=false、RO=true、URL/SHA保持，
+  无setModified或源保存；文稿close65.5ms/terminate4.09ms，原生与监听正常退出、无强清。
+  仅生成结构不证明全部可用静态内容或动态效果。
+- 两样本converter所有UNO调用同一MTA、独立headless profile/62241；均正常退出，源/副本及产物
+  exclusive读检查通过，profiles精确清理，无用户其它Office/D4操作。原始日志与产物保留。
+- TestPPT导出PDF178,774,520字节（约178.8MB），实有6组EmbeddedFile/Screen/Rendition标记，
+  pdfinfo JavaScript=no并不表示无媒体附件或活动annotation。不能标成无交互扁平静态PDF；
+  未逐对象证实每个媒体映射或宣称这些媒体可在PDF播放器使用。
+- 独立看完AllinOne9张PNG：第5页标题换行遮作者，第6页顶栏换行/上部裁切，第7页5个公式
+  变为不透明黑块。源5个oMath的fallback PNG多数透明、角点alpha0且仅少量公式笔画，
+  支持转换链可读性/透明度损失，而非原件刻意实心矩形；仍未区分导入或导出阶段。
+  5/6页尚缺完整golden，不能硬归因某字体；1/2/9已参照旧原始PNG，1/2原图也有裁切不算新缺陷。
+
+T014结构路径有实证但视觉/静态PDF语义仍未通过，不移除旧转换入口或假报全替换。T004正常关闭
+仍为核心阻断，T009及以后生产接入/前端/安装/完整文档/60分钟门禁未执行。
