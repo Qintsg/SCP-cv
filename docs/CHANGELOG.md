@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2026-09-29 — LibreOffice接入保存点与停机安全前置
+
+- 接入前保存点`549c57f`/`checkpoint-before-libreoffice-20260929`，原件、数据库及忽略的实验代码归档保留；未推送或部署D4。
+- 确认停机后原子退役Pending/Processing并清两窗及音频pending，保留Actual/Observed和终态审计；重复停止清理新CLOSE，重启先stop成功再分配新组start，stop失败不继续。单ControlHost启停排他，忙时409无副作用/不排队；相关回归先红后绿，最终全非Physical576/576、零跳过。原生超时/取消后迟到操作不据此宣称安全。
+- 新需求为全部LibreOffice/退役PowerPoint，不走源码fork。纯C#Net48官方UNO连接与正常Frame导航有实证，但统一媒体控制、完整去UI及有界协作关闭门禁尚未通过；生产默认路由/旧入口未切换。当前只完成008部分任务，不宣称完整引擎交付。
+
 ## 2026-09-29 — 前端状态与在途操作隔离
 
 - 播出标签只确认在线 playing，离线 SourcePicker／上传并打开／Seek 禁用；长列表条目不收缩，手机错误原因与恢复按钮分离。

@@ -1,4 +1,4 @@
-// 持久化运行组代次与 Worker 所有权，并在受控停机后终结旧租约。
+// 持久化运行组代次与 Worker 所有权，确认停机后原子退役旧意图和兼容 pending 投影。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
@@ -120,6 +120,13 @@ public sealed partial class RuntimeAuthorityRepository(
             cancellationToken);
     }
 
+    /// <summary>
+    /// 确认整组已停止后原子退役未完成意图；同代次重复确认仍执行幂等清理。
+    /// :param expectedGroupEpoch: 已取得停止证明的运行组代次。
+    /// :param cancellationToken: 事务取消令牌，取消不发布半清理结果。
+    /// :returns: Stopped 运行组，不代表单条命令完成或实际源已观测为空。
+    /// :raises RuntimeAuthorityException: 代次或组状态不再匹配。
+    /// </summary>
     public Task<RuntimeGroupControl> CompleteStopAsync(
         long expectedGroupEpoch,
         CancellationToken cancellationToken = default) =>
@@ -135,13 +142,13 @@ public sealed partial class RuntimeAuthorityRepository(
 
                 group.State = RuntimeGroupState.Stopped;
                 group.ExplicitStartRequestId = null;
-                // Supervisor 已确认整组退出；旧执行结果不能再落库，也不能阻塞下一轮领取。
-                var inFlight = await context.CommandRecords
-                    .Where(command => command.Status == CommandStatus.Processing)
+                // 停止证明不等于每个意图均已执行；Pending 也不能转投下一组的新 owner。
+                var unfinished = await context.CommandRecords
+                    .Where(command => command.Status == CommandStatus.Pending || command.Status == CommandStatus.Processing)
                     .ToListAsync(token)
                     .ConfigureAwait(false);
                 var now = _timeProvider.GetUtcNow();
-                foreach (var command in inFlight)
+                foreach (var command in unfinished)
                 {
                     command.Status = CommandStatus.Superseded;
                     command.ConsumerInstanceId = null;
@@ -151,9 +158,51 @@ public sealed partial class RuntimeAuthorityRepository(
                     command.ResultCode = "runtime_group_stopped";
                     command.LastError = "受控停机后旧 Worker 已退出，未完成命令不再重放。";
                 }
+                await ClearStoppedPendingProjectionsAsync(context, now, token).ConfigureAwait(false);
                 return group;
             },
             cancellationToken);
+
+    /// <summary>
+    /// 只清理两窗及独立音频的兼容意图投影，不改写源、播放状态或最后实际观测。
+    /// :param context: 与命令退役共享的短事务上下文。
+    /// :param now: 本次停止确认时间。
+    /// :param cancellationToken: 数据库事务取消令牌。
+    /// :returns: 仅有投影变更时推进兼容更新时间；历史窗口 3/4 保留。
+    /// </summary>
+    private static async Task ClearStoppedPendingProjectionsAsync(
+        ControlDbContext context,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var sessions = await context.PlaybackSessions.Where(session =>
+                session.WindowId >= WindowId.Minimum && session.WindowId <= WindowId.Maximum &&
+                (session.PendingCommand != string.Empty || session.CommandArgsJson != "{}"))
+            .ToListAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var session in sessions)
+        {
+            session.PendingCommand = string.Empty;
+            session.CommandArgsJson = "{}";
+            session.LastUpdatedAt = StopProjectionTimestamp(session.LastUpdatedAt, now);
+        }
+
+        var audio = await context.BackgroundAudioStates.SingleAsync(cancellationToken).ConfigureAwait(false);
+        if (audio.PendingCommand != string.Empty || audio.CommandArgsJson != "{}")
+        {
+            audio.PendingCommand = string.Empty;
+            audio.CommandArgsJson = "{}";
+            audio.UpdatedAt = StopProjectionTimestamp(audio.UpdatedAt, now);
+        }
+    }
+
+    /// <summary>
+    /// 维持毫秒粒度客户端投影的严格单调时间，不以旧时间覆盖较新的意图更新。
+    /// :param previous: 投影已保存的更新时间。
+    /// :param now: 当前确认时间。
+    /// :returns: 严格晚于 previous 的毫秒时间戳。
+    /// </summary>
+    private static DateTimeOffset StopProjectionTimestamp(DateTimeOffset previous, DateTimeOffset now) =>
+        now.ToUnixTimeMilliseconds() > previous.ToUnixTimeMilliseconds() ? now : previous.AddMilliseconds(1);
 
     public Task<WorkerOwnership> RegisterWorkerAsync(
         RegisterWorker request,

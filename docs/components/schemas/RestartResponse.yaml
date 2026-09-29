@@ -7,8 +7,9 @@ allOf:
     properties:
       sessions:
         type: array
+        description: 未配置Supervisor时仿真停止及意图清理后的两窗快照
         items:
           $ref: ./SessionSnapshot.yaml
       detail:
         type: string
-        example: 全部服务重启请求已发送
+        example: 系统重启请求已发送

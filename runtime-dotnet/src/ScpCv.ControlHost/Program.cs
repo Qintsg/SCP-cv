@@ -103,6 +103,8 @@ builder.Services.AddSingleton<RuntimeSupervisorControl>(services =>
             services.GetRequiredService<RuntimePipeBroker>(),
             bigScreenOutputs,
             services.GetRequiredService<RuntimePipeBroker>()));
+builder.Services.AddSingleton<IRuntimeSupervisorControl>(services => services.GetRequiredService<RuntimeSupervisorControl>());
+builder.Services.AddSingleton<RuntimeSystemOperationGate>();
 builder.Services.AddSingleton<CommandCoordinator>();
 builder.Services.AddSingleton<CommandLeaseService>();
 builder.Services.AddSingleton<CommandResultService>();

@@ -1,15 +1,48 @@
 post:
   tags:
     - runtime
-  summary: 请求重启全部服务
-  description: 通知 runall 关闭其管理的运行时进程，清理可确认属于本项目的残留进程，并以相同参数重新启动。
+  summary: 停止并重新启动播放运行组
+  description: >-
+    已配置Supervisor时先进入排空，等待stop成功后才确认停止、退役未完成意图，
+    分配新组代次并start；新组就绪后授予所有权并恢复显示目标，返回202。
+    stop失败返回503并保持Draining，不启动新组。
+    未配置Supervisor时仅执行仿真停止/意图清理，返回200，不启动真实进程。
+    不重启ControlHost或操作系统。旧命令不转投新组。
+    同ControlHost已有启停操作时409拒绝，不把请求排队到新代次后执行。
   operationId: restartAllServices
   responses:
     '200':
-      description: 重启请求已发送
+      description: 未配置Supervisor，仅完成仿真停止与意图清理
       content:
         application/json:
           schema:
             $ref: ../components/schemas/RestartResponse.yaml
+    '202':
+      description: 新运行组已就绪并授予所有权
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../components/schemas/SuccessResponse.yaml
+              - type: object
+                required:
+                  - group_epoch
+                  - detail
+                properties:
+                  group_epoch:
+                    type: integer
+                    format: int64
+                    description: 本次已就绪运行组代次
+                  detail:
+                    type: string
+                    description: 实际启动/就绪结果
     '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '409':
+      description: 启停操作进行中（runtime_operation_in_progress），先核对已有操作结果
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    '503':
       $ref: ../components/responses/ErrorResponse.yaml

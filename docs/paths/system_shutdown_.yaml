@@ -1,14 +1,28 @@
 post:
   tags:
     - runtime
-  summary: 请求主控进程关闭系统
+  summary: 停止播放运行组
+  description: >-
+    先进入排空并发送重置意图；已配置Supervisor时等待自有运行组停止成功，
+    再原子退役未完成命令并清理当前两窗和音频pending投影。
+    不关闭操作系统或ControlHost，不改写最后实际观测。
+    重复停止也清理新排入的停止意图；停止失败返回503且不确认Stopped。
+    同ControlHost已有启停操作时409拒绝，不排队、不重置意图或发送停止动作。
   operationId: shutdownSystem
   responses:
     '200':
-      description: 请求已发送
+      description: 运行组停止及意图清理完成；未配置Supervisor时仅完成仿真状态清理
       content:
         application/json:
           schema:
             $ref: ../components/schemas/ShutdownResponse.yaml
     '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '409':
+      description: 启停操作进行中（runtime_operation_in_progress），先核对已有操作结果
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml
+    '503':
       $ref: ../components/responses/ErrorResponse.yaml

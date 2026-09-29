@@ -1,3 +1,4 @@
+// 设备仿真合同及确认停机后的真实会话投影，不执行实体设备操作。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -95,7 +96,7 @@ public sealed class DeviceAndSystemEndpointTests
             session =>
             {
                 Assert.Equal("idle", session.GetProperty("playback_state").GetString());
-                Assert.Equal("CLOSE", session.GetProperty("pending_command").GetString());
+                Assert.Equal(string.Empty, session.GetProperty("pending_command").GetString());
             });
 
         var authority = factory.Services.GetRequiredService<RuntimeAuthorityRepository>();

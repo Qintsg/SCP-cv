@@ -22,7 +22,7 @@ public sealed class RuntimeSupervisorControl(
     NamedPipeServer? pipeServer = null,
     IRuntimeReadinessGate? readinessGate = null,
     BigScreenOutputOptions? bigScreenOutputs = null,
-    IRuntimeShutdownNotifier? shutdownNotifier = null)
+    IRuntimeShutdownNotifier? shutdownNotifier = null) : IRuntimeSupervisorControl
 {
     private readonly BigScreenOutputOptions _bigScreenOutputs = bigScreenOutputs ?? new BigScreenOutputOptions();
     public bool IsConfigured => !string.IsNullOrWhiteSpace(options.ExecutablePath);

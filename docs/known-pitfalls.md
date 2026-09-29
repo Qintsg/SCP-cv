@@ -350,6 +350,13 @@
 - **根因**：Worker正确发source_id:null，控制端通用数值读取却用旧值fallback。
 - **现状**：只对ActualSourceId区分明确null与缺失/畸形字段，保留身份/代次fencing与进度语义；真实SQLite两窗2/2红→绿、相关24/24。完整门禁和D4复核由T050/T051承接，不放宽空实际源的QA断言。
 
+### 坑 47 - 确认停机只退役 Processing，旧 Pending 会被新组领取（2026-09-29 本机修复）
+
+- **症状**：停止完成后仍有旧 CLOSE/Pending；新组虽使用新 owner/epoch，仍能领取队列中的旧意图。重复 Stopped 请求又排入 CLOSE，HTTP 响应带过期 pending；重启路径还在真实停止前先确认 Stopped。
+- **根因**：`CompleteStopAsync` 只终结 Processing，不清兼容 pending 投影；停止入口跳过重复 Stopped 清理并复用清理前快照；重启把停止与启动混在一次外部 restart 中，数据库先确认了未取得证明的退出。
+- **检出方式**：真实 SQLite 核对两窗/音频、迟到结果、重复确认和旧 epoch；真实 HTTP 配合明确外部测试替身观察 stop 时 Draining、start 时 Starting，并断言 stop 失败不授予新组。不能把替身受理当原生退出证据。
+- **现状**：同事务先验证组身份/状态，再退役 Pending/Processing、清当前两窗及音频 pending；保留终态审计、Actual/Observed 和历史窗口 3/4 投影。端点停止后重新读会话，重启改 stop 成功→确认停止→新组 start。原回归 7/18 红及入口 4/4 红；修后19/19与相关15/15。独立复核补最外层单Host排他，忙时409无副作用/不排队，四种交错4/4红→绿、相关19/19、全非Physical576/576零跳过。仅本机自动化，未部署/复测D4；不涵盖原生stop超时/取消后迟到动作、多ControlHost或未退出的LibreOffice。具体边界见008 verification。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 - `specs/003-dotnet-runtime-refactor/baseline.md` §易错语义：迁移前必须保住的**旧 Python 语义**（冻结在基线提交）。

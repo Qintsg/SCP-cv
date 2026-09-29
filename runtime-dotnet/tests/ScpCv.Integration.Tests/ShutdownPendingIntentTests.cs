@@ -15,7 +15,7 @@ using ScpCv.Integration.Tests.Fixtures;
 
 namespace ScpCv.Integration.Tests;
 
-public sealed class ShutdownPendingIntentTests
+public sealed partial class ShutdownPendingIntentTests
 {
     private const long LastObservedGeneration = 9;
 
