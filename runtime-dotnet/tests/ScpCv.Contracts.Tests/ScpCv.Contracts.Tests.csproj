@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ScpCv.Contracts\ScpCv.Contracts.csproj" />
     <ProjectReference Include="..\..\src\ScpCv.Domain\ScpCv.Domain.csproj" />
+    <ProjectReference Include="..\..\src\ScpCv.Presentation.Protocol\ScpCv.Presentation.Protocol.csproj" />
     <ProjectReference Include="..\..\src\ScpCv.ControlHost\ScpCv.ControlHost.csproj" />
   </ItemGroup>
 

@@ -550,6 +550,9 @@
           "ScpCv.Domain": "[1.0.0, )"
         }
       },
+      "scpcv.presentation.protocol": {
+        "type": "Project"
+      },
       "Microsoft.EntityFrameworkCore": {
         "type": "CentralTransitive",
         "requested": "[10.0.8, )",
