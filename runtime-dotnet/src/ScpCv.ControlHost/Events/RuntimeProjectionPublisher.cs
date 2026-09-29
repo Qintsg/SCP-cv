@@ -83,7 +83,7 @@ public sealed class RuntimeProjectionPublisher(
         session.PlayerLastSeenAt = _timeProvider.GetUtcNow();
         session.PlaybackState = ReadPlaybackState(state, session.PlaybackState);
         session.PlaybackMode = ReadPlaybackMode(state, session.PlaybackMode);
-        session.ActualSourceId = ReadInt64(state, "source_id", session.ActualSourceId);
+        session.ActualSourceId = ReadActualSourceId(state, session.ActualSourceId);
         session.ActualAdapterKind = ReadString(state, "adapter_kind", session.ActualAdapterKind);
         session.ErrorMessage = ReadString(state, "error_message", session.ErrorMessage);
         session.CurrentSlide = ReadInt32(state, "current_slide", session.CurrentSlide);
@@ -192,4 +192,17 @@ public sealed class RuntimeProjectionPublisher(
         value.TryGetInt64(out var parsed)
             ? parsed
             : fallback;
+
+    /// <summary>
+    /// 区分已报告的空实际源与没有可用观测的字段。
+    /// :param state: 已通过身份和代次门禁的状态。
+    /// :param fallback: 缺失或畸形字段沿用的实际源。
+    /// :returns: 明确空值清空实际源，其它值保持原数值读取语义。
+    /// </summary>
+    private static long? ReadActualSourceId(JsonElement state, long? fallback) =>
+        state.ValueKind == JsonValueKind.Object &&
+        state.TryGetProperty("source_id", out var value) &&
+        value.ValueKind == JsonValueKind.Null
+            ? null
+            : ReadInt64(state, "source_id", fallback);
 }

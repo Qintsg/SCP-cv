@@ -1,3 +1,4 @@
+// 验证 Worker 实际状态的持久投影、在线心跳与代次隔离。
 using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Ipc;
@@ -11,7 +12,7 @@ using ScpCv.Integration.Tests.Fixtures;
 
 namespace ScpCv.Integration.Tests;
 
-public sealed class RuntimeProjectionTests
+public sealed partial class RuntimeProjectionTests
 {
     [Fact]
     public async Task DisplayTransportHeartbeatKeepsPlayerOnlineBetweenCommands()
