@@ -289,3 +289,17 @@ ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进
 - SHA `B0AECB9B...A53A7` 版第四个1分钟试跑69.06秒、179 held样本、一次已观测Loading上界1秒，清理实际Idle/空意图/loopfalse/pending空，但持久ActualSourceId仍48/39（generation704/460），严格收尾判为失败。Worker Snapshot正确发null，控制端通用数值fallback保留旧源；T050已补真实SQLite两窗2/2红和最小nullable投影修复，本机针对性24/24，D4新版本尚未复测。
 - 主代理已目视pilot的一张整屏浅灰与3秒后正常短视频；同SHA原短视频独立解码112帧、每帧YMIN0/YMAX255、无均匀亮度帧，灰场不是编码素材，不能宣称视觉连续通过。该循环重启显示缺口仍由T027/T030调查；采样结果显式 `visualContinuityProved=false`。
 - T050后重构建Release0警告/错误，全套实际 **543/544**：Integration新溢出值例在fixture初始化迁移报SQLitePCL对象已释放，未执行到投影断言，其它5项目全绿；`.validation/t033-20260929-actual-source-final/` 原6份TRX保留。Integration仍有4处ClearAllPools，T051承接确定性越界清池回归与修复，不能仅用孤立175绿色覆盖本次完整失败。
+
+### T051 全量验证恢复与分块提交（2026-09-29）
+
+- 存活A独立timeout37池的TEMP标记在B释放后原为0、预期1，确定性红证明全进程清池越界，不声称确定重演native对象已释放。三类其它consumer保留独立池、8轮并行Create/迁移/Dispose继续核完整迁移和仅两窗种子；Integration四处ClearAllPools已移除。
+- 自有清理读取实际EF连接串、校验temp桶的直接GUID子目录后ClearPool/删自有根；Hardware父进程无自有池，不猜串清其它池，仅子进程退出后清其GUID目录。首次收窄完整176/180仍因Supervisor故障拦截factory额外池锁文件，原TRX保留；将该factory只增加interceptor、复用原实际串后通过，故障/迁移/并行断言不变。
+- 相关25/25三轮、完整Integration180/180三轮；root重构建Release0警告/错误，全solution非Physical两轮均 **549/549、0跳过**（41/18/80/152/78/180），六份TRX各轮在 `.validation/t033-20260929-pool-final-1/`、`pool-final-2/`。前端root独立77/77、Redocly/Spec Kit通过。T051完成，T050的D4门禁仍待部署复测。
+- `43a35d5`（前端）、`6a1e2e0`（空实际源投影）、`ed07211`（Integration池归属）已分别提交并推送origin/gitlab；旧543/544、174/175代理失败、176/180清理锁失败保留，不由后来的绿结果覆盖。
+
+### D4 更新的实际阻断与停机边界（2026-09-29 08:48 后）
+
+- 先按PID33072/启动时间/命令行核对并停止本轮发布器，再受认证group shutdown、按同一DataRoot停止ControlHost44224并清其启动任务。Office/MediaMTX/Supervisor/其它Worker均退出，但window2 PID52152仍在；不能写成项目进程0。
+- 该实例仍为session1、instance `721dae80-6a7e-4082-84e9-4016912320c8`、UTC启动2026-09-28 15:44:05.380，命令明确window2/DISPLAY3。第一次更新未将残留作硬门禁，D4虽已快进 `ed07211`，Debug build实际20警告/4错误（MSB3027/MSB3021、Domain/Contracts DLL被该PID锁）；不称新构建完成。随后所有重试均在非零残留处停止，不启动新组。
+- 精确Stop-Process和Force后原生WaitForExit15秒仍false；一次返回的HasExited=true与CIM/文件锁矛盾，不能取其中一项冒充退出。taskkill /F /PID52152退出1，理由“没有此任务实例运行”，CIM仍有该PID。线程/资源、身份和完整taskkill日志在D4 `qa-006/shutdown-residual-player2-*`，根因尚未知，T052承接；未全局杀Office或影响其它窗口。
+- 已请求用户许可重启D4 Windows，未获许可前不执行重启。当前控制面及监听端口已停、QA任务Ready；残留播放器未清除。T050 D4、T046/T048真实页面、循环灰场与60分钟仍未通过；本机与两处远端HEAD为ed07211，D4源代码同步但运行制品尚非完整一致。
