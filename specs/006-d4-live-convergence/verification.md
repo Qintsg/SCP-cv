@@ -312,3 +312,10 @@ ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进
 - 新运行组仅两窗，显式OPEN39/40后逐窗等待playing/online/pending空，再CLOSE，持久两窗MediaSourceId/ActualSourceId均null、Idle/pending空、generation708/464与observed相等。首个QA查询误纳入历史3/4审计行而判失败，保留原全行JSON；改为明确WHERE窗口1/2，不修改历史行、不放宽两窗断言。
 - 重新OPEN39/40、等待捕获任务Ready及唯一JSON，主代理逐张目视两张输出图为对应测试图/登录截图，无桌面泄露；原图与清空DTO在 `.validation/qa-d4-006/close-null-fixed-5bb25bc-evidence/`。后续协作shutdown实际Worker/MTX残留0，停止同DataRoot ControlHost12920后项目/PPT/发布器/Node及TCP/UDP端口0，QA任务Ready；T050的明确null投影闭环。
 - 此次只开图片，**不是**T052此前VLC/直播混合后停机卡住的同条件复现，T052仍未完成。System shutdown后持久会话留最后actual39/40、待CLOSE与desired/observed差一，原记录 `close-null-shutdown-5bb25bc.json` 保留；这不同于已完成的显式CLOSE，后续T031须核对其租约终结/不重放语义，不能把“进程0”当全部持久状态已清空。T046/T048真实页面、循环灰场与60分钟仍未完成。
+
+### 用户暂停时的交接（2026-09-29 10:09）
+
+- D4仍为 `b2f09c5`。只读查询确认group110停止后的两窗CLOSE真实为Pending，generation710/466，consumer/claim/CompletedAt均null；新增T053公开SQLite/租约链回归实际 **2红、4绿、0跳过**，新合法owner在无新OPEN时误领旧CLOSE。原TRX在 `.validation/t053-shutdown-pending-red/`；仅新增测试和任务，生产尚未修复、未提交。
+- 本轮group111两窗依次测试长视频/PPT页图、PDF/网页、短视频循环/长视频；没有开启PowerPoint、操作墙面或电视。短视频循环后的窗口1显式CLOSE在354ms内取得Idle、实际源null、generation715一致与pending空。此为有限诊断，不是60分钟、连续视觉或历史长时残留的验收。
+- 用户要求暂停后立即中断并行工作，不再启动诊断harness。协作shutdown耗时703ms；持有的两个精确播放器句柄（11924/12192）WaitForExit均true，ExitCode返回null不宣称退出码0。随后关闭ControlHost17024并清理其启动任务；证据在D4 `qa-006/mixed-stop-b2f09c5-20260929-1007/`。
+- 恢复时先核对停机基线，再修复T053。测试曾将窗口1loop设true，停机保留该意图；下一轮应通过公开API恢复原false并等待真实完成，不在停机库内伪造观测。未完成的取证脚本位于忽略目录，必须审查后再运行；本轮未采dump、未运行A/B。所有原媒体和快照保留。
