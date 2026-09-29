@@ -303,3 +303,12 @@ ControlHost PID52216并移除其启动任务。复查项目/MediaMTX/POWERPNT进
 - 该实例仍为session1、instance `721dae80-6a7e-4082-84e9-4016912320c8`、UTC启动2026-09-28 15:44:05.380，命令明确window2/DISPLAY3。第一次更新未将残留作硬门禁，D4虽已快进 `ed07211`，Debug build实际20警告/4错误（MSB3027/MSB3021、Domain/Contracts DLL被该PID锁）；不称新构建完成。随后所有重试均在非零残留处停止，不启动新组。
 - 精确Stop-Process和Force后原生WaitForExit15秒仍false；一次返回的HasExited=true与CIM/文件锁矛盾，不能取其中一项冒充退出。taskkill /F /PID52152退出1，理由“没有此任务实例运行”，CIM仍有该PID。线程/资源、身份和完整taskkill日志在D4 `qa-006/shutdown-residual-player2-*`，根因尚未知，T052承接；未全局杀Office或影响其它窗口。
 - 已请求用户许可重启D4 Windows，未获许可前不执行重启。当前控制面及监听端口已停、QA任务Ready；残留播放器未清除。T050 D4、T046/T048真实页面、循环灰场与60分钟仍未通过；本机与两处远端HEAD为ed07211，D4源代码同步但运行制品尚非完整一致。
+
+### 获准重启后的恢复与 T050 D4 闭环（2026-09-29）
+
+- 用户明确允许重启D4；验证主机名后发出重启请求，SSH断开。重新连接确认OS启动时间09:06:51.500、旧PID不存在、项目/MediaMTX/PPT/发布器及端口0。起初没有Windows用户会话，未在Session0播放；用户现场登录后quser确认admin/console1（09:14），两块输出仍为DISPLAY2 x0和DISPLAY3 x1920、1920×1080，控制桌面未绑定。
+- D4快进 `5bb25bc`，重构建Debug退出0、0警告/错误、37.67秒。第一次pnpm在PS5.1的Stop/合并stderr包装下把脚本前缀视为NativeCommandError，输出未完整记录，不算测试通过；改为隐藏独立原生进程、stdout/stderr分离后取得77 pass/0 fail/0 skip原始输出（189.1秒）。120秒等待先超时，继续观察同一PID，未重复启动；原包装和等待超时不冒充产品失败。
+- D4 Web构建输出完整vite built in57.15s、无TS/ELIFECYCLE错误，主包1093.07kB提醒保留；观察对象的ExitCode为null，故此处只记录完整构建日志，不声称取得了退出码0。无活动Node残留。
+- 新运行组仅两窗，显式OPEN39/40后逐窗等待playing/online/pending空，再CLOSE，持久两窗MediaSourceId/ActualSourceId均null、Idle/pending空、generation708/464与observed相等。首个QA查询误纳入历史3/4审计行而判失败，保留原全行JSON；改为明确WHERE窗口1/2，不修改历史行、不放宽两窗断言。
+- 重新OPEN39/40、等待捕获任务Ready及唯一JSON，主代理逐张目视两张输出图为对应测试图/登录截图，无桌面泄露；原图与清空DTO在 `.validation/qa-d4-006/close-null-fixed-5bb25bc-evidence/`。后续协作shutdown实际Worker/MTX残留0，停止同DataRoot ControlHost12920后项目/PPT/发布器/Node及TCP/UDP端口0，QA任务Ready；T050的明确null投影闭环。
+- 此次只开图片，**不是**T052此前VLC/直播混合后停机卡住的同条件复现，T052仍未完成。System shutdown后持久会话留最后actual39/40、待CLOSE与desired/observed差一，原记录 `close-null-shutdown-5bb25bc.json` 保留；这不同于已完成的显式CLOSE，后续T031须核对其租约终结/不重放语义，不能把“进程0”当全部持久状态已清空。T046/T048真实页面、循环灰场与60分钟仍未完成。
