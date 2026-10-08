@@ -42,5 +42,89 @@
   "topology-audit": {
     "screens": 50,
     "all_match": true
+  },
+  "reply-field-verification": {
+    "fixed_parsers": 34,
+    "field_rows": 99,
+    "field_comparisons": 1193,
+    "all_match": true,
+    "boundary": "原始指令执行结果来自 reply-parser-probes.json；本脚本独立按网络字节解码核对。"
+  },
+  "variable-reply-verification": {
+    "families": 8,
+    "complete_all_match": true,
+    "boundary": "合成地址和文本；无真实输入事件、识别服务或网络连接。环绕结果按原代码保留，包括已发现的字符串复制问题。"
+  },
+  "touch-verification": {
+    "cases": 18,
+    "all_match": true,
+    "boundary": "Qt 触点是纯内存适配，原打包和数量截断指令执行；UDP 仅截取。"
+  },
+  "aux-frame-verification": {
+    "cases": 56,
+    "all_match": true,
+    "boundary": "原构造算法与独立编码比较，无设备写入。"
+  },
+  "media-sequence-verification": {
+    "sequence_cases": 8,
+    "audio_cases": 4,
+    "all_match": true,
+    "boundary": "队列和网络调用被截住，验证原序号和类型分支，不执行媒体解码或声卡播放。"
+  },
+  "geometry-verification": {
+    "cases": 8,
+    "all_match": true,
+    "boundary": "验证矩形转换原指令；整个跨屏业务函数及实体画面没有整体执行。"
+  },
+  "license-algorithm-verification": {
+    "synthetic_cases": 45,
+    "normalized_all_match": true,
+    "case_sensitive_mismatches": [
+      "ABCDEF0",
+      "FEDCBA9"
+    ],
+    "duration_tokens": [
+      {
+        "token": "RU",
+        "raw_duration": 12
+      },
+      {
+        "token": "AQ",
+        "raw_duration": 3
+      },
+      {
+        "token": "AF",
+        "raw_duration": 6
+      },
+      {
+        "token": "SE",
+        "raw_duration": 9
+      },
+      {
+        "token": "ZT",
+        "raw_duration": 0
+      },
+      {
+        "token": "96",
+        "raw_duration": 1001
+      },
+      {
+        "token": "XX",
+        "raw_duration": 1
+      },
+      {
+        "token": "ru",
+        "raw_duration": 1
+      }
+    ],
+    "boundary": "没有读取实际设备指纹、生成实际授权码、执行授权写入或修改注册表。"
+  },
+  "license-source-verification": {
+    "cases": 10,
+    "all_match": true,
+    "synthetic_cpu": "A1B2C3D4",
+    "synthetic_volume": "E5F60789",
+    "synthetic_install_time": 1700000000,
+    "boundary": "所有系统读取被合成值替代；未读取实际设备指纹，未调用授权写入。"
   }
 }

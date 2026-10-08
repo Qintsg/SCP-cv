@@ -1,0 +1,578 @@
+{
+  "cases": 56,
+  "all_match": true,
+  "vectors": [
+    {
+      "function": "0x65f680",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB023100000033",
+      "expected": "A5AB023100000033",
+      "match": true
+    },
+    {
+      "function": "0x65f680",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB023101020036",
+      "expected": "A5AB023101020036",
+      "match": true
+    },
+    {
+      "function": "0x65f680",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0231FFFF0031",
+      "expected": "A5AB0231FFFF0031",
+      "match": true
+    },
+    {
+      "function": "0x65f680",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB02317FFF00B1",
+      "expected": "A5AB02317FFF00B1",
+      "match": true
+    },
+    {
+      "function": "0x65f710",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB023200000034",
+      "expected": "A5AB023200000034",
+      "match": true
+    },
+    {
+      "function": "0x65f710",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB023201020037",
+      "expected": "A5AB023201020037",
+      "match": true
+    },
+    {
+      "function": "0x65f710",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0232FFFF0032",
+      "expected": "A5AB0232FFFF0032",
+      "match": true
+    },
+    {
+      "function": "0x65f710",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB02327FFF00B2",
+      "expected": "A5AB02327FFF00B2",
+      "match": true
+    },
+    {
+      "function": "0x65f7a0",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB023300000035",
+      "expected": "A5AB023300000035",
+      "match": true
+    },
+    {
+      "function": "0x65f7a0",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB023301020038",
+      "expected": "A5AB023301020038",
+      "match": true
+    },
+    {
+      "function": "0x65f7a0",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0233FFFF0033",
+      "expected": "A5AB0233FFFF0033",
+      "match": true
+    },
+    {
+      "function": "0x65f7a0",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB02337FFF00B3",
+      "expected": "A5AB02337FFF00B3",
+      "match": true
+    },
+    {
+      "function": "0x65f830",
+      "parameters": [
+        0,
+        0,
+        0
+      ],
+      "native": "A5AB023400000036",
+      "expected": "A5AB023400000036",
+      "match": true
+    },
+    {
+      "function": "0x65f830",
+      "parameters": [
+        1,
+        2,
+        3
+      ],
+      "native": "A5AB02340102033C",
+      "expected": "A5AB02340102033C",
+      "match": true
+    },
+    {
+      "function": "0x65f830",
+      "parameters": [
+        255,
+        255,
+        255
+      ],
+      "native": "A5AB0234FFFFFF33",
+      "expected": "A5AB0234FFFFFF33",
+      "match": true
+    },
+    {
+      "function": "0x65f830",
+      "parameters": [
+        127,
+        65535,
+        8
+      ],
+      "native": "A5AB02347FFF08BC",
+      "expected": "A5AB02347FFF08BC",
+      "match": true
+    },
+    {
+      "function": "0x65f8c0",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB023700000039",
+      "expected": "A5AB023700000039",
+      "match": true
+    },
+    {
+      "function": "0x65f8c0",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB02370100023C",
+      "expected": "A5AB02370100023C",
+      "match": true
+    },
+    {
+      "function": "0x65f8c0",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0237FF00FF37",
+      "expected": "A5AB0237FF00FF37",
+      "match": true
+    },
+    {
+      "function": "0x65f8c0",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB02377FFFFFB6",
+      "expected": "A5AB02377FFFFFB6",
+      "match": true
+    },
+    {
+      "function": "0x65f960",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB033100000034",
+      "expected": "A5AB033100000034",
+      "match": true
+    },
+    {
+      "function": "0x65f960",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB033101020037",
+      "expected": "A5AB033101020037",
+      "match": true
+    },
+    {
+      "function": "0x65f960",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0331FFFF0032",
+      "expected": "A5AB0331FFFF0032",
+      "match": true
+    },
+    {
+      "function": "0x65f960",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB03317FFF00B2",
+      "expected": "A5AB03317FFF00B2",
+      "match": true
+    },
+    {
+      "function": "0x65f9f0",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB033200000035",
+      "expected": "A5AB033200000035",
+      "match": true
+    },
+    {
+      "function": "0x65f9f0",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB033201020038",
+      "expected": "A5AB033201020038",
+      "match": true
+    },
+    {
+      "function": "0x65f9f0",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0332FFFF0033",
+      "expected": "A5AB0332FFFF0033",
+      "match": true
+    },
+    {
+      "function": "0x65f9f0",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB03327FFF00B3",
+      "expected": "A5AB03327FFF00B3",
+      "match": true
+    },
+    {
+      "function": "0x65fa80",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB033300000036",
+      "expected": "A5AB033300000036",
+      "match": true
+    },
+    {
+      "function": "0x65fa80",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB033301020039",
+      "expected": "A5AB033301020039",
+      "match": true
+    },
+    {
+      "function": "0x65fa80",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0333FFFF0034",
+      "expected": "A5AB0333FFFF0034",
+      "match": true
+    },
+    {
+      "function": "0x65fa80",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB03337FFF00B4",
+      "expected": "A5AB03337FFF00B4",
+      "match": true
+    },
+    {
+      "function": "0x65fb10",
+      "parameters": [
+        0,
+        0,
+        0
+      ],
+      "native": "A5AB033400000037",
+      "expected": "A5AB033400000037",
+      "match": true
+    },
+    {
+      "function": "0x65fb10",
+      "parameters": [
+        1,
+        2,
+        3
+      ],
+      "native": "A5AB03340102033D",
+      "expected": "A5AB03340102033D",
+      "match": true
+    },
+    {
+      "function": "0x65fb10",
+      "parameters": [
+        255,
+        255,
+        255
+      ],
+      "native": "A5AB0334FFFFFF34",
+      "expected": "A5AB0334FFFFFF34",
+      "match": true
+    },
+    {
+      "function": "0x65fb10",
+      "parameters": [
+        127,
+        65535,
+        8
+      ],
+      "native": "A5AB03347FFF08BD",
+      "expected": "A5AB03347FFF08BD",
+      "match": true
+    },
+    {
+      "function": "0x65fba0",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB03370000003A",
+      "expected": "A5AB03370000003A",
+      "match": true
+    },
+    {
+      "function": "0x65fba0",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB03370100023D",
+      "expected": "A5AB03370100023D",
+      "match": true
+    },
+    {
+      "function": "0x65fba0",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0337FF00FF38",
+      "expected": "A5AB0337FF00FF38",
+      "match": true
+    },
+    {
+      "function": "0x65fba0",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB03377FFFFFB7",
+      "expected": "A5AB03377FFFFFB7",
+      "match": true
+    },
+    {
+      "function": "0x65fc40",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB043500000039",
+      "expected": "A5AB043500000039",
+      "match": true
+    },
+    {
+      "function": "0x65fc40",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB04350102003C",
+      "expected": "A5AB04350102003C",
+      "match": true
+    },
+    {
+      "function": "0x65fc40",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0435FFFF0037",
+      "expected": "A5AB0435FFFF0037",
+      "match": true
+    },
+    {
+      "function": "0x65fc40",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB04357FFF00B7",
+      "expected": "A5AB04357FFF00B7",
+      "match": true
+    },
+    {
+      "function": "0x65fcd0",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB04360000003A",
+      "expected": "A5AB04360000003A",
+      "match": true
+    },
+    {
+      "function": "0x65fcd0",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB04360102003D",
+      "expected": "A5AB04360102003D",
+      "match": true
+    },
+    {
+      "function": "0x65fcd0",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0436FFFF0038",
+      "expected": "A5AB0436FFFF0038",
+      "match": true
+    },
+    {
+      "function": "0x65fcd0",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB04367FFF00B8",
+      "expected": "A5AB04367FFF00B8",
+      "match": true
+    },
+    {
+      "function": "0x65fd60",
+      "parameters": [
+        0,
+        0
+      ],
+      "native": "A5AB0D020000000F",
+      "expected": "A5AB0D020000000F",
+      "match": true
+    },
+    {
+      "function": "0x65fd60",
+      "parameters": [
+        1,
+        2
+      ],
+      "native": "A5AB0D0201000212",
+      "expected": "A5AB0D0201000212",
+      "match": true
+    },
+    {
+      "function": "0x65fd60",
+      "parameters": [
+        255,
+        255
+      ],
+      "native": "A5AB0D02FF00FF0D",
+      "expected": "A5AB0D02FF00FF0D",
+      "match": true
+    },
+    {
+      "function": "0x65fd60",
+      "parameters": [
+        127,
+        65535
+      ],
+      "native": "A5AB0D027FFFFF8C",
+      "expected": "A5AB0D027FFFFF8C",
+      "match": true
+    },
+    {
+      "function": "0x65e3e0",
+      "parameters": [
+        17,
+        34,
+        51,
+        68
+      ],
+      "native": "EAEB0111223344FCFD",
+      "expected": "EAEB0111223344FCFD",
+      "match": true
+    },
+    {
+      "function": "0x65e450",
+      "parameters": [
+        8
+      ],
+      "native": "EAEB0208FCFD",
+      "expected": "EAEB0208FCFD",
+      "match": true
+    },
+    {
+      "function": "0x65e4b0",
+      "parameters": [
+        1,
+        1920,
+        1080
+      ],
+      "native": "EAEB030107800438FCFD",
+      "expected": "EAEB030107800438FCFD",
+      "match": true
+    },
+    {
+      "function": "0x65e560",
+      "parameters": [
+        2,
+        960,
+        540
+      ],
+      "native": "EAEB040203C0021CFCFD",
+      "expected": "EAEB040203C0021CFCFD",
+      "match": true
+    }
+  ],
+  "boundary": "原构造算法与独立编码比较，无设备写入。"
+}

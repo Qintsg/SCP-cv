@@ -1,5 +1,7 @@
 {
   "date": "2026-10-08",
+  "revision": 3,
+  "scope": "客户端与附带模块；服务端实现按用户要求排除",
   "modules": [
     {
       "name": "TPSimulator.exe",
@@ -48,8 +50,16 @@
     }
   ],
   "local_evidence_root": "E:\\Projects\\SSPU\\Resources\\SimulatorVideoJoint-analysis",
-  "binary_catalog_rows": 103,
+  "binary_catalog_rows": 187,
+  "native_constructor_samples": 131,
+  "constructor_field_rows": 549,
   "text_catalog_rows": 172,
-  "http_function_rows": 36,
+  "http_function_rows": 40,
+  "corrections": [
+    "重建函数边界，撤销相邻独立入口属于同函数型号分支的旧结论",
+    "65F680至65FD60属于Dante；标注位于65E3E0至65E560",
+    "触摸实际传输19字节",
+    "映射第二标识来源是WindowLevel；A/B/C恢复调用方来源"
+  ],
   "disclaimer": "表格行数不是完整恢复的协议数量；分别保留原代码模拟与静态候选。Qt宿主操作为有限纯内存适配，所有设备网络写入均未执行。"
 }

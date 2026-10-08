@@ -1,0 +1,1215 @@
+{
+  "fixed_parsers": 34,
+  "field_rows": 99,
+  "field_comparisons": 1193,
+  "all_match": true,
+  "vectors": [
+    {
+      "function": "0x00660850",
+      "prefix": "FCFD61000000000E",
+      "sample": "FCFD61000000000E0102030405060708090A0B0C0D0E0000FEFF",
+      "bytes": 26,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "5.6.7.8"
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "2828*3342"
+        },
+        {
+          "type": "QString *",
+          "name": "param_7",
+          "value": "1.2.3.4"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00660ff0",
+      "prefix": "FCFD610100000006",
+      "sample": "FCFD6101000000060102030405060000FEFF",
+      "bytes": 18,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "1.2.3.4"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00661520",
+      "prefix": "FCFD61000000000F",
+      "sample": "FCFD61000000000F0102030405060708090A0B0C0D0E0F0000FEFF",
+      "bytes": 27,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "5.6.7.8"
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "2828*3342"
+        },
+        {
+          "type": "QString *",
+          "name": "param_7",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "uint *",
+          "name": "param_8",
+          "value": [
+            15,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00661c30",
+      "prefix": "FCFD610100000007",
+      "sample": "FCFD610100000007010203040506070000FEFF",
+      "bytes": 19,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            7,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00662180",
+      "prefix": "FEFD31000000000E",
+      "sample": "FEFD31000000000E0102030405060708090A0B0C0D0E0000FCFF",
+      "bytes": 26,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "5.6.7.8"
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "2828*3342"
+        },
+        {
+          "type": "QString *",
+          "name": "param_7",
+          "value": "1.2.3.4"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00662870",
+      "prefix": "FEFD310100000006",
+      "sample": "FEFD3101000000060102030405060000FCFF",
+      "bytes": 18,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "1.2.3.4"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00662da0",
+      "prefix": "FEFD31030000000A",
+      "sample": "FEFD31030000000A0102030405060708090A0000FCFF",
+      "bytes": 22,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "5.6.7.8"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x006634d0",
+      "prefix": "FCFD61020000000A",
+      "sample": "FCFD61020000000A0102030405060708090A0000FEFF",
+      "bytes": 22,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "5.6.7.8"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00663c80",
+      "prefix": "FCFD61030000000A",
+      "sample": "FCFD61030000000A0102030405060708090A0000FEFF",
+      "bytes": 22,
+      "decoded": [
+        {
+          "type": "QString *",
+          "name": "param_4",
+          "value": "5.6.7.8"
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00664440",
+      "prefix": "FCFD61020000000B",
+      "sample": "FCFD61020000000B0102030405060708090A0B0000FEFF",
+      "bytes": 23,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "5.6.7.8"
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            11,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00664b30",
+      "prefix": "FCFD610200000016",
+      "sample": "FCFD6102000000160102030405060708090A0B0C0D0E0F101112131415160000FEFF",
+      "bytes": 34,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            1800,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "3.4.5.6"
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            2314,
+            2828,
+            5655,
+            6683
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_8",
+          "value": [
+            4370,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_9",
+          "value": [
+            4884,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_10",
+          "value": [
+            5398,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00665170",
+      "prefix": "FBFC611000000006",
+      "sample": "FBFC6110000000060102030405060000FDFE",
+      "bytes": 18,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "3.4.5.6"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x006656a0",
+      "prefix": "FBFC611100000006",
+      "sample": "FBFC6111000000060102030405060000FDFE",
+      "bytes": 18,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "3.4.5.6"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00665bd0",
+      "prefix": "FCFC611200000008",
+      "sample": "FCFC61120000000801020304050607080000FDFD",
+      "bytes": 20,
+      "decoded": [
+        {
+          "type": "QString *",
+          "name": "param_4",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "5.6.7.8"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00666330",
+      "prefix": "FCFC611300000004",
+      "sample": "FCFC611300000004010203040000FDFD",
+      "bytes": 16,
+      "decoded": [
+        {
+          "type": "QString *",
+          "name": "param_4",
+          "value": "1.2.3.4"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00666820",
+      "prefix": "FCFC611400000012",
+      "sample": "FCFC6114000000120102030405060708090A0B0C0D0E0F1011120000FDFD",
+      "bytes": 30,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "3.4.5.6"
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1800,
+            2314,
+            4627,
+            5655
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            3856,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_8",
+          "value": [
+            4370,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00666ed0",
+      "prefix": "FCFC611500000012",
+      "sample": "FCFC6115000000120102030405060708090A0B0C0D0E0F1011120000FDFD",
+      "bytes": 30,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "3.4.5.6"
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1800,
+            2314,
+            4627,
+            5655
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            3856,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_8",
+          "value": [
+            4370,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00667580",
+      "prefix": "FCFC611600000012",
+      "sample": "FCFC6116000000120102030405060708090A0B0C0D0E0F1011120000FDFD",
+      "bytes": 30,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "3.4.5.6"
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1800,
+            2314,
+            4627,
+            5655
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            3856,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_8",
+          "value": [
+            4370,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00667c30",
+      "prefix": "FCFC611700000004",
+      "sample": "FCFC611700000004010203040000FDFD",
+      "bytes": 16,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            772,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00667dc0",
+      "prefix": "FCFC611800000006",
+      "sample": "FCFC6118000000060102030405060000FDFD",
+      "bytes": 18,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            772,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00667f80",
+      "prefix": "FCFC61190000000A",
+      "sample": "FCFC61190000000A0102030405060708090A0000FDFD",
+      "bytes": 22,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "3.4.5.6"
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1800,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            2314,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00668530",
+      "prefix": "FCFD611A0000000A",
+      "sample": "FCFD611A0000000A0102030405060708090A0000FEFF",
+      "bytes": 22,
+      "decoded": [
+        {
+          "type": "QString *",
+          "name": "param_4",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "1800*2314"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00668c50",
+      "prefix": "FCFD61200000000A",
+      "sample": "FCFD61200000000A0102030405060708090A0000FEFF",
+      "bytes": 22,
+      "decoded": [
+        {
+          "type": "QString *",
+          "name": "param_4",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "1800*2314"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00669370",
+      "prefix": "FCFD61210000000A",
+      "sample": "FCFD61210000000A0102030405060708090A0000FEFF",
+      "bytes": 22,
+      "decoded": [
+        {
+          "type": "QString *",
+          "name": "param_4",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_6",
+          "value": "1800*2314"
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00669a90",
+      "prefix": "FCFD611D00000001",
+      "sample": "FCFD611D00000001010000FEFF",
+      "bytes": 13,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            1,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00669bc0",
+      "prefix": "FCFD613400000000",
+      "sample": "FCFD6134000000000000FEFF",
+      "bytes": 12,
+      "decoded": [],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x00669cd0",
+      "prefix": "FBFC61FE00000000",
+      "sample": "FBFC61FE000000000000FDFE",
+      "bytes": 12,
+      "decoded": [],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x0066a690",
+      "prefix": "FCFC230000000008",
+      "sample": "FCFC23000000000801020304050607080000FDFD",
+      "bytes": 20,
+      "decoded": [
+        {
+          "type": "QString *",
+          "name": "param_4",
+          "value": "1.2.3.4"
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1800,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x0066ae30",
+      "prefix": "FBFC2A0100000014",
+      "sample": "FBFC2A01000000140001030405060708090AFDFE",
+      "bytes": 20,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            3,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            4,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1286,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            1800,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x0066c230",
+      "prefix": "FCFD61FD00000001",
+      "sample": "FCFD61FD00000001000000FEFF",
+      "bytes": 13,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x0066c370",
+      "prefix": "FCFD61B000000004",
+      "sample": "FCFD61B000000004000000000000FEFF",
+      "bytes": 16,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_5",
+          "value": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x0066c530",
+      "prefix": "FCFD619100000001",
+      "sample": "FCFD619100000001010000FEFF",
+      "bytes": 13,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            1,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x0066d110",
+      "prefix": "FCFD61FA00000001",
+      "sample": "FCFD61FA00000001010000FEFF",
+      "bytes": 13,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            1,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    },
+    {
+      "function": "0x0066d280",
+      "prefix": "FBFC620300000009",
+      "sample": "FBFC6203000000090102030405060708090000FDFE",
+      "bytes": 21,
+      "decoded": [
+        {
+          "type": "uint *",
+          "name": "param_4",
+          "value": [
+            258,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "QString *",
+          "name": "param_5",
+          "value": "3.4.5.6"
+        },
+        {
+          "type": "uint *",
+          "name": "param_6",
+          "value": [
+            1800,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "type": "uint *",
+          "name": "param_7",
+          "value": [
+            9,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "independent_match": true,
+      "wrapped_match": true,
+      "partial_match": true,
+      "damaged_checksum_accepted": true
+    }
+  ],
+  "boundary": "原始指令执行结果来自 reply-parser-probes.json；本脚本独立按网络字节解码核对。"
+}

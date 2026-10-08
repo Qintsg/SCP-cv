@@ -107,6 +107,23 @@
     "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
   },
   {
+    "function": "004da1f0_CMem_HTTPClient__sl_get__2",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [
+      "\\r",
+      "\\n"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004da780_CMem_HTTPClient__sl_post__3",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
     "function": "00507ac0_FUN_00507ac0",
     "method": "POST",
     "request_constant_candidate": "addJointInfo",
@@ -336,6 +353,20 @@
   {
     "function": "0073a3e0_FUN_0073a3e0",
     "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00775710_FUN_00775710",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "007757e0_FUN_007757e0",
+    "method": "POST",
     "request_constant_candidate": null,
     "keys": [],
     "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"

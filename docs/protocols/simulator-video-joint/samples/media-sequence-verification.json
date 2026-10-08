@@ -1,0 +1,118 @@
+{
+  "sequence_cases": 8,
+  "audio_cases": 4,
+  "all_match": true,
+  "sequence": [
+    {
+      "previous_low": 4294967295,
+      "previous_high": 4294967295,
+      "incoming": 99,
+      "expected_acceptance": true,
+      "native_acceptance": true,
+      "requests": [],
+      "match": true
+    },
+    {
+      "previous_low": 1,
+      "previous_high": 0,
+      "incoming": 2,
+      "expected_acceptance": true,
+      "native_acceptance": true,
+      "requests": [],
+      "match": true
+    },
+    {
+      "previous_low": 99,
+      "previous_high": 0,
+      "incoming": 100,
+      "expected_acceptance": true,
+      "native_acceptance": true,
+      "requests": [],
+      "match": true
+    },
+    {
+      "previous_low": 100,
+      "previous_high": 0,
+      "incoming": 100,
+      "expected_acceptance": false,
+      "native_acceptance": false,
+      "requests": [
+        "GETKEYFRAME"
+      ],
+      "match": true
+    },
+    {
+      "previous_low": 100,
+      "previous_high": 0,
+      "incoming": 99,
+      "expected_acceptance": false,
+      "native_acceptance": false,
+      "requests": [
+        "GETKEYFRAME"
+      ],
+      "match": true
+    },
+    {
+      "previous_low": 64300,
+      "previous_high": 0,
+      "incoming": 1,
+      "expected_acceptance": true,
+      "native_acceptance": true,
+      "requests": [],
+      "match": true
+    },
+    {
+      "previous_low": 64300,
+      "previous_high": 0,
+      "incoming": 0,
+      "expected_acceptance": false,
+      "native_acceptance": false,
+      "requests": [
+        "GETKEYFRAME"
+      ],
+      "match": true
+    },
+    {
+      "previous_low": 65535,
+      "previous_high": 0,
+      "incoming": 0,
+      "expected_acceptance": false,
+      "native_acceptance": false,
+      "requests": [
+        "GETKEYFRAME"
+      ],
+      "match": true
+    }
+  ],
+  "audio": [
+    {
+      "previous_audio_count": 0,
+      "packet": "FFF144415441",
+      "expected": "aac",
+      "native": "aac",
+      "match": true
+    },
+    {
+      "previous_audio_count": 0,
+      "packet": "50434D5F44415441",
+      "expected": "pcm",
+      "native": "pcm",
+      "match": true
+    },
+    {
+      "previous_audio_count": 3,
+      "packet": "FFF144415441",
+      "expected": "aac",
+      "native": "aac",
+      "match": true
+    },
+    {
+      "previous_audio_count": 4,
+      "packet": "FFF144415441",
+      "expected": "initial",
+      "native": "initial",
+      "match": true
+    }
+  ],
+  "boundary": "队列和网络调用被截住，验证原序号和类型分支，不执行媒体解码或声卡播放。"
+}

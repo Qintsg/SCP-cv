@@ -1,0 +1,1230 @@
+{
+  "databases": [
+    {
+      "file": "192.168.2.118_10.db",
+      "tables": [
+        {
+          "name": "tbl_tp",
+          "columns": [
+            "type",
+            "joinnum",
+            "data"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "192.168.5.10_10.db",
+      "tables": [
+        {
+          "name": "tbl_tp",
+          "columns": [
+            "type",
+            "joinnum",
+            "data"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "192.168.5.161_10.db",
+      "tables": [
+        {
+          "name": "tbl_tp",
+          "columns": [
+            "type",
+            "joinnum",
+            "data"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "192.168.5.162_10.db",
+      "tables": [
+        {
+          "name": "tbl_tp",
+          "columns": [
+            "type",
+            "joinnum",
+            "data"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "192.168.5.20_10.db",
+      "tables": [
+        {
+          "name": "tbl_tp",
+          "columns": [
+            "type",
+            "joinnum",
+            "data"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Project/Project.db",
+      "tables": [
+        {
+          "name": "CInputSignal",
+          "columns": [
+            "CIS_ID",
+            "CIS_Port",
+            "CIS_Name",
+            "CIS_GroupIp",
+            "CIS_DevIp",
+            "CIS_GroupPort",
+            "CIS_Resolution",
+            "CIS_Type"
+          ]
+        },
+        {
+          "name": "sqlite_sequence",
+          "columns": [
+            "name",
+            "seq"
+          ]
+        },
+        {
+          "name": "CInputNode",
+          "columns": [
+            "CIN_ID",
+            "CIN_Name",
+            "CIN_ParentName"
+          ]
+        },
+        {
+          "name": "CInputItem",
+          "columns": [
+            "CII_ID",
+            "CII_Name",
+            "CII_InputPort",
+            "CII_ParentName"
+          ]
+        },
+        {
+          "name": "COutputPort",
+          "columns": [
+            "COP_ID",
+            "COP_Name",
+            "COP_AudioName",
+            "COP_JointName",
+            "COP_DevIp",
+            "COP_DevPort",
+            "COP_Type"
+          ]
+        },
+        {
+          "name": "COutputMatrix",
+          "columns": [
+            "COM_ID",
+            "COM_Name",
+            "COM_DevIp",
+            "COM_Port",
+            "COM_Flag"
+          ]
+        },
+        {
+          "name": "COutputJoint",
+          "columns": [
+            "COJ_ID",
+            "COJ_DevName",
+            "COJ_JointName",
+            "COJ_Port"
+          ]
+        },
+        {
+          "name": "CJointSetting",
+          "columns": [
+            "CJS_ID",
+            "CJS_JointName",
+            "CJS_Row",
+            "CJS_Column",
+            "CJS_Resolution",
+            "CJS_HorValue",
+            "CJS_VerValue"
+          ]
+        },
+        {
+          "name": "CPlanName",
+          "columns": [
+            "CPN_ID",
+            "CPN_SaveMatrix",
+            "CPN_ImgPath",
+            "CPN_Name"
+          ]
+        },
+        {
+          "name": "CPlanMatrix",
+          "columns": [
+            "CPM_PlanName",
+            "CPM_ItemName",
+            "CPM_InputPort",
+            "CPM_Flag"
+          ]
+        },
+        {
+          "name": "CPlanAudio",
+          "columns": [
+            "CPA_PlanName",
+            "CPA_GroupName",
+            "CPA_OutIp",
+            "CPA_InputPort"
+          ]
+        },
+        {
+          "name": "CPlanMatrixFourScreen",
+          "columns": [
+            "CPFS_ID",
+            "CPFS_PlanName",
+            "CPFS_DevIp",
+            "CPFS_Index",
+            "CPFS_InputPort"
+          ]
+        },
+        {
+          "name": "CPlanJoint",
+          "columns": [
+            "CPJ_PlanName",
+            "CPJ_JointName",
+            "CPJ_ItemName",
+            "CPJ_Index"
+          ]
+        },
+        {
+          "name": "CPlanJointOpenWindow",
+          "columns": [
+            "cpjow_ID",
+            "cpjow_PlanJointName",
+            "cpjow_JointName",
+            "cpjow_wID",
+            "cpjow_InputID",
+            "cpjow_Level",
+            "cpjow_fX",
+            "cpjow_fY",
+            "cpjow_fWidth",
+            "cpjow_fHeight"
+          ]
+        },
+        {
+          "name": "CPlanJointSetting",
+          "columns": [
+            "CPJS_ID",
+            "CPJS_PlanJointName",
+            "CPJS_JointName",
+            "CPJS_Row",
+            "CPJS_Column",
+            "CPJS_Resolution",
+            "CPJS_HorValue",
+            "CPJS_VerValue"
+          ]
+        },
+        {
+          "name": "CKeyValue",
+          "columns": [
+            "CKV_UserName",
+            "CKV_KeyValue"
+          ]
+        },
+        {
+          "name": "CPlanJointName",
+          "columns": [
+            "CPJN_ID",
+            "CPJN_JointId",
+            "CPJN_DspIp",
+            "CPJN_DspPort",
+            "CPJN_DspIndex",
+            "CPJN_JointName"
+          ]
+        },
+        {
+          "name": "CTreeOutput",
+          "columns": [
+            "CTO_ID",
+            "CTO_Name",
+            "CTO_ParentName",
+            "CTO_ItemType"
+          ]
+        },
+        {
+          "name": "BackGroundPicName",
+          "columns": [
+            "BGPN_ID",
+            "BGPN_Name",
+            "BGPN_Type",
+            "BGPN_JointName"
+          ]
+        },
+        {
+          "name": "CTreeIPC",
+          "columns": [
+            "CTI_ID",
+            "CTI_Name",
+            "CTI_IP",
+            "CTI_Port",
+            "CTI_UserName",
+            "CTI_Pwd",
+            "CTI_Parameter"
+          ]
+        },
+        {
+          "name": "CViewSize",
+          "columns": [
+            "CVS_ID",
+            "CVS_PosX",
+            "CVS_PosY",
+            "CVS_Width",
+            "CVS_Height",
+            "CVS_Zoom"
+          ]
+        },
+        {
+          "name": "CPreviewVideo",
+          "columns": [
+            "CPV_Index",
+            "CPV_GroupIp",
+            "CPV_GroupPort"
+          ]
+        },
+        {
+          "name": "CPreviewGroup",
+          "columns": [
+            "CPG_Index",
+            "CPG_LstGroupIp"
+          ]
+        },
+        {
+          "name": "CPreviewGroupName",
+          "columns": [
+            "CPGN_Index",
+            "CPGN_Row",
+            "CPGN_Column",
+            "CPGN_Name"
+          ]
+        },
+        {
+          "name": "CScreenInfo",
+          "columns": [
+            "CSI_Index",
+            "CSI_PosX",
+            "CSI_PosY",
+            "CSI_Width",
+            "CSI_Height",
+            "CSI_DevIp",
+            "CSI_GroupIp"
+          ]
+        },
+        {
+          "name": "CUserInfo",
+          "columns": [
+            "CUI_Index",
+            "CUI_Name",
+            "CUI_Pwd",
+            "CUI_RemFlag",
+            "CUI_LastFlag"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "Project/ProjectTP.db",
+      "tables": [
+        {
+          "name": "CInputSignal",
+          "columns": [
+            "CIS_ID",
+            "CIS_Port",
+            "CIS_Name",
+            "CIS_GroupIp",
+            "CIS_DevIp",
+            "CIS_GroupPort",
+            "CIS_Resolution",
+            "CIS_Type"
+          ]
+        },
+        {
+          "name": "sqlite_sequence",
+          "columns": [
+            "name",
+            "seq"
+          ]
+        },
+        {
+          "name": "CInputNode",
+          "columns": [
+            "CIN_ID",
+            "CIN_Name",
+            "CIN_ParentName"
+          ]
+        },
+        {
+          "name": "CInputItem",
+          "columns": [
+            "CII_ID",
+            "CII_Name",
+            "CII_InputPort",
+            "CII_ParentName"
+          ]
+        },
+        {
+          "name": "COutputPort",
+          "columns": [
+            "COP_ID",
+            "COP_Name",
+            "COP_AudioName",
+            "COP_JointName",
+            "COP_DevIp",
+            "COP_DevPort",
+            "COP_Type"
+          ]
+        },
+        {
+          "name": "COutputMatrix",
+          "columns": [
+            "COM_ID",
+            "COM_Name",
+            "COM_DevIp",
+            "COM_Port",
+            "COM_Flag"
+          ]
+        },
+        {
+          "name": "COutputJoint",
+          "columns": [
+            "COJ_ID",
+            "COJ_DevName",
+            "COJ_JointName",
+            "COJ_Port"
+          ]
+        },
+        {
+          "name": "CJointSetting",
+          "columns": [
+            "CJS_ID",
+            "CJS_JointName",
+            "CJS_Row",
+            "CJS_Column",
+            "CJS_Resolution",
+            "CJS_HorValue",
+            "CJS_VerValue"
+          ]
+        },
+        {
+          "name": "CPlanName",
+          "columns": [
+            "CPN_ID",
+            "CPN_SaveMatrix",
+            "CPN_ImgPath",
+            "CPN_Name"
+          ]
+        },
+        {
+          "name": "CPlanMatrix",
+          "columns": [
+            "CPM_PlanName",
+            "CPM_ItemName",
+            "CPM_InputPort",
+            "CPM_Flag"
+          ]
+        },
+        {
+          "name": "CPlanAudio",
+          "columns": [
+            "CPA_PlanName",
+            "CPA_GroupName",
+            "CPA_OutIp",
+            "CPA_InputPort"
+          ]
+        },
+        {
+          "name": "CPlanMatrixFourScreen",
+          "columns": [
+            "CPFS_ID",
+            "CPFS_PlanName",
+            "CPFS_DevIp",
+            "CPFS_Index",
+            "CPFS_InputPort"
+          ]
+        },
+        {
+          "name": "CPlanJoint",
+          "columns": [
+            "CPJ_PlanName",
+            "CPJ_JointName",
+            "CPJ_ItemName",
+            "CPJ_Index"
+          ]
+        },
+        {
+          "name": "CPlanJointOpenWindow",
+          "columns": [
+            "cpjow_ID",
+            "cpjow_PlanJointName",
+            "cpjow_JointName",
+            "cpjow_wID",
+            "cpjow_InputID",
+            "cpjow_Level",
+            "cpjow_fX",
+            "cpjow_fY",
+            "cpjow_fWidth",
+            "cpjow_fHeight"
+          ]
+        },
+        {
+          "name": "CPlanJointSetting",
+          "columns": [
+            "CPJS_ID",
+            "CPJS_PlanJointName",
+            "CPJS_JointName",
+            "CPJS_Row",
+            "CPJS_Column",
+            "CPJS_Resolution",
+            "CPJS_HorValue",
+            "CPJS_VerValue"
+          ]
+        },
+        {
+          "name": "CKeyValue",
+          "columns": [
+            "CKV_UserName",
+            "CKV_KeyValue"
+          ]
+        },
+        {
+          "name": "CPlanJointName",
+          "columns": [
+            "CPJN_ID",
+            "CPJN_JointId",
+            "CPJN_DspIp",
+            "CPJN_DspPort",
+            "CPJN_DspIndex",
+            "CPJN_JointName"
+          ]
+        },
+        {
+          "name": "CTreeOutput",
+          "columns": [
+            "CTO_ID",
+            "CTO_Name",
+            "CTO_ParentName",
+            "CTO_ItemType"
+          ]
+        },
+        {
+          "name": "BackGroundPicName",
+          "columns": [
+            "BGPN_ID",
+            "BGPN_Name",
+            "BGPN_Type",
+            "BGPN_JointName"
+          ]
+        },
+        {
+          "name": "CTreeIPC",
+          "columns": [
+            "CTI_ID",
+            "CTI_Name",
+            "CTI_IP",
+            "CTI_Port",
+            "CTI_UserName",
+            "CTI_Pwd",
+            "CTI_Parameter"
+          ]
+        },
+        {
+          "name": "CViewSize",
+          "columns": [
+            "CVS_ID",
+            "CVS_PosX",
+            "CVS_PosY",
+            "CVS_Width",
+            "CVS_Height",
+            "CVS_Zoom"
+          ]
+        },
+        {
+          "name": "CPreviewVideo",
+          "columns": [
+            "CPV_Index",
+            "CPV_GroupIp",
+            "CPV_InputIp",
+            "CPV_GroupPort",
+            "CPV_Type"
+          ]
+        },
+        {
+          "name": "CPreviewGroup",
+          "columns": [
+            "CPG_Index",
+            "CPG_LstGroupIp"
+          ]
+        },
+        {
+          "name": "CPreviewGroupName",
+          "columns": [
+            "CPGN_Index",
+            "CPGN_Name"
+          ]
+        },
+        {
+          "name": "CScreenInfo",
+          "columns": [
+            "CSI_Index",
+            "CSI_PosX",
+            "CSI_PosY",
+            "CSI_Width",
+            "CSI_Height",
+            "CSI_DevIp",
+            "CSI_GroupIp"
+          ]
+        },
+        {
+          "name": "CUserInfo",
+          "columns": [
+            "CUI_Index",
+            "CUI_Name",
+            "CUI_Pwd",
+            "CUI_RemFlag",
+            "CUI_LastFlag"
+          ]
+        },
+        {
+          "name": "CLog",
+          "columns": [
+            "CLG_Id",
+            "CLG_UserName",
+            "CLG_Action",
+            "CLG_DateTime"
+          ]
+        },
+        {
+          "name": "CWarningSetting",
+          "columns": [
+            "CWS_Id",
+            "CWS_Type",
+            "CWS_Value",
+            "CWS_Level"
+          ]
+        },
+        {
+          "name": "CWarningLog",
+          "columns": [
+            "CWL_Id",
+            "CWL_DateTime",
+            "CWL_Type",
+            "CWL_Content",
+            "CWL_Level",
+            "CWL_User"
+          ]
+        },
+        {
+          "name": "CRecordScreen",
+          "columns": [
+            "CRS_ID",
+            "CRS_RecordId",
+            "CRS_GroupIp",
+            "CRS_ModelName",
+            "CRS_TaskName",
+            "CRS_GroupPort"
+          ]
+        },
+        {
+          "name": "CRecordScreenAudio",
+          "columns": [
+            "CRSA_ID",
+            "CRSA_RecordId",
+            "CRSA_GroupIp",
+            "CRSA_GroupPort"
+          ]
+        },
+        {
+          "name": "CTreePlan",
+          "columns": [
+            "CTP_ID",
+            "CTP_NodeName",
+            "CTP_ParentName",
+            "CTP_Index"
+          ]
+        },
+        {
+          "name": "CTreeFavorite",
+          "columns": [
+            "CTF_ID",
+            "CTF_NodeName",
+            "CTF_ParentName",
+            "CTF_ItemType"
+          ]
+        },
+        {
+          "name": "CPreviewVideoNewInfo",
+          "columns": [
+            "CPVNI_Id",
+            "CPVNI_Row",
+            "CPVNI_Column"
+          ]
+        },
+        {
+          "name": "CPreviewVideoNew",
+          "columns": [
+            "CPVN_Id",
+            "CPVN_Index",
+            "CPVN_GroupIp",
+            "CPVN_GroupPort",
+            "CPVN_Ip",
+            "CPVN_Name",
+            "CPVN_Res"
+          ]
+        },
+        {
+          "name": "CPreviewGroupNew",
+          "columns": [
+            "CPGN_Index",
+            "CPGN_LstGroupIp"
+          ]
+        },
+        {
+          "name": "CPlanPolling",
+          "columns": [
+            "CPP_Type",
+            "CPP_StartTime",
+            "CPP_EndTime",
+            "CPP_Value",
+            "CPP_IsStart",
+            "CPP_IsCur",
+            "CPP_SelectDate",
+            "CPP_SelectPlanIndex"
+          ]
+        },
+        {
+          "name": "CGbNode",
+          "columns": [
+            "CGN_NodeId",
+            "CGN_NodeParentId",
+            "CGN_NodeName",
+            "CGN_NodeType",
+            "CGN_NodeGbId"
+          ]
+        },
+        {
+          "name": "CInputScreen",
+          "columns": [
+            "CIS_Id",
+            "CIS_GroupIp",
+            "CIS_GroupPort",
+            "CIS_ScreenRow",
+            "CIS_ScreenColumn"
+          ]
+        },
+        {
+          "name": "COutMatrix",
+          "columns": [
+            "com_ID",
+            "com_PortIn",
+            "com_PlanPortIn",
+            "com_PortOut",
+            "com_Name",
+            "com_CurColor",
+            "com_PreColor",
+            "com_Font",
+            "com_CardType",
+            "com_Resolution",
+            "com_Temperature",
+            "com_MCUVersion",
+            "com_FPGAVersion",
+            "com_Bright",
+            "com_Contrast",
+            "com_Saturation",
+            "com_Sharp",
+            "com_Red",
+            "com_Green",
+            "com_Blue"
+          ]
+        },
+        {
+          "name": "CPlanOutMatrixName",
+          "columns": [
+            "cpomn_ID",
+            "cpomn_PlanName",
+            "cpomn_PlanDescribe",
+            "cpomn_PlanSelect",
+            "cpomn_PlanDelayTime"
+          ]
+        },
+        {
+          "name": "CPlanOutMatrix",
+          "columns": [
+            "cpom_ID",
+            "cpom_PlanName",
+            "cpom_PortIn",
+            "cpom_PlanPortIn",
+            "cpom_PortOut",
+            "cpom_Name",
+            "cpom_CurColor",
+            "cpom_PreColor",
+            "cpom_Font",
+            "cpom_CardType",
+            "cpom_Resolution",
+            "cpom_Temperature",
+            "cpom_MCUVersion",
+            "cpom_FPGAVersion",
+            "cpom_Bright",
+            "cpom_Contrast",
+            "cpom_Saturation",
+            "cpom_Sharp",
+            "cpom_Red",
+            "cpom_Green",
+            "cpom_Blue"
+          ]
+        },
+        {
+          "name": "CMatrixPlanGroupItem",
+          "columns": [
+            "cmpgi_ID",
+            "cmpgi_PlanName",
+            "cmpgi_Name",
+            "cmpgi_CurColor",
+            "cmpgi_PreColor",
+            "cmpgi_InPort"
+          ]
+        },
+        {
+          "name": "CMatrixPlanGroupItemData",
+          "columns": [
+            "cmpgid_ID",
+            "cmpgid_PlanName",
+            "cmpgid_Name",
+            "cmpgid_OutPort"
+          ]
+        },
+        {
+          "name": "CUser",
+          "columns": [
+            "user_ID",
+            "user_Name",
+            "user_Password",
+            "user_Type",
+            "user_Limit",
+            "user_TreeLimit"
+          ]
+        },
+        {
+          "name": "CCurUser",
+          "columns": [
+            "ccu_ID",
+            "ccu_Name"
+          ]
+        },
+        {
+          "name": "CProgrammable",
+          "columns": [
+            "programmable_ID",
+            "programmable_ButtonName",
+            "programmable_CodeSending",
+            "programmable_UserID",
+            "programmable_Date",
+            "programmable_FromTab"
+          ]
+        },
+        {
+          "name": "CScreenParameters",
+          "columns": [
+            "ID",
+            "SP_ScreenWallNum",
+            "SP_Row",
+            "SP_Column",
+            "SP_ResolutionWidth",
+            "SP_ResolutionHeight",
+            "SP_IsOpenWindowModel",
+            "SP_OpenWindowZoom",
+            "SP_DirectConnectZoom",
+            "SP_MarginPix"
+          ]
+        },
+        {
+          "name": "CScreenDirectConnection",
+          "columns": [
+            "ID",
+            "SDC_ScreenWallNum",
+            "SDC_ItemRow",
+            "SDC_ItemColumn",
+            "SDC_ItemState"
+          ]
+        },
+        {
+          "name": "CCurOpenWindowItemProperty",
+          "columns": [
+            "cowp_ID",
+            "cowp_SceneID",
+            "cowp_wID",
+            "cowp_InputID",
+            "cowp_Level",
+            "cowp_Top",
+            "cowp_Left",
+            "cowp_Width",
+            "cowp_Height",
+            "cowp_IsVideo",
+            "cowp_IsLock",
+            "cowp_fTop",
+            "cowp_fLeft",
+            "cowp_fWidth",
+            "cowp_fHeight"
+          ]
+        },
+        {
+          "name": "CPlanDirectConnect",
+          "columns": [
+            "pdc_ID",
+            "pdc_PlanJointName",
+            "pdc_SceneID",
+            "pdc_Row",
+            "pdc_Column",
+            "pdc_Width",
+            "pdc_Height",
+            "pdc_Zoom"
+          ]
+        },
+        {
+          "name": "CPlanDirectConnectProperty",
+          "columns": [
+            "pdcp_ID",
+            "pdcp_PlanJointName",
+            "pdcp_SceneID",
+            "pdcp_Row",
+            "pdcp_Column",
+            "pdcp_Port",
+            "pdcp_ScreenStatus",
+            "pdcp_SignalType"
+          ]
+        },
+        {
+          "name": "CPlanIPInputCard",
+          "columns": [
+            "cpii_ID",
+            "cpii_PlanName",
+            "cpii_Channel",
+            "cpii_IP"
+          ]
+        },
+        {
+          "name": "CVideoPreview",
+          "columns": [
+            "vp_ID",
+            "vp_TotalPageCount",
+            "vp_CurID",
+            "vp_IsShow"
+          ]
+        },
+        {
+          "name": "CVideoPreviewProperty",
+          "columns": [
+            "vpp_ID",
+            "vpp_OneVideo",
+            "vpp_InPort",
+            "vpp_OutPort",
+            "vpp_Resolution"
+          ]
+        },
+        {
+          "name": "CScreenGroupSetting",
+          "columns": [
+            "SGS_ID",
+            "SGS_ScreenID",
+            "SGS_Index",
+            "SGS_OutputNumber"
+          ]
+        },
+        {
+          "name": "CProjectEx",
+          "columns": [
+            "project_ID",
+            "project_Version"
+          ]
+        },
+        {
+          "name": "CGroupItem",
+          "columns": [
+            "cgi_ID",
+            "cgi_Name",
+            "cgi_CurColor",
+            "cgi_PreColor"
+          ]
+        },
+        {
+          "name": "CGroupItemData",
+          "columns": [
+            "cgid_ID",
+            "cgid_Name",
+            "cgid_InPort",
+            "cgid_OutPort"
+          ]
+        },
+        {
+          "name": "CTitleMarquee",
+          "columns": [
+            "ctm_ID",
+            "ctm_Direct",
+            "ctm_Speed",
+            "ctm_Font",
+            "ctm_FontColor",
+            "ctm_FontBackground",
+            "ctm_ShowTimeType",
+            "ctm_Text"
+          ]
+        },
+        {
+          "name": "CCharSetting",
+          "columns": [
+            "ccs_ID",
+            "ccs_Color",
+            "ccs_PosX",
+            "ccs_PosY",
+            "ccs_Width",
+            "ccs_Height",
+            "ccs_Status"
+          ]
+        },
+        {
+          "name": "CDestView",
+          "columns": [
+            "cdv_ID",
+            "cdv_DestName",
+            "cdv_SourceName",
+            "cdv_X",
+            "cdv_Y",
+            "cdv_W",
+            "cdv_H"
+          ]
+        },
+        {
+          "name": "CInAndOut",
+          "columns": [
+            "COM_ID",
+            "CIO_Port",
+            "CIO_SignalType",
+            "CIO_Type"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "TP.db",
+      "tables": [
+        {
+          "name": "tbl_tp",
+          "columns": [
+            "type",
+            "joinnum",
+            "data"
+          ]
+        }
+      ]
+    },
+    {
+      "file": "TP_Tmp/touchctrl.db",
+      "tables": [
+        {
+          "name": "ImageList",
+          "columns": [
+            "ImageID",
+            "ImgGroupID",
+            "Img_StatesIndex",
+            "ListResources"
+          ]
+        },
+        {
+          "name": "General",
+          "columns": [
+            "ID",
+            "Name",
+            "GeneralImgGroupID",
+            "MPageID",
+            "SPageID",
+            "Display",
+            "Active",
+            "Left",
+            "Top",
+            "Width",
+            "Height",
+            "JumpPage",
+            "JoinNumber",
+            "FeedBack",
+            "DelayTime",
+            "InterLockGroup",
+            "Lock",
+            "Move",
+            "Shape",
+            "Transparent",
+            "BGColor",
+            "BarStatus",
+            "MoveDir",
+            "AmtChangeTime",
+            "AmtMoveType",
+            "AmtType",
+            "AmtStyle",
+            "AmtLoop",
+            "Sound",
+            "TP_Order",
+            "Webaddress",
+            "BarDownNB",
+            "BarMoveNB",
+            "BarUpNB",
+            "MacroID",
+            "RepeatDelay",
+            "DownSignal",
+            "UpSignal",
+            "GlideSignal",
+            "AutoPlay",
+            "IPAddress",
+            "IPAddressBackup",
+            "Type",
+            "UserPower",
+            "Font",
+            "Ctrl_FeedBack",
+            "SwitchInputIPAddr",
+            "SwitchOutput",
+            "strColor",
+            "strPrecent",
+            "strStatusName"
+          ]
+        },
+        {
+          "name": "SetOfPages",
+          "columns": [
+            "SetID",
+            "PageID",
+            "PageType",
+            "PageDescribe"
+          ]
+        },
+        {
+          "name": "SetOfKeys",
+          "columns": [
+            "KeyID",
+            "KeyName",
+            "JoinNumber"
+          ]
+        },
+        {
+          "name": "SystemInfo",
+          "columns": [
+            "si_ID",
+            "si_Name",
+            "si_Address",
+            "si_RemotePort",
+            "si_Protocol",
+            "si_Connect",
+            "si_Param"
+          ]
+        },
+        {
+          "name": "Command",
+          "columns": [
+            "cm_ID",
+            "cm_Name",
+            "cm_Value",
+            "cm_SystemID"
+          ]
+        },
+        {
+          "name": "Macro",
+          "columns": [
+            "mc_ID",
+            "mc_Name"
+          ]
+        },
+        {
+          "name": "Macro_Command",
+          "columns": [
+            "McCd_MacroID",
+            "McCd_CommandID",
+            "McCd_Delay",
+            "McCd_Order"
+          ]
+        },
+        {
+          "name": "LogicObject",
+          "columns": [
+            "Logic_ObjectID",
+            "Logic_TypeID",
+            "Logic_Name"
+          ]
+        },
+        {
+          "name": "LogicParameter",
+          "columns": [
+            "Logic_ObjectID",
+            "In_Parameter",
+            "Out_Parameter",
+            "Dispose_Parameter",
+            "Sort"
+          ]
+        },
+        {
+          "name": "UserGroup",
+          "columns": [
+            "UG_nID",
+            "UG_Name",
+            "UG_GroupID"
+          ]
+        },
+        {
+          "name": "UserMessage",
+          "columns": [
+            "UM_nID",
+            "UM_UserName",
+            "UM_GroupID",
+            "UM_UserAccount",
+            "UM_UserPwd",
+            "UM_UserContext"
+          ]
+        },
+        {
+          "name": "DSMySQL",
+          "columns": [
+            "nID",
+            "strName",
+            "strIP",
+            "strPort",
+            "strAccount",
+            "strPassword",
+            "strSQL"
+          ]
+        },
+        {
+          "name": "Project",
+          "columns": [
+            "Project_JobName",
+            "Project_ActivePaletteIndex",
+            "Project_SlotsCount",
+            "Project_PanelID",
+            "Project_DesignerID",
+            "Project_DealerID",
+            "Project_SalesOrder",
+            "Project_PurchaseOrder",
+            "Project_FileRevision",
+            "Project_JobComment",
+            "Project_ModifyTime",
+            "Project_CreateTime",
+            "Project_VersionTime",
+            "Project_OpenPWD",
+            "Project_InactivePageID",
+            "Project_InactiveTimeOut"
+          ]
+        },
+        {
+          "name": "ProjectEx",
+          "columns": [
+            "Project_HostIP",
+            "Project_DeviceID",
+            "Project_Version",
+            "Project_Style"
+          ]
+        }
+      ]
+    }
+  ],
+  "boundary": "只读表名和列名；没有记录内容、登录密码或工程数据。"
+}

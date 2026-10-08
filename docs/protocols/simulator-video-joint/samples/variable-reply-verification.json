@@ -1,0 +1,515 @@
+{
+  "families": 8,
+  "complete_all_match": true,
+  "vectors": [
+    {
+      "function": "0x669df0",
+      "sample": "FCFC21000000000A010203041388036162630000FDFD",
+      "expected": [
+        "1.2.3.4",
+        5000,
+        "abc"
+      ],
+      "actual": [
+        "1.2.3.4",
+        5000,
+        "abc"
+      ],
+      "complete": {
+        "status": 1,
+        "next_read_index": 22,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "1.2.3.4"
+          },
+          {
+            "type": "uint *",
+            "name": "param_5",
+            "value": [
+              5000,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "abc"
+          }
+        ]
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": ""
+          },
+          {
+            "type": "uint *",
+            "name": "param_5",
+            "value": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": ""
+          }
+        ]
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 17,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "1.2.3.4"
+          },
+          {
+            "type": "uint *",
+            "name": "param_5",
+            "value": [
+              5000,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "abc"
+          }
+        ]
+      }
+    },
+    {
+      "function": "0x66a240",
+      "sample": "FCFC2200000000090102030413880278790000FDFD",
+      "expected": [
+        "1.2.3.4",
+        5000,
+        "xy"
+      ],
+      "actual": [
+        "1.2.3.4",
+        5000,
+        "xy"
+      ],
+      "complete": {
+        "status": 1,
+        "next_read_index": 21,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "1.2.3.4"
+          },
+          {
+            "type": "uint *",
+            "name": "param_5",
+            "value": [
+              5000,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "xy"
+          }
+        ]
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": ""
+          },
+          {
+            "type": "uint *",
+            "name": "param_5",
+            "value": [
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": ""
+          }
+        ]
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 16,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "1.2.3.4"
+          },
+          {
+            "type": "uint *",
+            "name": "param_5",
+            "value": [
+              5000,
+              0,
+              0,
+              0
+            ]
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "xy"
+          }
+        ]
+      }
+    },
+    {
+      "function": "0x66ac00",
+      "sample": "FCFC230000000004016101620000FDFD",
+      "expected": [
+        "a",
+        "b"
+      ],
+      "actual": [
+        "a",
+        "b"
+      ],
+      "complete": {
+        "status": 1,
+        "next_read_index": 16,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "a"
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": "b"
+          }
+        ]
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": ""
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": ""
+          }
+        ]
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 11,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "a"
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": "b"
+          }
+        ]
+      }
+    },
+    {
+      "function": "0x66b000",
+      "sample": "FBFC2A010000001D0003010203040506070801750464656D6F0000FDFE",
+      "expected": [
+        "1.2.3.4",
+        "5.6.7.8",
+        "u",
+        "demo"
+      ],
+      "actual": [
+        "1.2.3.4",
+        "5.6.7.8",
+        "u",
+        "demo"
+      ],
+      "complete": {
+        "status": 1,
+        "next_read_index": 29,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "1.2.3.4"
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": "5.6.7.8"
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "u"
+          },
+          {
+            "type": "QString *",
+            "name": "param_7",
+            "value": "demo"
+          }
+        ]
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": ""
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": ""
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": ""
+          },
+          {
+            "type": "QString *",
+            "name": "param_7",
+            "value": ""
+          }
+        ]
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 24,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "1.2.3.4"
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": "5.6.7.8"
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "o"
+          },
+          {
+            "type": "QString *",
+            "name": "param_7",
+            "value": ""
+          }
+        ]
+      }
+    },
+    {
+      "function": "0x66c660",
+      "sample": "FAFB22000000000C036F6E650374776F037369780000FCFD",
+      "expected": [
+        "one",
+        "two",
+        "six"
+      ],
+      "actual": [
+        "one",
+        "two",
+        "six"
+      ],
+      "complete": {
+        "status": 1,
+        "next_read_index": 24,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "one"
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": "two"
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "six"
+          }
+        ]
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": ""
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": ""
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": ""
+          }
+        ]
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 19,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "one"
+          },
+          {
+            "type": "QString *",
+            "name": "param_5",
+            "value": "two"
+          },
+          {
+            "type": "QString *",
+            "name": "param_6",
+            "value": "six"
+          }
+        ]
+      }
+    },
+    {
+      "function": "0x66cc40",
+      "sample": "FAFB2201000000000000FCFD",
+      "expected": [],
+      "actual": [],
+      "complete": {
+        "status": 1,
+        "next_read_index": 12,
+        "outputs": []
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": []
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 7,
+        "outputs": []
+      }
+    },
+    {
+      "function": "0x66cd50",
+      "sample": "FAFB22020000000568656C6C6F0000FCFD",
+      "expected": [
+        "hello"
+      ],
+      "actual": [
+        "hello"
+      ],
+      "complete": {
+        "status": 1,
+        "next_read_index": 17,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "hello"
+          }
+        ]
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": ""
+          }
+        ]
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 12,
+        "outputs": [
+          {
+            "type": "QString *",
+            "name": "param_4",
+            "value": "hello"
+          }
+        ]
+      }
+    },
+    {
+      "function": "0x66c020",
+      "sample": "FBFC2A010000000E00040000FDFE",
+      "expected": [],
+      "actual": [],
+      "complete": {
+        "status": 1,
+        "next_read_index": 14,
+        "outputs": []
+      },
+      "complete_match": true,
+      "partial": {
+        "status": 3,
+        "next_read_index": 0,
+        "outputs": []
+      },
+      "wrapped": {
+        "status": 1,
+        "next_read_index": 9,
+        "outputs": []
+      }
+    }
+  ],
+  "boundary": "合成地址和文本；无真实输入事件、识别服务或网络连接。环绕结果按原代码保留，包括已发现的字符串复制问题。"
+}

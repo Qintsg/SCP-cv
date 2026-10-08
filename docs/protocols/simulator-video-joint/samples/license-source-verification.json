@@ -1,0 +1,120 @@
+{
+  "cases": 10,
+  "all_match": true,
+  "synthetic_cpu": "A1B2C3D4",
+  "synthetic_volume": "E5F60789",
+  "synthetic_install_time": 1700000000,
+  "vectors": [
+    {
+      "choice": 0,
+      "synthetic_source": "C3D4700",
+      "length": 7,
+      "slice_lengths": [
+        4,
+        1,
+        2
+      ],
+      "match": true
+    },
+    {
+      "choice": 1,
+      "synthetic_source": "C378000",
+      "length": 7,
+      "slice_lengths": [
+        2,
+        2,
+        3
+      ],
+      "match": true
+    },
+    {
+      "choice": 2,
+      "synthetic_source": "C378900",
+      "length": 7,
+      "slice_lengths": [
+        2,
+        3,
+        2
+      ],
+      "match": true
+    },
+    {
+      "choice": 3,
+      "synthetic_source": "C780000",
+      "length": 7,
+      "slice_lengths": [
+        1,
+        2,
+        4
+      ],
+      "match": true
+    },
+    {
+      "choice": 4,
+      "synthetic_source": "C3D7800",
+      "length": 7,
+      "slice_lengths": [
+        3,
+        2,
+        2
+      ],
+      "match": true
+    },
+    {
+      "choice": 5,
+      "synthetic_source": "C3D4780",
+      "length": 7,
+      "slice_lengths": [
+        4,
+        2,
+        1
+      ],
+      "match": true
+    },
+    {
+      "choice": 6,
+      "synthetic_source": "C3D7000",
+      "length": 7,
+      "slice_lengths": [
+        3,
+        1,
+        3
+      ],
+      "match": true
+    },
+    {
+      "choice": 7,
+      "synthetic_source": "C780000",
+      "length": 7,
+      "slice_lengths": [
+        1,
+        2,
+        4
+      ],
+      "match": true
+    },
+    {
+      "choice": 8,
+      "synthetic_source": "C370000",
+      "length": 7,
+      "slice_lengths": [
+        2,
+        1,
+        4
+      ],
+      "match": true
+    },
+    {
+      "choice": 9,
+      "synthetic_source": "C3D7890",
+      "length": 7,
+      "slice_lengths": [
+        3,
+        3,
+        1
+      ],
+      "match": true
+    }
+  ],
+  "boundary": "所有系统读取被合成值替代；未读取实际设备指纹，未调用授权写入。"
+}

@@ -1,0 +1,2123 @@
+[
+  {
+    "function": "0x65ae70",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD2100000000000021FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65af10",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6100000000000061FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65afa0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6101000000000062FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65b030",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6102000000000063FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65b0c0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD2110000000000031FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65b150",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61760000000C00010002000300040005000600F8FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65b340",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6103000D0018000100020003000300030006000700030003000B000A000C00C9FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65b640",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD51010000000C000100020003000300050006006CFEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65b850",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6104000D0018000100020003000300030006000700030003000B000A000C00CAFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65bb50",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6302000F001C000100020003000300030006000700030003000D000E000B000A000C00D5FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65bee0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6105000200020001006BFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65bfc0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD51030000000400010002005BFEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c0b0",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC610600030004000100020071FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c1b0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD51040000000400010002005AFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c2a0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC613300020001010098FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c360",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC610A00010000006CFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c400",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC610F000100000071FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c4a0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC610B00000000006CFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c540",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC610C00000000006DFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c5e0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC610B00010000006DFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c680",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC610C00010000006EFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c720",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6130000000000091FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c7c0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC623100020001010096FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c880",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61FF000100000161FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c920",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61B8000000000119FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65c9c0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61B900000000011AFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65ca60",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC61170000000400010002007FFDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65cb50",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC6118000000060001000200030085FDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65cc90",
+    "parameters": [
+      "224.1.1.55"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61340000000A3232342E312E312E3535028DFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65cfe0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD21010000000201020027FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d0b0",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD51070000000B00010200030004000500060078FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d280",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD5104000000060002000300010060FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d3c0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61420000000000A3FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d5a0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC614600020001010000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d630",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6147000100000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d730",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61FE000000000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d7f0",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA21010000000B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65d8d0",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      "10.21.32.43",
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61720000001A0B31302E32312E33322E3433020B31302E32312E33322E3433040000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65da70",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      "10.21.32.43",
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61730000001A0B31302E32312E33322E3433020B31302E32312E33322E3433040000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65dc10",
+    "parameters": [
+      "10.21.32.43",
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61740000000D0B31302E32312E33322E3433020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65dd50",
+    "parameters": [
+      "10.21.32.43",
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61750000000D0B31302E32312E33322E3433020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65de90",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC2A010000000E00040000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65df10",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6180000100000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65df80",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6181000000000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65dfe0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61830000000200010000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e080",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC618200090010000100020003000300050006000300030000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e280",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FEFD0000000B310030002E00320031002E0000FCFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e3e0",
+    "parameters": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "EAEB0101020304FCFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e450",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "EAEB0201FCFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e4b0",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "EAEB030100020003FCFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e560",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "EAEB040100020003FCFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e610",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "EAEB050100020003FCFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65e6c0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "EAEB0601FCFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f4d0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA31010000000201020000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f560",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA31020000000201020000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f5f0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA31030000000201020000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f680",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB023101020036",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f710",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB023201020037",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f7a0",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB02330102033B",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f830",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB02340102033C",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f8c0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB02370100023C",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f960",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB033101020037",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65f9f0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB033201020038",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65fa80",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB03330102033C",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65fb10",
+    "parameters": [
+      1,
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB03340102033D",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65fba0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB03370100023D",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65fc40",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB04350102003C",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65fcd0",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB04360102003D",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65fd60",
+    "parameters": [
+      1,
+      2
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "A5AB0D0201000212",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65fe00",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61C00005000800010002000300030000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65ff40",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61C1000100000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x65ffb0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC619000000001010000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x660020",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6191000000000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x660080",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA22000000000B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x660190",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA22010000000B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6602a0",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA23000000000B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6603b0",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA23010000000B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6605e0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61A800000001010000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x660650",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61C400000001010000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6606d0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61FA000000000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x660730",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC611A000000000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x660790",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6120000000000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6607f0",
+    "parameters": [
+      1
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6121000000000000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x66dd60",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61021211002100010A15202B00030004000500030003000C0008000900030003000E000D000F100171FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x66e2a0",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      "10.21.32.43",
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61201413003000010A15202B00030A15202B00050006000700030003000E000A000B000300030010000F00111201000000000000000001F1FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x66e970",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC62101211002100010A15202B00030004000500030003000C0008000900030003000E000D000F100180FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x66eeb0",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61601211002100010A15202B00030004000500030003000C0008000900030003000E000D000F1001CFFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x66f3f0",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC63011413002500010A15202B00030004000500030003000C000800090003000300110012000E000D000F10019DFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x66f9a0",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD21080000002400010A15202B00030004000500030003000C0008000900030003000E000D000F0A15202B0117FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x66fff0",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD5100000000140A15202B0002000300040003000300070008000900EDFEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x670440",
+    "parameters": [
+      7,
+      "10.21.32.43",
+      5000,
+      "alpha",
+      "beta",
+      "gamma",
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61501514003200070A15202B13880007000800030003000F000B000C000300030011001000121305616C70686104626574610567616D6D610449FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x670da0",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC63040000002600010A15202B00030004000500030003000C000800090003000300110012000E000D000F1013015EFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x671340",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      "10.21.32.43",
+      "10.21.32.43",
+      "10.21.32.43",
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC63031716004900010A15202B00030007000800030003000F000B000C0003000300140015001100100012130B31302E32312E33322E34330B31302E32312E33322E34330B31302E32312E33322E34330644FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x671d60",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD21090000001C000100020003000300030006000700030003000B000A000C0A15202B00F0FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6721e0",
+    "parameters": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD210A0000001C000100020003000300030006000700030003000B000A000C0A15202B00F1FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x672660",
+    "parameters": [
+      1,
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD210B0000000600010A15202B0033FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x672900",
+    "parameters": [
+      1,
+      2,
+      "10.21.32.43",
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD210F00000008000100020A15202B0004003BFEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x672c30",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61080605000800010A15202B000300EAFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x672f10",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      "10.21.32.43",
+      5,
+      6,
+      7,
+      8
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61210807001700010A15202B00030A15202B00050100000000000000000116FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6733b0",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61080605000800010A15202B000300EAFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x673690",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD51020000000A0A15202B00030001000400CBFEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x673990",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD210C0000000C00010A15202B00030A15202B0111FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x673d70",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      "10.21.32.43",
+      "10.21.32.43",
+      "10.21.32.43",
+      7
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61510700003800010A15202B00030B31302E32312E33322E34330B31302E32312E33322E34330B31302E32312E33322E343307CEFDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x675e80",
+    "parameters": [
+      "10.21.32.43",
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD2106000000080A15202B0A15202B0103FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6777c0",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD2107000000040A15202B0096FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x677a30",
+    "parameters": [
+      "10.21.32.43",
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD2112000000080A15202B0A15202B010FFEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x677e20",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD2113000000040A15202B00A2FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6780c0",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD210D000000040A15202B009CFEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x678360",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFD210E000000040A15202B0033FEFF",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x678600",
+    "parameters": [
+      "10.21.32.43",
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC6112000000080A15202B0A15202B014FFDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x6789e0",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC6113000000040A15202B0078FDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x678c80",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC61140000001200010A15202B0003000400030003000700080106FDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x679060",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC61150000001200010A15202B0003000400030003000700080107FDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x679440",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC61160000001200010A15202B0003000400030003000700080108FDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x679820",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FCFC61190000000A00010A15202B0003000400F6FDFD",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x679b30",
+    "parameters": [
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6140000000040A15202B00C4FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x679dd0",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      "10.21.32.43",
+      "10.21.32.43",
+      "10.21.32.43",
+      6
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6141000600360A15202B00020B31302E32312E33322E34330B31302E32312E33322E34330B31302E32312E33322E343307B9FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67a610",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6143000300060A15202B00020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67a8c0",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6148000300060A15202B00020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67ab70",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC614B000300060A15202B00020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67ae20",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC6149000300060A15202B00020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67b0d0",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC614A000300060A15202B00020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67b380",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC614400030005010A15202B0000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67b630",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      "10.21.32.43",
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC614500040010010A15202B31302E32312E33322E34330000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67bab0",
+    "parameters": [
+      1,
+      "10.21.32.43",
+      3,
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFCA1000004001508010A15202B000301FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67bd40",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      "10.21.32.43",
+      "10.21.32.43",
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA21020000003200020B31302E32312E33322E34330B31302E32312E33322E34330B31302E32312E33322E34330B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67c6b0",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      "10.21.32.43",
+      "10.21.32.43",
+      "10.21.32.43",
+      6,
+      "10.21.32.43",
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA2100000000440A15202B00020B31302E32312E33322E34330B31302E32312E33322E34330B31302E32312E33322E343300060B31302E32312E33322E34330B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67cb80",
+    "parameters": [
+      "10.21.32.43",
+      "10.21.32.43",
+      "10.21.32.43",
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC2A010000002E00030A15202B0A15202B0B31302E32312E33322E34330B31302E32312E33322E34330000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67d070",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      "10.21.32.43",
+      "10.21.32.43"
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FAFA31000000001E0A15202B00020B31302E32312E33322E34330B31302E32312E33322E34330000FBFB",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67dc40",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC62020000000800030A15202B00020000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  },
+  {
+    "function": "0x67def0",
+    "parameters": [
+      "10.21.32.43",
+      2,
+      3,
+      4
+    ],
+    "synthetic_context": {
+      "SendType": 1,
+      "LegacyAlign4": 0,
+      "CredentialProtocol": 1
+    },
+    "hex": "FBFC61C3000000080A15202B000203040000FDFE",
+    "boundary": "合成参数／设置；常见QString指针采样不能替代真实业务类型，不能据此决定现场型号或业务枚举。"
+  }
+]

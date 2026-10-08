@@ -1,0 +1,1748 @@
+{
+  "modules": [
+    {
+      "name": "avcodec-56.dll",
+      "sha256": "1b6d2ceb4ad6f79a650d931696f359d72b650b0781ecca6d8c0911dfeb0dd3a2",
+      "size": 11873792,
+      "image_base": "0x6f680000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll",
+        "avutil-54.dll",
+        "swresample-1.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-54.dll",
+        "swresample-1.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "avcodec-57.dll",
+      "sha256": "af5161b6e855867ebf403b704539d85618fb174feba74aff1b2ffe097eae5a9e",
+      "size": 24519168,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll",
+        "avutil-55.dll",
+        "swresample-2.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-55.dll",
+        "swresample-2.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "avdevice-56.dll",
+      "sha256": "6a7c75033f249eb1f957404bc2c8a73258408f64c934ee05d366265ef4da24fb",
+      "size": 473600,
+      "image_base": "0x64340000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "AVICAP32.DLL",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "SHLWAPI.dll",
+        "USER32.dll",
+        "WINMM.DLL",
+        "avcodec-56.dll",
+        "avfilter-5.dll",
+        "avformat-56.dll",
+        "avutil-54.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-56.dll",
+        "avfilter-5.dll",
+        "avformat-56.dll",
+        "avutil-54.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "avdevice-57.dll",
+      "sha256": "2f7cd8d908c021040fe1c15a48c914c0fe4351a6a6cd7aaa36b5dc17fc3a1178",
+      "size": 1316352,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "AVICAP32.DLL",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "SHLWAPI.dll",
+        "USER32.dll",
+        "WINMM.DLL",
+        "avcodec-57.dll",
+        "avfilter-6.dll",
+        "avformat-57.dll",
+        "avutil-55.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avfilter-6.dll",
+        "avformat-57.dll",
+        "avutil-55.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "avfilter-5.dll",
+      "sha256": "7fe8d7fbe574335d198da19b1ce4d076f8199e14675cdd17005db30cbebccf83",
+      "size": 1211904,
+      "image_base": "0x6c940000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "OpenCL.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "avcodec-56.dll",
+        "avformat-56.dll",
+        "avutil-54.dll",
+        "swresample-1.dll",
+        "swscale-3.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-56.dll",
+        "avformat-56.dll",
+        "avutil-54.dll",
+        "OpenCL.dll",
+        "swresample-1.dll",
+        "swscale-3.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "avfilter-6.dll",
+      "sha256": "6b9084dbfa319d2e23e5f5d1dbb314f1e437d7f70a8333743714cd84ad9f7bc9",
+      "size": 3824128,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll",
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "postproc-54.dll",
+        "swresample-2.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "postproc-54.dll",
+        "swresample-2.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "avformat-56.dll",
+      "sha256": "ab9ddf0da850132aed3650b0b59b60866903c11a85b7a585025350060405a75b",
+      "size": 2152960,
+      "image_base": "0x63600000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll",
+        "WS2_32.dll",
+        "avcodec-56.dll",
+        "avutil-54.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-56.dll",
+        "avutil-54.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "avformat-57.dll",
+      "sha256": "961bb6bb1074cdd9a8338cb89a9927490b59fffa4d840b858e852f071fb4c9a7",
+      "size": 4895232,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "Secur32.dll",
+        "USER32.dll",
+        "WINMM.DLL",
+        "WS2_32.dll",
+        "avcodec-57.dll",
+        "avutil-55.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avutil-55.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "avutil-54.dll",
+      "sha256": "b8729857ca63ca6dbb128436216e1f45735167af3c107fa026d8127397a6c8ad",
+      "size": 558592,
+      "image_base": "0x67140000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "OpenCL.dll",
+        "ADVAPI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll"
+      ],
+      "binary_filename_references": [
+        "OpenCL.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "avutil-55.dll",
+      "sha256": "c75107a93eb58e0f3546d4734942967d07375072cd27d3dadd7b99043b6915a5",
+      "size": 557568,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": true
+    },
+    {
+      "name": "CRPlayerLib.dll",
+      "sha256": "828e10413df15325163bd47c7598acdeaf3126eefa48e8e5cd3671ad8097ab46",
+      "size": 262144,
+      "image_base": "0x6be80000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "ole32.dll",
+        "libwinpthread-1.dll",
+        "libstdc++-6.dll",
+        "avcodec-56.dll",
+        "avdevice-56.dll",
+        "avfilter-5.dll",
+        "avformat-56.dll",
+        "avutil-54.dll",
+        "postproc-53.dll",
+        "swresample-1.dll",
+        "swscale-3.dll",
+        "SDL2.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-56.dll",
+        "avdevice-56.dll",
+        "avfilter-5.dll",
+        "avformat-56.dll",
+        "avutil-54.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "libwinpthread-1.dll",
+        "postproc-53.dll",
+        "Qt5Core.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "SDL2.dll",
+        "swresample-1.dll",
+        "swscale-3.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "dllKVMMouse.dll",
+      "sha256": "040d1eea0593b1d8166412a13c98d7a275498bd85719036b9b6e84c4e2b3a798",
+      "size": 106496,
+      "image_base": "0x692c0000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "dllKVMTouch.dll",
+      "sha256": "2cdb813f9754db4095629d8d5576cec8e2526c249bc1c52cddbabc60df739da5",
+      "size": 129536,
+      "image_base": "0x6dcc0000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "dllKVMTouch_MulticastPlay.dll",
+      "sha256": "302e09644a5791d9df3b89ffd301a2a9f666a541b16e52b7075b1b58812fe946",
+      "size": 109056,
+      "image_base": "0x6dcc0000",
+      "classification": "备用KVM版本，当前EXE未按此文件名直接选择",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "dllKVMTouch.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "dllKVMTouch_old.dll",
+      "sha256": "abb468dd644d5249a9305a957a4c106547fa924ece0968da463ffc04b7149ef1",
+      "size": 129024,
+      "image_base": "0x6dcc0000",
+      "classification": "备用KVM版本，当前EXE未按此文件名直接选择",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "dllKVMTouch.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "DLLPCToControl.dll",
+      "sha256": "63ac984af9a81bd3295b81c0cd3d4fa47abbb24d3170e830c3fd08b6dc238e06",
+      "size": 111104,
+      "image_base": "0x64980000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll",
+        "SDL2.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "SDL2.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "h264_x264_ptplugin.dll",
+      "sha256": "7d4d03e011cd275d7b592fb07ec9028d3cb663dda580f3e9edb72072cc4ef423",
+      "size": 97280,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "avcodec-56.dll",
+        "avutil-54.dll",
+        "libx264-148.dll",
+        "KERNEL32.dll",
+        "MSVCP120.dll",
+        "MSVCR120.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-56.dll",
+        "avutil-54.dll",
+        "libx264-148.dll",
+        "msvcp120.dll",
+        "msvcr120.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "icudt53.dll",
+      "sha256": "8d7473b2419efce0cf8baa7718e1f9128b8bbb30221e52b4dd0b4d2c3279f9b1",
+      "size": 21565880,
+      "image_base": "0x66500000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "icuin53.dll",
+      "sha256": "ba3fb70f589d5b765d011ff03d76e0918653fa5b25adde6d296fd0ef0513ec78",
+      "size": 3758809,
+      "image_base": "0x61a40000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "icuuc53.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll"
+      ],
+      "binary_filename_references": [
+        "icuuc53.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "icuuc53.dll",
+      "sha256": "3378a566fadece7e11e2436f6383953c63b716c5633737f622859ec97b19f242",
+      "size": 2093901,
+      "image_base": "0x68f80000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "icudt53.dll",
+        "ADVAPI32.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll"
+      ],
+      "binary_filename_references": [
+        "icudt53.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "jpeg62.dll",
+      "sha256": "8ed3571f6b913d636dd5696632c91942abddac7a01be7c358663d868f9565ef5",
+      "size": 264704,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "MSVCR90.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "libeay32.dll",
+      "sha256": "0e6cc6953a30f9cfc41b118634b9850aae6e7ab945ec3642ef8ae808a9b5fe20",
+      "size": 1265664,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "WS2_32.dll",
+        "GDI32.dll",
+        "ADVAPI32.dll",
+        "USER32.dll",
+        "MSVCR120.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [
+        "msvcr120.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "libgcc_s_dw2-1.dll",
+      "sha256": "75f2fc6501259014e10fb9a26c7867e8ee22ef49514bbc9d21f2731a1fc91c8b",
+      "size": 119822,
+      "image_base": "0x6e940000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libwinpthread-1.dll"
+      ],
+      "binary_filename_references": [
+        "libwinpthread-1.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "libssl32.dll",
+      "sha256": "eab2ceb9ff81efb045da4cafa8600628aab266b33807a57f9b1d943590386b29",
+      "size": 274432,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "LIBEAY32.dll",
+        "MSVCR120.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [
+        "libeay32.dll",
+        "msvcr120.dll",
+        "ssleay32.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "libstdc++-6.dll",
+      "sha256": "e4700fb4f403e932dce64f406ffbaac7b9c6b92cc430b55ff36bc00601b8bddf",
+      "size": 1026574,
+      "image_base": "0x6fc40000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libwinpthread-1.dll",
+        "USER32.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libwinpthread-1.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "libwinpthread-1.dll",
+      "sha256": "3e39aee62f18675085342aa4ae0bf4497ed80b8394a83c701e07eea90c3c062c",
+      "size": 49152,
+      "image_base": "0x64940000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": true
+    },
+    {
+      "name": "libx264-148.dll",
+      "sha256": "fbec84a15bb4f497b3bd36798ff4a996a701002536b0da3758637b4b9adc2722",
+      "size": 1306624,
+      "image_base": "0x67600000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "lua5.1.dll",
+      "sha256": "1dee56b3376f69bf440ab1ac363bdb5a1b7860620306b48a6632c2c3c9f59d59",
+      "size": 325960,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "msvcp110.dll",
+      "sha256": "c8d5572ca8d7624871188f0acabc3ae60d4c5a4f6782d952b9038de3bc28b39a",
+      "size": 535008,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "MSVCR110.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [
+        "msvcr110.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "msvcp120.dll",
+      "sha256": "87c42ca155473e4e71857d03497c8cbc28fa8ff7f2c8d72e8a1f39b71078f608",
+      "size": 455328,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "MSVCR120.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [
+        "msvcr120.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "msvcr110.dll",
+      "sha256": "b30160e759115e24425b9bcdf606ef6ebce4657487525ede7f1ac40b90ff7e49",
+      "size": 875472,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "msvcr120.dll",
+      "sha256": "86e39b5995af0e042fcdaa85fe2aefd7c9ddc7ad65e6327bd5e7058bc3ab615f",
+      "size": 970912,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "NetworkTopology.dll",
+      "sha256": "c555e3e2d4a0c6c3af09b7d5de8cfd66be8820a7418e8ec171a3746b0d289749",
+      "size": 721920,
+      "image_base": "0x68e40000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "opal.dll",
+      "sha256": "4495b311d0201e68037269bb05393005befbfd7f42a2413bafb38eb64b792f8f",
+      "size": 9332224,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ptlib.dll",
+        "MSVCP110.dll",
+        "MSVCR110.dll",
+        "MSVFW32.dll",
+        "AVIFIL32.dll",
+        "WS2_32.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [
+        "msvcp110.dll",
+        "msvcr110.dll",
+        "ptlib.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "OpenCL.dll",
+      "sha256": "8241a7c9021f98127d8a141079a831f61b111ece542feca8539dbb1dd2b56d0a",
+      "size": 418936,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Packet.dll",
+      "sha256": "6b19cffaa2bf4359be1a0130a1fb47ab45e8c3be5d0cb7986579c5e04e1d77a5",
+      "size": 96784,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "VERSION.dll",
+        "WS2_32.dll",
+        "iphlpapi.dll",
+        "KERNEL32.dll",
+        "ADVAPI32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": true
+    },
+    {
+      "name": "PlayCoreGroup.exe",
+      "sha256": "e1a972c26631c39dadf53869563cf80424049483bde46d62181ed3150d58abab",
+      "size": 94208,
+      "image_base": "0x400000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "PlayCoreRtmp.exe",
+      "sha256": "21caa7d15374e7671c8f8aa1d04b5aca99ead162c9c26814233bbf4606a05ff1",
+      "size": 122368,
+      "image_base": "0x400000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "SHELL32.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "PlayCoreSignal.exe",
+      "sha256": "2ccd8a9a709cdd593b235203c0f52728a05d8ff7e6d42ab6ac197af053147ba1",
+      "size": 93184,
+      "image_base": "0x400000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avutil-55.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "postproc-53.dll",
+      "sha256": "171cee321b813841a01babafacd9938fdd3dbf58fb8046c24db1e6a67b68c83e",
+      "size": 121344,
+      "image_base": "0x6e7c0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "avutil-54.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-54.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "postproc-54.dll",
+      "sha256": "cb3f78f7319b0b602eb2e217a1453a862894a8fb74a6217050ce148d4981abd0",
+      "size": 110080,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "avutil-55.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-55.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "ptlib.dll",
+      "sha256": "5fa06940067bee902fe09dd226ff186163635cdd54326c97d56db491c5640f9d",
+      "size": 4152832,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "MSVCP120.dll",
+        "MSVCR120.dll",
+        "WINMM.dll",
+        "DSOUND.dll",
+        "AVICAP32.dll",
+        "QUARTZ.dll",
+        "MPR.dll",
+        "PSAPI.DLL",
+        "WS2_32.dll",
+        "IPHLPAPI.DLL",
+        "KERNEL32.dll",
+        "USER32.dll",
+        "GDI32.dll",
+        "ADVAPI32.dll",
+        "SHELL32.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "DNSAPI.dll",
+        "LIBEAY32.dll",
+        "SSLEAY32.dll",
+        "COMDLG32.dll",
+        "ODBC32.dll"
+      ],
+      "binary_filename_references": [
+        "jpeg62.dll",
+        "libeay32.dll",
+        "msvcp120.dll",
+        "msvcr120.dll",
+        "ssleay32.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5Core.dll",
+      "sha256": "bd3ac89c4351c67e79117cbcc92fbd1024987fa8b2b0bebad549de50b3dd4110",
+      "size": 4828672,
+      "image_base": "0x68880000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "MPR.DLL",
+        "msvcrt.dll",
+        "ole32.dll",
+        "libwinpthread-1.dll",
+        "SHELL32.dll",
+        "USER32.dll",
+        "WS2_32.dll",
+        "libstdc++-6.dll",
+        "icuin53.dll",
+        "icuuc53.dll"
+      ],
+      "binary_filename_references": [
+        "icuin53.dll",
+        "icuuc53.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "libwinpthread-1.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5Gui.dll",
+      "sha256": "941c3168499b598fc0e945c2e8d2f003484b89430b3161625cd99e40b9c0b079",
+      "size": 5211648,
+      "image_base": "0x61940000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "OPENGL32.DLL",
+        "USER32.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5Multimedia.dll",
+      "sha256": "69235f1a3c22e410e7ddda15ed15ad2c10920b8619335cf23019bb759df277a5",
+      "size": 784384,
+      "image_base": "0x6b480000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5MultimediaWidgets.dll",
+      "sha256": "fb571d3018576385a5fdeda7eb6bcb97264ae5273fbce3c72c705a6c18b66b69",
+      "size": 110592,
+      "image_base": "0x6c5c0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "OPENGL32.DLL",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5OpenGL.dll",
+        "Qt5Widgets.dll",
+        "Qt5Multimedia.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Multimedia.dll",
+        "Qt5OpenGL.dll",
+        "Qt5Widgets.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5Network.dll",
+      "sha256": "8206cd9b5145eea30f3a87abba311dd5e2435ce59db07d29cca7b07a15d4f9b4",
+      "size": 1511936,
+      "image_base": "0x69700000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "CRYPT32.dll",
+        "DNSAPI.DLL",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "WS2_32.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5OpenGL.dll",
+      "sha256": "beebee45111df1115a650d2263f23c9d1f9e9b6fa573efae1136907bd14de69d",
+      "size": 335360,
+      "image_base": "0x61c00000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Widgets.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Widgets.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5Positioning.dll",
+      "sha256": "8faa4ea3def65ecc41595502acbf96af7dc6529fea27b7eda53afc6c6769e161",
+      "size": 229376,
+      "image_base": "0x64b80000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5PrintSupport.dll",
+      "sha256": "2d546c0b7d1c91eb24e08145121386d34e1f343d3209b280612d39005b4ff247",
+      "size": 352768,
+      "image_base": "0x6df40000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "COMDLG32.DLL",
+        "libgcc_s_dw2-1.dll",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll",
+        "WINSPOOL.DRV",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Widgets.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Widgets.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5Qml.dll",
+      "sha256": "5509ca5b5eaca6ec57fa4532983959ed0e3bc4408943402c326488aa1a488cef",
+      "size": 3857920,
+      "image_base": "0x660c0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libwinpthread-1.dll",
+        "SHELL32.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Network.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "libwinpthread-1.dll",
+        "Qt5Core.dll",
+        "Qt5Network.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5Quick.dll",
+      "sha256": "535648acea553af98cfb9acb553a758cdb72a288f0180e461011f239a9984f15",
+      "size": 3715072,
+      "image_base": "0x6e5c0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Qml.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Qml.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5Sensors.dll",
+      "sha256": "5fdfa1f94e64e19737ec6e1089d502cbe4bb2995235c5ad72267de2e272894b3",
+      "size": 199680,
+      "image_base": "0x70cc0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5SerialPort.dll",
+      "sha256": "8b8e3eda4e3f18604edb4b4b1cbe37db73d2341ba2968f916d5d7e1b2e385c46",
+      "size": 95744,
+      "image_base": "0x65880000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "SETUPAPI.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5Sql.dll",
+      "sha256": "c56fc1d50335a0f6b9d09a9d2c9bc94457d2c6ee6837a130fe4f2b2bdabcbc9e",
+      "size": 259072,
+      "image_base": "0x6d7c0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5Svg.dll",
+      "sha256": "1d0d813ba71edcc50fecac5b00c0f4813f5c9f51127d9c36e10268f3e635509c",
+      "size": 329216,
+      "image_base": "0x67740000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Widgets.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Widgets.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5WebChannel.dll",
+      "sha256": "74dc87228782f3b2ce2f873ae3d11acf01fc7ae2b9ae563b946fbf0a9bfe1cf3",
+      "size": 115712,
+      "image_base": "0x6a000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Qml.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Qml.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5WebKit.dll",
+      "sha256": "26da2ce89f8e1361ef3d6f036a9bc6a6a33b09a9aa0ff6dddcc039eb017d94be",
+      "size": 33309184,
+      "image_base": "0x65c80000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.dll",
+        "libgcc_s_dw2-1.dll",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libwinpthread-1.dll",
+        "SHLWAPI.dll",
+        "USER32.dll",
+        "VERSION.dll",
+        "WINMM.DLL",
+        "libstdc++-6.dll",
+        "icuin53.dll",
+        "icuuc53.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Sql.dll",
+        "Qt5Qml.dll",
+        "Qt5Quick.dll",
+        "Qt5Positioning.dll",
+        "Qt5Multimedia.dll",
+        "Qt5Sensors.dll",
+        "Qt5WebChannel.dll"
+      ],
+      "binary_filename_references": [
+        "icuin53.dll",
+        "icuuc53.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "libwinpthread-1.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Multimedia.dll",
+        "Qt5Network.dll",
+        "Qt5Positioning.dll",
+        "Qt5Qml.dll",
+        "Qt5Quick.dll",
+        "Qt5Sensors.dll",
+        "Qt5Sql.dll",
+        "Qt5WebChannel.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5WebKitWidgets.dll",
+      "sha256": "979bf0252dfe70f566dfe2dfd17adae099ca583d70fcfe09276bb34c32eac65c",
+      "size": 272896,
+      "image_base": "0x675c0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5OpenGL.dll",
+        "Qt5PrintSupport.dll",
+        "Qt5Widgets.dll",
+        "Qt5Multimedia.dll",
+        "Qt5MultimediaWidgets.dll",
+        "Qt5Sensors.dll",
+        "Qt5WebKit.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Multimedia.dll",
+        "Qt5MultimediaWidgets.dll",
+        "Qt5Network.dll",
+        "Qt5OpenGL.dll",
+        "Qt5PrintSupport.dll",
+        "Qt5Sensors.dll",
+        "Qt5WebKit.dll",
+        "Qt5Widgets.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "Qt5WebSockets.dll",
+      "sha256": "07155aecd99b0fe7a2d4f8a4d783184c7ed646619da9d70faf86cc43af6e7177",
+      "size": 161280,
+      "image_base": "0x6ef80000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Network.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Network.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5Widgets.dll",
+      "sha256": "5d5ddf857aa05f7ab1541d4a1a22d65a13a4d36d334392ee932152928d81d38e",
+      "size": 6466560,
+      "image_base": "0x61dc0000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "SHELL32.dll",
+        "USER32.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "Qt5Xml.dll",
+      "sha256": "3a60f2f832a1eefd3bf748057c306f1393c7004cbfe9f81509b254c2316d8fa3",
+      "size": 238080,
+      "image_base": "0x66c00000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "binary_filename_references": [
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "SDL.dll",
+      "sha256": "af5f2716f1669e09e362d6ce8d4878a162a521d2aafe1660199be574242d151b",
+      "size": 303616,
+      "image_base": "0x68100000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "ADVAPI32.DLL",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "USER32.dll",
+        "WINMM.DLL"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "SDL2.dll",
+      "sha256": "a23d944bea101c574875c13883088798cfda712de969dd14f529e870a0de87da",
+      "size": 1007104,
+      "image_base": "0x6c740000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "GDI32.dll",
+        "IMM32.DLL",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "SHELL32.DLL",
+        "USER32.dll",
+        "VERSION.dll",
+        "WINMM.DLL"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": false
+    },
+    {
+      "name": "ssleay32.dll",
+      "sha256": "eab2ceb9ff81efb045da4cafa8600628aab266b33807a57f9b1d943590386b29",
+      "size": 274432,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "LIBEAY32.dll",
+        "MSVCR120.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [
+        "libeay32.dll",
+        "msvcr120.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "swresample-1.dll",
+      "sha256": "a92fb6cf96551ef5d25a2a13c33c85217ae3d1f6c621543eac3fe8946f041566",
+      "size": 111104,
+      "image_base": "0x6cb80000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "avutil-54.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-54.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "swresample-2.dll",
+      "sha256": "210c1567b94f0158ee86e4d8e57bfacb92d8d8237627407717e9cc072ea94cda",
+      "size": 288768,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "avutil-55.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-55.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "swscale-3.dll",
+      "sha256": "846805c0a580bd7636a72e3a32b945b5c5e98fe942bb628a40f20d09066121b0",
+      "size": 507904,
+      "image_base": "0x64f00000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "avutil-54.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-54.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "swscale-4.dll",
+      "sha256": "bd99e29fcf4393ef256979acb92334b713a552039ca9ce7254ad98cb1eda328a",
+      "size": 513536,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "avutil-55.dll"
+      ],
+      "binary_filename_references": [
+        "avutil-55.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "tftpd32.exe",
+      "sha256": "effd36f6842db09f296e1d5ab471748502f96c2037cbeda0af2f481fbe276734",
+      "size": 201216,
+      "image_base": "0x400000",
+      "classification": "TFTP辅助程序",
+      "imports": [
+        "SHELL32.dll",
+        "WS2_32.dll",
+        "COMCTL32.dll",
+        "IPHLPAPI.DLL",
+        "KERNEL32.dll",
+        "USER32.dll",
+        "GDI32.dll",
+        "COMDLG32.dll",
+        "ADVAPI32.dll"
+      ],
+      "binary_filename_references": [],
+      "reachable_candidate": true
+    },
+    {
+      "name": "TPSimulator.exe",
+      "sha256": "657d4c123936901cabcf5119fb8a878a63b962f21b24a661b61a74f58f47c91d",
+      "size": 12818432,
+      "image_base": "0x400000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Multimedia.dll",
+        "Qt5Network.dll",
+        "Qt5SerialPort.dll",
+        "Qt5Sql.dll",
+        "Qt5WebSockets.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "GDI32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "SHELL32.dll",
+        "USER32.dll",
+        "WSOCK32.DLL",
+        "libstdc++-6.dll",
+        "dllKVMTouch.dll",
+        "dllKVMMouse.dll",
+        "NetworkTopology.dll",
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "packet.dll",
+        "wpcap.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "dllKVMMouse.dll",
+        "dllKVMTouch.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "NetworkTopology.dll",
+        "Packet.dll",
+        "PlayCoreGroup.exe",
+        "PlayCoreRtmp.exe",
+        "PlayCoreSignal.exe",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Multimedia.dll",
+        "Qt5Network.dll",
+        "Qt5SerialPort.dll",
+        "Qt5Sql.dll",
+        "Qt5WebSockets.dll",
+        "Qt5Widgets.dll",
+        "tftpd32.exe",
+        "VideoPreview.exe",
+        "wpcap.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "uninstall.exe",
+      "sha256": "07365770631759420e679342ea3cc3b720286b5bfb5289f54396b432eea40580",
+      "size": 1342464,
+      "image_base": "0x400000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "KERNEL32.DLL",
+        "ADVAPI32.dll",
+        "COMCTL32.dll",
+        "COMDLG32.dll",
+        "GDI32.dll",
+        "gdiplus.dll",
+        "imagehlp.dll",
+        "IMM32.dll",
+        "lua5.1.dll",
+        "MSIMG32.dll",
+        "NETAPI32.dll",
+        "ole32.dll",
+        "OLEACC.dll",
+        "OLEAUT32.dll",
+        "oledlg.dll",
+        "SHELL32.dll",
+        "SHLWAPI.dll",
+        "urlmon.dll",
+        "USER32.dll",
+        "VERSION.dll",
+        "WINMM.dll",
+        "WINSPOOL.DRV"
+      ],
+      "binary_filename_references": [
+        "lua5.1.dll"
+      ],
+      "reachable_candidate": false
+    },
+    {
+      "name": "VideoPreview.exe",
+      "sha256": "6c97bff84032008b280a72da068269664025d5d600e8cbd539dce249e09e96e0",
+      "size": 112640,
+      "image_base": "0x400000",
+      "classification": "主要客户端模块，已提取协议代码",
+      "imports": [
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "libgcc_s_dw2-1.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "SHELL32.dll",
+        "libstdc++-6.dll",
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "swscale-4.dll"
+      ],
+      "binary_filename_references": [
+        "avcodec-57.dll",
+        "avformat-57.dll",
+        "avutil-55.dll",
+        "libgcc_s_dw2-1.dll",
+        "libstdc++-6.dll",
+        "Qt5Core.dll",
+        "Qt5Gui.dll",
+        "Qt5Network.dll",
+        "Qt5Widgets.dll",
+        "swscale-4.dll"
+      ],
+      "reachable_candidate": true
+    },
+    {
+      "name": "wpcap.dll",
+      "sha256": "0948518b229fb502b9c063966fc3afafbb749241a1c184f6eb7d532e00bce1d8",
+      "size": 281104,
+      "image_base": "0x10000000",
+      "classification": "安装器／第三方运行库／附带SDK，未逐函数恢复",
+      "imports": [
+        "WS2_32.dll",
+        "packet.dll",
+        "KERNEL32.dll"
+      ],
+      "binary_filename_references": [
+        "Packet.dll"
+      ],
+      "reachable_candidate": true
+    }
+  ],
+  "boundary": "导入和二进制文件名引用是可达候选，不证明本次运行实际加载。第三方标准协议库不作为自有私有协议恢复数量。"
+}
