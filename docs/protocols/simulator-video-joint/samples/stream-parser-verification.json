@@ -1,0 +1,73 @@
+{
+  "cases": 8,
+  "all_match": true,
+  "results": [
+    {
+      "status": 1,
+      "next_read_index": 22,
+      "payload": "000102030405060708090A0B0C0D0E0F",
+      "case": "完整包",
+      "expected_status": 1,
+      "match": true,
+      "payload_matches": true
+    },
+    {
+      "status": 3,
+      "next_read_index": 0,
+      "payload": "",
+      "case": "仅头部",
+      "expected_status": 3,
+      "match": true
+    },
+    {
+      "status": 3,
+      "next_read_index": 0,
+      "payload": "",
+      "case": "缺少尾字节",
+      "expected_status": 3,
+      "match": true
+    },
+    {
+      "status": 1,
+      "next_read_index": 17,
+      "payload": "000102030405060708090A0B0C0D0E0F",
+      "case": "跨环形缓冲末尾",
+      "expected_status": 1,
+      "match": true,
+      "payload_matches": true
+    },
+    {
+      "status": 2,
+      "next_read_index": 0,
+      "payload": "",
+      "case": "首字节错误",
+      "expected_status": 2,
+      "match": true
+    },
+    {
+      "status": 2,
+      "next_read_index": 0,
+      "payload": "",
+      "case": "尾字节错误",
+      "expected_status": 2,
+      "match": true
+    },
+    {
+      "status": 1,
+      "next_read_index": 22,
+      "payload": "000102030405060708090A0B0C0D0E0F",
+      "case": "两包粘连时只消耗第一包",
+      "expected_status": 1,
+      "match": true,
+      "payload_matches": true
+    },
+    {
+      "status": 2,
+      "next_read_index": 0,
+      "payload": "",
+      "case": "长度高字节非零",
+      "expected_status": 2,
+      "match": true
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+# 原客户端逆向HTTP契约；UTF-8、LF。
+openapi: 3.0.3
+info:
+  title: SimulatorVideoJoint 原客户端管理HTTP契约
+  version: 0.1.0
+  description: 逆向契约，针对指定TPSimulator.exe版本；不是SCP-cv自身API。请求名和字段由原代码恢复，错误返回及部分数据类型仍有待确认项。
+  contact:
+    name: SCP-cv 维护者
+    url: https://github.com/SCP-of-SSPU/SCP-cv
+servers:
+- url: http://{host}:9988
+  variables:
+    host:
+      default: 127.0.0.1
+      description: webServerIp或netWebServerIp；使用实际现场配置。
+tags:
+- name: management
+  description: 同一HTTP路径按request字段分派。
+- name: conference
+  description: 原会议代理和辅助播放器的请求；仅静态恢复，未调用现场服务。
+paths:
+  /jeesite/a/clogin:
+    post:
+      tags:
+      - management
+      summary: 登录或分派管理资料操作
+      description: 登录可实测；其余操作按原客户端构造恢复。写操作没有在现场服务上执行。HTTP 200不等于业务成功，客户端还检查返回内容。
+      operationId: dispatchSimulatorManagementRequest
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+              - $ref: schemas.yaml#/Login
+              - $ref: schemas.yaml#/UploadCurrentState
+              - $ref: schemas.yaml#/SaveJointPreview
+              - $ref: schemas.yaml#/RenameDevice
+              - $ref: schemas.yaml#/RestoreDeviceName
+              - $ref: schemas.yaml#/CreateCollection
+              - $ref: schemas.yaml#/DeleteCollection
+              - $ref: schemas.yaml#/UpdateCollection
+              - $ref: schemas.yaml#/DeleteAudioVideoBinding
+              - $ref: schemas.yaml#/ReadPlans
+              - $ref: schemas.yaml#/ReadJointPreview
+              - $ref: schemas.yaml#/ReadCollections
+              - $ref: schemas.yaml#/ReadAudioVideoBindings
+              - $ref: schemas.yaml#/SaveAudioVideoBinding
+              discriminator:
+                propertyName: request
+                mapping:
+                  cclogin: schemas.yaml#/Login
+                  csdata: schemas.yaml#/UploadCurrentState
+                  addJointInfo: schemas.yaml#/SaveJointPreview
+                  ReNameDevice: schemas.yaml#/RenameDevice
+                  ReductionName: schemas.yaml#/RestoreDeviceName
+                  collection: schemas.yaml#/CreateCollection
+                  deletecollection: schemas.yaml#/DeleteCollection
+                  updatecollection: schemas.yaml#/UpdateCollection
+                  deleteaudioandvideo: schemas.yaml#/DeleteAudioVideoBinding
+                  scdata: schemas.yaml#/ReadPlans
+                  downJointInfo: schemas.yaml#/ReadJointPreview
+                  downcollection: schemas.yaml#/ReadCollections
+                  downaudioandvideo: schemas.yaml#/ReadAudioVideoBindings
+                  audioandvideo: schemas.yaml#/SaveAudioVideoBinding
+            examples:
+              login:
+                value:
+                  request: cclogin
+                  username: <用户名>
+                  password: <密码>
+              readPlans:
+                value:
+                  request: scdata
+                  userid: '1'
+      responses:
+        '200':
+          description: 业务返回；response、result或其它字段决定业务结果。
+          content:
+            application/json:
+              schema:
+                $ref: schemas.yaml#/ManagementReply
+              examples:
+                loginSuccess:
+                  value:
+                    response: '200'
+                    userid: '1'
+                    VideoJoint:
+                    - Area: []
+                      Input: []
+                      Limit: []
+                      Other: []
+        '405':
+          description: '此路径不接受GET，实测返回Allow: POST。'
+        default:
+          description: 其它HTTP错误；具体业务错误结构未完整实测。
+  /api/confcontrol/{cmConfId}/reqrtspiframe:
+    post:
+      tags:
+      - conference
+      summary: 请求会议终端RTSP关键帧
+      operationId: requestConferenceRtspIFrame
+      description: PlayCoreRtmp和VideoPreview的原请求。此路径硬编码HTTP端口9999，cmConfId同时进入路径和查询。请求写作用于关键帧，未在现场执行。
+      servers:
+      - url: http://{host}:9999
+        variables:
+          host:
+            default: 127.0.0.1
+            description: 辅助进程保存的会议服务地址。
+      security:
+      - ConferenceAuthorization: []
+      parameters:
+      - name: cmConfId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: cmConfId
+        in: query
+        required: true
+        schema:
+          type: string
+        description: 与路径标识一致。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - epId
+              properties:
+                epId:
+                  type: string
+              additionalProperties: true
+      responses:
+        '200':
+          description: 原辅助程序处理success/failed返回分支，完整结构未实际采样。
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        4XX:
+          description: HTTP客户端错误的预留范围；具体状态与响应结构未实测。
+        default:
+          description: HTTP或业务错误；结构待确认。
+      x-source: PlayCoreRtmp.exe:0x00404BE0
+x-evidence:
+  binary-sha256: 657d4c123936901cabcf5119fb8a878a63b962f21b24a661b61a74f58f47c91d
+  date: '2026-10-08'
+  scope: 管理HTTP；会议、摄像机代理与XML-RPC参见同目录02和07章节，尚未补足的接口不伪造OpenAPI操作。
+components:
+  securitySchemes:
+    ConferenceAuthorization:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 客户端保存的完整Authorization头值；没有确认客户端自行添加Bearer前缀。

@@ -1,0 +1,364 @@
+[
+  {
+    "function": "00445a60_FUN_00445a60",
+    "method": "POST",
+    "request_constant_candidate": "csdata",
+    "keys": [
+      "request",
+      "userid",
+      "data"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0046ff30_FUN_0046ff30",
+    "method": "POST",
+    "request_constant_candidate": "scdata",
+    "keys": [
+      "request",
+      "userid"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004709b0_FUN_004709b0",
+    "method": "POST",
+    "request_constant_candidate": "downJointInfo",
+    "keys": [
+      "request",
+      "userid"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004988a0_FUN_004988a0",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [
+      "account",
+      "password"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004991a0_FUN_004991a0",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [
+      "fireTypes",
+      "queryType"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0049a210_FUN_0049a210",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0049feb0_FUN_0049feb0",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004a12b0_FUN_004a12b0",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [
+      "cmConfId",
+      "epId"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004a1f10_FUN_004a1f10",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004a2920_FUN_004a2920",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004a3d30_FUN_004a3d30",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "004a8290_FUN_004a8290",
+    "method": "POST",
+    "request_constant_candidate": "cclogin",
+    "keys": [
+      "request",
+      "username",
+      "password"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00507ac0_FUN_00507ac0",
+    "method": "POST",
+    "request_constant_candidate": "addJointInfo",
+    "keys": [
+      "request",
+      "userid",
+      "index",
+      "jointid",
+      "picname",
+      "nX",
+      "nY",
+      "nWidth",
+      "nHeight",
+      "data"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0054bd20_FUN_0054bd20",
+    "method": "POST",
+    "request_constant_candidate": "ReNameDevice",
+    "keys": [
+      "request",
+      "DeviceId",
+      "NewDeviceName"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0054c3d0_FUN_0054c3d0",
+    "method": "POST",
+    "request_constant_candidate": "ReductionName",
+    "keys": [
+      "request",
+      "DeviceId"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00556470_FUN_00556470",
+    "method": "POST",
+    "request_constant_candidate": "downcollection",
+    "keys": [
+      "request",
+      "userid"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00556f20_FUN_00556f20",
+    "method": "POST",
+    "request_constant_candidate": "collection",
+    "keys": [
+      "",
+      "request",
+      "userid",
+      "fathername",
+      "nodename",
+      "multicastip",
+      "multicastport",
+      "ipcip",
+      "ipcport"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00559ac0_FUN_00559ac0",
+    "method": "POST",
+    "request_constant_candidate": "deletecollection",
+    "keys": [
+      "request",
+      "userid",
+      "id"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0055aaa0_FUN_0055aaa0",
+    "method": "POST",
+    "request_constant_candidate": "updatecollection",
+    "keys": [
+      "request",
+      "userid",
+      "id",
+      "nodename",
+      "fathername"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0060c0c0_FUN_0060c0c0",
+    "method": "POST",
+    "request_constant_candidate": "cclogin",
+    "keys": [
+      "request",
+      "username",
+      "password"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00653cf0_FUN_00653cf0",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [
+      "0",
+      "rtsp",
+      "1",
+      "transcode=0"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00654750_FUN_00654750",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [
+      "0",
+      "rtsp",
+      "1",
+      "transcode=0"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00689470_FUN_00689470",
+    "method": "POST",
+    "request_constant_candidate": "downaudioandvideo",
+    "keys": [
+      "request",
+      "userid"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00689bd0_CDlgAVBind__sl_DelPostToServer__4",
+    "method": "POST",
+    "request_constant_candidate": "deleteaudioandvideo",
+    "keys": [
+      "request",
+      "userid",
+      "btnname"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0068a450_FUN_0068a450",
+    "method": "POST",
+    "request_constant_candidate": "audioandvideo",
+    "keys": [
+      "",
+      "request",
+      "userid",
+      "vmulticastip",
+      "vmulticastport",
+      "vipcip",
+      "vipcport",
+      "amulticastip",
+      "amulticastport",
+      "channelnumber",
+      "aipcip",
+      "aipcport",
+      "danteip",
+      "dantechannel",
+      "btnname"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00734570_FUN_00734570",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [
+      "account",
+      "password"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00734b80_FUN_00734b80",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [
+      "fireTypes",
+      "queryType"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00735730_FUN_00735730",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00736ca0_FUN_00736ca0",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00737d00_FUN_00737d00",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [
+      "cmConfId",
+      "epId"
+    ],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00738680_FUN_00738680",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00739030_FUN_00739030",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0073a3e0_FUN_0073a3e0",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "00799f00_FUN_00799f00",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0079a790_FUN_0079a790",
+    "method": "GET",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  },
+  {
+    "function": "0079ee30_FUN_0079ee30",
+    "method": "POST",
+    "request_constant_candidate": null,
+    "keys": [],
+    "confidence": "请求键和方法来自代码；常量候选需结合上下文复核"
+  }
+]

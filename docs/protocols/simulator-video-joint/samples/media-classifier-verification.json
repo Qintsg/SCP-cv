@@ -1,0 +1,48 @@
+{
+  "cases": 7,
+  "all_match": true,
+  "vectors": [
+    {
+      "packet": "806000000000000000000000000000016701",
+      "expected": 1,
+      "native_classification": 1,
+      "match": true
+    },
+    {
+      "packet": "806000000000000000000000000000016801",
+      "expected": 68,
+      "native_classification": 68,
+      "match": true
+    },
+    {
+      "packet": "80E000000000000000000000000000016501",
+      "expected": 2,
+      "native_classification": 2,
+      "match": true
+    },
+    {
+      "packet": "80E000000000000000000000000000016101",
+      "expected": 7,
+      "native_classification": 7,
+      "match": true
+    },
+    {
+      "packet": "806000000000000000000000000000016101",
+      "expected": 4,
+      "native_classification": 4,
+      "match": true
+    },
+    {
+      "packet": "80E000000000000000000000414243444546",
+      "expected": 6,
+      "native_classification": 6,
+      "match": true
+    },
+    {
+      "packet": "806000000000000000000000414243444546",
+      "expected": 5,
+      "native_classification": 5,
+      "match": true
+    }
+  ]
+}

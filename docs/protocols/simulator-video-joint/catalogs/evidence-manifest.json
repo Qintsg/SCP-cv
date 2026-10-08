@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-08",
+  "modules": [
+    {
+      "name": "TPSimulator.exe",
+      "sha256": "657d4c123936901cabcf5119fb8a878a63b962f21b24a661b61a74f58f47c91d",
+      "size": 12818432
+    },
+    {
+      "name": "dllKVMTouch.dll",
+      "sha256": "2cdb813f9754db4095629d8d5576cec8e2526c249bc1c52cddbabc60df739da5",
+      "size": 129536
+    },
+    {
+      "name": "dllKVMMouse.dll",
+      "sha256": "040d1eea0593b1d8166412a13c98d7a275498bd85719036b9b6e84c4e2b3a798",
+      "size": 106496
+    },
+    {
+      "name": "DLLPCToControl.dll",
+      "sha256": "63ac984af9a81bd3295b81c0cd3d4fa47abbb24d3170e830c3fd08b6dc238e06",
+      "size": 111104
+    },
+    {
+      "name": "NetworkTopology.dll",
+      "sha256": "c555e3e2d4a0c6c3af09b7d5de8cfd66be8820a7418e8ec171a3746b0d289749",
+      "size": 721920
+    },
+    {
+      "name": "PlayCoreGroup.exe",
+      "sha256": "e1a972c26631c39dadf53869563cf80424049483bde46d62181ed3150d58abab",
+      "size": 94208
+    },
+    {
+      "name": "PlayCoreSignal.exe",
+      "sha256": "2ccd8a9a709cdd593b235203c0f52728a05d8ff7e6d42ab6ac197af053147ba1",
+      "size": 93184
+    },
+    {
+      "name": "PlayCoreRtmp.exe",
+      "sha256": "21caa7d15374e7671c8f8aa1d04b5aca99ead162c9c26814233bbf4606a05ff1",
+      "size": 122368
+    },
+    {
+      "name": "VideoPreview.exe",
+      "sha256": "6c97bff84032008b280a72da068269664025d5d600e8cbd539dce249e09e96e0",
+      "size": 112640
+    }
+  ],
+  "local_evidence_root": "E:\\Projects\\SSPU\\Resources\\SimulatorVideoJoint-analysis",
+  "binary_catalog_rows": 103,
+  "text_catalog_rows": 172,
+  "http_function_rows": 36,
+  "disclaimer": "表格行数不是完整恢复的协议数量；分别保留原代码模拟与静态候选。Qt宿主操作为有限纯内存适配，所有设备网络写入均未执行。"
+}

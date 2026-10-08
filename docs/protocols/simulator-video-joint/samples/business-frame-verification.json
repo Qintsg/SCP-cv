@@ -1,0 +1,171 @@
+{
+  "cases": 15,
+  "all_match": true,
+  "vectors": [
+    {
+      "kind": "UTF-8 名称",
+      "function": "0x65cc90",
+      "arguments": [
+        "Input-A"
+      ],
+      "native": "FBFC613400000007496E7075742D41031AFDFE",
+      "expected": "FBFC613400000007496E7075742D41031AFDFE",
+      "match": true
+    },
+    {
+      "kind": "UTF-8 名称",
+      "function": "0x65cc90",
+      "arguments": [
+        "中文名称"
+      ],
+      "native": "FBFC61340000000CE4B8ADE69687E5908DE7A7B0092DFDFE",
+      "expected": "FBFC61340000000CE4B8ADE69687E5908DE7A7B0092DFDFE",
+      "match": true
+    },
+    {
+      "kind": "UTF-8 名称",
+      "function": "0x65cc90",
+      "arguments": [
+        "Camera🙂"
+      ],
+      "native": "FBFC61340000000A43616D657261F09F99820592FDFE",
+      "expected": "FBFC61340000000A43616D657261F09F99820592FDFE",
+      "match": true
+    },
+    {
+      "kind": "单字节 IPC 双字符串",
+      "function": "0x65d8d0",
+      "arguments": [
+        "rtsp://a",
+        1,
+        "192.168.5.55",
+        2
+      ],
+      "native": "FBFC61720000001808727473703A2F2F61010C3139322E3136382E352E3535020000FDFE",
+      "expected": "FBFC61720000001808727473703A2F2F61010C3139322E3136382E352E3535020000FDFE",
+      "match": true
+    },
+    {
+      "kind": "单字节 IPC 双字符串",
+      "function": "0x65d8d0",
+      "arguments": [
+        "中文",
+        1,
+        "镜像",
+        2
+      ],
+      "native": "FBFC61720000000802000001020000020000FDFE",
+      "expected": "FBFC61720000000802000001020000020000FDFE",
+      "match": true
+    },
+    {
+      "kind": "单字节 IPC 双字符串",
+      "function": "0x65d8d0",
+      "arguments": [
+        "A",
+        1,
+        "B",
+        2
+      ],
+      "native": "FBFC6172000000060141010142020000FDFE",
+      "expected": "FBFC6172000000060141010142020000FDFE",
+      "match": true
+    },
+    {
+      "kind": "音量",
+      "function": "0x65ffb0",
+      "arguments": [
+        0
+      ],
+      "native": "FBFC619000000001000000FDFE",
+      "expected": "FBFC619000000001000000FDFE",
+      "match": true
+    },
+    {
+      "kind": "音量",
+      "function": "0x65ffb0",
+      "arguments": [
+        57
+      ],
+      "native": "FBFC619000000001390000FDFE",
+      "expected": "FBFC619000000001390000FDFE",
+      "match": true
+    },
+    {
+      "kind": "音量",
+      "function": "0x65ffb0",
+      "arguments": [
+        100
+      ],
+      "native": "FBFC619000000001640000FDFE",
+      "expected": "FBFC619000000001640000FDFE",
+      "match": true
+    },
+    {
+      "kind": "音量",
+      "function": "0x65ffb0",
+      "arguments": [
+        255
+      ],
+      "native": "FBFC619000000001FF0000FDFE",
+      "expected": "FBFC619000000001FF0000FDFE",
+      "match": true
+    },
+    {
+      "kind": "层级",
+      "function": "0x65c0b0",
+      "arguments": [
+        1,
+        9,
+        0
+      ],
+      "native": "FBFC610600000004000100090075FDFE",
+      "expected": "FBFC610600000004000100090075FDFE",
+      "match": true
+    },
+    {
+      "kind": "层级",
+      "function": "0x65c0b0",
+      "arguments": [
+        128,
+        2,
+        0
+      ],
+      "native": "FBFC6106000000040080000200EDFDFE",
+      "expected": "FBFC6106000000040080000200EDFDFE",
+      "match": true
+    },
+    {
+      "kind": "层级",
+      "function": "0x65c0b0",
+      "arguments": [
+        65535,
+        65535,
+        0
+      ],
+      "native": "FBFC610600000004FFFFFFFF0467FDFE",
+      "expected": "FBFC610600000004FFFFFFFF0467FDFE",
+      "match": true
+    },
+    {
+      "kind": "FAFA 文本",
+      "function": "0x660080",
+      "arguments": [
+        "rtsp://a"
+      ],
+      "native": "FAFA220000000008727473703A2F2F610000FBFB",
+      "expected": "FAFA220000000008727473703A2F2F610000FBFB",
+      "match": true
+    },
+    {
+      "kind": "FAFA 文本",
+      "function": "0x660080",
+      "arguments": [
+        "中文"
+      ],
+      "native": "FAFA22000000000200000000FBFB",
+      "expected": "FAFA22000000000200000000FBFB",
+      "match": true
+    }
+  ]
+}

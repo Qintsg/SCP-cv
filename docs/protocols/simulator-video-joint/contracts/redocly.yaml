@@ -1,0 +1,5 @@
+# 逆向资料没有获得原软件许可信息，不虚构license字段。
+extends:
+  - recommended
+rules:
+  info-license: off

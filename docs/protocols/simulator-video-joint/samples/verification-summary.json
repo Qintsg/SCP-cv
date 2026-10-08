@@ -1,0 +1,46 @@
+{
+  "golden-verification": {
+    "all_match": true,
+    "unique_frames": 103,
+    "modes": [
+      {
+        "mode": "single",
+        "packets": 200,
+        "mismatches": []
+      },
+      {
+        "mode": "double",
+        "packets": 200,
+        "mismatches": []
+      }
+    ]
+  },
+  "mapping-verification": {
+    "cases": 40,
+    "all_match": true
+  },
+  "business-frame-verification": {
+    "cases": 15,
+    "all_match": true
+  },
+  "encryption-verification": {
+    "cases": 5,
+    "all_match": true
+  },
+  "stream-parser-verification": {
+    "cases": 8,
+    "all_match": true
+  },
+  "kvm-verification": {
+    "cases": 8,
+    "all_match": true
+  },
+  "media-classifier-verification": {
+    "cases": 7,
+    "all_match": true
+  },
+  "topology-audit": {
+    "screens": 50,
+    "all_match": true
+  }
+}

@@ -1,0 +1,396 @@
+# 原客户端逆向HTTP契约；UTF-8、LF。
+Login:
+  type: object
+  required:
+  - request
+  - username
+  - password
+  properties:
+    request:
+      type: string
+      enum:
+      - cclogin
+    username:
+      type: string
+      minLength: 1
+    password:
+      type: string
+      minLength: 1
+      writeOnly: true
+  additionalProperties: true
+UploadCurrentState:
+  type: object
+  required:
+  - request
+  - userid
+  - data
+  properties:
+    request:
+      type: string
+      enum:
+      - csdata
+    userid: &id001
+      type: string
+      minLength: 1
+      description: 管理登录返回的 userid。
+    data:
+      type: object
+      additionalProperties: true
+      description: VideoJoint、Matrix、Audio、Mark 等控制资料；详见状态同步章节。
+  additionalProperties: true
+SaveJointPreview:
+  type: object
+  required:
+  - request
+  - userid
+  - index
+  - jointid
+  - picname
+  - data
+  properties:
+    request:
+      type: string
+      enum:
+      - addJointInfo
+    userid: *id001
+    index:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    jointid:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    picname:
+      type: string
+    data:
+      description: 预览矩形记录；数组／序列化表示的具体分支待继续核对。
+      oneOf:
+      - type: array
+        items:
+          type: object
+          properties:
+            nX:
+              type: number
+            nY:
+              type: number
+            nWidth:
+              type: number
+            nHeight:
+              type: number
+          additionalProperties: true
+      - type: string
+  additionalProperties: true
+RenameDevice:
+  type: object
+  required:
+  - request
+  - DeviceId
+  - NewDeviceName
+  properties:
+    request:
+      type: string
+      enum:
+      - ReNameDevice
+    DeviceId:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    NewDeviceName:
+      type: string
+  additionalProperties: true
+RestoreDeviceName:
+  type: object
+  required:
+  - request
+  - DeviceId
+  properties:
+    request:
+      type: string
+      enum:
+      - ReductionName
+    DeviceId:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+  additionalProperties: true
+CreateCollection:
+  type: object
+  required:
+  - request
+  - userid
+  - fathername
+  - nodename
+  - multicastip
+  - multicastport
+  - ipcip
+  - ipcport
+  properties:
+    request:
+      type: string
+      enum:
+      - collection
+    userid: *id001
+    fathername:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    nodename:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    multicastip:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    multicastport:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    ipcip:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    ipcport:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+  additionalProperties: true
+DeleteCollection:
+  type: object
+  required:
+  - request
+  - userid
+  - id
+  properties:
+    request:
+      type: string
+      enum:
+      - deletecollection
+    userid: *id001
+    id:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+  additionalProperties: true
+UpdateCollection:
+  type: object
+  required:
+  - request
+  - userid
+  - id
+  - nodename
+  - fathername
+  properties:
+    request:
+      type: string
+      enum:
+      - updatecollection
+    userid: *id001
+    id:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    nodename:
+      type: string
+    fathername:
+      type: string
+  additionalProperties: true
+DeleteAudioVideoBinding:
+  type: object
+  required:
+  - request
+  - userid
+  - btnname
+  properties:
+    request:
+      type: string
+      enum:
+      - deleteaudioandvideo
+    userid: *id001
+    btnname:
+      type: string
+  additionalProperties: true
+ReadPlans:
+  type: object
+  required:
+  - request
+  - userid
+  properties:
+    request:
+      type: string
+      enum:
+      - scdata
+    userid: *id001
+  additionalProperties: true
+ReadJointPreview:
+  type: object
+  required:
+  - request
+  - userid
+  properties:
+    request:
+      type: string
+      enum:
+      - downJointInfo
+    userid: *id001
+  additionalProperties: true
+ReadCollections:
+  type: object
+  required:
+  - request
+  - userid
+  properties:
+    request:
+      type: string
+      enum:
+      - downcollection
+    userid: *id001
+  additionalProperties: true
+ReadAudioVideoBindings:
+  type: object
+  required:
+  - request
+  - userid
+  properties:
+    request:
+      type: string
+      enum:
+      - downaudioandvideo
+    userid: *id001
+  additionalProperties: true
+SaveAudioVideoBinding:
+  type: object
+  required:
+  - request
+  - userid
+  - vmulticastip
+  - vmulticastport
+  - vipcip
+  - vipcport
+  - amulticastip
+  - amulticastport
+  - channelnumber
+  - aipcip
+  - aipcport
+  - danteip
+  - dantechannel
+  - btnname
+  properties:
+    request:
+      type: string
+      enum:
+      - audioandvideo
+    userid: *id001
+    vmulticastip:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    vmulticastport:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    vipcip:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    vipcport:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    amulticastip:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    amulticastport:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    channelnumber:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    aipcip:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    aipcport:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    danteip:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    dantechannel:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+    btnname:
+      description: 原客户端字段。
+      oneOf:
+      - type: string
+      - type: integer
+  additionalProperties: true
+ManagementReply:
+  type: object
+  description: 不同管理操作使用不同返回键。只有登录成功响应做过真实业务验证。
+  properties:
+    response:
+      type: string
+    userid:
+      type: string
+    result:
+      type: string
+    data:
+      description: 原样保留；部分历史操作返回包含JSON的字符串。
+    VideoJoint:
+      type: array
+      items:
+        type: object
+        properties:
+          Area:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+          Input:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+          Limit:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+          Other:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+        additionalProperties: true
+  additionalProperties: true

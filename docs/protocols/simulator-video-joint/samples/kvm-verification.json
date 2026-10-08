@@ -1,0 +1,147 @@
+{
+  "cases": 8,
+  "all_match": true,
+  "vectors": [
+    {
+      "kind": "mouse",
+      "parameters": [
+        1,
+        960,
+        540,
+        1
+      ],
+      "display": [
+        1920,
+        1080
+      ],
+      "native": [
+        {
+          "hex": "FCFD06010103C0021C01DE",
+          "length": 11,
+          "port": 60123
+        }
+      ],
+      "match": true
+    },
+    {
+      "kind": "mouse",
+      "parameters": [
+        2,
+        480,
+        270,
+        2
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD06010203C0021C02DE",
+          "length": 11,
+          "port": 60123
+        }
+      ],
+      "match": true
+    },
+    {
+      "kind": "mouse",
+      "parameters": [
+        3,
+        0,
+        0,
+        0
+      ],
+      "display": [
+        1920,
+        1080
+      ],
+      "native": [
+        {
+          "hex": "FCFD0601030000000000DE",
+          "length": 11,
+          "port": 60123
+        }
+      ],
+      "match": true
+    },
+    {
+      "kind": "mouse",
+      "parameters": [
+        1,
+        1919,
+        1079,
+        4
+      ],
+      "display": [
+        1920,
+        1080
+      ],
+      "native": [
+        {
+          "hex": "FCFD060101077F043704DE",
+          "length": 11,
+          "port": 60123
+        }
+      ],
+      "match": true
+    },
+    {
+      "kind": "system",
+      "parameters": [
+        0
+      ],
+      "native": [
+        {
+          "hex": "FCFD05060007800438DE",
+          "length": 10,
+          "port": 60123
+        }
+      ],
+      "match": true
+    },
+    {
+      "kind": "system",
+      "parameters": [
+        1
+      ],
+      "native": [
+        {
+          "hex": "FCFD05060107800438DE",
+          "length": 10,
+          "port": 60123
+        }
+      ],
+      "match": true
+    },
+    {
+      "kind": "system",
+      "parameters": [
+        2
+      ],
+      "native": [
+        {
+          "hex": "FCFD05060207800438DE",
+          "length": 10,
+          "port": 60123
+        }
+      ],
+      "match": true
+    },
+    {
+      "kind": "system",
+      "parameters": [
+        255
+      ],
+      "native": [
+        {
+          "hex": "FCFD0506FF07800438DE",
+          "length": 10,
+          "port": 60123
+        }
+      ],
+      "match": true
+    }
+  ],
+  "boundary": "所有 UDP 调用仅在模拟器内截取，未发出真实数据。"
+}

@@ -1,0 +1,173 @@
+function,template,signature,evidence
+0x007a2820,<methodCall>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2820,<methodName>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2820,</methodName>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2820,<params>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2820,<param>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2820,</param>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2820,</params>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2820,</methodCall>,"QByteArray * FUN_007a2820(QByteArray *param_1,undefined4 param_2,int *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a2e80,<Protocol-Type>,undefined4 FUN_007a2e80(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a30d0,/:MessageOff;,undefined4 FUN_007a30d0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a32b0,<ResIn><ResOut>,undefined4 FUN_007a32b0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a3330,<ScanPortAll>,undefined4 FUN_007a3330(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a33b0,"<ResIn,","size_t FUN_007a33b0(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a33b0,%1,"size_t FUN_007a33b0(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a3660,"<ResIn,","size_t FUN_007a3660(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a3660,%1,"size_t FUN_007a3660(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a43d0,"<Temp,In,All>",undefined4 FUN_007a43d0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a4450,"<Temp,Out,All>",undefined4 FUN_007a4450(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a4540,%1,"size_t FUN_007a4540(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a4540,DefaultIn!,"size_t FUN_007a4540(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a47f0,%1,"size_t FUN_007a47f0(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a47f0,DefaultOut!,"size_t FUN_007a47f0(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a4aa0,<Defaults>,undefined4 FUN_007a4aa0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a4b20,<Defaults>,undefined4 FUN_007a4b20(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a5100,%1,"size_t FUN_007a5100(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a5100,AudioA!,"size_t FUN_007a5100(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a53b0,%1,"size_t FUN_007a53b0(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a53b0,AudioD!,"size_t FUN_007a53b0(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a5660,%1,"size_t FUN_007a5660(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a5660,AudioAOut!,"size_t FUN_007a5660(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a5910,%1,"size_t FUN_007a5910(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a5910,AudioDOut!,"size_t FUN_007a5910(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a5bc0,%1,"size_t FUN_007a5bc0(void *param_1,undefined4 param_2,undefined4 param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a5bc0,%1.,"size_t FUN_007a5bc0(void *param_1,undefined4 param_2,undefined4 param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a6670,<#VedioGetIn,"size_t FUN_007a6670(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a6670,%1,"size_t FUN_007a6670(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a6d00,<#VedioGetOut,"size_t FUN_007a6d00(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a6d00,%1,"size_t FUN_007a6d00(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a7bd0,"<Close,All>",undefined4 FUN_007a7bd0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a7c50,"<Close,%1>","size_t FUN_007a7c50(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a7de0,DownLoadCode.,undefined4 FUN_007a7de0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a9ac0,<^HSSUBR>,undefined4 FUN_007a9ac0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a9b30,<^HSGAR>,undefined4 FUN_007a9b30(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007a9c10,<#HSSPORT,"size_t FUN_007a9c10(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007a9c10,%1,"size_t FUN_007a9c10(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007aacc0,Status.,undefined4 FUN_007aacc0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007ab240,$%1->,"size_t FUN_007ab240(void *param_1,undefined4 param_2,undefined4 *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007aba60,$%1,"size_t __thiscall FUN_007aba60(undefined4 param_1,void *param_2,undefined4 param_3,undefined4 param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007abd00,"<MAP,W,%1,%2,%3>","size_t FUN_007abd00(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ac1a0,"<VIR,W,%1,%2,%3>","size_t FUN_007ac1a0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ac460,"<Res,%1,%2>","size_t FUN_007ac460(void *param_1,int param_2,undefined4 *param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ac680,"<ValidSize,R,%1>","size_t FUN_007ac680(void *param_1,int param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ac7f0,"<MARGIN,W,%1,%2,%3>","size_t FUN_007ac7f0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007aca40,"<WIN,W,%1,%2,%3,%4,%5,%6,%7,%8>","size_t FUN_007aca40(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4,                    undefined4 param_5,int param_6,int param_7,undefined4 param_8,undefined4 param_9)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ace30,"<MOVE,%1,%2,%3,%4>","size_t FUN_007ace30(void *param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ad0d0,"<RESIZE,%1,%2,%3,%4,%5,%6>","size_t FUN_007ad0d0(void *param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5,                    undefined4 param_6,undefined4 param_7)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ad400,"<LAYER,%1,%2,%3>","size_t FUN_007ad400(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ad650,"<CLOSE,%1,%2>","size_t FUN_007ad650(void *param_1,undefined4 param_2,undefined4 param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ad850,"<CLOSE,%1,All>","size_t FUN_007ad850(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ada00,"<MS,%1,%2,%3>","size_t FUN_007ada00(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ae3d0,$In%1->%2!,"size_t FUN_007ae3d0(void *param_1,undefined4 param_2,undefined4 param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007ae720,SetVGAIn%1.,"size_t FUN_007ae720(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007aea30,SetVGAOut%1.,"size_t FUN_007aea30(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007aed40,Bright%1.,"size_t FUN_007aed40(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007af050,Contrast%1.,"size_t FUN_007af050(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007af360,Saturation%1.,"size_t FUN_007af360(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007af670,Sharp%1.,"size_t FUN_007af670(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007af980,Red%1.,"size_t FUN_007af980(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007afc90,Green%1.,"size_t FUN_007afc90(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007affa0,Blue%1.,"size_t FUN_007affa0(void *param_1,undefined4 param_2)",静态构造模板；独立前缀不保证完整可发送命令
+0x007b02b0,AutoConfig.,undefined4 FUN_007b02b0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b0330,HPosUp.,undefined4 FUN_007b0330(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b03a0,HPosDown.,undefined4 FUN_007b03a0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b0410,VPosUp.,undefined4 FUN_007b0410(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b0480,VPosDown.,undefined4 FUN_007b0480(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b04f0,PosReset.,undefined4 FUN_007b04f0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b0560,HSizeUp.,undefined4 FUN_007b0560(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b05d0,HSizeDown.,undefined4 FUN_007b05d0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b0650,VSizeUp.,undefined4 FUN_007b0650(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b06c0,VSizeDown.,undefined4 FUN_007b06c0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b0740,<^CardType>,undefined4 FUN_007b0740(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b0840,"<CharColor,W,%1,%2,%3,%4>","size_t FUN_007b0840(void *param_1,int param_2,int param_3,int param_4,int param_5)",静态构造模板；独立前缀不保证完整可发送命令
+0x007b0c20,"<CharPos,W,%1,%2,%3>","size_t FUN_007b0c20(void *param_1,int param_2,int param_3,int param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007b0fd0,"<CharSize,W,%1,%2,%3>","size_t FUN_007b0fd0(void *param_1,int param_2,int param_3,int param_4)",静态构造模板；独立前缀不保证完整可发送命令
+0x007b1380,"<CharDisplay,W,%1,%2>","size_t FUN_007b1380(void *param_1,int param_2,undefined1 param_3)",静态构造模板；独立前缀不保证完整可发送命令
+0x007b2310,CheckPJ.,undefined4 FUN_007b2310(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b2dd0,TurnLeft.,undefined4 FUN_007b2dd0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b2e40,TurnRight.,undefined4 FUN_007b2e40(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b2ec0,TurnUp.,undefined4 FUN_007b2ec0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b2f30,TurnDown.,undefined4 FUN_007b2f30(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+0x007b2fa0,TurnStop.,undefined4 FUN_007b2fa0(undefined4 *param_1),静态构造模板；独立前缀不保证完整可发送命令
+常量@0xa2d537,<Type>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d53e,<Ver>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d544,"<Bell,OFF>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d54f,"<Bell,ON>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d567,/:MessageOn;,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d574,/%Lock;,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d57c,/%Unlock;,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d5b1,"<ReadInType,",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d5be,"<ReadOutType,",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d5cc,"<Temp,In,",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d5d6,"<Temp,Out,",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d5fe,$Default!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d62c,ControlIn!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d637,ControlOut!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d681,UpdateEnd.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d68c,"<#VedioSetIn%1,%2,%3,%4,%5,%6,%7,%8>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d6c0,"<#VedioSetOut%1,%2,%3,%4,%5,%6,%7,%8>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d6fc,Demo.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d702,All#.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d708,AllAnalyseOut!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d717,AllAnalyseIn!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d725,AnalyseIn!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d730,AnalyseOut!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d73c,All.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d79c,End.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7a1,<^SPORT>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7aa,<^SIPR>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7b2,<^SUBR>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7ba,<^GAR>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7c1,<^SHAR>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7c9,<#SPORT,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7d1,<#SIPR%1.%2.%3.%4>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7e4,<#SUBR%1.%2.%3.%4>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d7f7,<#GAR%1.%2.%3.%4>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d809,<#SHAR%1.%2.%3.%4.%5.%6>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d822,<#NETDEFAULT>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d830,<^HSSPORT>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d83b,<^HSSIPR>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d858,<^HSSHAR>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d86c,<#HSSIPR%1.%2.%3.%4>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d881,<#HSSUBR%1.%2.%3.%4>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d896,<#HSGAR%1.%2.%3.%4>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d8aa,<#HSNETDEFAULT>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d8ba,"<VS,%1,%2>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d8c5,Status%1.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d8d7,Save%1.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d8df,Recall%1.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d8e9,Clear%1.,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d8fa,$All->,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d918,Out!,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2d92e,"<SIZE,W,%1,%2,%3>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa2da0e,<^MAP>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2da15,<^SIZE>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2da1d,<^VIR>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2da24,<^JOINT>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2da2d,<^JOINT,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2da35,<^MARGIN>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2da59,<^HSResolution>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2dba5,/^Protocol;,,仅常量／前缀，调用和参数仍需复核
+常量@0xa2dc32,"<#CharInfo%1,%2>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa31c8c,<#InputCaption_,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31c9e,<DelInputCaption_,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31cb7,<#InputCaption_1/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31cc9,<#DeviceMsg/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31cd6,<#DeviceName/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31ce6,<#OutputMsg/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31cf7,<#Title/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d22,<#DelPJWall/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d2f,<#PJWall/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d39,<#JZPlan/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d43,<#DelJZPlan/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d50,<#User/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d73,<User/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d86,<#Del/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31d98,<#PJPlan/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31da2,<#WinName/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31dad,<#DelWinName/,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31dbc,"<Image_start><Wall_num%1><Image_num%2><Pic_size1920,1080>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa31df6,<Image_end>,,仅常量／前缀，调用和参数仍需复核
+常量@0xa31e04,"<Title_start><Wall_num%1><Pic_size%2,%3><Image_len%4>",,仅常量／前缀，调用和参数仍需复核
+常量@0xa31e3c,"<Title_end><Wall_num%1><Pic_size%2,%3>",,仅常量／前缀，调用和参数仍需复核
