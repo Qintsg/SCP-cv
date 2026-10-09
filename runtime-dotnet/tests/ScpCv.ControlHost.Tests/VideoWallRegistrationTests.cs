@@ -1,3 +1,4 @@
+// Hardware真实装配检查：D4窗口输入63/64，旧D2抓包不作为当前配置。
 using Microsoft.Extensions.DependencyInjection;
 using ScpCv.Infrastructure.VideoWall;
 
@@ -35,6 +36,10 @@ public sealed class VideoWallRegistrationTests
         // Hardware 分支必须能独立解析出下发参数：现场没有第二次机会试错。
         Assert.NotNull(factory.Services.GetRequiredService<VideoWallDispatchOptions>());
         var protocol = factory.Services.GetRequiredService<VideoWallProtocolOptions>();
+        Assert.Equal("192.168.5.63", protocol.Inputs["window_1"].UnicastAddress);
+        Assert.Equal("224.1.1.63", protocol.Inputs["window_1"].MulticastAddress);
+        Assert.Equal("192.168.5.64", protocol.Inputs["window_2"].UnicastAddress);
+        Assert.Equal("224.1.1.64", protocol.Inputs["window_2"].MulticastAddress);
         Assert.Equal("224.1.1.81", protocol.Inputs["laptop"].MulticastAddress);
         Assert.NotNull(factory.Services.GetRequiredService<VideoWallObservationStore>());
         Assert.NotNull(factory.Services.GetRequiredService<VideoWallOperationGate>());

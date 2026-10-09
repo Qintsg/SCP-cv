@@ -1,4 +1,4 @@
-// 现场输入与协议开关；只允许明确描述的设备流，敏感密钥不参与状态投影。
+// D4输入63/64/81与协议开关；旧D2的55/56仅为显式历史兼容配置。
 using System.Net;
 using System.Net.Sockets;
 
@@ -14,8 +14,8 @@ public sealed class VideoWallProtocolOptions
     public bool PreserveLegacyPresets { get; set; } = true;
     public Dictionary<string, VideoWallInputDescriptor> Inputs { get; set; } = new(StringComparer.Ordinal)
     {
-        ["window_1"] = Source(55),
-        ["window_2"] = Source(56),
+        ["window_1"] = Source(63),
+        ["window_2"] = Source(64),
         ["laptop"] = Source(81),
     };
 

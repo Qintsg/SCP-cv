@@ -13,6 +13,8 @@ public sealed class VideoWallProtocolTests
     {
         var profile = new VideoWallProtocolOptions { SendType = sendType, CutSync = cutSync, IgmpV3 = igmp };
         var source = profile.Inputs["window_1"];
+        // 原业务向量来自D2的55；不能随当前D4默认绑定修改不可变期望字节。
+        source.MulticastAddress = "224.1.1.55";
         var packet = VideoWallPacketCodec.Mapping(source, new(0, 0, 1920, 1080), new(0, 0, 3840, 2160),
             7, 3, 1, 1, 1, profile).Single();
         Assert.Equal(expected, Convert.ToHexString(packet));
@@ -28,11 +30,34 @@ public sealed class VideoWallProtocolTests
         // 对照layout-branch-verification.json的原业务合成节点，不是实际现场输入地址。
         var profile = new VideoWallProtocolOptions { SendType = sendType, IgmpV3 = igmp };
         var source = profile.Inputs["window_1"];
+        source.MulticastAddress = "224.1.1.55";
         source.UnicastAddress = "192.0.2.100";
         source.UnicastPort = port;
         var packet = VideoWallPacketCodec.Mapping(source, new(0, 0, 1920, 1080), new(0, 0, 3840, 2160),
             7, 3, 1, 1, 1, profile).Single();
         Assert.Equal(expected, Convert.ToHexString(packet));
+    }
+
+    [Theory]
+    [InlineData(1, false)]
+    [InlineData(1, true)]
+    [InlineData(2, false)]
+    [InlineData(2, true)]
+    [InlineData(3, false)]
+    public void CurrentD4BindingsReachBothAddressFieldsAcrossFormats(int sendType, bool igmp)
+    {
+        var options = new VideoWallProtocolOptions { SendType = sendType, IgmpV3 = igmp };
+        foreach (var (key, number) in new[] { ("window_1", (byte)63), ("window_2", (byte)64) })
+        {
+            var frames = VideoWallPacketCodec.Mapping(options.Inputs[key], new(0, 0, 1920, 1080),
+                new(0, 0, 384, 432), 1, 1, 1, 1, 1, options);
+            foreach (var frame in frames)
+            {
+                var unicast = frame[3] == 0x60 || frame.Length == 60;
+                Assert.Equal(unicast ? new byte[] { 192, 168, 5, number } : new byte[] { 224, 1, 1, number }, frame[10..14]);
+                if (frame.Length == 60) Assert.Equal(new byte[] { 224, 1, 1, number }, frame[16..20]);
+            }
+        }
     }
 
     [Theory]

@@ -1,3 +1,4 @@
+// 回环假节点核对当前D4配置63/64；历史D2黄金样本仍由专用兼容测试保留。
 using System.Diagnostics;
 using System.Net;
 using Microsoft.Extensions.Logging;
@@ -186,13 +187,13 @@ public sealed class VideoWallLoopbackTests(ITestOutputHelper output)
         var markers = node.Received.Select(packet => packet[3]).ToArray();
         Assert.Equal(PhaseMarkers, markers);
         Assert.Equal(
-            VideoWallSequenceBuilder.Build(mode)
+            VideoWallLayoutPlanner.Build(VideoWallLayoutPlanner.Preset(mode), new())
                 .Where(item => item.Ip == node.Ip)
                 .Select(item => Convert.ToHexString(item.Packet)),
             node.Received.Select(Convert.ToHexString));
     }
 
-    /// <summary>按列坐标核对该节点收到的映射包：左半墙工作站 2-1、右半墙工作站 2-2。</summary>
+    /// <summary>按列坐标核对该节点收到的映射包：左半墙D4窗口1、右半墙D4窗口2。</summary>
     private static void AssertHalfWallMapping(FakeVideoWallNode node)
     {
         var (column, row) = NodePositions[node.Ip];
@@ -202,7 +203,7 @@ public sealed class VideoWallLoopbackTests(ITestOutputHelper output)
         var windowId = ReadU16(mapping, 8);
 
         Assert.Equal(
-            leftHalf ? VideoWallSequenceBuilder.Ws21MulticastAddress : VideoWallSequenceBuilder.Ws22MulticastAddress,
+            leftHalf ? "224.1.1.63" : "224.1.1.64",
             new IPAddress(mapping[10..14]).ToString());
         Assert.Equal(leftHalf ? 1 : 2, windowId);
         // 同一个窗口号在包内出现两次，两个字段必须一致。

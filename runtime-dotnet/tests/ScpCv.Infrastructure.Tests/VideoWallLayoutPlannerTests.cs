@@ -37,7 +37,7 @@ public sealed class VideoWallLayoutPlannerTests
             var row = screen / 10;
             var col = screen % 10;
             var source = right is null || col < 5 ? left : right.Value;
-            var sourceNumber = source switch { WallInputKind.Window1 => 55, WallInputKind.Window2 => 56, _ => 81 };
+            var sourceNumber = source switch { WallInputKind.Window1 => 63, WallInputKind.Window2 => 64, _ => 81 };
             Assert.Equal(IPAddress.Parse($"224.1.1.{sourceNumber}").GetAddressBytes(), packet[10..14]);
             Assert.Equal(VideoWallSequenceBuilder.TargetIp(col, row), item.Ip);
             Assert.Equal(right is null || col < 5 ? 1 : 2, U16(packet, 8));
@@ -72,14 +72,38 @@ public sealed class VideoWallLayoutPlannerTests
     [Theory]
     [InlineData("single")]
     [InlineData("double")]
-    public void DefaultLegacyPresetsKeepEveryGoldenPacket(string mode)
+    public void ExplicitHistoricalD2ProfileKeepsEveryGoldenPacket(string mode)
     {
         var layout = VideoWallLayoutPlanner.Preset(mode);
-        var actual = VideoWallLayoutPlanner.Build(layout, new());
+        var historical = new VideoWallProtocolOptions();
+        historical.Inputs["window_1"].UnicastAddress = "192.168.5.55";
+        historical.Inputs["window_1"].MulticastAddress = "224.1.1.55";
+        historical.Inputs["window_2"].UnicastAddress = "192.168.5.56";
+        historical.Inputs["window_2"].MulticastAddress = "224.1.1.56";
+        var actual = VideoWallLayoutPlanner.Build(layout, historical);
         var expected = VideoWallSequenceBuilder.Build(mode);
         Assert.Equal(expected.Select(item => Convert.ToHexString(item.Packet)),
             actual.Select(item => Convert.ToHexString(item.Packet)));
         Assert.Equal(expected.Select(item => item.Ip), actual.Select(item => item.Ip));
+    }
+
+    [Theory]
+    [InlineData("single")]
+    [InlineData("double")]
+    public void DefaultPresetsUseD4InputsEvenWithLegacyCompatibilityEnabled(string mode)
+    {
+        var options = new VideoWallProtocolOptions();
+        Assert.True(options.PreserveLegacyPresets);
+        Assert.Equal("192.168.5.63", options.Inputs["window_1"].UnicastAddress);
+        Assert.Equal("192.168.5.64", options.Inputs["window_2"].UnicastAddress);
+        var plan = VideoWallLayoutPlanner.Build(VideoWallLayoutPlanner.Preset(mode), options);
+        var mappings = plan.Where(item => item.Phase.StartsWith("mapping_", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(50, mappings.Length);
+        foreach (var item in mappings)
+        {
+            var number = mode == "double" && item.Phase == "mapping_2" ? 64 : 63;
+            Assert.Equal(IPAddress.Parse($"224.1.1.{number}").GetAddressBytes(), item.Packet[10..14]);
+        }
     }
 
     [Fact]
