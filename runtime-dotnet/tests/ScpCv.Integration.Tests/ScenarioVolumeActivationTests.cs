@@ -61,6 +61,7 @@ public sealed class ScenarioVolumeActivationTests
         var state = await runtime.GetRuntimeAsync();
         Assert.Equal("single", state.BigScreenMode);
         Assert.Equal(100, state.VolumeLevel);
+        Assert.Equal("uncertain", (await host.Services.GetRequiredService<VideoWallLayoutService>().GetAsync()).DispatchStatus);
         Assert.All(await runtime.GetSessionsAsync(), session =>
         {
             Assert.False(session.IsMuted);

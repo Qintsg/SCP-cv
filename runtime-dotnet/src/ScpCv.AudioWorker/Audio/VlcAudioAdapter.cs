@@ -40,6 +40,8 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
     public Task OpenAsync(long sourceId, string uri, long generation, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        // Media释放只归还托管引用，不会停止播放器仍持有的旧输入；先退役旧播放再发布新身份。
+        _player.Stop();
         _media?.Dispose();
         var localPath = uri.StartsWith("file://", StringComparison.OrdinalIgnoreCase) ? new Uri(uri).LocalPath : uri;
         _media = File.Exists(localPath)
@@ -81,12 +83,7 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
         _ = Task.Run(() =>
         {
             if (Volatile.Read(ref _disposed) != 0 || sourceId != SourceId || generation != Generation) return;
-            if (LoopEnabled && _media is not null)
-            {
-                _ = _player.Play(_media);
-                return;
-            }
-
+            // LoopEnabled是播放列表循环意图；下一曲或回首曲由ControlHost决定，不能在这里重播本曲。
             var eventId = _finishedEvents.GetOrCreate(sourceId, generation);
             Finished?.Invoke(this, new AudioFinishedEventArgs(eventId, sourceId, generation));
         });

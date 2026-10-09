@@ -27,7 +27,7 @@ public static class PresentationFingerprints
         using var bytes = new MemoryStream();
         using (var writer = new BinaryWriter(bytes, new UTF8Encoding(false, true), true))
         {
-            writer.Write("SCP-CV.Presentation.Request/v1");
+            writer.Write("SCP-CV.Presentation.Request/v3");
             writer.Write(request.ProtocolVersion);
             writer.Write(request.OperationId.ToString("D"));
             WriteGuid(writer, request.ParentCommandId);
@@ -48,6 +48,7 @@ public static class PresentationFingerprints
             writer.Write(request.ReadOnly);
             writer.Write(request.AllowMacros);
             writer.Write(request.UpdateExternalLinks);
+            writer.Write(request.FitText);
             writer.Write(request.ParentWindow != null);
             if (request.ParentWindow != null)
             {
@@ -77,7 +78,7 @@ public static class PresentationFingerprints
         using var bytes = new MemoryStream();
         using (var writer = new BinaryWriter(bytes, new UTF8Encoding(false, true), true))
         {
-            writer.Write("SCP-CV.Presentation.Response/v1");
+            writer.Write("SCP-CV.Presentation.Response/v3");
             writer.Write(response.ProtocolVersion);
             writer.Write(response.OperationId.ToString("D"));
             writer.Write(response.RequestFingerprint.ToUpperInvariant());

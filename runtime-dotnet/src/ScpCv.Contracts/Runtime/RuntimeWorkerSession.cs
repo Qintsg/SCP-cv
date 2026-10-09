@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
+using ScpCv.Contracts.Presentations;
 
 namespace ScpCv.Contracts.Runtime;
 
@@ -280,10 +281,12 @@ public sealed class RuntimeWorkerSession(
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
+            // 已下发的原生结果未知不能被通用worker异常降为安全失败；仍保留实际资源观测。
+            var uncertain = exception is PresentationTransportException;
             result = new WorkerExecutionResult(
-                "failed",
-                $"worker_exception:{exception.GetType().Name}",
-                JsonSerializer.SerializeToElement(new { playback_state = "error", error_message = exception.Message }),
+                uncertain ? "uncertain" : "failed",
+                uncertain ? "presentation_transport_uncertain" : $"worker_exception:{exception.GetType().Name}",
+                JsonSerializer.SerializeToElement(new { source_generation = lease.SourceGeneration, playback_state = "error", error_message = exception.Message }),
                 new Dictionary<string, JsonElement>
                 {
                     ["exception_type"] = JsonSerializer.SerializeToElement(exception.GetType().Name),

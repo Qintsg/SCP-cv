@@ -17,6 +17,34 @@ public sealed partial class ScenarioService
     /// </summary>
     private async Task ApplyRuntimeAsync(Scenario scenario, CancellationToken cancellationToken)
     {
+        using var operation = await _wallGate.EnterAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            await ApplyRuntimeCoreAsync(scenario, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception) when (scenario.BigScreenModeState == ScenarioValueState.Set)
+        {
+            try
+            {
+                await writes.ExecuteAsync(async (database, token) =>
+                {
+                    var state = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
+                    state.WallLayoutDispatchStatus = "uncertain";
+                    state.WallLayoutDispatchDetail = "预案中墙面动作未完整确认；保留上次布局记录，请核对实体画面，不要自动重放。";
+                    state.UpdatedAt = _timeProvider.GetUtcNow();
+                }, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is DbUpdateException or DbException or InvalidOperationException)
+            {
+                // 库不可写时保留原始部分失败异常；状态标记不构成设备回滚。
+            }
+            throw;
+        }
+    }
+
+    /// <summary>墙面与声卡副作用在数据库提交之前执行，失败禁止派发媒体命令。</summary>
+    private async Task ApplyRuntimeCoreAsync(Scenario scenario, CancellationToken cancellationToken)
+    {
         if (scenario.BigScreenModeState == ScenarioValueState.Set)
         {
             // 保留旧预案语义：墙面失败即中止，网络重试不能持有数据库写锁。
@@ -53,7 +81,8 @@ public sealed partial class ScenarioService
                 var runtimeChanged = false;
                 if (scenario.BigScreenModeState == ScenarioValueState.Set)
                 {
-                    runtime.BigScreenMode = scenario.BigScreenMode;
+                    VideoWallStateProjection.Record(runtime,
+                        VideoWallLayoutPlanner.Preset(EnumName(scenario.BigScreenMode)), 0, _videoWall.IsHardware);
                     var mutedWindows = scenario.BigScreenMode == BigScreenMode.Single ? new HashSet<int> { 2 } : [];
                     foreach (var session in sessions) session.IsMuted = mutedWindows.Contains(session.WindowId);
                     runtimeChanged = true;

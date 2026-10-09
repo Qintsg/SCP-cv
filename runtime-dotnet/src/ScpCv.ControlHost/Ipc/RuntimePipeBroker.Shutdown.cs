@@ -9,7 +9,7 @@ public sealed partial class RuntimePipeBroker
     public async Task NotifyRuntimeShutdownAsync(string reason, CancellationToken cancellationToken = default)
     {
         var connections = _connections.ToArray()
-            .Where(item => RequiredRuntimeRoles.Contains(item.Key, StringComparer.Ordinal));
+            .Where(item => RequiredRuntimeRoles.Contains(item.Key, StringComparer.Ordinal) || item.Key == "office");
         foreach (var (role, connection) in connections)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -26,8 +26,8 @@ public sealed partial class RuntimePipeBroker
             catch (Exception exception) when (exception is IOException or ObjectDisposedException)
             {
                 LogShutdownNoticeFailed(logger, role, exception);
-                _connections.TryRemove(new KeyValuePair<string, RuntimeConnection>(role, connection));
-                RemoveReady(connection.Identity.Role, connection.Identity.InstanceId);
+                connection.RequestRetirement();
+                RemoveReady(connection);
             }
         }
     }

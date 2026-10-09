@@ -39,12 +39,6 @@ public sealed class RuntimeLauncher(ProcessRegistry registry)
                 ResolveBinary(root, "ScpCv.AudioWorker.exe"),
                 RuntimeArguments(controlPipe, audioInstanceId, startGate),
                 audioInstanceId));
-            var officeInstanceId = Guid.NewGuid();
-            started.Add(StartProcess(
-                "office",
-                ResolveBinary(root, "ScpCv.PowerPointHost.exe"),
-                RuntimeArguments(controlPipe, officeInstanceId, startGate),
-                officeInstanceId));
             if (!string.IsNullOrWhiteSpace(mediaMtxPath)) started.Add(StartProcess("mediamtx", Path.GetFullPath(mediaMtxPath), string.Empty));
             return started;
         }

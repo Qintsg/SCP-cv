@@ -7,6 +7,59 @@ namespace ScpCv.ControlHost.Tests;
 
 public sealed class VideoWallLayoutEndpointTests
 {
+    [Theory]
+    [InlineData("\"7\"")]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("0")]
+    public async Task InvalidRevisionReturnsBadRequestWithoutChangingDispatchState(string revision)
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        client.DefaultRequestHeaders.Add("X-CSRFToken", await AuthenticateAsync(client));
+        using var body = new StringContent("{\"expected_revision\":" + revision + "}", System.Text.Encoding.UTF8, "application/json");
+        using var response = await client.PostAsync("/api/video-wall/layout/apply/", body);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var current = await client.GetAsync("/api/video-wall/layout/");
+        using var state = await ReadJsonAsync(current);
+        Assert.Equal("none", state.RootElement.GetProperty("layout").GetProperty("dispatch_status").GetString());
+    }
+
+    [Fact]
+    public async Task EveryInputCombinationAppliesAndStaleRevisionIsRejected()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        client.DefaultRequestHeaders.Add("X-CSRFToken", csrf);
+        var kinds = new[] { "window_1", "window_2", "laptop" };
+        string?[] rightChoices = [null, .. kinds];
+        foreach (var left in kinds)
+        {
+            foreach (var right in rightChoices)
+            {
+                var mappings = right is null
+                    ? new[] { new { region = "fullscreen", input = new { kind = left } } }
+                    : [new { region = "left", input = new { kind = left } }, new { region = "right", input = new { kind = right } }];
+                using var saved = await client.PutAsJsonAsync("/api/video-wall/layout/", new { name = "组合", mappings });
+                saved.EnsureSuccessStatusCode();
+                using var body = await ReadJsonAsync(saved);
+                var revision = body.RootElement.GetProperty("layout").GetProperty("draft_revision").GetInt64();
+                using var applied = await client.PostAsJsonAsync("/api/video-wall/layout/apply/", new { expected_revision = revision });
+                applied.EnsureSuccessStatusCode();
+                using var result = await ReadJsonAsync(applied);
+                var state = result.RootElement.GetProperty("layout");
+                Assert.Equal("simulated", state.GetProperty("dispatch_status").GetString());
+                Assert.Equal(revision, state.GetProperty("applied_revision").GetInt64());
+                Assert.Equal(mappings.Length, state.GetProperty("applied").GetProperty("mappings").GetArrayLength());
+            }
+        }
+        using var stale = await client.PostAsJsonAsync("/api/video-wall/layout/apply/", new { expected_revision = 1 });
+        Assert.Equal(HttpStatusCode.Conflict, stale.StatusCode);
+        using var staleBody = await ReadJsonAsync(stale);
+        Assert.Equal("layout_revision_conflict", staleBody.RootElement.GetProperty("code").GetString());
+    }
+
     [Fact]
     public async Task FixedPresetReturnsCurrentRuntimeAndTwoSessions()
     {

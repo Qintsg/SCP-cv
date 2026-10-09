@@ -67,7 +67,7 @@ public sealed class LegacyHttpContractTests
                 "created_at", "preview_url",
                 "thumbnail_url", "preview_kind", "preview_label");
             Assert.Equal("ppt", source.GetProperty("source_type").GetString());
-            Assert.Equal("slide_images", source.GetProperty("playback_mode").GetString());
+            Assert.Equal("libreoffice", source.GetProperty("playback_mode").GetString());
         }
 
         using (var response = await client.GetAsync("/api/sessions/"))
@@ -268,7 +268,8 @@ public sealed class LegacyHttpContractTests
         "source_uri", "playback_mode", "playback_state", "playback_state_label", "error_message",
         "display_mode", "display_mode_label", "target_display_label", "current_slide", "total_slides",
         "position_ms", "duration_ms", "pending_command", "player_online", "player_last_seen_at",
-        "last_updated_at", "volume", "is_muted", "loop_enabled");
+        "last_updated_at", "volume", "is_muted", "loop_enabled", "actual_source_id", "actual_adapter_kind", "actual_fit_text",
+        "desired_generation", "observed_generation", "cleanup_pending");
 
     private static void AssertObjectHasExactly(JsonElement element, params string[] expectedNames)
     {

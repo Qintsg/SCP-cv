@@ -1,3 +1,4 @@
+// 背景音频HTTP入口；鉴权后验证参数，只返回持久受理，不假报原生操作完成。
 using System.Text.Json;
 using ScpCv.Infrastructure.Audio;
 
@@ -24,7 +25,18 @@ public static class BackgroundAudioEndpoints
     private static async Task<IResult> ControlAsync(HttpRequest request, BackgroundAudioService audio, CancellationToken cancellationToken)
     {
         var body = await ReadBodyAsync(request, cancellationToken).ConfigureAwait(false); if (body.Error is not null) return body.Error;
-        try { return Results.Ok(new { success = true, background_audio = await audio.ControlAsync(String(body.Value, "action"), cancellationToken).ConfigureAwait(false) }); }
+        var action = String(body.Value, "action");
+        try
+        {
+            if (action.Equals("seek", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!body.Value.TryGetProperty("position_ms", out var value) || value.ValueKind != JsonValueKind.Number ||
+                    !value.TryGetInt64(out var position) || position < 0)
+                    return ApiEndpointSupport.Error("position_ms 必须是非负整数", "invalid_position");
+                return Results.Ok(new { success = true, background_audio = await audio.SeekAsync(position, cancellationToken).ConfigureAwait(false) });
+            }
+            return Results.Ok(new { success = true, background_audio = await audio.ControlAsync(action, cancellationToken).ConfigureAwait(false) });
+        }
         catch (BackgroundAudioServiceException exception) { return ApiEndpointSupport.Error(exception.Message, exception.Code); }
     }
 

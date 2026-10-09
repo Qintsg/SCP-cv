@@ -1,4 +1,4 @@
-// ControlHost 准备作业经管道转发给 OfficeHost，结果带作业身份落库。
+// 旧Office转换协议必须明确退役，不能继续转发或写入操作记录。
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Text.Json;
@@ -18,7 +18,7 @@ namespace ScpCv.Integration.Tests;
 public sealed class RuntimePipeBrokerConversionTests
 {
     [Fact]
-    public async Task ConversionUsesRegisteredOfficeOperationWithoutAcquiringSlideShowSlot()
+    public async Task RetiredConversionCannotForwardOrAcquireAnyOfficeOperation()
     {
         await using var fixture = await ControlHostFixture.CreateAsync();
         var startRequest = Guid.NewGuid();
@@ -49,27 +49,12 @@ public sealed class RuntimePipeBrokerConversionTests
             var jobId = Guid.NewGuid();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             var conversion = broker.ConvertSlidesAsync(jobId, 7, @"C:\source.pptx", @"C:\staging", timeout.Token);
-            var forwarded = await ReadAsync(office);
-            var request = forwarded.Payload.Deserialize<OfficeRequestDto>();
-            Assert.NotNull(request);
-            Assert.Equal("export_slides", request.Operation);
-            Assert.Equal(jobId, request.ParentJobId);
-            Assert.Equal(starting.GroupEpoch, request.GroupEpoch);
-
-            await WriteAsync(office, Frame("office_result", officeId, welcome.OwnerEpoch, new OfficeResultDto
-            {
-                OfficeOperationId = jobId,
-                Status = "succeeded",
-                ResultFingerprint = "sha256:conversion",
-                Result = JsonSerializer.SerializeToElement(new { page_count = 3 }),
-            }));
-            var accepted = await ReadAsync(office);
-            Assert.Equal("office_result_accepted", accepted.MessageType);
-            Assert.True(accepted.Payload.GetProperty("accepted").GetBoolean());
-            Assert.Equal("succeeded", (await conversion).Status);
+            var result = await conversion;
+            Assert.Equal("failed", result.Status);
+            Assert.Equal("powerpoint_retired", result.ErrorCode);
+            Assert.False(broker.CanConvertSlides);
             await using var database = fixture.Database.CreateDbContext();
-            Assert.Equal(OperationStatus.Succeeded,
-                (await database.OfficeOperations.SingleAsync(item => item.OperationId == jobId)).Status);
+            Assert.Empty(await database.OfficeOperations.ToArrayAsync());
         }
         finally { await broker.StopAsync(CancellationToken.None); }
     }

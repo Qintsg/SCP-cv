@@ -14,10 +14,10 @@ public sealed partial class PlayerRuntimeHost
         ? media : throw new InvalidOperationException("当前 VLC 媒体不存在。");
 
     /// <summary>新尝试在 Play 前订阅，因此尚未切入表面的快速 Error/Playing 也会被保留。</summary>
-    private void BindVlcAttempt(VlcMediaPlayer player, Media media, long generation)
+    private void BindVlcAttempt(VlcMediaPlayer player, Media media, long generation, bool? liveInput = null)
     {
         _vlcBindings.TryGetValue(player, out var previous);
-        var attempt = new VlcPlaybackAttempt(generation);
+        var attempt = new VlcPlaybackAttempt(generation, liveInput ?? previous?.Attempt.IsLiveInput ?? false);
         void Failed(object? _, EventArgs __) => attempt.RecordError();
         void Playing(object? _, EventArgs __) => attempt.RecordPlaying();
         void Ended(object? _, EventArgs __)
@@ -72,10 +72,11 @@ public sealed partial class PlayerRuntimeHost
     /// <summary>显式重开、失败重试和循环只复用原生播放器，不复用旧尝试的状态或回调。</summary>
     private async Task<bool> RestartVlcAttemptAsync(VlcMediaPlayer player, Media media, long generation, bool autoplay)
     {
+        var liveInput = _vlcBindings.TryGetValue(player, out var previous) && previous.Attempt.IsLiveInput;
         UnbindVlcAttempt(player);
         await VlcResourceLifecycle.StopAsync(player.Stop);
         player.Time = 0;
-        BindVlcAttempt(player, media, generation);
+        BindVlcAttempt(player, media, generation, liveInput);
         _state = autoplay ? "loading" : "paused";
         _errorMessage = string.Empty;
         return !autoplay || player.Play(media);
@@ -105,6 +106,12 @@ public sealed partial class PlayerRuntimeHost
     {
         if (_current?.Native is not VlcMediaPlayer player || !_vlcBindings.TryGetValue(player, out var binding) ||
             binding.Attempt.SourceGeneration != _generation) return (_state, _errorMessage);
+        if (binding.Attempt.IsLiveInput)
+        {
+            var counters = OwnedVlcMedia(player).Statistics;
+            binding.Attempt.ObserveInputProgress(new(counters.ReadBytes, counters.DemuxReadBytes,
+                counters.DecodedVideo, counters.DisplayedPictures), player.State, _state, Environment.TickCount64);
+        }
         var state = binding.Attempt.ResolveState(player.State, _state);
         var error = state == "error" && _errorMessage.Length == 0
             ? "VLC 媒体连接或解码失败；请检查源地址、在线状态和格式支持。"

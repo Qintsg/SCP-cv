@@ -42,7 +42,7 @@ public sealed class HotSwitchBenchmarkScriptTests
 
     [Theory]
     [InlineData("simulation", "Hardware")]
-    [InlineData("experimental", "实验")]
+    [InlineData("wrong_engine", "LibreOffice")]
     public async Task UnsafeRuntimeFailsWithoutOpen(string scenario, string message)
     {
         if (!OperatingSystem.IsWindows()) return;
@@ -191,8 +191,8 @@ public sealed class HotSwitchBenchmarkScriptTests
             if ($Uri -eq 'http://contract.invalid/') {
                 return @{safety_mode=$(if ($fixtureScenario -eq 'simulation') {'simulation'} else {'hardware'})}
             }
-            if ($Uri -match '/api/settings/powerpoint/$') {
-                return @{settings=@{experimental_enabled=($fixtureScenario -eq 'experimental')}}
+            if ($Uri -match '/api/settings/presentation/$') {
+                return @{settings=@{default_engine=$(if ($fixtureScenario -eq 'wrong_engine') {'powerpoint'} else {'libreoffice'})}}
             }
             if ($Uri -match '/api/playback/([12])/open/$') {
                 if ($Method -ne 'Post') { throw 'unexpected_method' }

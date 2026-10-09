@@ -79,7 +79,7 @@ public sealed class HeadlessScriptSecurityTests
                 "-ReadyTimeoutSeconds", "30");
             Assert.True(start.ExitCode == 0, $"run-headless.ps1 failed: {start.Error}\n{start.Output}");
 
-            using var client = new HttpClient { BaseAddress = new Uri(listenUrl) };
+            using var client = new HttpClient(new HttpClientHandler { UseProxy = false }) { BaseAddress = new Uri(listenUrl) };
             using var request = new HttpRequestMessage(HttpMethod.Get, "/health/ready");
             request.Headers.Host = $"192.0.2.10:{port}";
             using var response = await client.SendAsync(request);

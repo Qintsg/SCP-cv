@@ -130,6 +130,53 @@ public sealed class PlayerRuntimeHostSlideStateTests
         finally { DeleteOwnedFixtureDirectory(root); }
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task PublishedLayoutSurvivesFailedReplacementAndClearsOnCloseOrImage(bool fitText)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"scp-cv-player-slide-state-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        try
+        {
+            await OnHiddenDispatcherAsync(async () =>
+            {
+                WritePng(Path.Combine(root, "page-0001.png"), 255, 0, 0);
+                var window = new PlayerWindow();
+                try
+                {
+                    await using var host = new PlayerRuntimeHost(window, 1);
+                    var opened = await host.ExecuteAsync(OpenLease(1, 1, new
+                    {
+                        source_id = 101, uri = root, source_type = "ppt", presentation_mode = "slide_images",
+                        slide_images_directory = root, fit_text = fitText, autoplay = true,
+                    }), CancellationToken.None);
+                    Assert.Equal(fitText, opened.ActualState.GetProperty("actual_fit_text").GetBoolean());
+                    await Assert.ThrowsAsync<FileNotFoundException>(() => host.ExecuteAsync(OpenLease(2, 2, new
+                    {
+                        source_id = 102, uri = root, source_type = "ppt", presentation_mode = "slide_images",
+                        slide_images_directory = Path.Combine(root, "missing"), fit_text = !fitText, autoplay = true,
+                    }), CancellationToken.None));
+                    var unchanged = await host.ExecuteAsync(OpenLease(3, 1, new { target_index = 1 }) with
+                    { Command = "GOTO" }, CancellationToken.None);
+                    Assert.Equal(101, unchanged.ActualState.GetProperty("source_id").GetInt64());
+                    Assert.Equal(fitText, unchanged.ActualState.GetProperty("actual_fit_text").GetBoolean());
+                    var closed = await host.ExecuteAsync(OpenLease(4, 2, new { }) with
+                    { Command = "CLOSE" }, CancellationToken.None);
+                    Assert.Equal(JsonValueKind.Null, closed.ActualState.GetProperty("actual_fit_text").ValueKind);
+                    var image = await host.ExecuteAsync(OpenLease(5, 3, new
+                    { source_id = 103, uri = Path.Combine(root, "page-0001.png"), source_type = "image", fit_text = true }),
+                        CancellationToken.None);
+                    Assert.Equal(JsonValueKind.Null, image.ActualState.GetProperty("actual_fit_text").ValueKind);
+                    Assert.False(window.IsVisible);
+                    Assert.Equal(nint.Zero, window.NativeHandle);
+                }
+                finally { window.Close(); }
+            });
+        }
+        finally { DeleteOwnedFixtureDirectory(root); }
+    }
+
     /// <summary>只经对外租约字段调用真实 PlayerRuntimeHost，不反射私有状态。</summary>
     /// <param name="sequence">本轮命令序号。</param>
     /// <param name="generation">新的源代次。</param>

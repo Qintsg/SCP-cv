@@ -1,3 +1,4 @@
+// 背景音频公开服务的独立SQLite持久/重建与自然结束幂等回归。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Domain.Rules;
@@ -7,7 +8,7 @@ using ScpCv.Integration.Tests.Fixtures;
 
 namespace ScpCv.Integration.Tests;
 
-public sealed class BackgroundAudioPersistenceTests
+public sealed partial class BackgroundAudioPersistenceTests
 {
     [Fact]
     public async Task GenerationAndFinishedEventDeduplicationSurviveServiceRestart()

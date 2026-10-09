@@ -27,6 +27,35 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../../src/ScpCv.LibreOfficeHost/Runtime/OfficeEngineProfile.cs" Link="OfficeRuntime/OfficeEngineProfile.cs" />
+    <Compile Include="../../src/ScpCv.LibreOfficeHost/Runtime/PresentationEventBuffer.cs" Link="OfficeRuntime/PresentationEventBuffer.cs" />
+    <Compile Include="../../src/ScpCv.LibreOfficeHost/Runtime/PresentationTerminalEvidence.cs" Link="OfficeRuntime/PresentationTerminalEvidence.cs" />
+    <Compile Include="../../src/ScpCv.LibreOfficeHost/Uno/PresentationLoadRejectedException.cs" Link="OfficeRuntime/PresentationLoadRejectedException.cs" />
+    <Compile Include="../../src/ScpCv.LibreOfficeHost/Uno/PresentationAnimationSafety.cs" Link="OfficeRuntime/PresentationAnimationSafety.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../ScpCv.Presentation.TestHost/ScpCv.Presentation.TestHost.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="../ScpCv.ParentGuard.TestHost/ScpCv.ParentGuard.TestHost.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+  </ItemGroup>
+  <Target Name="CopyPresentationTestHost" AfterTargets="Build">
+    <MSBuild Projects="../ScpCv.Presentation.TestHost/ScpCv.Presentation.TestHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="PresentationTestHostTarget" />
+    </MSBuild>
+    <PropertyGroup><PresentationTestHostDirectory>@(PresentationTestHostTarget->'%(RootDir)%(Directory)')</PresentationTestHostDirectory></PropertyGroup>
+    <ItemGroup><PresentationTestHostFile Include="$(PresentationTestHostDirectory)*" Exclude="**/*.pdb" /></ItemGroup>
+    <Copy SourceFiles="@(PresentationTestHostFile)" DestinationFolder="$(TargetDir)PresentationTestHost" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="CopyParentGuardTestHost" AfterTargets="Build">
+    <MSBuild Projects="../ScpCv.ParentGuard.TestHost/ScpCv.ParentGuard.TestHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="ParentGuardTestHostTarget" />
+    </MSBuild>
+    <PropertyGroup><ParentGuardTestHostDirectory>@(ParentGuardTestHostTarget->'%(RootDir)%(Directory)')</ParentGuardTestHostDirectory></PropertyGroup>
+    <ItemGroup><ParentGuardTestHostFile Include="$(ParentGuardTestHostDirectory)*" Exclude="**/*.pdb" /></ItemGroup>
+    <Copy SourceFiles="@(ParentGuardTestHostFile)" DestinationFolder="$(TargetDir)ParentGuardTestHost" SkipUnchangedFiles="true" />
+  </Target>
+
+  <ItemGroup>
     <None Include="..\..\..\docs\components\schemas\**\*.yaml"
           Link="OpenApiSchemas\%(RecursiveDir)%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />

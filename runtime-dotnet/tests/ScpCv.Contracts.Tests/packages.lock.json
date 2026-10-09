@@ -527,7 +527,10 @@
         }
       },
       "scpcv.contracts": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ScpCv.Presentation.Protocol": "[1.0.0, )"
+        }
       },
       "scpcv.controlhost": {
         "type": "Project",

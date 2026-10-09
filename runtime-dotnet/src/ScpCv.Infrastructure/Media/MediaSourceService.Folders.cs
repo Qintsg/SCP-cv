@@ -188,11 +188,14 @@ public sealed partial class MediaSourceService
         CancellationToken cancellationToken)
     {
         if (sourceIds.Length == 0) return;
+        var stopped = await database.RuntimeGroupControls.AnyAsync(group => group.State == RuntimeGroupState.Stopped, cancellationToken)
+            .ConfigureAwait(false);
         var activeDisplay = await database.PlaybackSessions.AnyAsync(session =>
-            session.WindowId <= WindowId.Maximum && session.MediaSourceId != null &&
-            sourceIds.Contains(session.MediaSourceId.Value) &&
-            (session.PendingCommand != string.Empty || session.PlaybackState == PlaybackState.Loading ||
-             session.PlaybackState == PlaybackState.Playing || session.PlaybackState == PlaybackState.Paused), cancellationToken)
+            session.WindowId <= WindowId.Maximum &&
+            ((session.ActualSourceId != null && sourceIds.Contains(session.ActualSourceId.Value) && (!stopped || session.CleanupPending)) ||
+             (session.MediaSourceId != null && sourceIds.Contains(session.MediaSourceId.Value) &&
+              (session.PendingCommand != string.Empty || session.PlaybackState == PlaybackState.Loading ||
+               session.PlaybackState == PlaybackState.Playing || session.PlaybackState == PlaybackState.Paused))), cancellationToken)
             .ConfigureAwait(false);
         var activeAudio = await database.BackgroundAudioStates.AnyAsync(audio =>
             audio.CurrentSourceId != null && sourceIds.Contains(audio.CurrentSourceId.Value) &&

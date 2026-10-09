@@ -1,4 +1,4 @@
-// 大屏映射草稿的保存、预览与已验证固定预设应用。
+// 大屏草稿及三输入组合应用；能力来自服务器预检，不将写出当作画面确认。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Http;
@@ -13,9 +13,11 @@ public sealed class VideoWallLayoutService(
     IDbContextFactory<ControlDbContext> contextFactory,
     WriteCoordinator writes,
     RuntimeStateService runtime,
-    TimeProvider? timeProvider = null)
+    TimeProvider? timeProvider = null,
+    VideoWallProtocolOptions? protocol = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
+    private readonly VideoWallProtocolOptions _protocol = protocol ?? new();
 
     public async Task<VideoWallLayoutStateDto> GetAsync(CancellationToken cancellationToken = default)
     {
@@ -26,7 +28,11 @@ public sealed class VideoWallLayoutService(
         {
             Draft = draft is null ? null : ToDto(draft),
             DraftRevision = state.WallLayoutDraftRevision,
-            ActivePreset = state.BigScreenMode == BigScreenMode.Single ? "single" : "double",
+            ActivePreset = state.BigScreenMode.ToString().ToLowerInvariant(),
+            Applied = VideoWallStateProjection.ReadApplied(state) is { } applied ? ToDto(applied) : null,
+            AppliedRevision = state.WallLayoutAppliedRevision,
+            DispatchStatus = state.WallLayoutDispatchStatus,
+            DispatchDetail = state.WallLayoutDispatchDetail,
         };
     }
 
@@ -45,16 +51,19 @@ public sealed class VideoWallLayoutService(
         return await GetAsync(cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task<VideoWallLayoutStateDto> ApplyDraftAsync(CancellationToken cancellationToken = default)
+    public Task<VideoWallLayoutStateDto> ApplyDraftAsync(CancellationToken cancellationToken) => ApplyDraftAsync(null, cancellationToken);
+
+    public async Task<VideoWallLayoutStateDto> ApplyDraftAsync(long? expectedRevision = null, CancellationToken cancellationToken = default)
     {
         await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
         var state = await database.RuntimeStates.AsNoTracking().SingleAsync(cancellationToken).ConfigureAwait(false);
         var draft = DeserializeDraft(state.WallLayoutDraftJson)
             ?? throw new VideoWallLayoutException("尚未保存大屏布局。", "layout_missing");
-        var preset = WallLayoutPolicy.CapturedPreset(draft);
-        if (preset is null)
-            throw new VideoWallLayoutException("此手动布局的实体控制帧尚待现场抓包；没有向墙面发送任何命令。", "protocol_unavailable");
-        await runtime.SetRuntimeModeAsync(preset == BigScreenMode.Single ? "single" : "double", cancellationToken)
+        if (expectedRevision.HasValue && state.WallLayoutDraftRevision != expectedRevision.Value)
+            throw new VideoWallLayoutException("布局草稿已更新，请重新读取后应用。", "layout_revision_conflict");
+        var capability = ToDto(draft);
+        if (!capability.CanApply) throw new VideoWallLayoutException(capability.UnavailableReason, "protocol_unavailable");
+        await runtime.ApplyWallLayoutAsync(draft, state.WallLayoutDraftRevision, cancellationToken)
             .ConfigureAwait(false);
         return await GetAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -94,7 +103,7 @@ public sealed class VideoWallLayoutService(
         }
     }
 
-    private static VideoWallLayoutDto ToDto(WallLayout layout)
+    private VideoWallLayoutDto ToDto(WallLayout layout)
     {
         var preset = WallLayoutPolicy.CapturedPreset(layout) switch
         {
@@ -102,6 +111,9 @@ public sealed class VideoWallLayoutService(
             BigScreenMode.Double => "window_1_left_window_2_right",
             _ => string.Empty,
         };
+        var reason = string.Empty;
+        try { _ = VideoWallLayoutPlanner.Build(layout, _protocol); }
+        catch (VideoWallException exception) { reason = exception.Message; }
         return new VideoWallLayoutDto
         {
             Name = layout.Name,
@@ -121,8 +133,8 @@ public sealed class VideoWallLayoutService(
                     IpAddress = mapping.Input.IpAddress,
                 },
             }).ToArray(),
-            CanApply = preset.Length > 0,
-            UnavailableReason = preset.Length > 0 ? string.Empty : "对应控制帧尚待现场抓包，当前仅能保存和预览。",
+            CanApply = reason.Length == 0,
+            UnavailableReason = reason,
         };
     }
 }

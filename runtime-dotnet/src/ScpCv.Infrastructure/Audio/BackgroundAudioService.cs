@@ -1,3 +1,4 @@
+// 背景音频持久意图与列表；实际时钟由受管Worker报告，定位目标不冒充已完成位置。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Http;
@@ -109,6 +110,8 @@ public sealed class BackgroundAudioService(
                     SortOrder = nextOrder,
                     CreatedAt = _timeProvider.GetUtcNow(),
                 });
+                var state = await database.BackgroundAudioStates.SingleAsync(token).ConfigureAwait(false);
+                state.UpdatedAt = NextTimestamp(state.UpdatedAt);
                 await database.SaveChangesAsync(token).ConfigureAwait(false);
             }
 
@@ -223,6 +226,15 @@ public sealed class BackgroundAudioService(
                 if (items.Length == 0) throw new FinishedEventIgnoredException();
 
                 var index = Array.FindIndex(items, item => item.SourceId == state.CurrentSourceId);
+                if (finished is not null && !state.LoopEnabled && index == items.Length - 1)
+                {
+                    // 结束通知已证明本曲结束；在同事务把意图改为STOP，保留末曲与代次，不伪造新OPEN。
+                    command.Command = "STOP";
+                    command.ArgsJson = "{}";
+                    state.PlaybackState = PlaybackState.Stopped;
+                    state.ErrorMessage = string.Empty;
+                    return;
+                }
                 index = previous ? (index <= 0 ? items.Length - 1 : index - 1) : (index + 1) % items.Length;
                 var sourceId = items[index].SourceId;
                 var source = await database.MediaSources.SingleAsync(item => item.Id == sourceId, token).ConfigureAwait(false);
@@ -265,6 +277,19 @@ public sealed class BackgroundAudioService(
 
     public Task<BackgroundAudioDto> SetVolumeAsync(int volume, CancellationToken cancellationToken = default) =>
         volume is < 0 or > 100 ? throw new BackgroundAudioServiceException("音量必须在 0 到 100 之间", "invalid_volume") : EnqueueAudioAsync("SET_VOLUME", JsonSerializer.Serialize(new { volume }), (database, state, command, token) => { state.Volume = volume; return Task.CompletedTask; }, cancellationToken);
+
+    /// <summary>:param positionMs: 非负毫秒目标。:param cancellationToken: 请求寿命。:returns: 持久受理状态，不把目标冒充实际位置。</summary>
+    public Task<BackgroundAudioDto> SeekAsync(long positionMs, CancellationToken cancellationToken = default)
+    {
+        if (positionMs < 0) throw new BackgroundAudioServiceException("position_ms 必须是非负整数", "invalid_position");
+        return EnqueueAudioAsync("SEEK", JsonSerializer.Serialize(new { position_ms = positionMs }),
+            (database, state, command, token) =>
+            {
+                if (state.CurrentSourceId is null)
+                    throw new BackgroundAudioServiceException("尚未选择背景音频源", "no_source");
+                return Task.CompletedTask;
+            }, cancellationToken);
+    }
 
     public Task<BackgroundAudioDto> SetMuteAsync(bool muted, CancellationToken cancellationToken = default) =>
         EnqueueAudioAsync("SET_MUTE", JsonSerializer.Serialize(new { muted }), (database, state, command, token) => { state.IsMuted = muted; return Task.CompletedTask; }, cancellationToken);

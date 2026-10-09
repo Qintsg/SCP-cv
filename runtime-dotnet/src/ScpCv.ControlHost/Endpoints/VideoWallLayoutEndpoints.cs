@@ -52,13 +52,27 @@ public static class VideoWallLayoutEndpoints
     }
 
     private static async Task<IResult> ApplyDraftAsync(
+        HttpRequest request,
         VideoWallLayoutService layouts,
         RuntimeStateService runtime,
         CancellationToken cancellationToken)
     {
         try
         {
-            var layout = await layouts.ApplyDraftAsync(cancellationToken).ConfigureAwait(false);
+            long? expectedRevision = null;
+            if (request.ContentLength is > 0 || request.Headers.ContainsKey("Transfer-Encoding"))
+            {
+                using var body = await JsonDocument.ParseAsync(request.Body, cancellationToken: cancellationToken).ConfigureAwait(false);
+                if (body.RootElement.ValueKind != JsonValueKind.Object)
+                    throw new VideoWallLayoutException("应用请求必须是JSON对象。", "layout_invalid");
+                if (body.RootElement.TryGetProperty("expected_revision", out var revision))
+                {
+                    if (revision.ValueKind != JsonValueKind.Number || !revision.TryGetInt64(out var value) || value <= 0)
+                        throw new VideoWallLayoutException("草稿版本必须为正整数。", "layout_invalid");
+                    expectedRevision = value;
+                }
+            }
+            var layout = await layouts.ApplyDraftAsync(expectedRevision, cancellationToken).ConfigureAwait(false);
             return Results.Ok(new
             {
                 success = true,
@@ -68,6 +82,7 @@ public static class VideoWallLayoutEndpoints
             });
         }
         catch (VideoWallLayoutException exception) { return Error(exception); }
+        catch (JsonException) { return ApiEndpointSupport.Error("应用请求JSON无效。", "layout_invalid"); }
         catch (PlaybackServiceException exception) { return ApiEndpointSupport.Error(exception.Message, exception.Code); }
     }
 
@@ -112,7 +127,7 @@ public static class VideoWallLayoutEndpoints
     private static IResult Error(VideoWallLayoutException exception) => ApiEndpointSupport.Error(
         exception.Message,
         exception.Code,
-        exception.Code == "protocol_unavailable"
+        exception.Code is "protocol_unavailable" or "layout_revision_conflict"
             ? StatusCodes.Status409Conflict
             : StatusCodes.Status400BadRequest);
 }

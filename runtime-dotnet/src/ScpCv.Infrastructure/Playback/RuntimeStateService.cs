@@ -19,7 +19,9 @@ public sealed partial class RuntimeStateService(
     IDisplayTopologyProvider? displayTopology = null,
     ISystemAudioController? systemAudio = null,
     IVideoWallController? videoWall = null,
-    BigScreenOutputOptions? bigScreenOutputs = null)
+    BigScreenOutputOptions? bigScreenOutputs = null,
+    VideoWallProtocolOptions? wallProtocol = null,
+    VideoWallOperationGate? wallGate = null)
 {
     private static readonly int[] Windows = [1, 2];
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
@@ -28,6 +30,8 @@ public sealed partial class RuntimeStateService(
     private readonly ISystemAudioController _systemAudio = systemAudio ?? new SimulationSystemAudioController();
     private readonly IVideoWallController _videoWall = videoWall ?? new SimulationVideoWallController();
     private readonly BigScreenOutputOptions _bigScreenOutputs = bigScreenOutputs ?? new BigScreenOutputOptions();
+    private readonly VideoWallProtocolOptions _wallProtocol = wallProtocol ?? new();
+    private readonly VideoWallOperationGate _wallGate = wallGate ?? new();
 
     public async Task<IReadOnlyList<PlaybackSessionDto>> GetSessionsAsync(CancellationToken cancellationToken = default)
     {
@@ -57,49 +61,6 @@ public sealed partial class RuntimeStateService(
         return ToRuntimeDto(runtime);
     }
 
-    public async Task<RuntimeStateDto> SetRuntimeModeAsync(string value, CancellationToken cancellationToken = default)
-    {
-        var mode = value.Trim().ToLowerInvariant() switch
-        {
-            "single" => BigScreenMode.Single,
-            "double" => BigScreenMode.Double,
-            _ => throw new PlaybackServiceException($"无效的大屏模式：{value}"),
-        };
-
-        // 先下发视频墙、成功后才落库：节点不可达时运行态必须保持原样，否则界面显示已切到双屏、
-        // 墙上还是旧画面。旧 Python 版是先改内存再回滚，等价语义就是“下发失败即整体不生效”。
-        // 网络重试（单节点最多 5 次 × 2 秒）也绝不能压进数据库写事务里。
-        try
-        {
-            await _videoWall.DispatchAsync(EnumName(mode), cancellationToken).ConfigureAwait(false);
-        }
-        catch (VideoWallException exception)
-        {
-            throw new PlaybackServiceException(exception.Message, "video_wall_error");
-        }
-
-        var changedWindows = await writes.ExecuteAsync(
-            async (database, token) =>
-            {
-                var runtime = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
-                runtime.BigScreenMode = mode;
-                runtime.UpdatedAt = _timeProvider.GetUtcNow();
-                var sessions = await database.PlaybackSessions
-                    .Where(session => session.WindowId <= WindowId.Maximum)
-                    .ToListAsync(token).ConfigureAwait(false);
-                var muted = MutedWindows(mode).ToHashSet();
-                return sessions
-                    .Where(session => session.IsMuted != muted.Contains(session.WindowId))
-                    .Select(session => (session.WindowId, Muted: muted.Contains(session.WindowId)))
-                    .ToArray();
-            },
-            cancellationToken).ConfigureAwait(false);
-        foreach (var changed in changedWindows)
-        {
-            await SetMuteAsync(changed.WindowId, changed.Muted, cancellationToken).ConfigureAwait(false);
-        }
-        return await GetRuntimeAsync(cancellationToken).ConfigureAwait(false);
-    }
 
     public Task<IReadOnlyList<PlaybackSessionDto>> ControlAsync(
         int windowId,
@@ -107,7 +68,7 @@ public sealed partial class RuntimeStateService(
         CancellationToken cancellationToken = default)
     {
         var normalized = command.Trim().ToLowerInvariant();
-        if (normalized is not ("play" or "pause" or "stop"))
+        if (normalized is not ("play" or "pause" or "stop" or "next_effect" or "previous_effect"))
         {
             throw new PlaybackServiceException($"无效的播放控制动作：{command}");
         }
@@ -145,6 +106,10 @@ public sealed partial class RuntimeStateService(
         if (normalized is not ("next" or "previous" or "first" or "last" or "goto" or "seek"))
         {
             throw new PlaybackServiceException($"无效的导航动作：{action}", "invalid_navigation");
+        }
+        if (normalized == "goto" && targetIndex is not > 0)
+        {
+            throw new PlaybackServiceException("goto 必须提供正整数 target_index。", "invalid_navigation");
         }
 
         var commandName = normalized switch
@@ -337,11 +302,13 @@ public sealed partial class RuntimeStateService(
         CancellationToken cancellationToken)
     {
         ValidateWindow(windowId);
-        await _commands.EnqueueAsync(
+        var submitted = await _commands.EnqueueAsync(
             new EnqueueCommand(CommandTargetKind.Display, windowId, commandName, initialArgsJson, 0, 0),
             async (database, command, token) =>
             {
                 var session = await database.PlaybackSessions.SingleAsync(item => item.WindowId == windowId, token).ConfigureAwait(false);
+                if (session.PlaybackMode == PlaybackMode.LibreOffice && commandName is "PLAY" or "PAUSE" or "STOP" or "SEEK" or "SET_VOLUME" or "SET_MUTE" or "SET_LOOP" or "PPT_MEDIA")
+                    throw new PlaybackServiceException("LibreOffice当前未支持统一媒体控制", "unsupported_media_control");
                 await mutation(database, session, command, token).ConfigureAwait(false);
                 var earlierPending = await database.CommandRecords
                     .Where(item => item.TargetKind == CommandTargetKind.Display && item.TargetId == windowId && item.Status == CommandStatus.Pending)
@@ -360,7 +327,9 @@ public sealed partial class RuntimeStateService(
                 session.LastUpdatedAt = NextTimestamp(session.LastUpdatedAt);
             },
             cancellationToken).ConfigureAwait(false);
-        return await GetSessionsAsync(cancellationToken).ConfigureAwait(false);
+        var sessions = await GetSessionsAsync(cancellationToken).ConfigureAwait(false);
+        return sessions.Select(session => session.WindowId == windowId
+            ? session with { SubmittedCommandId = submitted.CommandId } : session).ToArray();
     }
 
     public static PlaybackSessionDto ToSessionDto(PlaybackSession session, DateTimeOffset now)
@@ -385,8 +354,14 @@ public sealed partial class RuntimeStateService(
             TargetDisplayLabel = session.TargetDisplayLabel.Length == 0 ? "未选择" : session.TargetDisplayLabel,
             CurrentSlide = session.CurrentSlide,
             TotalSlides = session.TotalSlides,
-            PositionMs = session.PositionMs,
-            DurationMs = session.DurationMs,
+            PositionMs = session.ActualAdapterKind == "libreoffice" ? null : session.PositionMs,
+            DurationMs = session.ActualAdapterKind == "libreoffice" ? null : session.DurationMs,
+            ActualSourceId = session.ActualSourceId,
+            ActualAdapterKind = session.ActualAdapterKind,
+            ActualFitText = session.ActualFitText,
+            DesiredGeneration = session.DesiredGeneration,
+            ObservedGeneration = session.ObservedGeneration,
+            CleanupPending = session.CleanupPending,
             PendingCommand = session.PendingCommand,
             PlayerOnline = session.PlayerLastSeenAt is not null && now - session.PlayerLastSeenAt.Value <= TimeSpan.FromSeconds(5),
             PlayerLastSeenAt = session.PlayerLastSeenAt?.ToString("O") ?? string.Empty,
@@ -401,11 +376,9 @@ public sealed partial class RuntimeStateService(
     {
         BigScreenMode = EnumName(runtime.BigScreenMode),
         VolumeLevel = runtime.VolumeLevel,
-        MutedWindows = MutedWindows(runtime.BigScreenMode),
+        MutedWindows = VideoWallStateProjection.MutedWindows(runtime),
     };
 
-    private static IReadOnlyList<int> MutedWindows(BigScreenMode mode) =>
-        mode == BigScreenMode.Single ? [2] : [];
 
     private static void ValidateWindow(int windowId)
     {
@@ -420,6 +393,7 @@ public sealed partial class RuntimeStateService(
     private static string PlaybackModeName(PlaybackMode mode) => mode switch
     {
         PlaybackMode.PowerPoint => "powerpoint",
+        PlaybackMode.LibreOffice => "libreoffice",
         PlaybackMode.Pdf => "pdf",
         PlaybackMode.SlideImages => "slide_images",
         _ => string.Empty,

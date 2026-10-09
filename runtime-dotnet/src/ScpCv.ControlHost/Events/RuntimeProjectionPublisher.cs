@@ -79,12 +79,15 @@ public sealed class RuntimeProjectionPublisher(
         }
 
         var state = report.State;
+        var previousSourceId = session.ActualSourceId;
+        var previousAdapterKind = session.ActualAdapterKind;
         session.ObservedGeneration = report.SourceGeneration;
         session.PlayerLastSeenAt = _timeProvider.GetUtcNow();
         session.PlaybackState = ReadPlaybackState(state, session.PlaybackState);
         session.PlaybackMode = ReadPlaybackMode(state, session.PlaybackMode);
         session.ActualSourceId = ReadActualSourceId(state, session.ActualSourceId);
         session.ActualAdapterKind = ReadString(state, "adapter_kind", session.ActualAdapterKind);
+        session.ActualFitText = ReadActualFitText(state, session, previousSourceId, previousAdapterKind);
         session.ErrorMessage = ReadString(state, "error_message", session.ErrorMessage);
         session.CurrentSlide = ReadInt32(state, "current_slide", session.CurrentSlide);
         session.TotalSlides = ReadInt32(state, "total_slides", session.TotalSlides);
@@ -131,7 +134,7 @@ public sealed class RuntimeProjectionPublisher(
             .Where(candidate =>
                 candidate.TargetKind == targetKind &&
                 candidate.TargetId == targetId &&
-                candidate.Status == CommandStatus.Pending)
+                (candidate.Status == CommandStatus.Pending || candidate.Status == CommandStatus.Processing))
             .OrderBy(candidate => candidate.TargetSequence)
             .FirstOrDefaultAsync(cancellationToken)
             .ConfigureAwait(false);
@@ -192,6 +195,28 @@ public sealed class RuntimeProjectionPublisher(
         value.TryGetInt64(out var parsed)
             ? parsed
             : fallback;
+
+    /// <summary>
+    /// 实际布局跟随当前文稿资源；源或适配器变更而无有效字段时不沿用上一份布局。
+    /// :param state: 已通过身份和代次门禁的Worker观测。
+    /// :param session: 当前实际源/适配器投影。
+    /// :param previousSourceId: 上一实际源。
+    /// :param previousAdapterKind: 上一实际适配器。
+    /// :returns: 确认的原排版/适配选择，或未知/非文稿时空值。
+    /// </summary>
+    private static bool? ReadActualFitText(JsonElement state, PlaybackSession session,
+        long? previousSourceId, string previousAdapterKind)
+    {
+        if (session.ActualSourceId is null || session.ActualAdapterKind is not ("libreoffice" or "slide_images" or "pdf"))
+            return null;
+        if (state.ValueKind == JsonValueKind.Object && state.TryGetProperty("actual_fit_text", out var value))
+        {
+            if (value.ValueKind is JsonValueKind.True or JsonValueKind.False) return value.GetBoolean();
+            if (value.ValueKind == JsonValueKind.Null) return null;
+        }
+        return session.ActualSourceId == previousSourceId && session.ActualAdapterKind == previousAdapterKind
+            ? session.ActualFitText : null;
+    }
 
     /// <summary>
     /// 区分已报告的空实际源与没有可用观测的字段。

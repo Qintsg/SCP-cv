@@ -87,6 +87,7 @@ public sealed class PlaybackSession
     public long ObservedGeneration { get; set; }
     public long? ActualSourceId { get; set; }
     public string ActualAdapterKind { get; set; } = string.Empty;
+    public bool? ActualFitText { get; set; }
     public bool CleanupPending { get; set; }
 }
 
@@ -101,6 +102,10 @@ public sealed class RuntimeState
     public bool ExperimentalPowerPointEnabled { get; set; }
     public string WallLayoutDraftJson { get; set; } = "{}";
     public long WallLayoutDraftRevision { get; set; }
+    public string WallLayoutAppliedJson { get; set; } = "{}";
+    public long WallLayoutAppliedRevision { get; set; }
+    public string WallLayoutDispatchStatus { get; set; } = "none";
+    public string WallLayoutDispatchDetail { get; set; } = string.Empty;
     public DateTimeOffset UpdatedAt { get; set; }
 }
 

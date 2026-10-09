@@ -34,5 +34,9 @@ public sealed class VideoWallRegistrationTests
         Assert.IsType<TcpVideoWallTransport>(factory.Services.GetRequiredService<IVideoWallTransport>());
         // Hardware 分支必须能独立解析出下发参数：现场没有第二次机会试错。
         Assert.NotNull(factory.Services.GetRequiredService<VideoWallDispatchOptions>());
+        var protocol = factory.Services.GetRequiredService<VideoWallProtocolOptions>();
+        Assert.Equal("224.1.1.81", protocol.Inputs["laptop"].MulticastAddress);
+        Assert.NotNull(factory.Services.GetRequiredService<VideoWallObservationStore>());
+        Assert.NotNull(factory.Services.GetRequiredService<VideoWallOperationGate>());
     }
 }

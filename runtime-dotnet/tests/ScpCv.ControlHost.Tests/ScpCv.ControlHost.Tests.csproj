@@ -36,6 +36,12 @@
     <None Include="..\..\scripts\benchmark-commands.ps1"
           Link="scripts\benchmark-commands.ps1"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\scripts\publish-runtime.ps1"
+          Link="scripts\publish-runtime.ps1"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\scripts\runtime-publish.functions.ps1"
+          Link="scripts\runtime-publish.functions.ps1"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

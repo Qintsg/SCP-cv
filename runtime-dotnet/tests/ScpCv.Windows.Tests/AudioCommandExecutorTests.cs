@@ -5,7 +5,7 @@ using ScpCv.Contracts.Ipc;
 
 namespace ScpCv.Windows.Tests;
 
-public sealed class AudioCommandExecutorTests
+public sealed partial class AudioCommandExecutorTests
 {
     [Fact]
     public async Task OpenWaitsForDelayedPlaybackStateBeforeReporting()

@@ -79,7 +79,7 @@ public sealed class PresentationParentWindow
 public sealed class PresentationRequest
 {
     [DataMember(Name = "protocol_version", Order = 1, IsRequired = true)]
-    public int ProtocolVersion { get; set; } = 1;
+    public int ProtocolVersion { get; set; } = PresentationRequestPolicy.ProtocolVersion;
 
     [DataMember(Name = "operation_id", Order = 2, IsRequired = true)]
     public Guid OperationId { get; set; }
@@ -134,6 +134,9 @@ public sealed class PresentationRequest
 
     [DataMember(Name = "update_external_links", Order = 19, IsRequired = true)]
     public bool UpdateExternalLinks { get; set; }
+
+    [DataMember(Name = "fit_text", Order = 20)]
+    public bool FitText { get; set; }
 }
 
 /// <summary>未获真实验证的能力保持 false；不是输入请求可自行授予的权限。</summary>
@@ -174,7 +177,7 @@ public sealed class PresentationObservation
 public sealed class PresentationResponse
 {
     [DataMember(Name = "protocol_version", Order = 1, IsRequired = true)]
-    public int ProtocolVersion { get; set; } = 1;
+    public int ProtocolVersion { get; set; } = PresentationRequestPolicy.ProtocolVersion;
 
     [DataMember(Name = "operation_id", Order = 2, IsRequired = true)]
     public Guid OperationId { get; set; }

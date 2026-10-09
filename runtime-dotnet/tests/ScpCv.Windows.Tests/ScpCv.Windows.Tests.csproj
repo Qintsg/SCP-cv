@@ -29,4 +29,14 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup><ProjectReference Include="../ScpCv.Presentation.TestHost/ScpCv.Presentation.TestHost.csproj" ReferenceOutputAssembly="false" /></ItemGroup>
+  <Target Name="CopyPresentationTestHost" AfterTargets="Build">
+    <MSBuild Projects="../ScpCv.Presentation.TestHost/ScpCv.Presentation.TestHost.csproj" Targets="GetTargetPath" Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="PresentationTestHostTarget" />
+    </MSBuild>
+    <PropertyGroup><PresentationTestHostDirectory>@(PresentationTestHostTarget->'%(RootDir)%(Directory)')</PresentationTestHostDirectory></PropertyGroup>
+    <ItemGroup><PresentationTestHostFile Include="$(PresentationTestHostDirectory)*" Exclude="**/*.pdb" /></ItemGroup>
+    <Copy SourceFiles="@(PresentationTestHostFile)" DestinationFolder="$(TargetDir)PresentationTestHost" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>

@@ -1,0 +1,15 @@
+<!-- 测试专用父归属/Timer宿主：沿用已验证QA角色，核心Compile Link正式父监测逻辑。 -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>ScpCv.ParentGuard.TestHost</AssemblyName>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/ScpCv.LibreOfficeHost/Runtime/ParentProcessLifetime.cs" Link="Runtime/ParentProcessLifetime.cs" />
+  </ItemGroup>
+</Project>

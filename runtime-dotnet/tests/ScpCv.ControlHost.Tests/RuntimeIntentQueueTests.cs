@@ -211,11 +211,14 @@ public sealed class RuntimeIntentQueueTests
         long sourceRevision)
     {
         await using var database = await ContextAsync(factory);
+        var originalPath = Path.Combine(factory.TemporaryRoot, $"queue-{Guid.NewGuid():N}.pptx");
+        if (type == MediaSourceType.Presentation)
+            await File.WriteAllBytesAsync(originalPath, "队列原件契约夹具"u8.ToArray());
         var source = new MediaSource
         {
             SourceType = type,
             Name = $"队列测试-{type}",
-            Uri = $"queue-test-{type.ToString().ToLowerInvariant()}",
+            Uri = type == MediaSourceType.Presentation ? originalPath : $"queue-test-{type.ToString().ToLowerInvariant()}",
             IsAvailable = true,
             SourceRevision = sourceRevision,
             ContentDigest = type == MediaSourceType.Presentation ? "sha256:queue-ppt" : string.Empty,

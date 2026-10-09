@@ -9,9 +9,15 @@
         "contentHash": "3XkJAqbYq93MqqSOPusNE+6Tve5yBkbE92n9W8f+k8Z9AzXeoTMqMYqhZMrzVOp4saHhMMbOD78JkCjvk+qIzw=="
       },
       "scpcv.contracts": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ScpCv.Presentation.Protocol": "[1.0.0, )"
+        }
       },
       "scpcv.domain": {
+        "type": "Project"
+      },
+      "scpcv.presentation.protocol": {
         "type": "Project"
       }
     },

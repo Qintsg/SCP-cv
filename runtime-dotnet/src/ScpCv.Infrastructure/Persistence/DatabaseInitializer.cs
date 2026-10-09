@@ -82,6 +82,17 @@ public sealed class DatabaseInitializer(
         {
             context.RuntimeStates.Add(new RuntimeState { UpdatedAt = now });
         }
+        else
+        {
+            var runtime = await context.RuntimeStates.SingleAsync(cancellationToken).ConfigureAwait(false);
+            if (runtime.WallLayoutDispatchStatus == "dispatching")
+            {
+                // 进程重启不证明设备回滚；保留最后发送布局，不自动重放。
+                runtime.WallLayoutDispatchStatus = "uncertain";
+                runtime.WallLayoutDispatchDetail = "上次发送被服务中断，可能已有部分控制帧写出，请核对实体墙面。";
+                runtime.UpdatedAt = now;
+            }
+        }
 
         if (!await context.BackgroundAudioStates.AnyAsync(cancellationToken).ConfigureAwait(false))
         {

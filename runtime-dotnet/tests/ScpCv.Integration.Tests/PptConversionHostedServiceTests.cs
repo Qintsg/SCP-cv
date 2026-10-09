@@ -17,7 +17,7 @@ public sealed class PptConversionHostedServiceTests
     public async Task QueuedPptBecomesAvailableOnlyAfterConverterPublishesAllPages()
     {
         await using var context = await ConversionContext.CreateAsync();
-        Assert.False(context.Source.IsAvailable);
+        Assert.True(context.Source.IsAvailable);
         Assert.Equal("queued", context.Source.PreparationState);
         await Assert.ThrowsAsync<MediaServiceException>(() => context.Media.GetPptSlideImageAsync(context.Source.Id, 1));
 
@@ -424,7 +424,7 @@ public sealed class PptConversionHostedServiceTests
         /// <summary>失败或不确定状态不能暴露部分页图作为可播放资源。</summary>
         public async Task AssertNotPlayableAsync(MediaSourceDto source)
         {
-            Assert.False(source.IsAvailable);
+            Assert.Equal(File.Exists(source.Uri), source.IsAvailable);
             Assert.Equal(0, source.PageCount);
             Assert.Empty(await Media.GetPptResourcesAsync(source.Id));
             await Assert.ThrowsAsync<MediaServiceException>(() => Media.GetPptSlideImageAsync(source.Id, 1));

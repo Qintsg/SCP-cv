@@ -14,6 +14,7 @@ using ScpCv.ControlHost.Logging;
 using ScpCv.ControlHost.Media;
 using ScpCv.ControlHost.Runtime;
 using ScpCv.ControlHost.Commands;
+using ScpCv.Contracts.Presentations.Dependencies;
 using ScpCv.Infrastructure.Auth;
 using ScpCv.Infrastructure.Audio;
 using ScpCv.Infrastructure.Commands;
@@ -73,6 +74,9 @@ builder.Services.AddSingleton<WriteCoordinator>();
 builder.Services.AddSingleton<CommandRepository>();
 builder.Services.AddSingleton<RegisteredProcessRegistry>();
 builder.Services.AddSingleton<IRegisteredProcessRegistry>(services => services.GetRequiredService<RegisteredProcessRegistry>());
+builder.Services.AddSingleton(builder.Configuration.GetSection("VideoWall").Get<VideoWallProtocolOptions>() ?? new());
+builder.Services.AddSingleton<VideoWallObservationStore>();
+builder.Services.AddSingleton<VideoWallOperationGate>();
 if (safetyMode.IsSimulation)
 {
     builder.Services.AddSingleton<QueuedCommandWakeNotifier>();
@@ -91,7 +95,7 @@ else
     builder.Services.AddSingleton<IRuntimeProcessExitObserver, WindowsRuntimeProcessExitObserver>();
     builder.Services.AddSingleton<RuntimeCommandWakeNotifier>();
     builder.Services.AddSingleton<ICommandWakeNotifier>(services => services.GetRequiredService<RuntimeCommandWakeNotifier>());
-    builder.Services.AddSingleton<IPptSlideConverter, BrokerPptSlideConverter>();
+    builder.Services.AddSingleton<IPptSlideConverter, LibreOfficeSlideConverter>();
     builder.Services.AddHostedService(services => services.GetRequiredService<RuntimePipeBroker>());
 }
 builder.Services.AddSingleton<RuntimeSupervisorControl>(services =>
@@ -130,6 +134,8 @@ builder.Services.AddSingleton<RuntimeStateService>();
 builder.Services.AddSingleton<PowerPointSettingsService>();
 builder.Services.AddSingleton<VideoWallLayoutService>();
 builder.Services.AddSingleton<PresentationCoordinator>();
+builder.Services.AddSingleton<IPresentationDependencySnapshotReader, WindowsPresentationDependencySnapshotReader>();
+builder.Services.AddSingleton<IPresentationDependencyProbe, PresentationDependencyProbe>();
 builder.Services.AddSingleton<ScenarioService>();
 builder.Services.AddSingleton<BackgroundAudioService>();
 builder.Services.AddSingleton<SseEventHub>();
@@ -198,7 +204,7 @@ app.MapAuthEndpoints();
 app.MapMediaEndpoints();
 app.MapPlaybackEndpoints();
 app.MapVideoWallLayoutEndpoints();
-app.MapPowerPointSettingsEndpoints();
+app.MapPresentationSettingsEndpoints();
 app.MapPresentationEndpoints();
 app.MapScenarioEndpoints();
 app.MapSystemEndpoints();

@@ -15,18 +15,20 @@ public static class PresentationEndpoints
         api.MapPut("/sources/{sourceId:long}/ppt-resources/", ReplaceResourcesAsync);
         api.MapPost("/playback/{windowId:int}/navigate/", NavigateAsync);
         api.MapPost("/playback/{windowId:int}/ppt-media/", ControlMediaAsync);
-        api.MapPost("/playback/reset-ppt/", ResetPowerPointAsync);
+        api.MapPost("/playback/reset-ppt/", () => ApiEndpointSupport.Error("PowerPoint应急入口已退役。", "powerpoint_retired", StatusCodes.Status410Gone));
         return endpoints;
     }
 
     private static async Task<IResult> GetResourcesAsync(
         long sourceId,
+        HttpRequest request,
         MediaSourceService media,
         CancellationToken cancellationToken)
     {
+        if (!PresentationPreviewQuery.TryRead(request, out var fitText)) return PresentationPreviewQuery.Invalid();
         try
         {
-            return Results.Ok(new { success = true, resources = await media.GetPptResourcesAsync(sourceId, cancellationToken).ConfigureAwait(false) });
+            return Results.Ok(new { success = true, resources = await media.GetPptResourcesAsync(sourceId, fitText, cancellationToken).ConfigureAwait(false) });
         }
         catch (MediaServiceException exception)
         {

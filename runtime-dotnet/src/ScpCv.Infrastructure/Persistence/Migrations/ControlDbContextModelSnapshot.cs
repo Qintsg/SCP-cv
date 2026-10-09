@@ -504,6 +504,9 @@ namespace ScpCv.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<bool?>("ActualFitText")
+                        .HasColumnType("INTEGER");
+
                     b.Property<long?>("ActualSourceId")
                         .HasColumnType("INTEGER");
 
@@ -679,6 +682,21 @@ namespace ScpCv.Infrastructure.Persistence.Migrations
 
                     b.Property<bool>("VolumeMuted")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("WallLayoutAppliedJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("WallLayoutAppliedRevision")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("WallLayoutDispatchStatus")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WallLayoutDispatchDetail")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("WallLayoutDraftJson")
                         .IsRequired()

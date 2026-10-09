@@ -1,3 +1,4 @@
+// 背景音频公开HTTP兼容合同，与真实播放/队列验收分层。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -8,7 +9,7 @@ using ScpCv.Infrastructure.Persistence;
 
 namespace ScpCv.ControlHost.Tests;
 
-public sealed class BackgroundAudioCompatibilityEndpointTests
+public sealed partial class BackgroundAudioCompatibilityEndpointTests
 {
     private const string InitialPassword = "Old-password-123";
 

@@ -1,6 +1,7 @@
-// 后台 PPT 转页图作业：在无演出占用时经独立 OfficeHost 运行，失败如实落库。
+// 后台PPT转页图使用独立LibreOffice转换实例，不依赖大屏空闲，失败如实落库。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
+using ScpCv.Contracts.Presentations;
 using ScpCv.Infrastructure.Configuration;
 using ScpCv.Infrastructure.Media;
 using ScpCv.Infrastructure.Persistence;
@@ -95,6 +96,11 @@ public sealed partial class PptConversionHostedService(
             }
             await preparation.FailSlideImagesAsync(job.JobId,
                 result.Detail.Length == 0 ? result.Code : result.Detail, cancellationToken).ConfigureAwait(false);
+        }
+        catch (PresentationTransportException exception)
+        {
+            LogJobError(logger, exception, job.SourceId);
+            await preparation.MarkUncertainSlideImagesAsync(job.JobId, exception.Message, CancellationToken.None).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

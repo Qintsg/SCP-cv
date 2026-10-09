@@ -3,6 +3,7 @@ using System.IO.Pipes;
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Runtime;
+using ScpCv.Contracts.Presentations;
 using ScpCv.ControlHost.Ipc;
 
 namespace ScpCv.Integration.Tests;
@@ -271,8 +272,10 @@ public sealed class RuntimeWorkerSessionTests
         }
     }
 
-    [Fact]
-    public async Task LostResultAcknowledgementReconnectsAndReplaysWithoutExecutingAgain()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LostResultAcknowledgementReconnectsAndReplaysWithoutExecutingAgain(bool uncertain)
     {
         var pipeName = $"scp-cv-session-test-{Guid.NewGuid():N}";
         var instanceId = Guid.NewGuid();
@@ -331,6 +334,7 @@ public sealed class RuntimeWorkerSessionTests
         var run = session.RunAsync((_, _) =>
         {
             Interlocked.Increment(ref executionCount);
+            if (uncertain) throw new PresentationTransportException("已下发原生结果缺失", new EndOfStreamException());
             return Task.FromResult(new WorkerExecutionResult(
                 "completed",
                 "ok",
@@ -345,6 +349,8 @@ public sealed class RuntimeWorkerSessionTests
 
         Assert.Equal(1, executionCount);
         Assert.Equal("command_result", original.MessageType);
+        Assert.Equal(uncertain ? "uncertain" : "completed", original.Payload.Deserialize<CommandResultDto>()!.Status);
+        Assert.Equal(original.Payload.Deserialize<CommandResultDto>()!.Status, replayed.Payload.Deserialize<CommandResultDto>()!.Status);
         Assert.Equal(original.MessageId, replayed.MessageId);
         Assert.Equal(
             original.Payload.Deserialize<CommandResultDto>()!.ResultHash,

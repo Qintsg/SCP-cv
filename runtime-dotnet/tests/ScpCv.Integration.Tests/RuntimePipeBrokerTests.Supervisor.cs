@@ -31,7 +31,7 @@ public sealed partial class RuntimePipeBrokerTests
 
         var before = await broker.WaitForRuntimeReadyAsync(starting.GroupEpoch, TimeSpan.FromMilliseconds(100));
         Assert.False(before.Ready);
-        Assert.Equal(4, before.MissingRoles.Count);
+        Assert.Equal(3, before.MissingRoles.Count);
 
         var clients = new List<NamedPipeClientStream>();
         NamedPipeClientStream? officeClient = null;
@@ -68,8 +68,8 @@ public sealed partial class RuntimePipeBrokerTests
             }
 
             var missingOffice = await broker.WaitForRuntimeReadyAsync(starting.GroupEpoch, TimeSpan.FromMilliseconds(100));
-            Assert.False(missingOffice.Ready);
-            Assert.Equal(["office"], missingOffice.MissingRoles);
+            Assert.True(missingOffice.Ready);
+            Assert.Empty(missingOffice.MissingRoles);
 
             Assert.NotNull(officeClient);
             Assert.NotNull(officeWelcome);
@@ -86,7 +86,7 @@ public sealed partial class RuntimePipeBrokerTests
 
             var staleEpoch = await broker.WaitForRuntimeReadyAsync(starting.GroupEpoch + 1, TimeSpan.FromMilliseconds(100));
             Assert.False(staleEpoch.Ready);
-            Assert.Equal(4, staleEpoch.MissingRoles.Count);
+            Assert.Equal(3, staleEpoch.MissingRoles.Count);
 
             await officeClient.DisposeAsync();
             for (var attempt = 0; attempt < 50 && broker.GetRuntimeReadiness(starting.GroupEpoch).Ready; attempt++)
@@ -94,8 +94,8 @@ public sealed partial class RuntimePipeBrokerTests
                 await Task.Delay(20);
             }
             var disconnected = broker.GetRuntimeReadiness(starting.GroupEpoch);
-            Assert.False(disconnected.Ready);
-            Assert.Contains("office", disconnected.MissingRoles);
+            Assert.True(disconnected.Ready);
+            Assert.Empty(disconnected.MissingRoles);
         }
         finally
         {

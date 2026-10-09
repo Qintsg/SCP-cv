@@ -5,7 +5,6 @@ using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Http;
 using ScpCv.Domain.Model;
-using ScpCv.Infrastructure.Presentations;
 
 namespace ScpCv.Infrastructure.Media;
 
@@ -13,8 +12,12 @@ public sealed partial class MediaPreparationService
 {
     private static readonly byte[] PngSignature = [137, 80, 78, 71, 13, 10, 26, 10];
 
-    public async Task<MediaSourceDto> RetryPptImagesAsync(long sourceId, CancellationToken cancellationToken = default)
+    public Task<MediaSourceDto> RetryPptImagesAsync(long sourceId, CancellationToken cancellationToken = default) =>
+        RetryPptImagesAsync(sourceId, false, cancellationToken);
+
+    public async Task<MediaSourceDto> RetryPptImagesAsync(long sourceId, bool fitText, CancellationToken cancellationToken = default)
     {
+        var artifactRoot = Path.Combine(dataRootOptions.Resolve(AppContext.BaseDirectory).RootPath, "cache", "artifacts");
         var digestSnapshot = await ReadLegacyDigestAsync(sourceId, cancellationToken).ConfigureAwait(false);
         return await writes.ExecuteAsync(async (database, token) =>
         {
@@ -58,15 +61,21 @@ public sealed partial class MediaPreparationService
                      !string.Equals(source.ContentDigest, digestSnapshot.Digest, StringComparison.OrdinalIgnoreCase))
                 throw new MediaServiceException("读取摘要期间文稿摘要已变化；请核查原件后重新重试。");
 
+            // 换布局不是清理证明，不能用另一配方绕过同一原件的不确定操作。
+            if (await database.MediaPreparationJobs.AnyAsync(item => item.SourceId == sourceId &&
+                item.Kind == PreparationJobKind.PptImages && item.SourceDigest == source.ContentDigest &&
+                item.Status == OperationStatus.Uncertain, token).ConfigureAwait(false))
+                throw new MediaServiceException("同源存在结果不确定的转换；请先核查，不能通过切换文字适配重放。");
             var latest = await database.MediaPreparationJobs
                 .Where(item => item.SourceId == sourceId && item.Kind == PreparationJobKind.PptImages &&
-                               item.SourceDigest == source.ContentDigest)
+                               item.SourceDigest == source.ContentDigest &&
+                               (fitText ? item.RecipeVersion.StartsWith("ppt-images-fit-") : !item.RecipeVersion.StartsWith("ppt-images-fit-")))
                 .OrderByDescending(item => item.Id).FirstOrDefaultAsync(token).ConfigureAwait(false);
             if (latest?.Status == OperationStatus.Uncertain)
                 throw new MediaServiceException("上次 Office 转换结果不确定；请先核查暂存文件与 Office 状态，不能盲目重试。");
             if (latest?.Status is OperationStatus.Queued or OperationStatus.Running ||
-                latest?.Status == OperationStatus.Succeeded && HasPreparedSlideImages(source))
-                return await MediaSourceService.ProjectSourceAsync(source, database, token).ConfigureAwait(false);
+                latest?.Status == OperationStatus.Succeeded && HasPreparedSlideImages(source, fitText))
+                return await MediaSourceService.ProjectSourceAsync(source, database, artifactRoot, token).ConfigureAwait(false);
 
             database.MediaPreparationJobs.Add(new MediaPreparationJob
             {
@@ -76,10 +85,10 @@ public sealed partial class MediaPreparationService
                 SourceDigest = source.ContentDigest,
                 Kind = PreparationJobKind.PptImages,
                 Priority = 10,
-                RecipeVersion = latest is null ? "ppt-images-v1" : $"ppt-images-v1-retry-{Guid.NewGuid():N}",
+                RecipeVersion = fitText ? $"ppt-images-fit-v1-{Guid.NewGuid():N}" : latest is null ? "ppt-images-v1" : $"ppt-images-v1-retry-{Guid.NewGuid():N}",
             });
-            SetSourceSlideStatus(source, "queued", string.Empty, source.ContentDigest);
-            return await MediaSourceService.ProjectSourceAsync(source, database, token).ConfigureAwait(false);
+            SetSourceSlideStatus(source, "queued", string.Empty, source.ContentDigest, fitText);
+            return await MediaSourceService.ProjectSourceAsync(source, database, artifactRoot, token).ConfigureAwait(false);
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -123,19 +132,12 @@ public sealed partial class MediaPreparationService
     /// <summary>
     /// 成功作业仅在当前原件仍可选择页图时复用，否则允许用户明确重建清单。
     /// :param source: 当前原件与制品元数据。
-    /// :returns: 默认页图选择器是否接受当前清单。
+    /// :returns: 当前布局的元数据与全部受管理页图都通过同一预览文件门禁。
     /// </summary>
-    private static bool HasPreparedSlideImages(MediaSource source)
+    private bool HasPreparedSlideImages(MediaSource source, bool fitText)
     {
-        try
-        {
-            PresentationPlaybackSelector.Select(source, experimentalEnabled: false);
-            return true;
-        }
-        catch (PresentationPreparationException)
-        {
-            return false;
-        }
+        var artifactRoot = Path.Combine(dataRootOptions.Resolve(AppContext.BaseDirectory).RootPath, "cache", "artifacts");
+        return PresentationPreviewArtifact.TrySelect(source, artifactRoot, fitText) is not null;
     }
 
     public async Task<ArtifactManifest> PublishSlideImagesAsync(
@@ -166,6 +168,16 @@ public sealed partial class MediaPreparationService
                 throw new InvalidOperationException($"第 {index} 页不是有效 PNG。");
             hash.AppendData(bytes);
             totalSize += bytes.Length;
+        }
+        var staticPdf = Path.Combine(staging, "presentation.pdf");
+        string? pdfDigest = null;
+        if (File.Exists(staticPdf))
+        {
+            var pdf = await File.ReadAllBytesAsync(staticPdf, cancellationToken).ConfigureAwait(false);
+            if (pdf.Length < 20 || !pdf.AsSpan().StartsWith("%PDF-1.4"u8) || !pdf.AsSpan().EndsWith("%%EOF\n"u8))
+                throw new InvalidOperationException("静态PDF不完整，拒绝发布。");
+            pdfDigest = Convert.ToHexString(SHA256.HashData(pdf)).ToLowerInvariant();
+            hash.AppendData(pdf); totalSize += pdf.Length;
         }
         var digest = Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant();
 
@@ -199,20 +211,32 @@ public sealed partial class MediaPreparationService
 
                 var source = currentJob.Source;
                 var metadata = JsonNode.Parse(source.MetadataJson) as JsonObject ?? new JsonObject();
-                metadata["slide_images"] = JsonSerializer.SerializeToNode(new
+                var fitted = currentJob.RecipeVersion.StartsWith("ppt-images-fit-", StringComparison.Ordinal);
+                metadata[fitted ? "fitted_slide_images" : "slide_images"] = JsonSerializer.SerializeToNode(new
                 {
                     status = "ready",
                     directory = destination,
                     page_count = pageCount,
                     source_digest = currentJob.SourceDigest,
+                    source_revision = currentJob.SourceRevision,
+                    text_layout = fitted ? "fit" : "original",
                 });
+                var pdfMetadata = fitted ? "fitted_static_pdf" : "static_pdf";
+                metadata.Remove(pdfMetadata);
+                if (pdfDigest is not null)
+                    metadata[pdfMetadata] = JsonSerializer.SerializeToNode(new
+                    {
+                        status = "ready", path = Path.Combine(destination, "presentation.pdf"),
+                        source_digest = currentJob.SourceDigest, source_revision = currentJob.SourceRevision,
+                        page_count = pageCount, sha256 = pdfDigest, render_semantics = "raster_pages",
+                    });
                 source.MetadataJson = metadata.ToJsonString();
                 source.IsAvailable = true;
-                database.PptResources.RemoveRange(source.PptResources);
-                source.PptResources.Clear();
-                for (var index = 1; index <= pageCount; index++)
+                if (!fitted)
                 {
-                    source.PptResources.Add(new PptResource
+                    database.PptResources.RemoveRange(source.PptResources);
+                    source.PptResources.Clear();
+                    for (var index = 1; index <= pageCount; index++) source.PptResources.Add(new PptResource
                     {
                         PageIndex = index,
                         SlideImage = $"/api/sources/{source.Id}/slides/{index}/",
@@ -268,7 +292,8 @@ public sealed partial class MediaPreparationService
             if (job.Source.SourceRevision != job.SourceRevision ||
                 !string.Equals(job.Source.ContentDigest, job.SourceDigest, StringComparison.Ordinal)) return;
             var metadata = JsonNode.Parse(job.Source.MetadataJson) as JsonObject ?? new JsonObject();
-            metadata["slide_images"] = JsonSerializer.SerializeToNode(new
+            var fitted = job.RecipeVersion.StartsWith("ppt-images-fit-", StringComparison.Ordinal);
+            metadata[fitted ? "fitted_slide_images" : "slide_images"] = JsonSerializer.SerializeToNode(new
             {
                 status = "failed",
                 error,
@@ -276,7 +301,7 @@ public sealed partial class MediaPreparationService
                 page_count = 0,
             });
             job.Source.MetadataJson = metadata.ToJsonString();
-            job.Source.IsAvailable = false;
+            if (!fitted) job.Source.IsAvailable = false;
         }, cancellationToken);
 
     public Task RequeueSlideImagesAsync(Guid jobId, string reason, CancellationToken cancellationToken = default) =>
@@ -297,7 +322,7 @@ public sealed partial class MediaPreparationService
                 job.ErrorMessage = "ControlHost 上次退出时转换仍在运行；未盲目重试 Office 副作用。";
                 if (job.Source.SourceRevision != job.SourceRevision ||
                     !string.Equals(job.Source.ContentDigest, job.SourceDigest, StringComparison.Ordinal)) continue;
-                SetSourceSlideStatus(job.Source, "uncertain", job.ErrorMessage, job.SourceDigest);
+                SetSourceSlideStatus(job.Source, "uncertain", job.ErrorMessage, job.SourceDigest, job.RecipeVersion.StartsWith("ppt-images-fit-", StringComparison.Ordinal));
             }
         }, cancellationToken);
 
@@ -316,10 +341,10 @@ public sealed partial class MediaPreparationService
             job.ErrorMessage = reason;
             if (job.Source.SourceRevision != job.SourceRevision ||
                 !string.Equals(job.Source.ContentDigest, job.SourceDigest, StringComparison.Ordinal)) return;
-            SetSourceSlideStatus(job.Source, sourceStatus, reason, job.SourceDigest);
+            SetSourceSlideStatus(job.Source, sourceStatus, reason, job.SourceDigest, job.RecipeVersion.StartsWith("ppt-images-fit-", StringComparison.Ordinal));
         }, cancellationToken);
 
-    private static void SetSourceSlideStatus(MediaSource source, string status, string error, string sourceDigest)
+    private static void SetSourceSlideStatus(MediaSource source, string status, string error, string sourceDigest, bool fitText = false)
     {
         JsonObject metadata;
         try
@@ -331,7 +356,7 @@ public sealed partial class MediaPreparationService
             // 显式准备请求可以重建损坏的状态清单；只读投影不会改写历史元数据。
             metadata = new JsonObject();
         }
-        metadata["slide_images"] = JsonSerializer.SerializeToNode(new
+        metadata[fitText ? "fitted_slide_images" : "slide_images"] = JsonSerializer.SerializeToNode(new
         {
             status,
             error,
@@ -339,6 +364,6 @@ public sealed partial class MediaPreparationService
             page_count = 0,
         });
         source.MetadataJson = metadata.ToJsonString();
-        source.IsAvailable = false;
+        if (!fitText) source.IsAvailable = false;
     }
 }

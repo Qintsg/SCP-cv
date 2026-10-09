@@ -18,10 +18,8 @@ public sealed class PowerPointSettingsEndpointTests
 
         using var current = await client.GetAsync("/api/settings/powerpoint/");
         using var currentBody = await ReadJsonAsync(current);
-        Assert.Equal(HttpStatusCode.OK, current.StatusCode);
-        var settings = currentBody.RootElement.GetProperty("settings");
-        Assert.False(settings.GetProperty("experimental_enabled").GetBoolean());
-        Assert.False(settings.GetProperty("available").GetBoolean());
+        Assert.Equal(HttpStatusCode.Gone, current.StatusCode);
+        Assert.Equal("powerpoint_retired", currentBody.RootElement.GetProperty("code").GetString());
 
         using var enable = new HttpRequestMessage(HttpMethod.Patch, "/api/settings/powerpoint/")
         {
@@ -30,8 +28,8 @@ public sealed class PowerPointSettingsEndpointTests
         enable.Headers.Add("X-CSRFToken", csrf);
         using var response = await client.SendAsync(enable);
         using var body = await ReadJsonAsync(response);
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
-        Assert.Equal("powerpoint_unavailable", body.RootElement.GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.Gone, response.StatusCode);
+        Assert.Equal("powerpoint_retired", body.RootElement.GetProperty("code").GetString());
     }
 
     private static async Task<string> AuthenticateAsync(HttpClient client)

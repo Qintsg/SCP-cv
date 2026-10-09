@@ -242,11 +242,13 @@ public sealed class ScenarioEndpointTests
     {
         var contextFactory = factory.Services.GetRequiredService<IDbContextFactory<ControlDbContext>>();
         await using var database = await contextFactory.CreateDbContextAsync();
+        var originalPath = Path.Combine(factory.TemporaryRoot, $"scenario-{Guid.NewGuid():N}.pptx");
+        await File.WriteAllBytesAsync(originalPath, "预案原件契约夹具"u8.ToArray());
         var source = new MediaSource
         {
             SourceType = MediaSourceType.Presentation,
             Name = name,
-            Uri = $"{name}.pptx",
+            Uri = originalPath,
             IsAvailable = true,
             ContentDigest = "sha256:scenario-ppt",
             MetadataJson = JsonSerializer.Serialize(new

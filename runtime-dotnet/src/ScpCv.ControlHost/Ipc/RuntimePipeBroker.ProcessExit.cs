@@ -88,10 +88,14 @@ public sealed partial class RuntimePipeBroker
         changed.TrySetResult();
     }
 
-    /// <summary>宿主停止后等待原生观察释放句柄，不把取消误记为运行故障。</summary>
+    /// <summary>等待接受循环、连接分派和原生观察实际收尾；预算取消不提供正常停止证明。</summary>
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
         await base.StopAsync(cancellationToken).ConfigureAwait(false);
+        // BackgroundService的预算取消可能只结束等待，不能据此返回正常停止。
+        cancellationToken.ThrowIfCancellationRequested();
+        if (ExecuteTask is not null) await ExecuteTask.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _connectionHandlers.DrainAsync(cancellationToken).ConfigureAwait(false);
         await Task.WhenAll(_supervisorExitWatches.Values).WaitAsync(cancellationToken).ConfigureAwait(false);
     }
 

@@ -14,6 +14,24 @@ public sealed class PlaybackEndpointTests
     private const string InitialPassword = "Old-password-123";
 
     [Fact]
+    public async Task InvalidControlActionReturnsBadRequestWithoutChangingSessions()
+    {
+        using var factory = new ControlHostApplicationFactory();
+        using var client = factory.CreateHttpsClient();
+        var csrf = await AuthenticateAsync(client);
+        using var before = await client.GetAsync("/api/sessions/");
+        using var beforeJson = await Json(before);
+        using var request = Request(HttpMethod.Post, "/api/playback/1/control/", csrf, new { action = "next" });
+        using var response = await client.SendAsync(request);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        using var body = await Json(response);
+        Assert.Equal("playback_error", body.RootElement.GetProperty("code").GetString());
+        using var after = await client.GetAsync("/api/sessions/");
+        using var afterJson = await Json(after);
+        Assert.Equal(beforeJson.RootElement.GetProperty("sessions").GetRawText(), afterJson.RootElement.GetProperty("sessions").GetRawText());
+    }
+
+    [Fact]
     public async Task RuntimeAndVolumeMutationsPreserveTwoBigScreenPolicyAndResponseShape()
     {
         using var factory = new ControlHostApplicationFactory();
@@ -70,9 +88,9 @@ public sealed class PlaybackEndpointTests
                 .SingleAsync();
             using var args = JsonDocument.Parse(argsJson);
             Assert.Equal("sha256:presentation", args.RootElement.GetProperty("content_digest").GetString());
-            Assert.Equal("slide_images", args.RootElement.GetProperty("presentation_mode").GetString());
-            Assert.Equal(@"C:\cache\presentation-slides", args.RootElement.GetProperty("slide_images_directory").GetString());
-            Assert.Equal(3, args.RootElement.GetProperty("slide_images_page_count").GetInt32());
+            Assert.Equal("libreoffice", args.RootElement.GetProperty("presentation_mode").GetString());
+            Assert.Equal(string.Empty, args.RootElement.GetProperty("slide_images_directory").GetString());
+            Assert.Equal(0, args.RootElement.GetProperty("slide_images_page_count").GetInt32());
         }
 
         using var closeRequest = Request(HttpMethod.Post, "/api/playback/1/close/", csrf, new { });
@@ -176,15 +194,17 @@ public sealed class PlaybackEndpointTests
     {
         var contextFactory = factory.Services.GetRequiredService<IDbContextFactory<ControlDbContext>>();
         await using var database = await contextFactory.CreateDbContextAsync();
+        var originalPath = Path.Combine(factory.TemporaryRoot, "presentation.pptx");
+        await File.WriteAllTextAsync(originalPath, "readonly-fixture");
         var source = new MediaSource
         {
             SourceType = MediaSourceType.Presentation,
             Name = "演示",
-            Uri = "presentation.pptx",
+            Uri = originalPath,
             IsAvailable = true,
             MetadataJson = JsonSerializer.Serialize(new
             {
-                slide_images = new { status = "ready", source_digest = "sha256:presentation", directory = @"C:\cache\presentation-slides", page_count = 3 },
+                slide_images = new { status = "ready", source_digest = "sha256:presentation", source_revision = 0, directory = @"C:\cache\presentation-slides", page_count = 3 },
             }),
             ContentDigest = "sha256:presentation",
             CreatedAt = DateTimeOffset.UtcNow,

@@ -6,6 +6,11 @@ namespace ScpCv.Contracts.Http;
 
 public sealed record PlaybackSessionDto
 {
+    // 仅本次入队响应携带，普通GET/SSE不保留旧提交回执。
+    [JsonPropertyName("submitted_command_id")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public Guid? SubmittedCommandId { get; init; }
+
     [JsonPropertyName("window_id")]
     public int WindowId { get; init; }
 
@@ -55,10 +60,23 @@ public sealed record PlaybackSessionDto
     public int TotalSlides { get; init; }
 
     [JsonPropertyName("position_ms")]
-    public long PositionMs { get; init; }
+    public long? PositionMs { get; init; }
 
     [JsonPropertyName("duration_ms")]
-    public long DurationMs { get; init; }
+    public long? DurationMs { get; init; }
+
+    [JsonPropertyName("actual_source_id")]
+    public long? ActualSourceId { get; init; }
+    [JsonPropertyName("actual_adapter_kind")]
+    public string ActualAdapterKind { get; init; } = string.Empty;
+    [JsonPropertyName("actual_fit_text")]
+    public bool? ActualFitText { get; init; }
+    [JsonPropertyName("desired_generation")]
+    public long DesiredGeneration { get; init; }
+    [JsonPropertyName("observed_generation")]
+    public long ObservedGeneration { get; init; }
+    [JsonPropertyName("cleanup_pending")]
+    public bool CleanupPending { get; init; }
 
     [JsonPropertyName("pending_command")]
     public string PendingCommand { get; init; } = string.Empty;
@@ -171,6 +189,18 @@ public sealed record VideoWallLayoutDto
 
 public sealed record VideoWallLayoutStateDto
 {
+    [JsonPropertyName("applied")]
+    public VideoWallLayoutDto? Applied { get; init; }
+
+    [JsonPropertyName("applied_revision")]
+    public long AppliedRevision { get; init; }
+
+    [JsonPropertyName("dispatch_status")]
+    public string DispatchStatus { get; init; } = "none";
+
+    [JsonPropertyName("dispatch_detail")]
+    public string DispatchDetail { get; init; } = string.Empty;
+
     [JsonPropertyName("draft")]
     public VideoWallLayoutDto? Draft { get; init; }
 

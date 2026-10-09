@@ -50,6 +50,7 @@ public enum PlaybackMode
     PowerPoint,
     Pdf,
     SlideImages,
+    LibreOffice,
 }
 
 #pragma warning disable CA1720 // Single/Double 是现有外部合同中的领域术语。
@@ -62,6 +63,7 @@ public enum BigScreenMode
 {
     Single,
     Double,
+    Custom,
 }
 #pragma warning restore CA1720
 

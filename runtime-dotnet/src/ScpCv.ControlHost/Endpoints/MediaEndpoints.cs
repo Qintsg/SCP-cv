@@ -159,7 +159,9 @@ public static partial class MediaEndpoints
             return ApiEndpointSupport.Error("缺少 file 字段", "missing_file");
         }
 
-        var form = await request.ReadFormAsync(cancellationToken).ConfigureAwait(false);
+        var parsed = await ReadUploadFormAsync(request, cancellationToken).ConfigureAwait(false);
+        if (parsed.Error is not null) return parsed.Error;
+        var form = parsed.Form!;
         var file = form.Files.GetFile("file");
         if (file is null)
         {
@@ -361,12 +363,14 @@ public static partial class MediaEndpoints
     private static async Task<IResult> PptSlideImageAsync(
         long sourceId,
         int page,
+        HttpRequest request,
         MediaSourceService media,
         CancellationToken cancellationToken)
     {
+        if (!PresentationPreviewQuery.TryRead(request, out var fitText)) return PresentationPreviewQuery.Invalid();
         try
         {
-            var file = await media.GetPptSlideImageAsync(sourceId, page, cancellationToken).ConfigureAwait(false);
+            var file = await media.GetPptSlideImageAsync(sourceId, page, fitText, cancellationToken).ConfigureAwait(false);
             return Results.File(file.Path, file.ContentType, enableRangeProcessing: true);
         }
         catch (MediaServiceException exception)
@@ -377,12 +381,20 @@ public static partial class MediaEndpoints
 
     private static async Task<IResult> RetryPptImagesAsync(
         long sourceId,
+        HttpRequest request,
         MediaPreparationService preparation,
         CancellationToken cancellationToken)
     {
         try
         {
-            var source = await preparation.RetryPptImagesAsync(sourceId, cancellationToken).ConfigureAwait(false);
+            var fitText = false;
+            if (request.ContentLength is > 0 || request.Headers.ContainsKey("Transfer-Encoding"))
+            {
+                var body = await ReadBodyAsync(request, cancellationToken).ConfigureAwait(false);
+                if (body.Error is not null) return body.Error;
+                fitText = Boolean(body.Value, "fit_text", false);
+            }
+            var source = await preparation.RetryPptImagesAsync(sourceId, fitText, cancellationToken).ConfigureAwait(false);
             return Results.Ok(new { success = true, source });
         }
         catch (MediaServiceException exception)

@@ -29,18 +29,18 @@ public sealed partial class MediaSourceReadinessEndpointTests
         var listed = Assert.Single(body.RootElement.GetProperty("sources").EnumerateArray());
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.False(listed.GetProperty("is_available").GetBoolean());
-        Assert.Equal("slide_images", listed.GetProperty("playback_mode").GetString());
+        Assert.True(listed.GetProperty("is_available").GetBoolean());
+        Assert.Equal("libreoffice", listed.GetProperty("playback_mode").GetString());
         Assert.Equal(string.Empty, listed.GetProperty("preparation_state").GetString());
         Assert.Equal(0, listed.GetProperty("page_count").GetInt32());
-        Assert.False(MediaSourceService.ToSourceDto(source).IsAvailable);
+        Assert.True(MediaSourceService.ToSourceDto(source).IsAvailable);
         Assert.True(source.IsAvailable);
         using var open = CreateJsonRequest(HttpMethod.Post, "/api/playback/1/open/", csrf,
             new { source_id = source.Id, autoplay = true });
         using var rejected = await client.SendAsync(open);
         using var error = await ReadJsonAsync(rejected);
-        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
-        Assert.Equal("presentation_not_prepared", error.RootElement.GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.OK, rejected.StatusCode);
+        Assert.True(error.RootElement.GetProperty("success").GetBoolean());
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed partial class MediaSourceReadinessEndpointTests
         var queued = retryBody.RootElement.GetProperty("source");
         Assert.True(queued.GetProperty("is_available").GetBoolean());
         Assert.Equal("queued", queued.GetProperty("preparation_state").GetString());
-        Assert.Equal("slide_images", queued.GetProperty("playback_mode").GetString());
+        Assert.Equal("libreoffice", queued.GetProperty("playback_mode").GetString());
         await using var upload = new MemoryStream("new-native-attempt"u8.ToArray());
         var uploaded = await media.AddUploadedAsync(upload, "new.pptx", null, null, null, null, false, false);
         Assert.True(uploaded.IsAvailable);
@@ -92,7 +92,7 @@ public sealed partial class MediaSourceReadinessEndpointTests
         using var accepted = await client.SendAsync(open);
         Assert.Equal(HttpStatusCode.OK, accepted.StatusCode);
         await settings.SetAsync(false);
-        Assert.False((await ReadListedSourceAsync(client, source.Id)).GetProperty("is_available").GetBoolean());
+        Assert.True((await ReadListedSourceAsync(client, source.Id)).GetProperty("is_available").GetBoolean());
     }
 
     [Theory]
@@ -129,7 +129,7 @@ public sealed partial class MediaSourceReadinessEndpointTests
 
         var listed = await ReadListedSourceAsync(client, source.Id);
 
-        Assert.False(listed.GetProperty("is_available").GetBoolean());
+        Assert.True(listed.GetProperty("is_available").GetBoolean());
         Assert.Equal(0, listed.GetProperty("page_count").GetInt32());
         Assert.Equal(expectedState, listed.GetProperty("preparation_state").GetString());
         Assert.Equal(metadata, listed.GetProperty("metadata").GetRawText());
@@ -193,10 +193,10 @@ public sealed partial class MediaSourceReadinessEndpointTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var queued = body.RootElement.GetProperty("source");
-        Assert.False(queued.GetProperty("is_available").GetBoolean());
+        Assert.True(queued.GetProperty("is_available").GetBoolean());
         Assert.Equal("queued", queued.GetProperty("preparation_state").GetString());
         var listed = await ReadListedSourceAsync(client, source.Id);
-        Assert.False(listed.GetProperty("is_available").GetBoolean());
+        Assert.True(listed.GetProperty("is_available").GetBoolean());
         Assert.Equal("queued", listed.GetProperty("preparation_state").GetString());
         using var download = await client.GetAsync($"/api/sources/{source.Id}/download/");
         Assert.Equal(HttpStatusCode.OK, download.StatusCode);
@@ -230,7 +230,7 @@ public sealed partial class MediaSourceReadinessEndpointTests
             stored.MetadataJson = metadata.ToJsonString();
         });
         var damaged = await ReadListedSourceAsync(client, source.Id);
-        Assert.False(damaged.GetProperty("is_available").GetBoolean());
+        Assert.True(damaged.GetProperty("is_available").GetBoolean());
         Assert.Equal(string.Empty, damaged.GetProperty("preparation_state").GetString());
         using var retry = CreateJsonRequest(HttpMethod.Post, $"/api/sources/{source.Id}/prepare/", csrf, new { });
 
@@ -239,7 +239,7 @@ public sealed partial class MediaSourceReadinessEndpointTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("queued", body.RootElement.GetProperty("source").GetProperty("preparation_state").GetString());
-        Assert.False(body.RootElement.GetProperty("source").GetProperty("is_available").GetBoolean());
+        Assert.True(body.RootElement.GetProperty("source").GetProperty("is_available").GetBoolean());
         var next = await preparation.ClaimNextAsync(PreparationJobKind.PptImages);
         Assert.NotNull(next);
         Assert.NotEqual(first.JobId, next.JobId);
@@ -295,19 +295,19 @@ public sealed partial class MediaSourceReadinessEndpointTests
         });
 
         Assert.Throws<PresentationPreparationException>(() =>
-            PresentationPlaybackSelector.Select(source, experimentalEnabled: false));
+            PresentationPlaybackSelector.Select(source, staticImages: true));
         var projected = MediaSourceService.ToSourceDto(source);
-        Assert.False(projected.IsAvailable);
+        Assert.True(projected.IsAvailable);
         Assert.Equal(0, projected.PageCount);
         Assert.Equal(string.Empty, projected.PreparationState);
         Assert.Equal(metadata.Replace("test-digest", source.ContentDigest, StringComparison.Ordinal), source.MetadataJson);
-        Assert.False((await ReadListedSourceAsync(client, source.Id)).GetProperty("is_available").GetBoolean());
+        Assert.True((await ReadListedSourceAsync(client, source.Id)).GetProperty("is_available").GetBoolean());
         using var open = CreateJsonRequest(HttpMethod.Post, "/api/playback/1/open/", csrf,
             new { source_id = source.Id, autoplay = true });
         using var rejected = await client.SendAsync(open);
         using var error = await ReadJsonAsync(rejected);
-        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
-        Assert.Equal("presentation_not_prepared", error.RootElement.GetProperty("code").GetString());
+        Assert.Equal(HttpStatusCode.OK, rejected.StatusCode);
+        Assert.True(error.RootElement.GetProperty("success").GetBoolean());
         Assert.True(MediaSourceService.ToSourceDto(source, experimentalEnabled: true).IsAvailable);
         using var retry = CreateJsonRequest(HttpMethod.Post, $"/api/sources/{source.Id}/prepare/", csrf, new { });
         using var retried = await client.SendAsync(retry);
@@ -333,10 +333,10 @@ public sealed partial class MediaSourceReadinessEndpointTests
         };
 
         Assert.Throws<PresentationPreparationException>(() =>
-            PresentationPlaybackSelector.Select(source, experimentalEnabled: false));
+            PresentationPlaybackSelector.Select(source, staticImages: true));
         Assert.False(MediaSourceService.ToSourceDto(source).IsAvailable);
         Assert.Equal(0, MediaSourceService.ToSourceDto(source).PageCount);
-        Assert.True(MediaSourceService.ToSourceDto(source, experimentalEnabled: true).IsAvailable);
+        Assert.False(MediaSourceService.ToSourceDto(source, experimentalEnabled: true).IsAvailable);
     }
 
     /// <summary>

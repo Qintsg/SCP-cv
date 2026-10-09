@@ -10,6 +10,7 @@ public static class PlaybackEndpoints
 {
     public static IEndpointRouteBuilder MapPlaybackEndpoints(this IEndpointRouteBuilder endpoints)
     {
+        endpoints.MapPlaybackCommandEndpoints();
         var api = endpoints.MapGroup("/api").RequireSessionAndCsrf();
         api.MapGet("/sessions/", GetSessionsAsync);
         api.MapGet("/sessions/{windowId:int}/", GetSessionAsync);
@@ -153,6 +154,8 @@ public static class PlaybackEndpoints
                 Integer64(body, "source_id", Integer64(body, "media_source_id", 0)),
                 Boolean(body, "autoplay", true),
                 Integer(body, "target_slide", 0),
+                String(body, "presentation_mode"),
+                Boolean(body, "fit_text", false),
                 token),
             cancellationToken).ConfigureAwait(false);
 
@@ -175,10 +178,18 @@ public static class PlaybackEndpoints
             return ApiEndpointSupport.Error("缺少 action 字段", "missing_action");
         }
 
-        return await MutateValueAsync(
-            runtime.ControlAsync(windowId, action, cancellationToken),
-            contextFactory,
-            cancellationToken).ConfigureAwait(false);
+        try
+        {
+            // 服务的输入校验可能同步抛出，必须在调用前建立HTTP错误边界。
+            return await MutateValueAsync(
+                runtime.ControlAsync(windowId, action, cancellationToken),
+                contextFactory,
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (PlaybackServiceException exception)
+        {
+            return Error(exception);
+        }
     }
 
     private static async Task<IResult> CloseAsync(

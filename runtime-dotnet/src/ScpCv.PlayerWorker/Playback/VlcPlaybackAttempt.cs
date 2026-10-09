@@ -3,7 +3,7 @@ using LibVLCSharp.Shared;
 
 namespace ScpCv.PlayerWorker.Playback;
 
-public sealed class VlcPlaybackAttempt(long sourceGeneration)
+public sealed class VlcPlaybackAttempt(long sourceGeneration, bool liveInput = false)
 {
     private const int ErrorFlag = 1;
     private const int PlayingFlag = 2;
@@ -11,6 +11,14 @@ public sealed class VlcPlaybackAttempt(long sourceGeneration)
     private int _signals;
     public long SourceGeneration { get; } = sourceGeneration;
     public bool HasError => (Volatile.Read(ref _signals) & ErrorFlag) != 0;
+    public bool IsLiveInput { get; } = liveInput;
+    private readonly VlcLiveInputProgress? _liveProgress = liveInput ? new() : null;
+
+    /// <summary>:param counters: 本尝试的原生累计计数。:param native: 原生状态。:param desired: 已执行意图。:param nowMs: 单调时间。:returns: 不触发重连；缺推进的错误由显式重开创建新尝试。</summary>
+    public void ObserveInputProgress(VlcInputCounters counters, VLCState native, string desired, long nowMs)
+    {
+        if (_liveProgress?.Observe(counters, native, desired, nowMs) == true) RecordError();
+    }
 
     /// <summary>原生回调只记录错误；后来的 Playing/Ended 不清除该证据。</summary>
     public void RecordError() => Interlocked.Or(ref _signals, ErrorFlag);

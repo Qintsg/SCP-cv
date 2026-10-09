@@ -297,9 +297,15 @@
         }
       },
       "scpcv.contracts": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "ScpCv.Presentation.Protocol": "[1.0.0, )"
+        }
       },
       "scpcv.domain": {
+        "type": "Project"
+      },
+      "scpcv.presentation.protocol": {
         "type": "Project"
       },
       "SQLitePCLRaw.lib.e_sqlite3": {

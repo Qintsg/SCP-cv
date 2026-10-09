@@ -29,6 +29,7 @@ public sealed partial class PlayerRuntimeHost
         string uri,
         bool autoplay,
         long generation,
+        bool liveInput,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -43,7 +44,7 @@ public sealed partial class PlayerRuntimeHost
             : new Media(libVlc, uri, FromType.FromLocation);
         player.Media = media;
         _vlcMedia[player] = media;
-        BindVlcAttempt(player, media, generation);
+        BindVlcAttempt(player, media, generation, liveInput);
         var view = new VideoView { MediaPlayer = player };
         if (autoplay && !player.Play())
         {
@@ -104,16 +105,7 @@ public sealed partial class PlayerRuntimeHost
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (_current?.Kind == "powerpoint")
-        {
-            await SendOfficeAsync(lease, "playback", new Dictionary<string, JsonElement>
-            {
-                ["presentation_identity"] = JsonSerializer.SerializeToElement(_officePresentationIdentity),
-                ["action"] = JsonSerializer.SerializeToElement(action),
-            }, cancellationToken);
-            _state = action switch { "play" => "playing", "pause" => "paused", _ => "stopped" };
-            return;
-        }
+        if (_current?.Kind == "libreoffice") throw new InvalidOperationException("LibreOffice统一媒体播放/暂停控制暂不支持");
         if (_current?.Native is not VlcMediaPlayer player)
         {
             _state = action switch { "play" => "playing", "pause" => "paused", _ => "stopped" };

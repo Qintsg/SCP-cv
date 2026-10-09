@@ -1,7 +1,9 @@
+// 视频墙阶段下发及接收诊断；网络写出不等于画面或操作ACK。
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using ScpCv.Domain.Model;
 
 namespace ScpCv.Infrastructure.VideoWall;
 
@@ -31,14 +33,21 @@ public interface IVideoWallController
     /// <summary>按运行态大屏模式（<c>single</c> / <c>double</c>）下发完整控制序列。</summary>
     /// <exception cref="VideoWallException">模式无效，或任一节点在重试后仍未收到控制包时。</exception>
     Task DispatchAsync(string bigScreenMode, CancellationToken cancellationToken = default);
+
+    /// <summary>发送明确布局；未接入该能力的实现必须拒绝，不能静默降级预设。</summary>
+    Task<VideoWallDispatchReceipt> DispatchLayoutAsync(WallLayout layout, CancellationToken cancellationToken = default) =>
+        Task.FromException<VideoWallDispatchReceipt>(new VideoWallException("此控制器不支持通用布局。"));
 }
+
+public sealed record VideoWallDispatchReceipt(bool IsHardware, int PacketCount);
 
 /// <summary>
 /// Simulation 模式的空实现。开发机不在视频墙网段（192.168.5.0/24），真实下发会让每次切换都等满
 /// 50 个节点各自的连接超时后整体失败，所以这里保持“切换成功但不发网络包”。
 /// 仍然构造下发序列，使非法模式在 Simulation 下立即报错，而不是留到现场才暴露。
 /// </summary>
-public sealed class SimulationVideoWallController(ILogger<SimulationVideoWallController>? logger = null)
+public sealed class SimulationVideoWallController(ILogger<SimulationVideoWallController>? logger = null,
+    VideoWallProtocolOptions? protocol = null)
     : IVideoWallController
 {
     private readonly ILogger _logger = (ILogger?)logger ?? NullLogger.Instance;
@@ -47,9 +56,17 @@ public sealed class SimulationVideoWallController(ILogger<SimulationVideoWallCon
 
     public Task DispatchAsync(string bigScreenMode, CancellationToken cancellationToken = default)
     {
-        var sequence = VideoWallSequenceBuilder.Build(bigScreenMode);
+        var sequence = VideoWallLayoutPlanner.Build(VideoWallLayoutPlanner.Preset(bigScreenMode), protocol ?? new());
         VideoWallLog.DispatchSkipped(_logger, bigScreenMode, sequence.Count);
         return Task.CompletedTask;
+    }
+
+    public Task<VideoWallDispatchReceipt> DispatchLayoutAsync(WallLayout layout, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var sequence = VideoWallLayoutPlanner.Build(layout, protocol ?? new());
+        VideoWallLog.DispatchSkipped(_logger, layout.Name, sequence.Count);
+        return Task.FromResult(new VideoWallDispatchReceipt(false, sequence.Count));
     }
 }
 
@@ -85,10 +102,11 @@ public interface IVideoWallTransport
 }
 
 /// <summary>
-/// 真实 TCP 发送。与 Python 版一致：2 秒超时，并开启 TCP_NODELAY——控制帧只有 11~45 字节，
-/// 不关 Nagle 会等不到后续数据才发出，设备端迟迟收不到。
+/// 真实TCP发送：保留2秒连接/写出预算和TCP_NODELAY；本轮帧最长70字节（含可选外层）。
+/// 被动回读单独有界，不将缺少回读视为未写出。
 /// </summary>
-public sealed class TcpVideoWallTransport : IVideoWallTransport
+public sealed class TcpVideoWallTransport(VideoWallObservationStore? observations = null,
+    VideoWallProtocolOptions? protocol = null) : IVideoWallTransport
 {
     /// <summary>单次连接与发送的超时。</summary>
     public static readonly TimeSpan Timeout = TimeSpan.FromSeconds(2);
@@ -104,6 +122,26 @@ public sealed class TcpVideoWallTransport : IVideoWallTransport
             client.NoDelay = true;
             using var stream = client.GetStream();
             await stream.WriteAsync(packet, deadline.Token).ConfigureAwait(false);
+            if (observations is not null)
+            {
+                // 没有窗口查询触发证据，仅短时收集设备主动回读；无回读不能当成发送失败。
+                using var receive = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                receive.CancelAfter(TimeSpan.FromMilliseconds(40));
+                var decoder = new VideoWallReplyDecoder(ip, protocol ?? new());
+                var buffer = new byte[512];
+                try
+                {
+                    for (var read = 0; read < 4; read++)
+                    {
+                        var count = await stream.ReadAsync(buffer, receive.Token).ConfigureAwait(false);
+                        if (count == 0) break;
+                        foreach (var reply in decoder.Feed(buffer[..count])) observations.Record(reply);
+                    }
+                }
+                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { }
+                catch (IOException) { /* 设备主动断开不抹掉已经写出的控制帧。 */ }
+                catch (VideoWallException) { /* 畸形诊断帧不作为布局确认。 */ }
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -127,17 +165,19 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
     private readonly IVideoWallTransport _transport;
     private readonly VideoWallDispatchOptions _options;
     private readonly ILogger _logger;
+    private readonly VideoWallProtocolOptions _protocol;
     private readonly SemaphoreSlim _gate = new(1, 1);
 
     public TcpVideoWallController(
         IVideoWallTransport transport,
         VideoWallDispatchOptions? options = null,
-        ILogger<TcpVideoWallController>? logger = null)
+        ILogger<TcpVideoWallController>? logger = null,
+        VideoWallProtocolOptions? protocol = null)
     {
         _transport = transport;
         _options = options ?? new VideoWallDispatchOptions();
-        // 下发日志是现场唯一的“墙面到底动没动”线索（节点不回读状态），缺省实现保证直接 new 的
-        // 调用方与测试不必构造日志设施。
+        _protocol = protocol ?? new();
+        // 日志记录发送，不宣称当前尚未建立关联的设备回读已证明实际画面。
         _logger = (ILogger?)logger ?? NullLogger.Instance;
     }
 
@@ -147,7 +187,20 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
 
     public async Task DispatchAsync(string bigScreenMode, CancellationToken cancellationToken = default)
     {
-        var sequence = VideoWallSequenceBuilder.Build(bigScreenMode);
+        var mode = bigScreenMode.Trim().ToLowerInvariant();
+        var sequence = VideoWallLayoutPlanner.Build(VideoWallLayoutPlanner.Preset(mode), _protocol);
+        await DispatchPlanAsync(sequence, mode, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<VideoWallDispatchReceipt> DispatchLayoutAsync(WallLayout layout, CancellationToken cancellationToken = default)
+    {
+        var sequence = VideoWallLayoutPlanner.Build(layout, _protocol);
+        await DispatchPlanAsync(sequence, layout.Name, cancellationToken).ConfigureAwait(false);
+        return new(true, sequence.Count);
+    }
+
+    private async Task DispatchPlanAsync(IReadOnlyList<VideoWallSendItem> sequence, string bigScreenMode, CancellationToken cancellationToken)
+    {
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
@@ -205,11 +258,21 @@ public sealed class TcpVideoWallController : IVideoWallController, IDisposable
     {
         var parallelLimit = Math.Max(1, Math.Min(_options.MaxParallelSends, items.Count));
         using var throttle = new SemaphoreSlim(parallelLimit, parallelLimit);
-        var sends = items
-            .Select(item => SendWithRetryAsync(item, throttle, cancellationToken))
+        var sends = items.GroupBy(item => (item.Ip, item.Port))
+            .Select(SendNodeAsync)
             .ToArray();
         var results = await Task.WhenAll(sends).ConfigureAwait(false);
         return results.Where(result => result is not null).Select(result => result!).ToList();
+
+        async Task<string?> SendNodeAsync(IGrouping<(string Ip, int Port), VideoWallSendItem> node)
+        {
+            foreach (var item in node)
+            {
+                var failure = await SendWithRetryAsync(item, throttle, cancellationToken).ConfigureAwait(false);
+                if (failure is not null) return failure;
+            }
+            return null;
+        }
     }
 
     private async Task<string?> SendWithRetryAsync(

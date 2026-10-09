@@ -1,3 +1,4 @@
+// OpenAPI路径与实际路由/认证响应核对；测试参数必须满足公开路径类型。
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -114,7 +115,8 @@ public sealed partial class OpenApiCoverageTests
     private static string NormalizePath(string endpointPath) =>
         Parameter().Replace(endpointPath.StartsWith("/api/", StringComparison.Ordinal) ? endpointPath[4..] : endpointPath, "{}");
 
-    private static string MaterializePath(string path) => Parameter().Replace(path, "1");
+    private static string MaterializePath(string path) => Parameter().Replace(path, parameter =>
+        parameter.Value == "{command_id}" ? "bf71fb1b-c3ea-44ea-a479-25478c0b59b3" : "1");
     private static string KeyText(OperationKey key) => $"{key.Method} {key.Path}";
 
     [GeneratedRegex("^  (?<path>/[^:]+):$")]

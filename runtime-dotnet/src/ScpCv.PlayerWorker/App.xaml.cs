@@ -14,7 +14,13 @@ public partial class App : System.Windows.Application, IAsyncDisposable
     private PlayerRuntimeHost? _runtime;
     private bool _closeReady;
     private int _closing;
-    private int _disposed;
+    private PlayerApplicationExit? _exit;
+
+    // Closing和运行组退出必须走同一真实接线点；测试只替换最外部的进程终止动作。
+    private PlayerApplicationExit ExitCoordinator => _exit ??= new(
+        () => DisposeAsync().AsTask(),
+        error => Console.Error.WriteLine($"播放器协作退出失败：{error}"),
+        exitCode => Dispatcher.InvokeAsync(() => { _closeReady = true; Shutdown(exitCode); }).Task);
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -58,29 +64,12 @@ public partial class App : System.Windows.Application, IAsyncDisposable
         base.OnExit(e);
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-        _stop?.Cancel();
-        if (_session is not null) await _session.DisposeAsync();
-        if (_runtime is not null) await _runtime.DisposeAsync();
-        _stop?.Dispose();
-        _stop = null;
-        GC.SuppressFinalize(this);
-    }
-
     private async void ClosePlayerAsync(object? sender, CancelEventArgs args)
     {
         if (_closeReady || _runtime is null) return;
         args.Cancel = true;
         if (Interlocked.Exchange(ref _closing, 1) != 0) return;
-        try { await DisposeAsync(); }
-        catch (Exception exception) { Console.Error.WriteLine($"播放器协作退出失败：{exception.Message}"); }
-        finally
-        {
-            _closeReady = true;
-            if (sender is Window window) window.Close();
-        }
+        await ExitCoordinator.RequestAsync();
     }
 
     private async Task RunRuntimeAsync(
@@ -93,16 +82,13 @@ public partial class App : System.Windows.Application, IAsyncDisposable
         {
             await RuntimeStartGate.WaitAsync(startGate, cancellationToken: cancellationToken);
             await session.RunAsync(runtime.ExecuteAsync, runtime.SampleProgressAsync, cancellationToken);
-            await DisposeAsync();
-            await Dispatcher.InvokeAsync(() => Shutdown());
+            await ExitCoordinator.RequestAsync();
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
         catch (Exception exception)
         {
             Console.Error.WriteLine($"PlayerWorker 运行时故障：{exception}");
-            try { await DisposeAsync(); }
-            catch (Exception cleanupException) { Console.Error.WriteLine($"故障退出清理失败：{cleanupException.Message}"); }
-            finally { await Dispatcher.InvokeAsync(() => Shutdown(1)); }
+            await ExitCoordinator.RequestAsync(1);
         }
     }
 

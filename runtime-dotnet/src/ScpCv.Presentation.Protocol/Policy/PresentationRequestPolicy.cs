@@ -7,6 +7,7 @@
  */
 using System;
 using System.Globalization;
+using System.IO;
 using System.Text.RegularExpressions;
 
 namespace ScpCv.Presentation.Protocol;
@@ -26,7 +27,7 @@ public sealed class PresentationDecision
 
 public static class PresentationRequestPolicy
 {
-    public const int ProtocolVersion = 1;
+    public const int ProtocolVersion = 3;
     public const int MaximumSlides = 500;
     private const string TimestampPattern = @"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|[+-]\d{2}:\d{2})$";
 
@@ -114,9 +115,8 @@ public static class PresentationRequestPolicy
     private static PresentationDecision ValidateArguments(PresentationRequest request)
     {
         var opensFile = request.Operation == "open" || request.Operation == "export_slides";
-        if (opensFile && (!LocalPath(request.SourcePath) ||
-            !(request.SourcePath.EndsWith(".pptx", StringComparison.OrdinalIgnoreCase) ||
-              request.SourcePath.EndsWith(".ppt", StringComparison.OrdinalIgnoreCase)))) return Reject("invalid_source_path");
+        if (request.FitText && !opensFile) return Reject("unexpected_text_layout");
+        if (opensFile && (!LocalPath(request.SourcePath) || !PresentationSource(request.SourcePath))) return Reject("invalid_source_path");
         if (!opensFile && request.SourcePath != string.Empty) return Reject("unexpected_source_path");
         if (request.Operation == "export_slides")
         {
@@ -150,6 +150,10 @@ public static class PresentationRequestPolicy
         else if (request.Muted != null) return Reject("unexpected_mute");
         return Accept();
     }
+
+    /// <summary>:param path: 已验证本地路径。:returns: 与既有非PDF文稿登记格式对齐；不授予宏/密码/外链能力。</summary>
+    private static bool PresentationSource(string path) => Path.GetExtension(path).ToLowerInvariant() is
+        ".ppt" or ".pps" or ".pot" or ".pptx" or ".pptm" or ".ppsx" or ".ppsm" or ".potx" or ".potm" or ".odp";
 
     /// <summary>
     /// 检查本机绝对 Windows 路径，根目录白名单与实际文件摘要仍由宿主验证。
@@ -208,7 +212,7 @@ public static class PresentationRequestPolicy
     /// <summary>
     /// 检查有限动作集合。
     /// :param operation: 动作名。
-    /// :returns: 协议 v1 是否识别。
+    /// :returns: 当前协议版本是否识别。
     /// </summary>
     private static bool KnownOperation(string operation) => operation == "open" || operation == "close" ||
         operation == "next_slide" || operation == "previous_slide" || operation == "goto" ||

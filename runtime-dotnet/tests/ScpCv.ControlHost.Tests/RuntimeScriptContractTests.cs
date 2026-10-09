@@ -84,6 +84,7 @@ public sealed class RuntimeScriptContractTests
         var actionArgument = action is null ? string.Empty : $" -Action '{action}'";
         var command = $$"""
             $ErrorActionPreference = 'Stop'
+            [Console]::Error.WriteLine('contract_phase: entered')
             [Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
             function Test-Path { throw 'contract_side_effect: Test-Path' }
             function Start-Process { throw 'contract_side_effect: Start-Process' }
@@ -94,7 +95,9 @@ public sealed class RuntimeScriptContractTests
             $scriptPath = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('{{pathBase64}}'))
             $tokens = $null
             $errors = $null
+            [Console]::Error.WriteLine('contract_phase: before_parse')
             [Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$tokens, [ref]$errors) | Out-Null
+            [Console]::Error.WriteLine('contract_phase: after_parse')
             if ($errors.Count -gt 0) { [Console]::Error.WriteLine($errors[0].Message); exit 2 }
             try {
                 & $scriptPath -RuntimeRoot 'C:\scp-cv-contract-nonexistent' -MediaMtxPath 'contract-unused'{{actionArgument}}
@@ -132,12 +135,12 @@ public sealed class RuntimeScriptContractTests
         {
             await process.WaitForExitAsync(timeout.Token);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException exception)
         {
             // 仅终止本测试持有的隔离 PowerShell，绝不按名称查杀运行组。
             process.Kill(entireProcessTree: true);
             await process.WaitForExitAsync();
-            throw;
+            throw new TimeoutException($"隔离脚本超时；PID={process.Id}；stdout={await output}；stderr={await error}", exception);
         }
 
         await output;

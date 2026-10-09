@@ -1,3 +1,4 @@
+// Worker双工管道：对端断开可能与发送/Flush并发，统一为传输错误而非本地对象生命周期错误。
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.IO.Pipes;
@@ -121,6 +122,11 @@ public sealed class RuntimePipeClient(string pipeName) : IAsyncDisposable
             {
                 await WriteFrameAsync(stream, JsonSerializer.SerializeToUtf8Bytes(request), cancellationToken)
                     .ConfigureAwait(false);
+            }
+            catch (ObjectDisposedException exception)
+            {
+                // reader在对端断开后会释放同一流；不能漏过既有IOException重连/幂等结果路径。
+                throw new IOException("Named Pipe 在发送期间已关闭。", exception);
             }
             finally
             {

@@ -22,10 +22,8 @@ public sealed partial class RuntimePipeBroker(
     IRuntimeProcessExitObserver? processExitObserver = null) : BackgroundService, ICommandWakeNotifier, IRuntimeReadinessGate, IRuntimeShutdownNotifier
 {
     private static readonly string[] RequiredRuntimeRoles =
-        ["player-1", "player-2", "audio", "office"];
+        ["player-1", "player-2", "audio"];
     private readonly ConcurrentDictionary<string, RuntimeConnection> _connections = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<Guid, OfficePendingRequest> _officePending = new();
-    private readonly ConcurrentDictionary<Guid, OfficeCachedResult> _officeResults = new();
     private readonly Dictionary<string, ReadyWorker> _readyWorkers = new(StringComparer.Ordinal);
     private readonly PresentationCoordinator _presentations = presentations ?? new PresentationCoordinator();
     private readonly object _readinessSync = new();
@@ -95,7 +93,7 @@ public sealed partial class RuntimePipeBroker(
                 continue;
             }
 
-            _ = HandleConnectionAsync(stream, stoppingToken);
+            _connectionHandlers.Run(() => HandleConnectionAsync(stream, stoppingToken));
         }
     }
 
@@ -118,8 +116,9 @@ public sealed partial class RuntimePipeBroker(
         }
         catch (Exception exception) when (exception is IOException or ObjectDisposedException)
         {
-            _connections.TryRemove(new KeyValuePair<string, RuntimeConnection>(key, connection));
-            RemoveReady(connection.Identity.Role, connection.Identity.InstanceId);
+            // 失败只请求退休；旧分派仍在展开时不能提前移除slot，让新hello绕过drain。
+            connection.RequestRetirement();
+            RemoveReady(connection);
         }
     }
 
@@ -164,13 +163,8 @@ public sealed partial class RuntimePipeBroker(
                 _presentations.FenceHost(ownerEpoch);
             }
 
-            connection = new RuntimeConnection(stream, identity, target, ownerEpoch, group.GroupEpoch);
-            if (_connections.TryGetValue(identity.Role, out var old))
-            {
-                RemoveReady(old.Identity.Role, old.Identity.InstanceId);
-                await old.DisposeAsync().ConfigureAwait(false);
-            }
-            _connections[identity.Role] = connection;
+            connection = new RuntimeConnection(stream, identity, target, ownerEpoch, group.GroupEpoch, stoppingToken);
+            await InstallConnectionAsync(connection, stoppingToken).ConfigureAwait(false);
             ObserveSupervisorExit(connection, group.State, stoppingToken);
             var welcome = Response(helloFrame, "welcome", new WelcomeDto
             {
@@ -183,13 +177,14 @@ public sealed partial class RuntimePipeBroker(
 
             while (!stoppingToken.IsCancellationRequested && stream.IsConnected)
             {
-                var frame = await ReadFrameAsync(stream, IpcProtocol.FrameReadTimeout, stoppingToken).ConfigureAwait(false);
+                var frame = await ReadFrameAsync(stream, IpcProtocol.FrameReadTimeout, connection.Lifetime).ConfigureAwait(false);
                 // 同一 Worker 执行长 Office 子操作时仍须能发送 LeaseRenew。
                 // 单 reader 只拆帧；处理和响应可并发，实际写入由 RuntimeConnection 串行化。
-                _ = DispatchAndRespondAsync(connection, frame, stoppingToken);
+                connection.Dispatch(() => DispatchAndRespondAsync(connection, frame, connection.Lifetime));
             }
         }
-        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested) { }
+        catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested || connection?.IsRetiring == true) { }
+        catch (ObjectDisposedException) when (connection?.IsRetiring == true) { }
         catch (EndOfStreamException) { }
         catch (TimeoutException exception)
         {
@@ -203,14 +198,14 @@ public sealed partial class RuntimePipeBroker(
         {
             if (connection is not null)
             {
-                _connections.TryRemove(new KeyValuePair<string, RuntimeConnection>(connection.Identity.Role, connection));
-                RemoveReady(connection.Identity.Role, connection.Identity.InstanceId);
-                await connection.DisposeAsync().ConfigureAwait(false);
+                // owner自己完成退休；外部重连只等待该终态，不能在这里等待自己Dispose的reader。
+                await connection.CompleteRetirementAsync(() =>
+                {
+                    _connections.TryRemove(new KeyValuePair<string, RuntimeConnection>(connection.Identity.Role, connection));
+                    RemoveReady(connection);
+                }).ConfigureAwait(false);
             }
-            else
-            {
-                await stream.DisposeAsync().ConfigureAwait(false);
-            }
+            else await stream.DisposeAsync().ConfigureAwait(false);
         }
     }
 
@@ -375,14 +370,16 @@ public sealed partial class RuntimePipeBroker(
         TaskCompletionSource changed;
         lock (_readinessSync)
         {
+            if (!_connections.TryGetValue(connection.Identity.Role, out var active) || !ReferenceEquals(active, connection)) return;
             if (ready)
             {
                 _readyWorkers[connection.Identity.Role] = new ReadyWorker(
                     connection.Identity.InstanceId,
-                    connection.GroupEpoch);
+                    connection.GroupEpoch,
+                    connection);
             }
             else if (_readyWorkers.TryGetValue(connection.Identity.Role, out var existing) &&
-                     existing.InstanceId == connection.Identity.InstanceId)
+                     ReferenceEquals(existing.Connection, connection))
             {
                 _readyWorkers.Remove(connection.Identity.Role);
             }
@@ -390,21 +387,6 @@ public sealed partial class RuntimePipeBroker(
             _readinessChanged = NewReadinessSignal();
         }
         changed.TrySetResult();
-    }
-
-    private void RemoveReady(string role, Guid instanceId)
-    {
-        TaskCompletionSource? changed = null;
-        lock (_readinessSync)
-        {
-            if (_readyWorkers.TryGetValue(role, out var existing) && existing.InstanceId == instanceId)
-            {
-                _readyWorkers.Remove(role);
-                changed = _readinessChanged;
-                _readinessChanged = NewReadinessSignal();
-            }
-        }
-        changed?.TrySetResult();
     }
 
     private static TaskCompletionSource NewReadinessSignal() =>
@@ -451,7 +433,7 @@ public sealed partial class RuntimePipeBroker(
     [LoggerMessage(EventId = 2206, Level = LogLevel.Warning, Message = "Runtime IPC 消息 {messageId} 的派发失败")]
     private static partial void LogDispatchFailed(ILogger logger, Guid messageId, Exception exception);
 
-    private sealed record ReadyWorker(Guid InstanceId, long GroupEpoch);
+    private sealed record ReadyWorker(Guid InstanceId, long GroupEpoch, RuntimeConnection Connection);
 }
 
 public sealed record RuntimeReadinessResult(bool Ready, IReadOnlyList<string> MissingRoles);

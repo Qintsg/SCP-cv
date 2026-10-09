@@ -17,12 +17,14 @@ public sealed partial class ScenarioService(
     CommandCoordinator commands,
     TimeProvider? timeProvider = null,
     IVideoWallController? videoWall = null,
-    ISystemAudioController? systemAudio = null)
+    ISystemAudioController? systemAudio = null,
+    VideoWallOperationGate? wallGate = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
     private readonly IVideoWallController _videoWall = videoWall ?? new SimulationVideoWallController();
     private readonly ISystemAudioController _systemAudio = systemAudio ?? new SimulationSystemAudioController();
+    private readonly VideoWallOperationGate _wallGate = wallGate ?? new();
 
     public async Task<IReadOnlyList<ScenarioDto>> ListAsync(CancellationToken cancellationToken = default)
     {
@@ -162,8 +164,9 @@ public sealed partial class ScenarioService(
 
                 scenario.Name = ValidateName(name);
                 scenario.Description = description.Trim();
-                scenario.BigScreenModeState = ScenarioValueState.Set;
-                scenario.BigScreenMode = runtime.BigScreenMode;
+                // 旧预案合同只承载两个预设，手动布局快照不静默变为错误的单/双屏。
+                scenario.BigScreenModeState = runtime.BigScreenMode == BigScreenMode.Custom ? ScenarioValueState.Unset : ScenarioValueState.Set;
+                scenario.BigScreenMode = runtime.BigScreenMode == BigScreenMode.Custom ? BigScreenMode.Single : runtime.BigScreenMode;
                 scenario.VolumeState = ScenarioValueState.Set;
                 scenario.VolumeLevel = runtime.VolumeLevel;
                 scenario.TargetsJson = JsonSerializer.Serialize(targets);
@@ -195,9 +198,6 @@ public sealed partial class ScenarioService(
         var presentationBySource = new Dictionary<long, PresentationSelection>();
         await using (var preflight = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false))
         {
-            var experimental = await preflight.RuntimeStates.AsNoTracking()
-                .Select(state => state.ExperimentalPowerPointEnabled)
-                .SingleAsync(cancellationToken).ConfigureAwait(false);
             foreach (var target in targets.Where(target => target.SourceState == "set"))
             {
                 if (target.SourceId is not > 0)
@@ -206,7 +206,12 @@ public sealed partial class ScenarioService(
                     .SingleOrDefaultAsync(item => item.Id == target.SourceId.Value, cancellationToken)
                     .ConfigureAwait(false) ?? throw new ScenarioServiceException($"媒体源 id={target.SourceId.Value} 不存在");
                 if (source.SourceType != MediaSourceType.Presentation) continue;
-                try { presentationBySource[source.Id] = PresentationPlaybackSelector.Select(source, experimental); }
+                try
+                {
+                    presentationBySource[source.Id] = PresentationPlaybackSelector.Select(source, false);
+                    if (presentationBySource[source.Id].Mode == PlaybackMode.LibreOffice && !File.Exists(source.Uri))
+                        throw new PresentationPreparationException("演示文稿原件不存在");
+                }
                 catch (PresentationPreparationException exception)
                 {
                     throw new ScenarioServiceException(exception.Message, code: "presentation_not_prepared");
@@ -261,6 +266,7 @@ public sealed partial class ScenarioService(
                         source_id = sourceId,
                         source_type = SourceTypeName(source.SourceType),
                         uri = source.Uri,
+                        content_digest = source.ContentDigest,
                         autoplay = target.Autoplay,
                         target_slide = 0,
                         presentation_mode = presentationBySource.TryGetValue(sourceId, out var presentation)
@@ -268,7 +274,7 @@ public sealed partial class ScenarioService(
                             {
                                 PlaybackMode.Pdf => "pdf",
                                 PlaybackMode.SlideImages => "slide_images",
-                                PlaybackMode.PowerPoint => "powerpoint",
+                                PlaybackMode.LibreOffice => "libreoffice",
                                 _ => string.Empty,
                             }
                             : string.Empty,

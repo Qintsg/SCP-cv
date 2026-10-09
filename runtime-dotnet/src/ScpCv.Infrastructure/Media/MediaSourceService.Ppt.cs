@@ -1,3 +1,4 @@
+// 文稿预览按明确布局选择制品，备注/媒体资源保持既有DTO语义。
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
@@ -11,43 +12,37 @@ public sealed partial class MediaSourceService
     public async Task<MediaFileResult> GetPptSlideImageAsync(
         long sourceId,
         int page,
+        CancellationToken cancellationToken = default) =>
+        await GetPptSlideImageAsync(sourceId, page, false, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>:param sourceId: 文稿标识。:param page: 页码。:param fitText: 布局。:param cancellationToken: 取消令牌。:returns: 所选布局的PNG。</summary>
+    public async Task<MediaFileResult> GetPptSlideImageAsync(
+        long sourceId,
+        int page,
+        bool fitText,
         CancellationToken cancellationToken = default)
     {
         var source = await GetSourceAsync(sourceId, cancellationToken).ConfigureAwait(false);
         if (source.SourceType != MediaSourceType.Presentation)
             throw new MediaServiceException("只有演示文稿源支持逐页图片。", isNotFound: true);
-        JsonElement images;
-        try
-        {
-            using var metadata = JsonDocument.Parse(source.MetadataJson);
-            if (!metadata.RootElement.TryGetProperty("slide_images", out var parsed) ||
-                parsed.ValueKind != JsonValueKind.Object ||
-                !parsed.TryGetProperty("status", out var status) || status.GetString() != "ready" ||
-                !parsed.TryGetProperty("source_digest", out var digest) ||
-                digest.GetString() != source.ContentDigest ||
-                !parsed.TryGetProperty("page_count", out var pages) || pages.ValueKind != JsonValueKind.Number ||
-                !parsed.TryGetProperty("directory", out var location) || location.ValueKind != JsonValueKind.String)
-                throw new MediaServiceException("演示文稿逐页图片尚未准备完成。", isNotFound: true);
-            images = parsed.Clone();
-        }
-        catch (JsonException)
-        {
-            throw new MediaServiceException("演示文稿逐页图片元数据无效。", isNotFound: true);
-        }
-        var pageCount = images.GetProperty("page_count").GetInt32();
-        if (page < 1 || page > pageCount)
+        var artifact = PresentationPreviewArtifact.TrySelect(source, PreviewArtifactRoot, fitText)
+            ?? throw new MediaServiceException("所选文字布局的演示文稿逐页图片尚未准备完成。", isNotFound: true);
+        if (page < 1 || page > artifact.PageCount)
             throw new MediaServiceException($"演示文稿第 {page} 页不存在。", isNotFound: true);
-        var directory = Path.GetFullPath(images.GetProperty("directory").GetString() ?? string.Empty);
-        var artifactRoot = Path.Combine(controlDbFactory.Layout.RootPath, "cache", "artifacts");
-        if (!IsWithinRoot(directory, artifactRoot))
-            throw new MediaServiceException("页图目录超出受管理制品范围。");
-        var file = Path.Combine(directory, $"page-{page:0000}.png");
+        var file = artifact.PagePath(page);
         if (!File.Exists(file)) throw new MediaServiceException("页图文件已缺失。", isNotFound: true);
         return new MediaFileResult(file, "image/png", Path.GetFileName(file), Download: false);
     }
 
     public async Task<IReadOnlyList<PptResourceDto>> GetPptResourcesAsync(
         long sourceId,
+        CancellationToken cancellationToken = default) =>
+        await GetPptResourcesAsync(sourceId, false, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>:param sourceId: 文稿标识。:param fitText: 布局。:param cancellationToken: 取消令牌。:returns: 所选布局的预览及原有备注/媒体。</summary>
+    public async Task<IReadOnlyList<PptResourceDto>> GetPptResourcesAsync(
+        long sourceId,
+        bool fitText,
         CancellationToken cancellationToken = default)
     {
         await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
@@ -55,13 +50,28 @@ public sealed partial class MediaSourceService
             .Where(resource => resource.SourceId == sourceId)
             .OrderBy(resource => resource.PageIndex)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
-        if (!await database.MediaSources.AnyAsync(source => source.Id == sourceId, cancellationToken).ConfigureAwait(false))
+        var source = await database.MediaSources.AsNoTracking()
+            .SingleOrDefaultAsync(item => item.Id == sourceId, cancellationToken).ConfigureAwait(false)
+            ?? throw new MediaServiceException($"媒体源 id={sourceId} 不存在", isNotFound: true);
+        var artifact = PresentationPreviewArtifact.TrySelect(source, PreviewArtifactRoot, fitText);
+        if (artifact is null) return resources.Select(resource =>
+            ToPptResourceDto(resource, null) with { SlideImage = string.Empty, NextSlideImage = string.Empty }).ToArray();
+        var byPage = resources.ToDictionary(resource => resource.PageIndex);
+        return Enumerable.Range(1, artifact.PageCount).Select(page =>
         {
-            throw new MediaServiceException($"媒体源 id={sourceId} 不存在", isNotFound: true);
-        }
-
-        return resources.Select((resource, index) => ToPptResourceDto(resource, resources.ElementAtOrDefault(index + 1))).ToArray();
+            var resource = byPage.GetValueOrDefault(page) ?? new PptResource
+            {
+                SourceId = sourceId, PageIndex = page, CreatedAt = source.CreatedAt,
+            };
+            return ToPptResourceDto(resource, null) with
+            {
+                SlideImage = PresentationPreviewArtifact.PageUrl(sourceId, page, fitText),
+                NextSlideImage = page < artifact.PageCount ? PresentationPreviewArtifact.PageUrl(sourceId, page + 1, fitText) : string.Empty,
+            };
+        }).ToArray();
     }
+
+    private string PreviewArtifactRoot => Path.Combine(controlDbFactory.Layout.RootPath, "cache", "artifacts");
 
     public async Task<IReadOnlyList<PptResourceDto>> ReplacePptResourcesAsync(
         long sourceId,

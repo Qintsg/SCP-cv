@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="ScpCv.PlayerWorker" />
+    <InternalsVisibleTo Include="ScpCv.Contracts.Tests" />
+    <InternalsVisibleTo Include="ScpCv.ControlHost" />
+    <Compile Include="../../shared/PresentationProcessJob.cs" Link="Presentations/PresentationProcessJob.cs" />
+    <Compile Include="../../shared/PresentationPackageMetadata.cs" Link="Presentations/PresentationPackageMetadata.cs" />
+    <ProjectReference Include="../ScpCv.Presentation.Protocol/ScpCv.Presentation.Protocol.csproj" />
+  </ItemGroup>
+
 </Project>

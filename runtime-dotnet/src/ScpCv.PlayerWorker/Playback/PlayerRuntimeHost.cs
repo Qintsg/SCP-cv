@@ -40,9 +40,6 @@ public sealed partial class PlayerRuntimeHost(
     private bool _loopEnabled;
     private int _currentSlide;
     private int _totalSlides;
-    private long _officePresentationIdentity;
-    private long _officeHostEpoch;
-    private long _officeSlotEpoch;
     private int _disposed;
     private static readonly TimeSpan WebViewStageTimeout = TimeSpan.FromSeconds(15);
 
@@ -51,76 +48,55 @@ public sealed partial class PlayerRuntimeHost(
         CancellationToken cancellationToken) =>
         _window.Dispatcher.InvokeAsync(() => ExecuteCoreAsync(lease, cancellationToken)).Task.Unwrap();
 
-    public async ValueTask DisposeAsync()
-    {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
-        if (_window.Dispatcher.CheckAccess())
-        {
-            await DisposeCoreAsync();
-        }
-        else
-        {
-            await _window.Dispatcher.InvokeAsync(DisposeCoreAsync).Task.Unwrap();
-        }
-        GC.SuppressFinalize(this);
-    }
-
-    private async Task DisposeCoreAsync()
-    {
-        await _mediaGate.WaitAsync();
-        try
-        {
-            var resources = _warmWebResources.Values.Append(_current).OfType<SurfaceResource>().Distinct().ToArray();
-            _window.SetSurface(new Grid { Background = WpfBrushes.Black });
-            _current = null;
-            foreach (var resource in resources) await resource.DisposeAsync();
-            _warmWebResources.Clear();
-            DisposeVlcInstance();
-        }
-        finally
-        {
-            _mediaGate.Release();
-            _mediaGate.Dispose();
-        }
-    }
-
     private async Task<WorkerExecutionResult> ExecuteCoreAsync(
         CommandLeaseDto lease,
         CancellationToken cancellationToken)
     {
+        // 退出已开始的新命令不能排在原生关闭后；取得gate后仍须再次核验竞态。
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         await _mediaGate.WaitAsync(cancellationToken);
         try
         {
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             var command = lease.Command.Trim().ToUpperInvariant();
+            var resultCode = "ok";
+            if (_unconfirmedCandidates.Count > 0 && command is not ("CLOSE" or "RESET_PPT"))
+                throw new ScpCv.Contracts.Presentations.PresentationTransportException("候选资源清理未确认，普通播放命令已隔离。",
+                    new InvalidOperationException("unconfirmed_presentation_candidate"));
+            if (_current?.Kind == "libreoffice" && command is "PLAY" or "PAUSE" or "STOP" or "SEEK" or "SET_VOLUME" or "SET_MUTE" or "SET_LOOP" or "PPT_MEDIA")
+                throw new InvalidOperationException("LibreOffice当前未支持统一媒体控制");
             switch (command)
             {
-                case "OPEN": await OpenAsync(lease, cancellationToken); break;
+                case "OPEN":
+                    if (await OpenAsync(lease, cancellationToken) is { } openFailure) return openFailure;
+                    break;
                 case "CLOSE":
                 case "RESET_PPT": await CloseAsync(lease, cancellationToken); break;
                 case "PLAY": await CurrentControlAsync(lease, "play", cancellationToken); break;
                 case "PAUSE": await CurrentControlAsync(lease, "pause", cancellationToken); break;
                 case "STOP": await CurrentControlAsync(lease, "stop", cancellationToken); break;
                 case "SEEK": await SeekAsync(Long(lease.Args, "position_ms"), cancellationToken); break;
-                case "NEXT": await NavigateAsync(lease, _currentSlide + 1, cancellationToken); break;
-                case "PREV": await NavigateAsync(lease, Math.Max(1, _currentSlide - 1), cancellationToken); break;
+                case "NEXT": resultCode = await NavigateRelativeAsync(lease, true, cancellationToken); break;
+                case "PREV": resultCode = await NavigateRelativeAsync(lease, false, cancellationToken); break;
                 case "GOTO": await NavigateAsync(lease, Int(lease.Args, "target_index", 1), cancellationToken); break;
+                case "NEXT_EFFECT":
+                case "PREVIOUS_EFFECT": resultCode = await StepLibreOfficeAsync(lease, cancellationToken); break;
                 case "SET_VOLUME": SetVolume(Int(lease.Args, "volume", 100)); break;
                 case "SET_MUTE": SetMute(Bool(lease.Args, "muted", false)); break;
                 case "SET_LOOP": SetLoop(Bool(lease.Args, "enabled", false)); break;
                 case "SELECT_DISPLAY": SelectDisplay(String(lease.Args, "target_label")); break;
                 case "SHOW_ID": ShowWindowId(); break;
-                case "PPT_MEDIA": await ControlPptMediaAsync(lease, cancellationToken); break;
+                case "PPT_MEDIA": throw new InvalidOperationException("统一文稿媒体控制未支持；PowerPoint入口已退役。");
                 default: throw new InvalidOperationException($"PlayerWorker 不支持命令 {lease.Command}。");
             }
 
             _generation = Math.Max(_generation, lease.SourceGeneration);
-            return new WorkerExecutionResult("completed", "ok", Snapshot());
+            return new WorkerExecutionResult("completed", resultCode, Snapshot());
         }
         finally { _mediaGate.Release(); }
     }
 
-    private async Task OpenAsync(CommandLeaseDto lease, CancellationToken cancellationToken)
+    private async Task<WorkerExecutionResult?> OpenAsync(CommandLeaseDto lease, CancellationToken cancellationToken)
     {
         var sourceId = Long(lease.Args, "source_id");
         var uri = String(lease.Args, "uri");
@@ -136,11 +112,7 @@ public sealed partial class PlayerRuntimeHost(
                 throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
             _generation = lease.SourceGeneration;
             _errorMessage = string.Empty;
-            return;
-        }
-        if (_current?.Kind == "powerpoint" && _officePresentationIdentity != 0)
-        {
-            await ClosePowerPointAsync(lease, "switch-close", cancellationToken);
+            return null;
         }
         SurfaceResource next;
         switch (sourceType)
@@ -151,7 +123,8 @@ public sealed partial class PlayerRuntimeHost(
             case "audio":
             case "custom_stream":
             case "rtsp":
-            case "srt": next = await OpenVlcAsync(uri, autoplay, lease.SourceGeneration, cancellationToken); break;
+            case "srt": next = await OpenVlcAsync(uri, autoplay, lease.SourceGeneration,
+                sourceType is "rtsp" or "srt" or "custom_stream", cancellationToken); break;
             case "ppt" when Path.GetExtension(LocalPath(uri)).Equals(".pdf", StringComparison.OrdinalIgnoreCase):
                 next = await OpenPdfAsync(uri, Int(lease.Args, "target_slide", 1), cancellationToken);
                 break;
@@ -160,14 +133,26 @@ public sealed partial class PlayerRuntimeHost(
                     String(lease.Args, "slide_images_directory"),
                     Int(lease.Args, "target_slide", 1), cancellationToken);
                 break;
-            case "ppt" when String(lease.Args, "presentation_mode") == "powerpoint":
-                next = await OpenPowerPointAsync(lease, uri, cancellationToken);
+            case "ppt" when String(lease.Args, "presentation_mode") == "libreoffice":
+                next = await OpenLibreOfficeAsync(lease, uri, cancellationToken);
                 break;
-            case "ppt": throw new InvalidOperationException("PPT 页图尚未准备完成，且原生 PowerPoint 放映未启用。");
+            case "ppt": throw new InvalidOperationException("演示文稿模式无效；请选择LibreOffice或已准备的静态制品。");
             default: throw new InvalidOperationException($"不支持媒体类型 {sourceType}。");
         }
 
         var previous = _current;
+        if (previous?.Kind == "libreoffice")
+        {
+            try { await previous.DisposeAsync(); }
+            catch (Exception retirement)
+            {
+                await DiscardCandidateAfterRetirementFailureAsync(next, retirement);
+                throw;
+            }
+        }
+        if (await ActivateCandidateAsync(lease, previous, next) is { } activationFailure) return activationFailure;
+        // 布局属于成功发布的资源，不让失败OPEN的意图覆盖旧画面的实际布局。
+        next.ActualFitText = sourceType == "ppt" ? Bool(lease.Args, "fit_text", false) : null;
         _current = next;
         _sourceId = sourceId;
         _sourceRevision = lease.SourceRevision;
@@ -179,20 +164,27 @@ public sealed partial class PlayerRuntimeHost(
             _currentSlide = pdf.CurrentPage;
             _totalSlides = pdf.PageCount;
         }
+        else if (next.Native is ScpCv.PlayerWorker.Presentations.IPresentationSurface native)
+        {
+            _currentSlide = native.CurrentSlide;
+            _totalSlides = native.TotalSlides;
+        }
         else if (next.Native is SlideImagePlaybackAdapter slides)
         {
             _currentSlide = slides.CurrentPage;
             _totalSlides = slides.PageCount;
         }
-        else if (next.Kind != "powerpoint")
+        else if (next.Kind != "libreoffice")
         {
             _currentSlide = 0;
             _totalSlides = 0;
         }
-        _state = autoplay ? next.Kind == "vlc" ? "loading" : "playing" : "paused";
+        // 统一媒体暂停未支持：不可将已运行的LibreOffice虚报为paused。
+        _state = next.Kind == "libreoffice" ? "playing" : autoplay ? next.Kind == "vlc" ? "loading" : "playing" : "paused";
         _window.SetSurface(next.Surface);
-        if (previous is not null && !ReferenceEquals(previous, next) && previous.Kind != "web")
+        if (previous is not null && !ReferenceEquals(previous, next) && previous.Kind is not ("web" or "libreoffice"))
             await previous.DisposeAsync();
+        return null;
     }
 
     private static async Task<SurfaceResource> OpenImageAsync(string uri, CancellationToken cancellationToken)
@@ -336,16 +328,13 @@ public sealed partial class PlayerRuntimeHost(
 
     private async Task NavigateAsync(CommandLeaseDto? lease, int page, CancellationToken cancellationToken)
     {
-        if (_current?.Kind == "powerpoint")
+        if (_current is null) throw new InvalidOperationException("没有实际播放资源，不能执行翻页。");
+        if (_current?.Native is ScpCv.PlayerWorker.Presentations.IPresentationSurface native)
         {
-            if (lease is null) throw new InvalidOperationException("PowerPoint 导航缺少命令租约。");
-            var result = await SendOfficeAsync(lease, "navigate", new Dictionary<string, JsonElement>
-            {
-                ["presentation_identity"] = JsonSerializer.SerializeToElement(_officePresentationIdentity),
-                ["action"] = JsonSerializer.SerializeToElement(lease.Command.Trim().ToLowerInvariant()),
-                ["target_slide"] = JsonSerializer.SerializeToElement(page),
-            }, cancellationToken);
-            _currentSlide = Int(result.Result, "current_slide", page);
+            if (lease is null) throw new InvalidOperationException("LibreOffice翻页缺少命令租约");
+            await native.ControlAsync(lease, "goto", Math.Clamp(page, 1, native.TotalSlides), cancellationToken);
+            _currentSlide = native.CurrentSlide;
+            _totalSlides = native.TotalSlides;
             return;
         }
         if (_current?.Native is not PdfPlaybackAdapter && _current?.Native is not SlideImagePlaybackAdapter) return;
@@ -373,14 +362,12 @@ public sealed partial class PlayerRuntimeHost(
     private async Task CloseAsync(CommandLeaseDto lease, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (_current?.Kind == "powerpoint" && _officePresentationIdentity != 0)
-        {
-            await ClosePowerPointAsync(lease, "close", cancellationToken);
-        }
+        await CloseUnconfirmedCandidatesAsync();
         var previous = _current;
+        if (previous?.Kind == "libreoffice") await previous.DisposeAsync();
         _current = null;
         _window.SetSurface(new Grid { Background = WpfBrushes.Black });
-        if (previous is not null && previous.Kind != "web") await previous.DisposeAsync();
+        if (previous is not null && previous.Kind is not ("web" or "libreoffice")) await previous.DisposeAsync();
         _sourceId = 0;
         _sourceRevision = 0;
         _sourceUri = string.Empty;
@@ -456,6 +443,7 @@ public sealed partial class PlayerRuntimeHost(
         public string Kind { get; } = kind;
         public FrameworkElement Surface { get; } = surface;
         public object? Native { get; } = native;
+        public bool? ActualFitText { get; set; }
         public bool IsHealthy => health?.Invoke() ?? true;
         public ValueTask DisposeAsync() => dispose();
     }

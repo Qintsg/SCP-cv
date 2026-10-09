@@ -13,7 +13,7 @@
   Worker 认领命令，本脚本会直接判定测量无效。
 
   -Mode HotSwitch 必须显式提供至少两个不同的 -SourceIds 和 -RawSamplesPath；默认100次，
-  串行在窗口1/2间轮询，每个窗口前后异源。只在当前会话健康且实验性PowerPoint关闭时测量。
+  串行在窗口1/2间轮询，每个窗口前后异源。只在当前会话健康且默认引擎为LibreOffice时测量。
   HTTP受理不等于完成：必须核对唯一OPEN、完成摘要、Worker身份、代次及实际源；首错停止。
   延迟为命令创建至控制完成（非画面验收），实体稳定帧仍须另外截图或采样。
   不启动/停机、不改系统音量或墙面；结束保留最后媒体，调用者负责恢复测试前状态。
@@ -166,8 +166,8 @@ function Invoke-HotSwitchBenchmark {
     <# :returns: 每次唯一OPEN的完成、身份和代次证据；首错停止继续发令并留下CSV。 #>
     $hostState = Invoke-RestMethod -Uri ($BaseUrl.TrimEnd('/') + '/') -WebSession $session -Headers $headers
     if ($hostState.safety_mode -ne 'hardware') { throw '热切换必须连接Hardware模式，Simulation不是实机证据。' }
-    $settings = Invoke-RestMethod -Uri "$BaseUrl/api/settings/powerpoint/" -WebSession $session -Headers $headers
-    if ($settings.settings.experimental_enabled -ne $false) { throw '健康热切换要求明确关闭实验性PowerPoint；脚本不会自行修改设置。' }
+    $settings = Invoke-RestMethod -Uri "$BaseUrl/api/settings/presentation/" -WebSession $session -Headers $headers
+    if ($settings.settings.default_engine -ne 'libreoffice') { throw '健康热切换要求使用当前LibreOffice引擎合同；脚本不会自行修改设置。' }
     $rows = [Collections.Generic.List[object]]::new()
     for ($index = 1; $index -le $Samples; $index++) {
         $windowId = $targetList[($index - 1) % $targetList.Count]

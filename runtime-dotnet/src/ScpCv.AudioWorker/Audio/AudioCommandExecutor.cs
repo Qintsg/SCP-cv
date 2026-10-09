@@ -21,9 +21,11 @@ public interface IAudioPlaybackAdapter
     Task SeekAsync(long positionMs, CancellationToken cancellationToken = default);
 }
 
-public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio, TimeSpan? playbackReadyTimeout = null)
+public sealed partial class AudioCommandExecutor(IAudioPlaybackAdapter audio, TimeSpan? playbackReadyTimeout = null)
 {
     private readonly TimeSpan _playbackReadyTimeout = playbackReadyTimeout ?? TimeSpan.FromSeconds(5);
+    private long _observedGeneration;
+    private long _observedSourceId;
 
     public async Task<WorkerExecutionResult> ExecuteAsync(
         CommandLeaseDto lease,
@@ -33,6 +35,8 @@ public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio, TimeSpan? 
         switch (lease.Command.Trim().ToUpperInvariant())
         {
             case "OPEN":
+                _observedGeneration = 0;
+                _observedSourceId = 0;
                 await audio.OpenAsync(
                     Long(lease.Args, "source_id"),
                     String(lease.Args, "uri"),
@@ -66,20 +70,9 @@ public sealed class AudioCommandExecutor(IAudioPlaybackAdapter audio, TimeSpan? 
             default: throw new InvalidOperationException($"AudioWorker 不支持命令 {lease.Command}。");
         }
 
-        return new WorkerExecutionResult(
-            "completed",
-            "ok",
-            JsonSerializer.SerializeToElement(new
-            {
-                source_generation = lease.SourceGeneration,
-                source_id = audio.SourceId == 0 ? (long?)null : audio.SourceId,
-                playback_state = audio.PlaybackState,
-                position_ms = audio.PositionMs,
-                duration_ms = audio.DurationMs,
-                volume = audio.Volume,
-                muted = audio.IsMuted,
-                loop_enabled = audio.LoopEnabled,
-            }));
+        _observedGeneration = lease.SourceGeneration;
+        _observedSourceId = audio.SourceId;
+        return new WorkerExecutionResult("completed", "ok", Snapshot(lease.SourceGeneration));
     }
 
     private async Task WaitForPlaybackStateAsync(string expectedState, CancellationToken cancellationToken)

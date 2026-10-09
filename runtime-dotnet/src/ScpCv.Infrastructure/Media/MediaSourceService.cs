@@ -17,6 +17,7 @@ public sealed partial class MediaSourceService(
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly string _mediaRoot = Path.GetFullPath(Path.Combine(controlDbFactory.Layout.RootPath, "media"));
+    private readonly string _artifactRoot = Path.GetFullPath(Path.Combine(controlDbFactory.Layout.RootPath, "cache", "artifacts"));
     private readonly MediaPathResolver _paths = new(Path.Combine(controlDbFactory.Layout.RootPath, "media"));
     private readonly string[] _allowedRoots = BuildAllowedRoots(controlDbFactory, storageOptions);
 
@@ -41,12 +42,7 @@ public sealed partial class MediaSourceService(
         }
 
         var sources = await query.OrderBy(source => source.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
-        var experimental = sources.Any(source => source.SourceType == MediaSourceType.Presentation &&
-                                                  !Path.GetExtension(source.Uri).Equals(".pdf", StringComparison.OrdinalIgnoreCase)) &&
-                           await database.RuntimeStates.AsNoTracking()
-                               .Select(state => state.ExperimentalPowerPointEnabled)
-                               .SingleAsync(cancellationToken).ConfigureAwait(false);
-        return sources.Select(source => ToSourceDto(source, experimental)).ToArray();
+        return sources.Select(ProjectManagedSource).ToArray();
     }
 
     public async Task<MediaSourceDto> AddLocalAsync(
@@ -130,21 +126,7 @@ public sealed partial class MediaSourceService(
                 var managed = ManagedFileOrNull(source.UploadedFile);
                 if (managed is not null)
                 {
-                    var activeDisplay = await database.PlaybackSessions.AnyAsync(session =>
-                        session.WindowId <= WindowId.Maximum && session.MediaSourceId == sourceId &&
-                        (session.PendingCommand != string.Empty ||
-                         session.PlaybackState == PlaybackState.Loading ||
-                         session.PlaybackState == PlaybackState.Playing ||
-                         session.PlaybackState == PlaybackState.Paused), token).ConfigureAwait(false);
-                    var activeAudio = await database.BackgroundAudioStates.AnyAsync(audio =>
-                        audio.CurrentSourceId == sourceId &&
-                        (audio.PlaybackState == PlaybackState.Loading ||
-                         audio.PlaybackState == PlaybackState.Playing ||
-                         audio.PlaybackState == PlaybackState.Paused), token).ConfigureAwait(false);
-                    var converting = await database.MediaPreparationJobs.AnyAsync(job =>
-                        job.SourceId == sourceId && job.Status == OperationStatus.Running, token).ConfigureAwait(false);
-                    if (activeDisplay || activeAudio || converting)
-                        throw new MediaServiceException("媒体源正在播放或转换中，停止后才能移动原件。");
+                    await EnsureSourcesIdleAsync(database, [sourceId], token).ConfigureAwait(false);
                     if (!File.Exists(managed)) throw new MediaServiceException("受管理媒体原件不存在，不能移动。");
 
                     var folders = await database.MediaFolders.AsNoTracking().ToListAsync(token).ConfigureAwait(false);

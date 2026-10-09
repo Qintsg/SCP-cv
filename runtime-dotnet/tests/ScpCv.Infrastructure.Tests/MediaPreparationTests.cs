@@ -23,7 +23,7 @@ public sealed class MediaPreparationTests
             var uploaded = await media.AddUploadedAsync(
                 upload, "deck.pptx", null, "deck", null, null, false, false);
 
-            Assert.False(uploaded.IsAvailable);
+            Assert.True(uploaded.IsAvailable);
             Assert.Equal("queued", uploaded.PreparationState);
             await using var initial = factory.CreateDbContext();
             var source = await initial.MediaSources.SingleAsync(item => item.Id == uploaded.Id);

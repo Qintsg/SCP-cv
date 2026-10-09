@@ -47,7 +47,7 @@ public sealed class HardwareControlHostStartupTests
 
         try
         {
-            using var client = new HttpClient { BaseAddress = baseAddress };
+            using var client = new HttpClient(new HttpClientHandler { UseProxy = false }) { BaseAddress = baseAddress };
             using var deadline = new CancellationTokenSource(ReadyTimeout);
             Exception? lastError = null;
             while (!deadline.IsCancellationRequested)

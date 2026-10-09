@@ -31,7 +31,7 @@ public sealed partial class MediaSourceReadinessEndpointTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var queued = body.RootElement.GetProperty("source");
         Assert.Equal("queued", queued.GetProperty("preparation_state").GetString());
-        Assert.False(queued.GetProperty("is_available").GetBoolean());
+        Assert.True(queued.GetProperty("is_available").GetBoolean());
         Assert.Equal(source.Uri, queued.GetProperty("uri").GetString());
         Assert.Equal(source.ContentDigest,
             queued.GetProperty("metadata").GetProperty("slide_images").GetProperty("source_digest").GetString());

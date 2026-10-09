@@ -9,12 +9,21 @@ namespace ScpCv.Infrastructure.Playback;
 
 public sealed partial class RuntimeStateService
 {
+    /// <summary>:param windowId: 输出窗口。:param sourceId: 原件。:param autoplay: 默认播放。:param targetSlide: 初始页。:param cancellationToken: 寿命。:returns: 默认LibreOffice打开。</summary>
+    public Task<IReadOnlyList<PlaybackSessionDto>> OpenSourceAsync(int windowId, long sourceId, bool autoplay, int targetSlide, CancellationToken cancellationToken = default) =>
+        OpenSourceAsync(windowId, sourceId, autoplay, targetSlide, null, cancellationToken);
+
     public Task<IReadOnlyList<PlaybackSessionDto>> OpenSourceAsync(
         int windowId,
         long sourceId,
         bool autoplay,
         int targetSlide,
+        string? presentationMode,
         CancellationToken cancellationToken = default)
+        => OpenSourceAsync(windowId, sourceId, autoplay, targetSlide, presentationMode, false, cancellationToken);
+
+    public Task<IReadOnlyList<PlaybackSessionDto>> OpenSourceAsync(int windowId, long sourceId, bool autoplay,
+        int targetSlide, string? presentationMode, bool fitText, CancellationToken cancellationToken = default)
     {
         ValidateWindow(windowId);
         if (sourceId <= 0)
@@ -27,14 +36,15 @@ public sealed partial class RuntimeStateService
             PresentationSelection? presentation = null;
             if (source.SourceType == MediaSourceType.Presentation)
             {
-                var experimental = await database.RuntimeStates.AsNoTracking()
-                    .Select(state => state.ExperimentalPowerPointEnabled)
-                    .SingleAsync(token).ConfigureAwait(false);
-                try { presentation = PresentationPlaybackSelector.Select(source, experimental); }
+                if (presentationMode is not (null or "" or "libreoffice" or "slide_images" or "pdf"))
+                    throw new PlaybackServiceException("演示文稿模式无效", "invalid_presentation_mode");
+                try { presentation = PresentationPlaybackSelector.Select(source, presentationMode, fitText); }
                 catch (PresentationPreparationException exception)
                 {
                     throw new PlaybackServiceException(exception.Message, "presentation_not_prepared");
                 }
+                if (presentation.Mode == PlaybackMode.LibreOffice && !File.Exists(source.Uri))
+                    throw new PlaybackServiceException("演示文稿原件不存在", "presentation_not_prepared");
             }
 
             session.MediaSourceId = source.Id;
@@ -48,7 +58,7 @@ public sealed partial class RuntimeStateService
             {
                 source_id = source.Id,
                 source_type = SourceTypeName(source.SourceType),
-                uri = source.Uri,
+                uri = string.IsNullOrEmpty(presentation?.PlaybackUri) ? source.Uri : presentation.PlaybackUri,
                 content_digest = source.ContentDigest,
                 autoplay,
                 loop = session.LoopEnabled,
@@ -58,8 +68,11 @@ public sealed partial class RuntimeStateService
                     PlaybackMode.Pdf => "pdf",
                     PlaybackMode.SlideImages => "slide_images",
                     PlaybackMode.PowerPoint => "powerpoint",
+                    PlaybackMode.LibreOffice => "libreoffice",
                     _ => string.Empty,
                 },
+                // 原始PDF没有文字适配导入步骤，不把未执行的请求选项报告为实际布局。
+                fit_text = fitText && presentation is not null && !source.Uri.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase),
                 slide_images_directory = presentation?.SlidesDirectory ?? string.Empty,
                 slide_images_page_count = presentation?.PageCount ?? 0,
                 fallback_uri = string.Empty,

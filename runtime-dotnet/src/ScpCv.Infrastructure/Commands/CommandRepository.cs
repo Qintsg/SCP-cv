@@ -87,7 +87,8 @@ public sealed class CommandRepository(
                 {
                     await projection(context, record, token).ConfigureAwait(false);
                 }
-
+                await RefreshPendingProjectionAsync(context, record.TargetKind, record.TargetId, token)
+                    .ConfigureAwait(false);
                 return record;
             },
             cancellationToken);
@@ -143,6 +144,8 @@ public sealed class CommandRepository(
                 command.LeaseExpiresAt = now.Add(request.LeaseDuration);
                 command.AttemptCount++;
                 command.StartedAt ??= now;
+                await RefreshPendingProjectionAsync(context, command.TargetKind, command.TargetId, token)
+                    .ConfigureAwait(false);
                 return command;
             },
             cancellationToken);
@@ -237,14 +240,20 @@ public sealed class CommandRepository(
         int targetId,
         CancellationToken cancellationToken)
     {
-        var next = await context.CommandRecords
+        var unfinished = await context.CommandRecords
             .Where(candidate =>
                 candidate.TargetKind == targetKind &&
                 candidate.TargetId == targetId &&
-                candidate.Status == CommandStatus.Pending)
+                (candidate.Status == CommandStatus.Pending || candidate.Status == CommandStatus.Processing))
             .OrderBy(candidate => candidate.TargetSequence)
-            .FirstOrDefaultAsync(cancellationToken)
+            .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+        // 事务尚未SaveChanges；合并新入队实体，并按tracked当前状态排除SQL仍读到的旧终态。
+        var next = unfinished.Concat(context.CommandRecords.Local)
+            .Where(candidate => candidate.TargetKind == targetKind && candidate.TargetId == targetId &&
+                candidate.Status is CommandStatus.Pending or CommandStatus.Processing)
+            .OrderBy(candidate => candidate.TargetSequence)
+            .FirstOrDefault();
         if (targetKind == CommandTargetKind.Display)
         {
             var session = await context.PlaybackSessions.SingleAsync(

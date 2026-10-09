@@ -1,0 +1,29 @@
+<!-- 官方Framework UNO独立宿主；不将原生代理加载进.NET10。 -->
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <AutomaticallyUseReferenceAssemblyPackages>false</AutomaticallyUseReferenceAssemblyPackages>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../shared/PresentationProcessJob.cs" Link="Runtime/PresentationProcessJob.cs" />
+    <Compile Include="../../shared/PresentationPackageMetadata.cs" Link="Uno/PresentationPackageMetadata.cs" />
+    <ProjectReference Include="../ScpCv.Presentation.Protocol/ScpCv.Presentation.Protocol.csproj" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Net.Http" />
+    <UnoReference Include="$(windir)/Microsoft.NET/assembly/GAC_MSIL/cli_basetypes/**/cli_basetypes.dll" />
+    <UnoReference Include="$(windir)/Microsoft.NET/assembly/GAC_MSIL/cli_ure/**/cli_ure.dll" />
+    <UnoReference Include="$(windir)/Microsoft.NET/assembly/GAC_MSIL/cli_uretypes/**/cli_uretypes.dll" />
+    <UnoReference Include="$(windir)/Microsoft.NET/assembly/GAC_MSIL/cli_oootypes/**/cli_oootypes.dll" />
+    <UnoReference Include="$(windir)/Microsoft.NET/assembly/GAC_64/cli_cppuhelper/**/cli_cppuhelper.dll" />
+    <Reference Include="@(UnoReference)"><Private>false</Private></Reference>
+  </ItemGroup>
+  <Target Name="RequireOfficialUno" BeforeTargets="ResolveReferences">
+    <Error Condition="'@(UnoReference)' == ''" Text="未找到LibreOffice官方CLI/GAC绑定；请安装带.NET互操作组件的LibreOffice。" />
+  </Target>
+</Project>

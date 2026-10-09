@@ -69,6 +69,14 @@ public static class PresentationResultPolicy
             return string.Equals(previousResultFingerprint, response.ResultFingerprint, StringComparison.OrdinalIgnoreCase)
                 ? new PresentationResultDecision(true, "duplicate", duplicate: true) : Reject("result_conflict");
         }
+        if (response.Status == "noop")
+        {
+            // 无播放动作仍须独立匹配请求和实际文稿；不能借此授予其它操作或省略当前画面身份。
+            if (request.Operation != "next_effect" && request.Operation != "next_slide") return Reject("invalid_no_op_operation");
+            var boundary = response.Observation!;
+            if (boundary.SourceId != request.Scope.SourceId) return Reject("observation_source_fenced");
+            return new PresentationResultDecision(true, "no_op_confirmed", applyObservation: true);
+        }
         if (response.Status != "succeeded") return new PresentationResultDecision(true,
             response.Status == "accepted" ? "accepted_only" : response.Status);
         if (request.Operation == "shutdown")
@@ -114,7 +122,7 @@ public static class PresentationResultPolicy
             response.ErrorCode.Length > 128 || response.ErrorDetail == null || response.ErrorDetail.Length > 4096)
             return new PresentationDecision(false, "invalid_response_detail");
         if (response.Status != "accepted" && response.Status != "succeeded" && response.Status != "failed" &&
-            response.Status != "unsupported" && response.Status != "uncertain") return new PresentationDecision(false, "invalid_response_status");
+            response.Status != "unsupported" && response.Status != "uncertain" && response.Status != "noop") return new PresentationDecision(false, "invalid_response_status");
         if (response.Status == "succeeded" && response.ErrorCode.Length != 0)
             return new PresentationDecision(false, "contradictory_success");
         var observed = response.Observation;
@@ -123,6 +131,11 @@ public static class PresentationResultPolicy
             observed.SourceId <= 0 || observed.PositionMs < 0 || observed.DurationMs < 0 || observed.ArtifactDigest == null ||
             (observed.ArtifactDigest.Length != 0 && !PresentationRequestPolicy.IsDigest(observed.ArtifactDigest))))
             return new PresentationDecision(false, "invalid_observation");
+        // 隐藏页/自定义放映的实际末页可能不等于count-1；终端事实由自有宿主确认，纯合同不猜动画状态。
+        if (response.Status == "noop" && (response.ErrorCode != "presentation_at_last_slide" || observed == null ||
+            !observed.Confirmed || observed.SourceId != scope.SourceId || observed.DocumentClosed || observed.EngineExited ||
+            observed.CurrentSlide < 1 || observed.TotalSlides < 1 || observed.ArtifactDigest.Length != 0))
+            return new PresentationDecision(false, "invalid_no_op_boundary");
         return new PresentationDecision(true, "ok");
     }
 

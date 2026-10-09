@@ -1,3 +1,4 @@
+// Windows PDF按页渲染与相邻缓存；命中缓存也在同一门禁更新当前页。
 using System.Collections.Concurrent;
 using System.IO;
 using Windows.Data.Pdf;
@@ -44,12 +45,15 @@ public sealed class PdfPlaybackAdapter : IAsyncDisposable
     public async Task<byte[]> RenderPageAsync(int pageNumber, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-        if (_renderedPages.TryGetValue(pageNumber, out var cached)) return cached;
-
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ValidatePage(pageNumber);
+            if (_renderedPages.TryGetValue(pageNumber, out var cached))
+            {
+                CurrentPage = pageNumber;
+                return cached;
+            }
             var bytes = await RenderCoreAsync(pageNumber, cancellationToken).ConfigureAwait(false);
             _renderedPages[pageNumber] = bytes;
             CurrentPage = pageNumber;
