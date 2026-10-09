@@ -1,0 +1,32 @@
+parameters:
+  - $ref: ../components/parameters/WindowId.yaml
+  - in: path
+    name: command_id
+    required: true
+    description: 本次入队响应的 submitted_command_id，不使用全局最新命令
+    schema:
+      type: string
+      format: uuid
+get:
+  tags: [playback]
+  summary: 查询指定窗口的一条持久命令
+  operationId: getPlaybackCommand
+  description: 仅只读，不下发或重放。pending/processing不是动作完成；completed的presentation_at_last_slide为宿主确认的末页无操作，不是动画结束的通用证明。不泄露args、claim_token或本机路径。
+  responses:
+    '200':
+      description: 精确命令的当前持久状态
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [success, command]
+            properties:
+              success:
+                type: boolean
+                enum: [true]
+              command:
+                $ref: ../components/schemas/PlaybackCommandSnapshot.yaml
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '404':
+      $ref: ../components/responses/ErrorResponse.yaml

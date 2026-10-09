@@ -11,7 +11,7 @@ post:
           $ref: ../components/schemas/BackgroundAudioControlRequest.yaml
   responses:
     '200':
-      description: 控制指令已写入后台播放器状态
+      description: 指令已持久入队；seek保持当前源/代次，position_ms仍为最后实际观测，不把目标当完成结果。实际定位由后续GET/SSE报告。
       content:
         application/json:
           schema:

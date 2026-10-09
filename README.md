@@ -20,9 +20,9 @@ Vue 3 + Tailwind CSS 4 + Pinia + Vite（Web / Electron / Capacitor）
                          │ REST / SSE
 ASP.NET Core ControlHost（SQLite + EF Core + 持久命令队列）
                          │ Named Pipe
-Windows Supervisor ─┬─ PlayerWorker × 2（WPF / VLC / WebView2 / PDF / PPT 页图）
+Windows Supervisor ─┬─ PlayerWorker × 2（WPF / VLC / WebView2 / PDF / LibreOffice）
                     ├─ AudioWorker
-                    ├─ PowerPointHost（唯一 STA / COM 槽）
+                    │  └─ LibreOfficeHost（每窗独立，按需创建）
                     └─ MediaMTX
 ```
 
@@ -34,7 +34,8 @@ ControlHost 是业务数据库的唯一写入者。控制端只访问 REST/SSE�
 - [.NET SDK 10.0.400](global.json)
 - Node.js 22 或更高版本
 - pnpm 11（仓库 `packageManager` 字段固定版本；不要使用 npm 安装依赖）
-- Microsoft PowerPoint（仅 PPT 上传转换需要；原生放映为设置中的实验性选项）
+- LibreOffice Windows x64（包含官方.NET互操作/GAC组件；本机验证26.8.0.3）
+- .NET Framework 4.8运行时与开发targeting pack（官方UNO侧车使用）
 - VLC/libVLC Windows x64 运行时
 - MediaMTX Windows x64
 
@@ -57,7 +58,12 @@ pnpm --prefix frontend install
 
 - `tools/third_party/mediamtx/mediamtx.exe`
 - `tools/third_party/vlc/runtime/`，或系统安装的 `C:\Program Files\VideoLAN\VLC`
-- 当前 Windows 用户可自动化调用的 Microsoft PowerPoint
+- `C:\Program Files\LibreOffice\program`，或`SCP_CV_LIBREOFFICE_PROGRAM`指定的官方安装目录
+
+PPT/PPTX默认LibreOffice只读动态放映；上传由独立转换实例准备图片和只含图片的静态PDF。
+PowerPoint设置/播放/转换入口已退役。文字适配默认关闭，开启只改变内存布局，不修改原件。
+统一媒体暂停、恢复、定位和窗口音量/静音暂不支持，不以放映暂停标志假报能力。
+详细配置、回退与验证边界见[LibreOffice文稿运行指南](docs/libreoffice-playback.md)。
 
 ## 开发运行
 
@@ -120,7 +126,7 @@ py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
 pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 ```
 
-本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、两块大屏/Office/VLC/MediaMTX/音频长稳测试和性能基准需要专用工作站，不能用 Simulation 结果替代。未知协议的手动墙面映射只能保存与预览，不能向实体节点下发；仅“窗口 1 全屏”和“窗口 1 左、窗口 2 右”两个已知预设可执行。
+本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、两块大屏/Office/VLC/MediaMTX/音频长稳测试和性能基准需要专用工作站，不能用 Simulation 结果替代。大屏现支持窗口1/2/输入IP81的12种全屏和左右组合及单侧映射，保留两个旧预设；已发送不等于出画，未登记IP仍禁止下发。配置、协议及现场边界见[大屏映射指南](docs/video-wall-mapping.md)。
 
 当前 D4 两窗实测、修复前后对照及未完成门禁见 [006 验证记录](specs/006-d4-live-convergence/verification.md)。短时出画或 1000 普通命令通过不等于 60 分钟混合长稳已完成。
 
@@ -139,6 +145,7 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 - [.NET 重构规范](specs/003-dotnet-runtime-refactor/spec.md)
 - [视频墙控制规范](specs/004-video-wall-control/spec.md)
 - [大屏专用与媒体整理规范](specs/005-big-screen-only/spec.md)
+- [三输入大屏组合与协议接入规范](specs/009-wall-input-mapping/spec.md)
 - [D4 两窗实机收敛规范](specs/006-d4-live-convergence/spec.md)
 - [变更记录](docs/CHANGELOG.md)
 

@@ -10,6 +10,17 @@ get:
   tags: [sources]
   summary: 读取已准备的 PPT 指定页 PNG，需当前会话
   operationId: getPptSlideImage
+  description: >-
+    按对应布局的同源摘要、修订、页数和受管理制品读取PNG，不借其它布局或历史页资源地址。
+    缺所选制品、过期或不完整时明确不可用，不表示原件不能动态打开。
+  parameters:
+    - in: query
+      name: fit_text
+      required: false
+      description: 仅接受单值 true/false，缺省 false；重复或其它值返回400。
+      schema:
+        type: boolean
+        default: false
   responses:
     '200':
       description: 逐页 PNG 文件流
@@ -19,4 +30,6 @@ get:
             type: string
             format: binary
     '404':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '400':
       $ref: ../components/responses/ErrorResponse.yaml

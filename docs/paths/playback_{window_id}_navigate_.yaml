@@ -13,7 +13,7 @@ post:
           $ref: ../components/schemas/NavigateContentRequest.yaml
   responses:
     '200':
-      description: 操作成功
+      description: 导航意图已受理；目标会话携带submitted_command_id。非播放器实际动作、过渡或动画完成证明，实际终态须查询该命令。
       content:
         application/json:
           schema:

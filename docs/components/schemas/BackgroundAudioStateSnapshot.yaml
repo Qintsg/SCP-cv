@@ -56,20 +56,21 @@ properties:
     type: boolean
   loop_enabled:
     type: boolean
-    description: 是否在自然播放到列表末尾后回到首项
+    description: 是否在自然播放到列表末尾后回到首项；false时末曲自然结束后保留末曲并停止，中间曲仍推进下一首。不是单曲循环。
   pending_command:
     type: string
-    description: 播放器进程尚未消费的后台指令；空字符串表示无指令
+    description: 音频队列按序最早未终结的指令，包含Pending和Processing；空字符串表示无未终结命令，不证明音频实际播放完成。
     enum:
       - ''
-      - open
-      - play
-      - pause
-      - stop
-      - seek
-      - set_loop
-      - set_volume
-      - set_mute
+      - OPEN
+      - PLAY
+      - PAUSE
+      - STOP
+      - SEEK
+      - SET_LOOP
+      - SET_VOLUME
+      - SET_MUTE
   updated_at:
     type: string
     format: date-time
+    description: 音频状态、设置和播放列表操作的观测更新时间；实际加入推进、重复加入不变。客户端用于隔离较旧响应，不是媒体库元信息修订号、主机身份或实体播放完成证明。

@@ -13,7 +13,7 @@ post:
           $ref: ../components/schemas/PlaybackControlRequest.yaml
   responses:
     '200':
-      description: 操作成功
+      description: 意图已入队；目标会话携带submitted_command_id。实际终态须查询该命令，不能据200或页码宣称动作完成。
       content:
         application/json:
           schema:

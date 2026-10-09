@@ -3,3 +3,4 @@ properties:
   enabled:
     type: boolean
     default: true
+    description: 列表循环。为true时末曲自然结束后回到首曲；为false时停在末曲。中间曲自然结束仍推进下一首，不是单曲原地循环。

@@ -1,15 +1,11 @@
 post:
   tags:
     - playback
-  summary: 重置当前 PowerPoint 放映并恢复页码
-  description: 关闭全局单槽位中当前活跃的 PowerPoint 放映窗口与文档，再回到重置前页码；PDF 演示文稿不受影响。
+  summary: 已退役PowerPoint应急入口
+  description: 返回明确退役结果，不执行任何Office操作。
   operationId: resetPptPlayback
   responses:
-    '200':
-      description: 操作成功
-      content:
-        application/json:
-          schema:
-            $ref: ../components/schemas/PlaybackStateResponse.yaml
+    '410':
+      $ref: ../components/responses/ErrorResponse.yaml
     '401':
       $ref: ../components/responses/ErrorResponse.yaml

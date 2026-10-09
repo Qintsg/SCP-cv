@@ -1,5 +1,7 @@
 # Feature Specification: 大屏专用控制与媒体整理
 
+> 2026-10-09接续：[009](../009-wall-input-mapping/spec.md)在明确的55/56/81及10×5矩形墙范围放开手动映射；本文件保留历史门禁与验收，不把逆向或本机模拟改写为现场通过。PPT新需求以008为准。
+
 **Feature Branch**: `main`（本仓库未配置 Spec Kit 建分支 hook）
 
 **Created**: 2026-09-27

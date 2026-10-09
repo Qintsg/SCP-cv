@@ -1,4 +1,5 @@
 type: object
+description: goto必须提供正整数target_index；缺失、null、非整数或越出int32的值在入队前400拒绝。first/last按已知页数派生，不要求target_index。HTTP成功仅表示意图已受理，非原生动作或动画完成。
 required:
   - action
 properties:
@@ -6,7 +7,24 @@ properties:
     $ref: ./NavigateAction.yaml
   target_index:
     type: integer
-    description: 当 action=goto 时使用
+    format: int32
+    description: 当action=goto时必填且大于0；不将缺失值默认为第一页。其它导航沿既有派生/钳制语义，超总页数不代表目标已显示。
   position_ms:
     type: integer
     description: 当 action=seek 时使用
+oneOf:
+  - required: [action, target_index]
+    properties:
+      action:
+        type: string
+        enum: [goto]
+      target_index:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 2147483647
+  - required: [action]
+    properties:
+      action:
+        type: string
+        enum: [next, prev, previous, first, last, seek]

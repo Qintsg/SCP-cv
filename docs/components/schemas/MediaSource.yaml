@@ -29,8 +29,9 @@ properties:
   is_available:
     type: boolean
     description: >-
-      表示当前配置可尝试打开，不保证实际出画。默认 PPT 必须有匹配非空原件摘要的有效页图清单，
-      缺失/过期/失败时不可用；持久实验开关开启时可尝试原件。
+      表示当前配置可尝试打开，不保证依赖就绪、文稿解析成功或实际出画。
+      PPT/PPTX 默认动态模式独立检查原件存在及登记摘要非空，不受静态制品排队、缺失或失败阻断；
+      不在列表投影时重新计算原件摘要。显式静态模式须另行通过所选布局的制品门禁。
       列表和编辑/移动/上传/重试响应使用相同门禁。直播源仅表示配置可尝试连接，
       实际连通、画面和错误以目标播放会话为准。
   stream_identifier:
@@ -55,8 +56,15 @@ properties:
     type: object
     additionalProperties: true
     description: |
-      媒体源扩展元数据。PPT/PPTX 源的 `slide_images` 记录逐页图片准备状态、
-      原件摘要、制品路径与页数；原始文稿仍保留在 `uri`。
+      媒体源扩展元数据。PPT/PPTX 原件保留在 `uri`，不由制品覆盖。
+      原排版制品使用 `slide_images` / `static_pdf`；文字适配制品使用独立的
+      `fitted_slide_images` / `fitted_static_pdf`，不覆盖或代替原排版制品。
+      页图记录准备状态、原件摘要/修订、制品目录、页数与 `text_layout`（original/fit）；
+      PDF 记录同源摘要/修订、路径、页数、SHA256 与 `render_semantics=raster_pages`。
+      未准备的对应键可不存在；queued/running/failed/uncertain 不等于静态可播，
+      ready 仍须通过当前摘要、修订、页数及文件门禁。不确定作业需核查，不能盲重放。
+      顶层 `preparation_state` / `page_count` 描述原排版页图，不代表适配版已准备。
+      预览按显式布局读取；提供 `text_layout` 时须与所选原/fit键一致，否则不可用，历史缺声明保留所选键契约。
       直播源的 `stream_status=unverified` 表示登记时未探测连通性。
   keep_alive:
     type: boolean
@@ -64,22 +72,27 @@ properties:
     description: 旧版保持活跃字段，当前与 preheat_enabled 同步
   preheat_enabled:
     type: boolean
-    description: 媒体源预热开关；播放器启动时按源类型提前准备后台资源，PowerPoint 预热当前停用
+    description: 媒体源预热偏好；实际预热取决于源类型及运行时能力，不表示已准备或已播放，不会启动已退役的 PowerPoint
   playback_mode:
     type: string
     enum:
       - ''
       - pdf
       - slide_images
+      - libreoffice
       - powerpoint
-    description: PPT/PPTX 默认 slide_images，PDF 为 pdf；实际原生放映需显式实验开关
+    description: >-
+      当前媒体源投影的默认模式：PPT/PPTX 为 libreoffice，PDF 原源为 pdf，非文稿为空字符串；
+      不是播放器已确认的实际模式。slide_images / pdf 也用于显式静态模式，需在 OPEN 中选择；
+      powerpoint 仅保留为历史只读兼容值，当前投影不会返回且新 OPEN 不接受，旧入口已退役，
+      不会因历史实验开关恢复播放。
   preparation_state:
     type: string
-    description: PPT 页图准备状态（queued/running/ready/failed/uncertain）；缺失、摘要过期或残缺的成功清单显示为空并可显式重试，其它媒体源为空
+    description: 原排版 PPT 页图准备状态（queued/running/ready/failed/uncertain）；缺失、摘要过期或残缺的 ready 清单显示为空并可显式重试，其它媒体源为空；适配版状态见 metadata.fitted_slide_images
   page_count:
     type: integer
     minimum: 0
-    description: 已准备的 PPT 页图数，未就绪时为 0
+    description: 原排版 PPT 页图已通过当前投影门禁的页数，未就绪时为 0；不表示动态原件总页数或适配版已准备
   preview_url:
     type: string
     description: 可嵌入前端缩略位的预览 URL；无真实预览时为空字符串

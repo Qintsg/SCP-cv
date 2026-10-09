@@ -3,6 +3,10 @@ required:
   - draft
   - draft_revision
   - active_preset
+  - applied
+  - applied_revision
+  - dispatch_status
+  - dispatch_detail
 properties:
   draft:
     type: object
@@ -15,4 +19,19 @@ properties:
     minimum: 0
   active_preset:
     type: string
-    enum: [single, double]
+    enum: [single, double, custom]
+  applied:
+    type: object
+    nullable: true
+    description: 上次完整发送的布局意图，不是实体确认；失败时可能仍显示历史意图
+    allOf:
+      - $ref: ./VideoWallLayout.yaml
+  applied_revision:
+    type: integer
+    format: int64
+    minimum: 0
+  dispatch_status:
+    type: string
+    enum: [none, dispatching, simulated, sent_unconfirmed, uncertain]
+  dispatch_detail:
+    type: string

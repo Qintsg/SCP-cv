@@ -5,6 +5,18 @@ get:
     - sources
   summary: 获取 PPT 页资源
   operationId: listPptResources
+  description: >-
+    按明确选择的原排版或文字适配制品生成当前页/下一页图片地址，不借另一布局。
+    制品摘要、修订、页数及受管理文件门禁通过后才提供图片；未准备时可保留已有备注和媒体信息，图片地址为空。
+    控制端应沿实际播放源和 actual_fit_text 选择；受理的期望源不是预览依据。
+  parameters:
+    - in: query
+      name: fit_text
+      required: false
+      description: 仅接受单值 true/false，缺省为原排版 false；重复或其它值返回400。
+      schema:
+        type: boolean
+        default: false
   responses:
     '200':
       description: 成功
@@ -13,6 +25,8 @@ get:
           schema:
             $ref: ../components/schemas/PptResourcesResponse.yaml
     '400':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '404':
       $ref: ../components/responses/ErrorResponse.yaml
 put:
   tags:

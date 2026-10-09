@@ -1,0 +1,26 @@
+type: object
+required: [command_id, window_id, command, source_generation, status, result_code, completed_at]
+properties:
+  command_id:
+    type: string
+    format: uuid
+  window_id:
+    type: integer
+    minimum: 1
+    maximum: 2
+  command:
+    type: string
+    description: 持久命令名称，例如NEXT_EFFECT或NEXT
+  source_generation:
+    type: integer
+    format: int64
+  status:
+    type: string
+    enum: [pending, processing, completed, failed, superseded, uncertain]
+  result_code:
+    type: string
+    description: completed/presentation_at_last_slide仅表示确认末页无操作；失败或uncertain不显示末页成功提示
+  completed_at:
+    type: string
+    format: date-time
+    nullable: true

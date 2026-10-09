@@ -5,7 +5,8 @@ required:
   - muted_windows
 properties:
   big_screen_mode:
-    $ref: ./BigScreenMode.yaml
+    type: string
+    enum: [single, double, custom]
   volume_level:
     type: integer
     minimum: 0

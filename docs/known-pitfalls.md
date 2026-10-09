@@ -15,15 +15,15 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
-| 拼接屏画面映射（视频墙） | `PUT /api/video-wall/layout/` 保存草稿；`POST /api/video-wall/layout/apply/` 或 `/presets/{preset}/apply/`；预案兼容入口 | `VideoWallLayoutService`/`ScenarioService` → `IVideoWallController` → 50 节点 `192.168.5.101~150:4830`；仅两个既有预设可下发，未知手动映射在下发前拒绝 | `SimulationVideoWallController`；未知布局同样拒绝 | `VideoWallLayoutServiceTests`、`VideoWallGoldenPacketsTests`、`HostHardwareIntegrationTests`；新映射帧待现场抓包，不能把本机预览或回环称为实体画面证据 |
+| 拼接屏画面映射（视频墙） | 草稿PUT、应用POST、快捷预设及预案兼容入口 | Service→操作门禁/组合Planner→控制器→50节点4830；55/56/81组合，未知输入/几何拒绝；被动回读仅诊断 | 相同预检与Planner，明确simulated | Planner/Protocol/Dispatch、SQLite/HTTP/DOM；现场抓包/出画另验，不把回环称实体通过 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`；3/4 请求拒绝、旧命令不重放 |
-| PPT 上传转换 / 实验性 PowerPoint 放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 重试；`PATCH /api/settings/powerpoint/` 显式开启后才允许原生放映 | `PptConversionHostedService` → `PowerPointHost` STA 导出 PNG；播放器默认 `slide_images`，实验开关只影响后续打开 | Simulation 不启动 Office，作业保持待处理 | `PowerPointSlideExportTests`、`PptConversionHostedServiceTests`、`PowerPointSettingsEndpointTests`；D4 实机转换/放映仍待复测 |
+| PPT 上传转换 / LibreOffice 动态放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 明确准备；两窗 `open/` 选择动态或静态模式；`GET /api/settings/presentation/` 只读能力 | `PptConversionHostedService` → 独占 Framework converter 导出 PNG/图片PDF；Player → 每窗独占 LibreOffice 侧车；动态默认，静态须修订/摘要匹配 | Simulation 不启动 Office；准备状态不证明真实转换或播出 | `PptConversionHostedServiceTests`、`PresentationPlaybackSelectorTests`、`PowerPointSettingsEndpointTests`（410退役）；008 本机原生/视觉/退出门禁，D4 未部署 |
 | 背景音频（独立列表） | `POST\|PATCH\|DELETE /api/background-audio/*` | `BackgroundAudioService` → 命令队列（`CommandTargetKind.Audio`）→ Named Pipe → `AudioWorker` | `QueuedCommandWakeNotifier`（仅排队） | `docs/实机测试结论.md` 背景音乐段 |
 | 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 2026-09-27 已在用户授权后发送拼接屏 ON→OFF→ON 与电视各两次 toggle；API 只确认写出，物理电源状态未独立读回，见 `docs/qa/003-full-regression-20260927.md`；`appsettings.json` §Devices |
 | MediaMTX 推拉流 / 直播 | `POST /api/sources/streams/` 登记、`PATCH /api/sources/{id}/` 更新、`POST /api/playback/{windowId}/open/` 打开；在线探测不代表出画 | MediaMTX 进程（`8890`/`9997`/`8554`）→ VLC PlayerWorker×2；写队列影响 RTSP 完整性 | 无进程，探测失败即离线 | `specs/006-d4-live-convergence/verification.md`；D4 独立解码与交互桌面截图 |
-| 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×2 / AudioWorker / PowerPointHost / MediaMTX；独立 `runtime.ps1` 已退役，避免旁路 | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `RuntimeScriptContractTests`、`docs/qa/003-workstation-runbook.md` |
+| 进程组生命周期 | `POST /api/system/shutdown/`、`/system/restart/` | `RuntimeSupervisorControl` → Named Pipe → Supervisor → PlayerWorker×2 / AudioWorker / MediaMTX；Player/ControlHost 按需拥有 LibreOffice 侧车；独立 `runtime.ps1` 已退役 | `QueuedCommandWakeNotifier` 路径，不登记真实进程 | `RuntimeScriptContractTests`、`ShutdownPendingIntentTests`、008 独占job/父死亡验证；旧停机证据不能替代新引擎退出证明 |
 
 核对程度说明：表内 `file:line` 是 2026-09-19 逐个 grep 出来的代码位置。其中「拼接屏画面映射」「系统音量」「显示器拓扑」「设备电源」四行我读到了完整链路（入口 → 接口 → 实现 → 目标地址）；「播放器窗口内容」「PowerPoint」「背景音频」「MediaMTX」「进程组生命周期」五行的**下游部件**列来自 003 规范与既有 QA 记录，只核到了入口与 Hardware 注册，未逐行走完进程侧链路——首次改动这几条时请顺便复核本表。
 
@@ -357,7 +357,29 @@
 - **检出方式**：真实 SQLite 核对两窗/音频、迟到结果、重复确认和旧 epoch；真实 HTTP 配合明确外部测试替身观察 stop 时 Draining、start 时 Starting，并断言 stop 失败不授予新组。不能把替身受理当原生退出证据。
 - **现状**：同事务先验证组身份/状态，再退役 Pending/Processing、清当前两窗及音频 pending；保留终态审计、Actual/Observed 和历史窗口 3/4 投影。端点停止后重新读会话，重启改 stop 成功→确认停止→新组 start。原回归 7/18 红及入口 4/4 红；修后19/19与相关15/15。独立复核补最外层单Host排他，忙时409无副作用/不排队，四种交错4/4红→绿、相关19/19、全非Physical576/576零跳过。仅本机自动化，未部署/复测D4；不涵盖原生stop超时/取消后迟到动作、多ControlHost或未退出的LibreOffice。具体边界见008 verification。
 
+### 坑 48 - 原生切页返回页码，不保证异步媒体对象安全结束（2026-10-02 有限修复）
+
+- **症状/证据**：双窗视频页回退出现 `MFPlay!NotifyMediaItemCreatedEvent` 原生崩溃；单窗、关闭文字适配仍在第21轮回退卡住，控制动作未返回，45秒预算后只能清自有job。
+- **根因边界**：固定版本的 `gotoSlideIndex` 在远程UNO线程持有SolarMutex并切换页面；卡住时VCL主线程等待mutex。MFPlay异步创建后销毁的风险有上游开发讨论，但不把最近导出符号偏移或第三方注入模块存在当完整根因。
+- **现状**：跳页改用已有`.uno:JumpToMark`异步UI调度，等待真实当前页匹配后才回执。30轮及原排版/适配各300轮视频页往返、正常关闭和原件SHA通过；一轮300测试含短暂只读debug采样，另一轮未附加debug。该证据不等于所有媒体/动画或最终60分钟门禁，启动仍有间歇超时待查。
+
+### 坑 49 - 原件摘要相同不代表静态页图修订匹配（2026-10-02 本机修复）
+
+- **症状/根因**：静态PDF核修订而页图只核摘要，旧修订原排版/适配页图均可被接受；同摘要不能代替源修订围栏。
+- **检出与现状**：公开选择器两条回归先红，页图增加数值修订严格匹配；完整Infrastructure非Physical98/98。旧缺少修订的页图明确未准备，不能静默放行或回退动态。
+
+### 坑 50 - 把异常启动超时与脚本业务失败混为一谈（2026-10-02 诊断）
+
+- **症状**：Host13项脚本进程超时，脚本首条诊断输出也未产生；最小启动对照和原套件随后正常执行。
+- **现状**：保留原13失败及隔离失败证据，未延长预算、跳过或放宽断言。原脚本34项复跑通过，Host160/160通过；这些只证明复跑结果，不宣称已找到间歇启动超时根因。热切换脚本另外修正了真实旧PowerPoint设置入口，迁移合同27/27通过，不把两类问题混为一个修复。
+
+### LibreOffice运行时后续记录（坑51起）
+
+为保持本文件可维护，2026-10-03的布局、协议、进程、预览、队列与动画记录已移到[LibreOffice运行时记录](known-pitfalls/libreoffice-runtime.md)。编号及历史结论保持，不以本轮修复覆盖旧失败。
+
 ## 3. 相关沉淀点（不在这里重复）
+
+009的重复输入窗口、屏号/裁剪、重启不确定、版本与诊断边界见[大屏映射记录](known-pitfalls/video-wall-mapping.md)；历史坑21的门禁已在受限三输入范围内接续。
 
 - `specs/003-dotnet-runtime-refactor/baseline.md` §易错语义：迁移前必须保住的**旧 Python 语义**（冻结在基线提交）。
 - `specs/003-dotnet-runtime-refactor/verification.md` §尚未验证：未完成的硬件验证登记处。本文件不替代它。

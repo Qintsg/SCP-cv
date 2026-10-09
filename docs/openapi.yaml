@@ -106,6 +106,8 @@ paths:
     $ref: './paths/video-wall_presets_{preset}_apply_.yaml'
   /settings/powerpoint/:
     $ref: './paths/settings_powerpoint_.yaml'
+  /settings/presentation/:
+    $ref: './paths/settings_presentation_.yaml'
   /volume/:
     $ref: './paths/volume_.yaml'
   /background-audio/:
@@ -130,6 +132,8 @@ paths:
     $ref: './paths/playback_{window_id}_open_.yaml'
   /playback/{window_id}/control/:
     $ref: './paths/playback_{window_id}_control_.yaml'
+  /playback/{window_id}/commands/{command_id}/:
+    $ref: './paths/playback_{window_id}_commands_{command_id}_.yaml'
   /playback/{window_id}/navigate/:
     $ref: './paths/playback_{window_id}_navigate_.yaml'
   /playback/{window_id}/ppt-media/:

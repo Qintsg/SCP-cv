@@ -1,10 +1,22 @@
 post:
   tags: [video-wall]
-  summary: 应用已保存草稿；未知控制帧组合在任何发包前拒绝
+  summary: 应用保存的布局快照，返回模拟或发送未确认状态
   operationId: applyVideoWallLayoutDraft
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            expected_revision:
+              type: integer
+              format: int64
+              minimum: 1
+              description: 保存响应中的草稿版本；不匹配时零发包拒绝
   responses:
     '200':
-      description: 已验证预设应用成功
+      description: 请求完成；实体画面确认边界见dispatch_status
       content:
         application/json:
           schema:
@@ -12,7 +24,7 @@ post:
     '400':
       $ref: ../components/responses/ErrorResponse.yaml
     '409':
-      description: 控制帧待抓包，code=protocol_unavailable，墙面和活动预设不变
+      description: 输入或协议未支持(protocol_unavailable)或草稿过期(layout_revision_conflict)，零发包
       content:
         application/json:
           schema:

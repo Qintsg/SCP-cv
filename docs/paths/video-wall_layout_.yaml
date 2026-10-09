@@ -1,6 +1,6 @@
 get:
   tags: [video-wall]
-  summary: 获取已保存草稿与当前活动预设
+  summary: 获取草稿、上次发送布局及明确发送状态
   operationId: getVideoWallLayout
   responses:
     '200':

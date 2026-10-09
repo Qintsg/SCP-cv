@@ -1,5 +1,7 @@
 # 本机实施与技术门禁记录
 
+最新补充（2026-10-07）：T076发布插件索引修复及D4视频/三格式音频/RTSP/SRT/UDP短测证据已核对，见[插件索引记录](verification/vlc-plugin-cache-20261005.md)。1140非Physical和3CLI守卫是2026-10-05执行结果，本日仅补归档、图像复核及任务清理，不重报为本日重跑。混合长稳、动态控制台及正式源码同步仍未完成。
+
 **日期**：2026-09-29。当前为部分实施，不是LibreOffice完整交付或D4验收。
 
 ## 1. 保存点与范围
@@ -202,5 +204,303 @@ wire bytes完全相同、请求/结果SHA一致、native callback计数0。
   支持转换链可读性/透明度损失，而非原件刻意实心矩形；仍未区分导入或导出阶段。
   5/6页尚缺完整golden，不能硬归因某字体；1/2/9已参照旧原始PNG，1/2原图也有裁切不算新缺陷。
 
-T014结构路径有实证但视觉/静态PDF语义仍未通过，不移除旧转换入口或假报全替换。T004正常关闭
-仍为核心阻断，T009及以后生产接入/前端/安装/完整文档/60分钟门禁未执行。
+以上为2026-09-29阶段结论；后续状态以第9节为准，不回写历史失败。
+
+## 9. 2026-09-30生产接入与继续验证
+
+- 结束放映改用Office主线程的异步`.uno:PresentationEnd`（先parseStrict），再读回controller结束、关闭文稿和退出引擎。
+  原专用MTA直接end的dump证据仍保留；不能从最近导出符号的偏移推定精确内部函数或Windhawk是根因。
+  SDK独立新profile重复10轮正常结束约0.29–0.32秒，证据`async-end-20260930-c`及`repeat-1..9`。
+  首个未parse URL的失败与62251旧实验残留单独保留，不能宣称所有历史进程均已清理。
+- 生产Net48宿主、Net10父客户端和真实WPF已接通；正常Frame去菜单/导航，以独立隐藏候选子窗口暂存，
+  原件摘要/OS父PID启动时间、会话和DPI核验。损坏候选失败后旧窗口可继续控制。
+  侧车仅在OS实际父进程确认并加入独占job后放行；Office launcher暂停创建、入job后运行。
+  未取得正常退出证明的兜底不作为成功，已传输后的取消/断线隔离通信并保持uncertain。
+- PNG使用Translucent=true，第7页透明公式fallback黑块不再出现；9页独立视觉评审仍发现5/6页窄标题框换行/裁切。
+  第7页原件wrap=none+spAutoFit被导入为AutoGrowWidth=false，单变量开启AutoGrowWidth恢复一行，原件不保存。
+  第2页与旧参考不同，但旧参考的动画时刻/源指纹不足，不能据此确认原件完全相同。
+  文字AUTOFIT实验能消除5/6页溢出，但不能未经选择默认缩小全部原件文字；可选处理尚待对齐。
+- 生产转换已生成9张PNG和只含图片的PDF（约3.91MB），不直接采用带EmbeddedFile/Screen/Rendition的LO原生PDF导出。
+  `008-host-probe/run-3c52597...`真实导出/正常shutdown成功，但父job成员即时核验曾失败；失败原样保留。
+  带诊断的`run-f4bcbc...`成功且active=0/members空。微软job计数说明：终止进程的所有句柄引用释放后计数才下降；
+  后续改为核成员实际HasExited与监听，不把对象引用残留当运行中，仍需多轮复测。
+- 非Physical回归：`008-migration-fourth`681/681；新增原件占用8条红→绿（错误/空闲但ActualSource仍占用，移动/删除源或目录）。
+  `008-migration-fifth`688通过/1失败，唯一失败为新增actual/generation字段后旧精确JSON字段断言，已更新合同断言，待最终全量重跑。
+- 桌面1440×900、手机390×844真实Chromium：新设置、能力GET、静态模式选择、页面异常及横向溢出通过。
+  证据`.validation/008-web-qa/results.json`和截图；IAB两次截图超时，只把其DOM/API读回计为通过，视觉由独立Chromium复核。
+- 冻结版双WPF：10轮两窗同/异源打开→100次页/动画控制→关闭/重开，损坏候选失败留旧画面；
+  随后连续3609.28秒，180次采样，两窗正常关闭，原件/副本SHA不变。
+  证据`.validation/008-player-probe/run-b15543ca0ca34ef7a3d5a973c0739db8/events.jsonl`。
+  此轮主要停在第6页，未覆盖所有媒体时钟；也早于后续PDF、只读观测、清理和语义兼容修复，不等于最终T019门禁。
+- 当前仍须完成：最终版热切换/多媒体与故障注入、最终60分钟复跑、转换发布/静态PDF合同、前端原生控制态，
+  安装打包及文档治理同步。D4、墙面、电源、音量、部署/推送均未操作。
+
+## 10. 2026-10-02至03：媒体切页、实际布局与打包回归
+
+本节是新的阶段快照，不覆盖第2–9节的历史失败。仍非完整引擎验收，D4继续暂停。
+
+### 原生故障与有限修复
+
+- 双窗旧直接切页在TestPPT视频页回退产生`MFPlay!CMFPInnerPlayer::NotifyMediaItemCreatedEvent`原生崩溃；
+  dump为`soffice.bin.37160.dmp`，异常`0xc0000409 / FAST_FAIL_GUARD_ICALL_CHECK_FAILURE`。
+  上游[异步媒体对象讨论](https://www.mail-archive.com/libreoffice@lists.freedesktop.org/msg359230.html)
+  及[Windows视频页崩溃172071](https://bugs.documentfoundation.org/show_bug.cgi?id=172071)提供相近风险，
+  不据此断言本机与上游bug完全同因，不修改源代码、CFG或用户第三方软件。
+- 单窗、fit=false、无媒体暂停的30轮最小回退在第21轮卡住；原生动作未返回，45秒预算后兜底清自有job。
+  `008-single-media-probe/no-fit-92ea8497...`保留原失败，第二个最小回退也失败并采样VCL主线程等mutex。
+  首次debug采样误用了网络符号源，延长了暂停时间，不能拿该轮评估时延；后续只用本地符号缓存。
+- 跳页改为公开`.uno:JumpToMark`异步UI调度，按当前放映列表取目标页而非假定文稿页序，
+  真实页码匹配后才回执。30轮通过；随后原排版/适配各300轮视频页2→1、正常关闭、原件SHA通过。
+  目录`ui-300-false-8631ec1e...`与`ui-300-true-69ed57dd...`。前者含短暂只读debug采样，后者无debug；
+  不将两轮等同所有媒体、所有动画或最终长稳。
+- 双窗新版一轮启动在30秒预算内未监听；未加重试或放宽预算。另一轮完成100控制、9个完整生命周期，
+  第10轮关闭`ConfirmStopped`在5秒预算内失败，兜底不算正常退出，原始`run-dd2fc9d2...`和启动/退出日志保留。
+  新增精确launcher/listener/job成员诊断，随后`run-45aef0581f684ee3814d9d715b91eb81`完整10轮/100控制/关闭通过。
+  WindowsPS5的该包装器退出码仍为null，以动作事件、侧车正常退出及无残留证明其有限成功，不虚报包装器exit0；
+  后续包装器启动即持有Handle，实际视觉轮已取得exit0。
+
+### 真实视觉与尚未解决的裁切
+
+- `visual-70903d.../run-e8f926cc...`的两窗：AllinOne页7图表/文字可见；TestPPT页2、页3各两次2.5秒间隔
+  Computer Use实图有明显视频变化；页6两次动画后标题/正文可见。两窗无编辑菜单/导航，关闭约0.34秒，
+  自有job为空、原件副本SHA不变，包装器exit0。图由工具直接内联返回，未另存或解码payload。
+- 同时发现TestPPT页2/3/6下方约70px黑条。独立只读QA核原件16:9、白色master背景；已有PNG
+  1920×1080及PDF800×450底行均全白，排除源设计/转换同形缺陷，不把视频已动当完整viewport通过。
+- 只读尺寸诊断：父客户区、native SALTMPSUBFRAME与Frame container均800×450/DPI96；
+  component加载时(0,78,800×327)，隐藏layout及放映后(0,0,800×450)。固定源码的内部放映尺寸
+  来自ViewShellBase私有client-area缓存，外层尺寸不证明内部正确；实际视频大小又符合800宽源坐标，
+  不直接归因于整页按380高等比缩小。
+- 单变量`doLayout()`及实际450→449→450往返均未消除底条，实验修改已撤回。
+  第三次单变量把候选父窗设为可见但移出自有客户区（不覆盖旧输出），黑条仍存在；该实验亦已撤回。
+  按systematic-debugging的三次失败门禁，停止继续叠加同类修补，下一步须讨论承载方案。
+  诊断日志/截图与失败保留；视觉人工门禁等待超时是QA流程失败，原生文稿随后正常清理，
+  不能充当产品卡住或视觉通过证据。最终T004/T017/T019仍未完成，不开展最终60分钟验收。
+
+### 行为修复与统一自动化
+
+- 页图增加原件修订严格匹配，原排版/适配两个回归先红后绿；缺修订旧制品不静默使用。
+- 抽屉按选定布局显示准备状态和页数，真实Vue/Naive UI DOM原9页/适配3页先红后绿。
+- 增加可空`actual_fit_text`，仅随成功资源发布与fenced实际报告更新；失败换源保留旧实际布局，
+  关闭/非文稿清空，旧/畸形同源观测不伪造新布局。实际观测不能由desired或OPEN受理推断。
+  Worker页图/图片隐藏STA2红→2绿；认证HTTP/publisher8红→8绿，不是LibreOffice实际出画证据。
+  前端“重新打开当前画面源”沿实际源/adapter/布局，明确actual=null不回退desired；5个真实DOM先红后绿。
+- `fit_text`改变规范字节，纯值协议升级v2，旧版/未知版拒绝，默认布局false。
+  版本回归9项7红2绿→完整Contracts139绿；新的Net10→Framework→Net10六组回环覆盖open/export
+  两布局、unsupported media_pause、shutdown及各自v1拒绝；wire逐字节和结果SHA一致，无Office调用。
+  首次export夹具把nullable父身份设为Guid.Empty导致拒绝，是QA夹具错误，修为null后全部通过，原失败保留。
+- 发布脚本隔离Net10/Net48，拒绝覆盖现有包/不同摘要的同名文件，不包含退役PowerPointHost或用户数据。
+  6项合同初4绿2红：子PS5继承PS7模块路径导致Get-FileHash缺失；改用内置SHA256流读后6/6，
+  实际`-CheckDependencies`通过。尚未真正publish/安装/运行发布包，不把纯复制合同冒充包可用。
+- 原脚本13项启动超时的早期全套保留；未延长预算/跳过。原脚本34项复跑、Host160项通过，
+  间歇根因未确认。热切换脚本另外迁到新presentation设置合同，27项通过。
+- 统一非Physical期望731项：Domain41、Windows80、Contracts139、Infrastructure98、Integration199、Host174。
+  首次730绿1红仅为新HTTP字段缺少旧精确shape断言；同步正式合同后Host174绿，最终统一TRX另存
+  `.validation/008-20261002-unified-final/`，实际731/731、0skip。没有改变断言为允许任意字段。
+- 前端87/87、0skip，类型/Web构建通过；主chunk约1096kB的构建提示保留，未关闭告警。Spec Kit通过。
+  Redocly复用pnpm既有缓存直接运行，0错误/3条410入口无2XX的预期告警，不捏造200。
+  CERNET下载/包管理器自切换尝试失败保留，未改仓库`.npmrc`或清空node_modules；未用npm。
+  NuGet锁还原首次漏洞源不可达，依仓库约定只清测试子shell代理后正常还原，全解0警告/错误，未禁用审计。
+
+### 清理与继续边界
+
+用户Resources原件SHA仍为AllinOne `2401652F...B82A55F0`、TestPPT `0BBAFC49...38F25C22`。
+原件、数据库、转换产物、历史dump与失败日志均保留；本轮自有测试窗/Office退出已逐轮核对，未按名称全局清理。
+剩余：底部裁切根因、启动/退出间歇风险、真实用户Office共存、较广故障与恶意/旧格式矩阵、最终60分钟、
+发布包运行、最新浏览器/封装端实际布局界面。D4、设备电源、墙面、系统音量、部署和推送未操作。
+
+## 11. 2026-10-03：重复关闭、真实发布包与当前主机诊断
+
+本轮继续整体目标，但未取得承载方案调整答复，不再给底部裁切叠加第4个猜测修补。
+
+### 关闭终态不可被重复调用擦除
+
+Client和Surface先设disposed再关闭，首次抛错后的第二次Dispose直接返回，Host.CLOSE可能执行后续实际源清空。
+纯重复回归及真实Client公共回归均红（`008-close-completion/red.trx`）；实际自有系统PowerShell只接客户端固定未知参数，
+没有Command/File/脚本、没有Office，非零退出首次失败却被并发关闭擦除。
+修复先发布同一TaskCompletionSource，再唯一启动外部关闭，成功/失败/取消/同步抛错均保留；不Task.Run改变WPF线程。
+五项回归绿（`green.trx`），覆盖在途、16线程竞争、正常幂等、同步失败及真实非零退出；不能据此称原生风险已解决。
+
+### 真实发布与有限运行
+
+- 第一全新包`008-published-package-32894d72...`真实publish第一组件NU1004：全局-r win-x64传播到引用图，与锁冲突。
+  失败目录/输出保留，未禁用LockedMode或改锁假绿；只以DefaultAppHostRuntimeIdentifier选择x64宿主、沿项目既有RID。
+- 七条合同绿；新包`008-published-package-ae269053532b432fbb441b10d2b40b36`实际五组件publish成功，无PowerPointHost/用户数据。
+  五EXE为AMD64/PE32+，两TFM协议SHA不同，Net48独立在libreoffice/，未覆盖Net10。
+- 包内ControlHost在新Simulation根`008-package-smoke-0f66067d...`只监听127.0.0.1:20881，初始化、认证、真实SSE通过。
+  未启动其它发布组件、LO/MTX；不能将控制台可登录提升为整个原生包通过。临时发布stage精确清理，包/数据/日志保留。
+
+### 活浏览器与页面回归
+
+- 自有IAB页20880。首次生产dist未配主机而用默认8000，preview环境不能改旧构建；通过/connect配实际20881后可达、认证/SSE正常。
+  不使用shell HTTP代替页面证据，不请求D4或改变远程HTTPS约束。
+- 页面发现实际请求20881，但品牌/开发摘要8000；七个公开/真实Vue DOM回归先红后绿，端口和六个API地址复用实际请求解析。
+  重建后两断点均20881、六href均正确，未点击API链接启动另一任务；日志/.env文案对齐DataRoot、appsettings/环境/CLI及MediaMTX YAML。
+- 手机390、桌面1440的scrollWidth分别380/1430，无横向溢出，浏览器error为空；依赖能力、三模式、fit默认关闭/明确开启、离线禁控实查。
+  没有播放资源，不把模拟控制台当出画。图片在`008-web-qa/published-settings-desktop-fixed.png`、`published-settings-mobile-fixed.png`、
+  `published-display-mobile-stable.png`。部分IAB图较模糊，文本以DOM为证据，不证明像素保真；开关过渡帧排除，稳定图与aria=true相符。
+- 真实退出临时会话，恢复viewport并关闭自有tab；按PID/start/命令行精确停止ControlHost22780及preview12928，两端口空、LO0。
+  用户应用、原件、库与失败证据未清理；域操作经验已写入本机use-my-browser对应127.0.0.1笔记，仅适用SCP-cv。
+
+统一后端737/737、零skip（41/80/144/98/199/175），全解0警告/错误，证据`008-close-package-full`。
+前端94/94、类型/Web通过，约1096kB的chunk提示保留；Spec Kit通过，OpenAPI结构无新变更。
+整体未完成：原生裁切/间歇风险、最终60分钟、用户实例共存/较广故障、封装端与D4验收均保留原门禁。
+
+## 12. 2026-10-03：生产转换闭环与启动路径诊断
+
+### 静态模式元数据边界
+
+原问题是畸形PDF元数据被共同兜底误报“页图未准备”，不是未捕获500。
+新增29条选择器、8条认证HTTP边界；对象/数值类型、long/int边界、旧修订、默认/适配隔离及有效上界均覆盖。
+选择器17红/12绿、HTTP4红/4绿后修正为TryGet及模式相关错误；42项相关选择器与8项HTTP绿。
+证据`008-metadata-boundaries`，不增加64位SHA格式约束，不静默回退动态。
+
+### 真实失败和单变量路径对照
+
+- 失败根`008-production-conversion/run-851d648c...`、`run-660ef3c...`及`run-1a412aa8...`保留。
+  文稿还未打开前ready失败。新增launcher_exit诊断先暴露Framework的GetProcessById对象不能读ExitCode，掩盖原失败。
+- 共享暂停启动器在ResumeThread前缓存Process.Handle；同源Framework自有cmd退出7先红后绿，正式进程回归也通过。
+  精确句柄保留终态，仍先加入自有job，未放宽监听归属/ready条件。
+- 新鲜长profile根154字符，内部已有backenddb.xml为267，bundled路径预计更长；launcher返回-1073740791。
+  自有soffice.bin.14132的WER/dump证实0xc0000409、subcode7 FAST_FAIL_FATAL_APP_EXIT、ucrt abort/terminate，
+  与旧MFPlay subcodeA不同。离线cdb证据`008-native-debugger/startup-crash-14132.txt`。
+  无完整C++异常文本/PDB，最近导出符号不是精确函数，不能泛称Windows所有>260路径必失败。
+- 短根`cvt-27a4f92f`保持headless/job/预算，两个原件9/7页转换、监听归属和正常关闭通过。
+  转换profile随后沿Player已有88字符临时目录、以EngineInstanceId独占，不再随DataRoot深度增长。
+  原深度数据根`run-b1fddf674bf04652ba3cd99ddd183483`两原件再次通过；这项修正不是底部裁切第4次修补。
+- 五条路径/进程回归通过。profile根120字符为保守工程预算，异常深TMP/TEMP在启动前拒绝，
+  原件/制品仍由DataRoot管理；没有更改LO二进制/注册表/安全策略或把启动器早退当正常退出。
+
+### 原件、双布局和发布
+
+`008-production-conversion/fit-ca19e87b47ca42df8c32c066a4341790`：
+实际MediaSourceService上传→中文目录移动→持久作业领取→LibreOfficeSlideConverter→PNG/图片PDF→Publish→明确静态选择。
+AllinOne原/适配各9页，TestPPT原/适配各7页；各次约6.5–8.6秒，有在途移动拒绝、关闭后移动成功与独占读锁释放。
+原件及上传副本SHA均不变；四个制品目录不同、请求/实体布局匹配。文件原件、所有QA库/产物/profile保留。
+其中较早`run-b1f...`一次job计数仍1，HasRunningMembers为false、监听已消失；不只靠计数判断退出。
+三个中断QA根经正式ReconcileInterruptedSlideJobs变uncertain，原/适配两类重试均拒绝，未直接篡改数据库为成功或自动重试。
+
+独立fresh-eyes检查原布局16PNG、两PDF全页：无漏页、错序、页面缩角、静态底部黑条；公式可读无黑fallback。
+AllinOne默认5/6页窄标题的换行/重叠/裁切与旧制品一致，不能标默认全视觉通过。
+适配16PNG逐页、PDF全页联系表与关键页独立渲染确认：5页标题整行且与作者分开，6页蓝条标题无裁切，7页公式/下标正常。
+未发现新增漏页/黑条/遮挡，但5/7/8部分正文换行改变（如“分子筛”跨行），不等于逐像素保真；默认仍关闭。
+静态媒体仅海报，不代替动画/视频时钟或原生窗验收。
+视觉证据`008-conversion-visual/review.md`及`fit-round/review.md`，同轮default/fit对照保留，不改原PPTX以迁就渲染。
+
+### QA依赖与完整回归
+
+外层Probe显式Import集中配置但未走NuGet自动导入，CentralPackageVersionsFileImported为空，
+实际解析SQLite native 2.1.11并报告NU1903；不是正式产品已采用的2.1.13出了漏洞。
+改同目录Directory.Packages.props包装，由NuGet正常自动发现；两个集中启用标志true，真实构建0告警/错误。
+Probe实际native SHA为B7385D722C83FB52142A00477A726723745916D22A555711EE89834C1111FB2E，与正式库一致（SQLite3.53.3）。
+无包版本变更、禁止审计或改锁；没有证据将该SQLite漏洞当成Office崩溃原因。
+
+统一非Physical779/779、零skip：Domain41、Windows80、Contracts149、Infrastructure127、Integration199、Host183，
+证据`008-conversion-full`。前端94/94，类型/Web通过，1096.24kB chunk提示保留。
+最初QA命令误写type-check而非typecheck，明确失败；随后正确pnpm命令通过，未把失败隐藏成通过。
+CERNET配置未变，pnpm自选版本等待较慢；未使用npm或改全局配置。Spec Kit/diff检查通过；Redocly0错误/3条退役410无2XX预期告警。
+自有Office/Probe均退出，Resources两个原件SHA不变；D4/电源/墙面/系统音量/部署/推送未操作。
+原生底部裁切及其它间歇风险、用户实例共存、最终60分钟和D4门禁仍未完成。
+
+## 13. 2026-10-03：排队期限、真实stdio故障与父死亡
+
+### 请求排队也必须有界
+
+公开Client对A在途、B deadline=300ms的真实stdio用例先红：B等待超过2秒，测试外部WaitAsync报Timeout，
+A放行后B收到负CancelAfter参数异常。旧gate只用caller token，deadline直到取得gate后才开始计算。
+修复把链接deadline/caller/lifetime的预算前移，取得gate后再次检查；B未写入、明确取消、不poison，A与后续C成功。
+红绿证据`008-transport-faults/queue-red.trx`、`queue-green.trx`。
+
+新增外部测试侧车不引用Office，真实exe/stdio/启动门禁/自有job，而不是内存流替身。
+六项回归覆盖排队期限、已flush半header的取消与完整迟到回复、非法长度、错误scope、截断EOF，
+以及A在途/B排队时两次并发Dispose：A为transport uncertain，B为未下发取消，收条仍一份，精确子进程退出0。
+失败收尾由缓存的精确Process.Handle和外部预算保护；兜底强清仍报失败，不能永远卡在finally或标成通过。
+证据`fault-matrix.trx`、`fault-bounded-green.trx`、`final-transport.trx`（连原进程/退出回归8/8）。
+这是Client传输门禁，不代替UNO媒体、原生卡住或窗口退出验收；未为测试添加生产HTTP/配置接口。
+
+### 空converter父死亡（限定证据）
+
+`008-parent-loss/run-6d7acecf...`、`run-3ef92456...`、`run-53406384...`三次均先记录自有监听归属和精确存活句柄，
+只结束本轮父进程，Framework/Office在5秒预算内退出，实际约0.011/0.034/0.014秒，端口52802/65316/65340消失。
+对应身份为parent/host/Office：28808/41828/44904、67928/28032/70804、38116/68304/52844；native日志与result.json保留。
+只有空converter、无文稿/播放窗口；证明父job关闭的OS兜底，不证明ParentProcessLifetime timer分支，
+也不能写成持有文稿的正常协作关闭成功。没有按soffice名称全局结束。
+
+### QA接线和未解决采样
+
+第一整解在`008-transport-full`有2失败：新fixture未纳入sln，整解Release引用构建Debug而复制旧Release，
+received标记缺失；加入tests及六配置映射后夹具一致。未延长接收等待或放宽没有dispatch证据的断言。
+`008-transport-full-fixed`另有旧即时job退出断言1失败，cmd精确句柄已退出7，但HasRunningMembers当时true。
+单独复跑及128次8并发自有cmd都未复现；当前没有同次成员证据，不能猜作PID复用、引用计数或其它子进程。
+新增可选同一次/同句柄的WaitForSingleObject、退出码、IsProcessInJob诊断，默认不采样、不改变判断，原即时断言保留。
+该偶发根因未解决；不以job ActiveCount代替真实成员，也不通过延长timeout或删除断言制造修复。
+
+最新整解`008-transport-job-diag`非Physical785/785、零skip：41/80/155/127/199/183。
+最终相关8/8及Framework宿主构建0告警/错误；只是复跑通过，不覆盖前述偶发根因。
+前端本轮无改动，沿用上一轮94/94与类型/Web结果，不冒称重新浏览器验收。
+自有Office/Probe/TestHost已退出，未操作D4/设备/系统音量/推送或部署；008完整目标及原生裁切架构门禁仍未完成。
+
+## 14. 2026-10-03：完整job退出与真实父身份/Timer
+
+### 即时job断言的实际来源
+
+4096次自有cmd、16并发，并行Contracts155项通过；job即时采样出现4次pending（轮14/306/345/355）。
+launcher和成员PID不同。轮345的成员37364、轮355的50468在同句柄记录wait=258、exit=259、in_job=true，
+是仍活的自有子成员；后一例随后读名为conhost且已经退出。两例诊断前即退出，不能补猜其名称。
+各pending在下一次采样即消失，未将已退出对象引用计数当存活，也没有证据支持该失败来自PID复用。
+因此cmd句柄回归改为仍在既有5秒退出预算内等真实完整成员，保留旧即时失败及原始诊断，而不是删退出断言。
+
+Client也曾只等宿主，然后即时成员检查失败并清job。公开受限继承侧车证明此路径确会误报短活子成员。
+最初普通Process.Start子夹具意外持有父stdio，WaitForExitAsync等待EOF而假绿（child-exit-red.trx其实通过）；
+改为仅继承NUL、不创建另一个job/不breakaway后真正红：`restricted-child-exit-red.trx`，约233ms报残留。
+修改只在原有同一15秒关闭预算内轮询完整job，不重新计时或改变HasRunningMembers。
+
+正例加强为命名事件保持child：先确认宿主已退出0、child仍活、Dispose尚未完成，再放行，最终二者正常退出0。
+30秒child负例15秒仍Transport uncertain，宿主已退出0而剩余child由唯一job关闭精确结束；重复关闭是同一失败。
+相关10/10，`gated-child-budget-green.trx`，不以兜底后的消失假报正常成功；不是所有Office原生退出间歇风险的根因证明。
+
+### 父归属与Timer（不用job/EOF推断）
+
+Framework QA直接Compile Link正式ParentProcessLifetime源码，observer→parent→guard真实父链，
+guard ready后主线程仅睡眠、stderr为独立文件，不创建自有job、不读stdin或父EOF。
+先核父/guard存活及精确句柄，只结束父，要求正式`libreoffice_parent_lost`日志及guard退出2。
+另三项只改变父PID、启动ticks或session：InvalidDataException、对应原因、退出2、无ready。
+三轮共12/12，根`run-7a0339cae69d475c9331e5ac1572e406`、`run-ff6bb4a379ea450bb435b5e7549439da`、
+`run-3c621dded3f44d71bb12f13c65b51553`；timer分别496/480/496ms。没有强清记录被计为成功。
+
+同源逻辑已纳入仅测试ScpCv.ParentGuard.TestHost和正式PresentationParentGuardTests，不依赖忽略目录才能复现。
+通过1个聚合公开进程回归（内部4项实证），`parent-guard-formal.trx`；不引用UNO/Office或进入五组件发布。
+它证明父归属拒绝和timer分支，不证明PID复用、用户应用共存或持有文稿正常关闭。
+
+整解`008-child-exit-full`非Physical787/787，之后加正式父监测并加强正例的最新整解`008-child-parent-final`为788/788、零skip（41/80/158/127/199/183）。
+本轮前端/API无改动，不冒称重新跑浏览器或D4；历史失败与Resources原件/库均保留。
+当前原生底部裁切架构选择仍待人类答复，最终双窗60分钟及完整原生故障/用户共存门禁未完成。
+
+## 15. 2026-10-03：PPTX纯包预检与拒绝分类
+
+16条真实ZIP回归、三类真实上传/作业/Converter提前拒绝、两文稿原/fit四次正常转换通过；全非Physical804/804，32PNG及四PDF与旧同布局制品摘要/像素完全一致，默认窄标题问题不据此消失。
+具体红绿、失败分类、显示边界与剩余事项见[本轮包门禁记录](verification/package-gate-20261003.md)。
+
+## 16. 2026-10-03：安全终态与上传接线
+
+T038/T039/T041/T042、Broker停机展开T047及重连T048完成有限回归；最终后端827/827、前端100/100、零skip。
+真实浏览器确认静态失败重试不重复上传、动态fit参数保留；夹具不启动Native。
+红绿、真实外部门禁与剩余竞态见[本轮安全终态记录](verification/safety-terminal-20261003.md)。
+
+## 17. 2026-10-03：实际布局预览闭环
+
+T040的原/fit GET、列表、缺页重准备及前端实际观测/刷新闭环通过，最终后端876/876、前端122/122。
+独立HTTP、DOM、桌面/390夹具与能力未验证边界见[本轮预览记录](verification/preview-layout-20261003.md)。
+
+## 18. 2026-10-03：只读运行依赖诊断
+
+T043的文件/平台/Framework/PE/五CLI绑定及设置页失败、目标切换反馈完成有限闭环。依赖、导航输入、更新隔离及动画事件的后续记录见[运行时诊断索引](verification/runtime-diagnostic-index-20261003.md)；静态检查及事件计数不替代原生视觉、完整加载或长稳验收。
+
+## 19. 2026-10-03：创建候选与转换双原因诊断
+
+T066公开Converter4项/实际Player adapter2项红绿、非Physical1054及另2真实Physical、真实转换/Player留旧关闭复核完成，见[创建与转换诊断](verification/creation-cleanup-diagnostic-20261003.md)。随后T067已发布文稿关闭五保护/1059非Physical、两实际视频关闭与新981767…包完成，见[正常文稿关闭诊断](verification/published-close-diagnostic-20261003.md)；包仅构建，本地异常链不新增API堆栈字段，原失败/原件及完整范围保持。
+
+## 20. 2026-10-05：完整组有限长稳与大文稿上传
+
+文件/网页正式两输出完成10轮切换、100条实际PDF控制和3613.7秒观察，240原图摘要核对、另一窗89图保持、资源同阶段有限稳定、正常退出及原件锁释放通过，见[长稳记录](verification/group-visual-soak-20261005.md)。
+修复真实98MB PPT上传入口30MB默认上限后，1139非Physical通过；D4实际大文稿上传/7页转换、两窗动态短测、视频运动/暂停、实际末页持久回执及16原图独立复核通过，见[大文稿记录](verification/upload-limit-and-full-ppt-group-20261005.md)。VLC硬解警告保留；直播/音频/PPT混合长稳、控制台动态联动、封装端与正式源码同步等仍未完成，不标T074或整体完成。
+随后MediaMTX纳入正式Supervisor组，三格式音频实际HTTP/Worker控制、RTSP/SRT断流及显式恢复出内容、另一窗保持和关闭有限通过；17原图逐张核SHA/查看、Host/task0、自有任务及监听清理确认。首次playing黑/灰、恢复连续运动与默认GPU/SRT告警不略去；前端271/类型/Web重新通过，见[直播音频记录](verification/full-group-live-audio-20261005.md)。

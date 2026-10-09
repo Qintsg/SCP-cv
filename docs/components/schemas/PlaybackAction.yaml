@@ -3,3 +3,5 @@ enum:
   - play
   - pause
   - stop
+  - next_effect
+  - previous_effect

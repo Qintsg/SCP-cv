@@ -19,6 +19,6 @@ properties:
       $ref: ./VideoWallMapping.yaml
   can_apply:
     type: boolean
-    description: 只有两个已抓包固定预设为 true
+    description: 服务端对输入描述、受限布局及协议配置预检通过时为true，不证明实体出画
   unavailable_reason:
     type: string

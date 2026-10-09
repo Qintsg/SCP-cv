@@ -12,14 +12,17 @@ required:
 properties:
   id:
     type: integer
+    description: 持久页资源标识；由有效制品生成但未登记页行的只读资源为0，不创建数据库记录。
   source_id:
     type: integer
   page_index:
     type: integer
   slide_image:
     type: string
+    description: 已通过门禁的所选布局PNG地址；适配版包含fit_text=true。未准备或不可用时为空，不借另一版。
   next_slide_image:
     type: string
+    description: 同一布局的下一页PNG地址；末页或对应制品不可用时为空。
   speaker_notes:
     type: string
   has_media:

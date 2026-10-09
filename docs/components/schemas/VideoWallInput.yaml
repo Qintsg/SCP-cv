@@ -8,4 +8,4 @@ properties:
   ip_address:
     type: string
     format: ipv4
-    description: 仅 kind=ip_stream 使用；控制帧待现场抓包
+    description: 仅kind=ip_stream使用；须匹配服务器已登记的设备流描述，未登记时只可保存预览

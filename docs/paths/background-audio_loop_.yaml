@@ -2,6 +2,7 @@ patch:
   tags:
     - background-audio
   summary: 设置背景音乐列表循环
+  description: 循环策略由ControlHost决定；AudioWorker每曲结束均发送带源和代次的结束通知。关闭循环只改变自动末尾行为，手动上一首/下一首保持既有回环。
   operationId: setBackgroundAudioLoop
   requestBody:
     required: true

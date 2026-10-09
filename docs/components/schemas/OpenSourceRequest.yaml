@@ -17,3 +17,11 @@ properties:
     type: integer
     minimum: 1
     description: PPT 打开后自动跳转的页码；非 PPT 源忽略
+  presentation_mode:
+    type: string
+    enum: [libreoffice, slide_images, pdf]
+    description: PPT/PPTX默认LibreOffice；页图与只含图片的同源PDF须显式选择且准备完成。PDF原源仍为PDF。
+  fit_text:
+    type: boolean
+    default: false
+    description: 明确开启时只在内存中缩放文字适应原框；静态模式使用独立适配版制品，不修改原件。

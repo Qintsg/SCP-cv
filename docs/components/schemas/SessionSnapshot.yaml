@@ -25,6 +25,10 @@ required:
   - player_online
   - player_last_seen_at
 properties:
+  submitted_command_id:
+    type: string
+    format: uuid
+    description: 仅此次显示命令入队响应的目标窗口携带；普通GET和SSE不保留。受理不等于实际完成。
   window_id:
     type: integer
   session_id:
@@ -46,6 +50,7 @@ properties:
       - ''
       - pdf
       - slide_images
+      - libreoffice
       - powerpoint
     description: 播放器上报的当前演示文稿实际放映模式；尚未确认或其它源为空字符串
   playback_state:
@@ -66,11 +71,31 @@ properties:
     type: integer
   position_ms:
     type: integer
+    nullable: true
+    description: LibreOffice统一媒体时钟不可得时为null，不伪造零进度。
   duration_ms:
     type: integer
+    nullable: true
+  actual_source_id:
+    type: integer
+    nullable: true
+    description: 最后确认的实际源，可能与请求中的source_id不同；未确认关闭前保留占用。若旧资源已确认关闭且失败候选也已释放，明确为空而非保留已关闭源；清理不确定不得据此猜空输出。
+  actual_adapter_kind:
+    type: string
+  actual_fit_text:
+    type: boolean
+    nullable: true
+    description: Worker成功发布的当前文稿文字布局；true为适配，false为原排版，null表示未观测、非文稿或确认无实际输出。失败换源仍有旧资源时保留旧实际布局；旧资源与候选均确认释放时清空，不从desired或OPEN受理推断。
+  desired_generation:
+    type: integer
+  observed_generation:
+    type: integer
+  cleanup_pending:
+    type: boolean
   pending_command:
     type: string
     nullable: true
+    description: 目标队列按序最早未终结的指令，包含待领取Pending和执行中Processing；空值不证明动画或媒体效果结束。
   last_updated_at:
     type: string
     format: date-time

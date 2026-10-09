@@ -13,5 +13,14 @@ properties:
       - seek
   position_ms:
     type: integer
+    format: int64
     minimum: 0
-    description: action=seek 时使用的目标位置毫秒
+    description: action=seek时必填的非负int64毫秒目标；不能传字符串、小数或null。请求仅入队，不表示媒体已定位。
+oneOf:
+  - properties:
+      action:
+        enum: [play, pause, stop, next, prev]
+  - properties:
+      action:
+        enum: [seek]
+    required: [position_ms]

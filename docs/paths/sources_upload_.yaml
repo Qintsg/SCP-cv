@@ -2,8 +2,9 @@ post:
   tags:
     - sources
   summary: 上传文件并创建媒体源
-  description: 支持 PDF、PPT/PPS/POT/ODP、视频、音频和图片等文件。静态演示文稿会尝试转换为 PDF，动态演示文稿使用 PowerPoint。
+  description: 支持 PDF、PPT/PPS/POT/ODP、视频、音频和图片等文件。文稿原件按用户目录保留，LibreOffice 独立作业准备页图及图片 PDF；准备失败不等于原件丢失。动态文稿默认使用 LibreOffice，静态回退须明确选择。OOXML 声明扩展或可解析 ZIP 中的演示包内容采用相同外链预检，不能靠改扩展名绕过；已知危险包准备失败并保留原件。禁止宏执行与自动更新，不承诺所有旧格式、宏或加密文稿都已在预检阶段识别。
   operationId: uploadSource
+  x-upload-request-limit-bytes: 1073741824
   requestBody:
     required: true
     content:
@@ -38,3 +39,9 @@ post:
             $ref: ../components/schemas/SourceResponse.yaml
     '400':
       $ref: ../components/responses/ErrorResponse.yaml
+    '413':
+      description: 完整上传请求超过1GiB有限上限，返回upload_too_large；文件、表单字段及multipart开销均计入总请求，不登记媒体源。
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml

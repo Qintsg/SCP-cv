@@ -1,0 +1,75 @@
+get:
+  tags: [settings]
+  summary: 获取LibreOffice依赖和已验证控制能力
+  operationId: getPresentationSettings
+  responses:
+    '200':
+      description: 只读静态运行依赖诊断；不启动引擎，available不代表文稿或实际出画成功
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [success, settings]
+            properties:
+              success:
+                type: boolean
+                enum: [true]
+              settings:
+                type: object
+                required: [default_engine, available, dependency_status, detail, capabilities, components]
+                properties:
+                  default_engine:
+                    type: string
+                    enum: [libreoffice]
+                  available:
+                    type: boolean
+                    description: 当前静态依赖检查是否全部通过；不证明UNO连接、原生启动、文稿兼容或实际播放
+                  dependency_status:
+                    type: string
+                    enum: [installed, unavailable]
+                  detail:
+                    type: string
+                    description: 当前检查摘要，不包含安装路径或配置值
+                  components:
+                    type: array
+                    minItems: 1
+                    description: 每项静态运行检查的结果与处理建议，不执行任何原生进程
+                    items:
+                      type: object
+                      required: [id, status, detail, reason_code]
+                      properties:
+                        id:
+                          type: string
+                          description: 稳定组件标识或必需文件/CLI名称，不包含磁盘路径
+                        status:
+                          type: string
+                          enum: [installed, unavailable]
+                        detail:
+                          type: string
+                          description: 可读原因及处理建议，不泄漏配置值
+                        reason_code:
+                          type: string
+                          description: 诊断原因码；通过时可为空，不等同原生播放错误
+                  capabilities:
+                    type: object
+                    required: [slide_navigation, effect_navigation, media_pause, media_resume, media_seek, media_volume, media_mute]
+                    description: 引擎控制能力声明，与依赖静态可用和实际文稿完成分开，不据此推断已播放
+                    properties:
+                      slide_navigation:
+                        type: boolean
+                      effect_navigation:
+                        type: boolean
+                      media_pause:
+                        type: boolean
+                      media_resume:
+                        type: boolean
+                      media_seek:
+                        type: boolean
+                      media_volume:
+                        type: boolean
+                      media_mute:
+                        type: boolean
+                    additionalProperties:
+                      type: boolean
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml
