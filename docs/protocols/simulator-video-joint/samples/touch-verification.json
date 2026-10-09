@@ -1,5 +1,5 @@
 {
-  "cases": 18,
+  "cases": 30,
   "all_match": true,
   "vectors": [
     {
@@ -308,6 +308,121 @@
       "match": true
     },
     {
+      "function": "0x6dcc8f30",
+      "points": [
+        [
+          -1.5,
+          -2.5,
+          8
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E07020601FCFFF1FF00000000000001DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E07020601FCFFF1FF00000000000001DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc8f30",
+      "points": [
+        [
+          -10.0,
+          -20.0,
+          2
+        ],
+        [
+          0.5,
+          1.5,
+          4
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E07020701D6FF69FF070204000F0002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E07020701D6FF69FF070204000F0002DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc8f30",
+      "points": [
+        [
+          960.0,
+          540.0,
+          1
+        ],
+        [
+          1920.0,
+          1080.0,
+          8
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E070207010010001006020020002002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E070207010010001006020020002002DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc8f30",
+      "points": [
+        [
+          -0.5,
+          -0.5,
+          8
+        ],
+        [
+          959.5,
+          539.5,
+          1
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E070206010000000007020010001002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E070206010000000007020010001002DE"
+      ],
+      "match": true
+    },
+    {
       "function": "0x6dcc9700",
       "points": [],
       "display": [
@@ -613,6 +728,121 @@
       "match": true
     },
     {
+      "function": "0x6dcc9700",
+      "points": [
+        [
+          -1.5,
+          -2.5,
+          8
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E07020601FCFFF1FF00000000000001DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E07020601FCFFF1FF00000000000001DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc9700",
+      "points": [
+        [
+          -10.0,
+          -20.0,
+          2
+        ],
+        [
+          0.5,
+          1.5,
+          4
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E07020701D6FF69FF070204000F0002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E07020701D6FF69FF070204000F0002DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc9700",
+      "points": [
+        [
+          960.0,
+          540.0,
+          1
+        ],
+        [
+          1920.0,
+          1080.0,
+          8
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E070207010010001006020020002002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E070207010010001006020020002002DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc9700",
+      "points": [
+        [
+          -0.5,
+          -0.5,
+          8
+        ],
+        [
+          959.5,
+          539.5,
+          1
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E070206010000000007020010001002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E070206010000000007020010001002DE"
+      ],
+      "match": true
+    },
+    {
       "function": "0x6dcc9ed0",
       "points": [],
       "display": [
@@ -914,6 +1144,121 @@
         "FCFD0E070207053304330307064005000400DE",
         "FCFD0E070206074C06CC0407085907990500DE",
         "FCFD0E0702070966086606060A7309330700DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc9ed0",
+      "points": [
+        [
+          -1.5,
+          -2.5,
+          8
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E07020601FCFFF1FF00000000000001DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E07020601FCFFF1FF00000000000001DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc9ed0",
+      "points": [
+        [
+          -10.0,
+          -20.0,
+          2
+        ],
+        [
+          0.5,
+          1.5,
+          4
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E07020701D6FF69FF070204000F0002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E07020701D6FF69FF070204000F0002DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc9ed0",
+      "points": [
+        [
+          960.0,
+          540.0,
+          1
+        ],
+        [
+          1920.0,
+          1080.0,
+          8
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E070207010010001006020020002002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E070207010010001006020020002002DE"
+      ],
+      "match": true
+    },
+    {
+      "function": "0x6dcc9ed0",
+      "points": [
+        [
+          -0.5,
+          -0.5,
+          8
+        ],
+        [
+          959.5,
+          539.5,
+          1
+        ]
+      ],
+      "display": [
+        960,
+        540
+      ],
+      "native": [
+        {
+          "hex": "FCFD0E070206010000000007020010001002DE",
+          "length": 19,
+          "port": 60123
+        }
+      ],
+      "expected": [
+        "FCFD0E070206010000000007020010001002DE"
       ],
       "match": true
     }

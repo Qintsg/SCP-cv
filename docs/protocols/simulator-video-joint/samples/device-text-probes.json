@@ -1,0 +1,3570 @@
+{
+  "constructors": 106,
+  "completed": 106,
+  "rows": [
+    {
+      "function": "0x7a2e80",
+      "signature": "undefined4 FUN_007a2e80(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 15,
+        "hex": "3C50726F746F636F6C2D547970653E",
+        "text": "<Protocol-Type>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a30d0",
+      "signature": "undefined4 FUN_007a30d0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 13,
+        "hex": "2F3A4D6573736167654F66663B",
+        "text": "/:MessageOff;",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a32b0",
+      "signature": "undefined4 FUN_007a32b0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 15,
+        "hex": "3C526573496E3E3C5265734F75743E",
+        "text": "<ResIn><ResOut>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a3330",
+      "signature": "undefined4 FUN_007a3330(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 13,
+        "hex": "3C5363616E506F7274416C6C3E",
+        "text": "<ScanPortAll>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a33b0",
+      "signature": "size_t FUN_007a33b0(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 10,
+        "hex": "3C526573496E2C31313E",
+        "text": "<ResIn,11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 11,
+            "hex": "3C526573496E2C3130303E",
+            "text": "<ResIn,100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a3660",
+      "signature": "size_t FUN_007a3660(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 10,
+        "hex": "3C526573496E2C31313E",
+        "text": "<ResIn,11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 11,
+            "hex": "3C526573496E2C3130303E",
+            "text": "<ResIn,100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a43d0",
+      "signature": "undefined4 FUN_007a43d0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 13,
+        "hex": "3C54656D702C496E2C416C6C3E",
+        "text": "<Temp,In,All>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a4450",
+      "signature": "undefined4 FUN_007a4450(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 14,
+        "hex": "3C54656D702C4F75742C416C6C3E",
+        "text": "<Temp,Out,All>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a4540",
+      "signature": "size_t FUN_007a4540(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 13,
+        "hex": "24313144656661756C74496E21",
+        "text": "$11DefaultIn!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 14,
+            "hex": "2431303044656661756C74496E21",
+            "text": "$100DefaultIn!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a47f0",
+      "signature": "size_t FUN_007a47f0(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 14,
+        "hex": "24313144656661756C744F757421",
+        "text": "$11DefaultOut!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 15,
+            "hex": "2431303044656661756C744F757421",
+            "text": "$100DefaultOut!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a4aa0",
+      "signature": "undefined4 FUN_007a4aa0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "3C44656661756C74733E",
+        "text": "<Defaults>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a4b20",
+      "signature": "undefined4 FUN_007a4b20(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "3C44656661756C74733E",
+        "text": "<Defaults>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a5100",
+      "signature": "size_t FUN_007a5100(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 10,
+        "hex": "243131417564696F4121",
+        "text": "$11AudioA!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 11,
+            "hex": "24313030417564696F4121",
+            "text": "$100AudioA!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a53b0",
+      "signature": "size_t FUN_007a53b0(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 10,
+        "hex": "243131417564696F4421",
+        "text": "$11AudioD!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 11,
+            "hex": "24313030417564696F4421",
+            "text": "$100AudioD!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a5660",
+      "signature": "size_t FUN_007a5660(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 13,
+        "hex": "243131417564696F414F757421",
+        "text": "$11AudioAOut!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 14,
+            "hex": "24313030417564696F414F757421",
+            "text": "$100AudioAOut!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a5910",
+      "signature": "size_t FUN_007a5910(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 13,
+        "hex": "243131417564696F444F757421",
+        "text": "$11AudioDOut!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 14,
+            "hex": "24313030417564696F444F757421",
+            "text": "$100AudioDOut!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a5bc0",
+      "signature": "size_t FUN_007a5bc0(void *param_1,undefined4 param_2,undefined4 param_3)",
+      "parameters": [
+        11,
+        12
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12
+        ],
+        "bytes": 12,
+        "hex": "24313145444944546F31322E",
+        "text": "$11EDIDTo12.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12
+            ],
+            "bytes": 13,
+            "hex": "2431303045444944546F31322E",
+            "text": "$100EDIDTo12.",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101
+            ],
+            "bytes": 13,
+            "hex": "24313145444944546F3130312E",
+            "text": "$11EDIDTo101.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a6670",
+      "signature": "size_t FUN_007a6670(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 15,
+        "hex": "3C23566564696F476574496E31313E",
+        "text": "<#VedioGetIn11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 16,
+            "hex": "3C23566564696F476574496E3130303E",
+            "text": "<#VedioGetIn100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a6d00",
+      "signature": "size_t FUN_007a6d00(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 16,
+        "hex": "3C23566564696F4765744F757431313E",
+        "text": "<#VedioGetOut11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 17,
+            "hex": "3C23566564696F4765744F75743130303E",
+            "text": "<#VedioGetOut100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a7bd0",
+      "signature": "undefined4 FUN_007a7bd0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 11,
+        "hex": "3C436C6F73652C416C6C3E",
+        "text": "<Close,All>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a7c50",
+      "signature": "size_t FUN_007a7c50(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 10,
+        "hex": "3C436C6F73652C31313E",
+        "text": "<Close,11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 11,
+            "hex": "3C436C6F73652C3130303E",
+            "text": "<Close,100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7a7de0",
+      "signature": "undefined4 FUN_007a7de0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 13,
+        "hex": "446F776E4C6F6164436F64652E",
+        "text": "DownLoadCode.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a9ac0",
+      "signature": "undefined4 FUN_007a9ac0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "3C5E4853535542523E",
+        "text": "<^HSSUBR>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a9b30",
+      "signature": "undefined4 FUN_007a9b30(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 8,
+        "hex": "3C5E48534741523E",
+        "text": "<^HSGAR>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7a9c10",
+      "signature": "size_t FUN_007a9c10(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 12,
+        "hex": "3C23485353504F525431313E",
+        "text": "<#HSSPORT11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 13,
+            "hex": "3C23485353504F52543130303E",
+            "text": "<#HSSPORT100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7aacc0",
+      "signature": "undefined4 FUN_007aacc0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 7,
+        "hex": "5374617475732E",
+        "text": "Status.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7ab240",
+      "signature": "size_t FUN_007ab240(void *param_1,undefined4 param_2,undefined4 *param_3)",
+      "parameters": [
+        11,
+        "192.0.2.55"
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          "192.0.2.55"
+        ],
+        "bytes": 16,
+        "hex": "2431312D3E3139322E302E322E353521",
+        "text": "$11->192.0.2.55!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              "192.0.2.55"
+            ],
+            "bytes": 17,
+            "hex": "243130302D3E3139322E302E322E353521",
+            "text": "$100->192.0.2.55!",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              "X,>;%2"
+            ],
+            "bytes": 12,
+            "hex": "2431312D3E582C3E3B253221",
+            "text": "$11->X,>;%2!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ab4e0",
+      "signature": "size_t FUN_007ab4e0(void *param_1,undefined4 *param_2)",
+      "parameters": [
+        "192.0.2.55"
+      ],
+      "sample": {
+        "parameters": [
+          "192.0.2.55"
+        ],
+        "bytes": 17,
+        "hex": "24416C6C2D3E3139322E302E322E353521",
+        "text": "$All->192.0.2.55!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              "X,>;%2"
+            ],
+            "bytes": 13,
+            "hex": "24416C6C2D3E582C3E3B253221",
+            "text": "$All->X,>;%2!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7aba60",
+      "signature": "size_t __thiscall FUN_007aba60(undefined4 param_1,void *param_2,undefined4 param_3,undefined4 param_4)",
+      "parameters": [
+        11,
+        0
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          0
+        ],
+        "bytes": 10,
+        "hex": "2431315647414F757421",
+        "text": "$11VGAOut!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              0
+            ],
+            "bytes": 11,
+            "hex": "243130305647414F757421",
+            "text": "$100VGAOut!",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101
+            ],
+            "bytes": 7,
+            "hex": "2431314F757421",
+            "text": "$11Out!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7abd00",
+      "signature": "size_t FUN_007abd00(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",
+      "parameters": [
+        11,
+        12,
+        13
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13
+        ],
+        "bytes": 16,
+        "hex": "3C4D41502C572C31312C31322C31333E",
+        "text": "<MAP,W,11,12,13>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13
+            ],
+            "bytes": 17,
+            "hex": "3C4D41502C572C3130302C31322C31333E",
+            "text": "<MAP,W,100,12,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13
+            ],
+            "bytes": 17,
+            "hex": "3C4D41502C572C31312C3130312C31333E",
+            "text": "<MAP,W,11,101,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102
+            ],
+            "bytes": 17,
+            "hex": "3C4D41502C572C31312C31322C3130323E",
+            "text": "<MAP,W,11,12,102>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ac1a0",
+      "signature": "size_t FUN_007ac1a0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",
+      "parameters": [
+        11,
+        12,
+        13
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13
+        ],
+        "bytes": 16,
+        "hex": "3C5649522C572C31312C31322C31333E",
+        "text": "<VIR,W,11,12,13>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13
+            ],
+            "bytes": 17,
+            "hex": "3C5649522C572C3130302C31322C31333E",
+            "text": "<VIR,W,100,12,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13
+            ],
+            "bytes": 17,
+            "hex": "3C5649522C572C31312C3130312C31333E",
+            "text": "<VIR,W,11,101,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102
+            ],
+            "bytes": 17,
+            "hex": "3C5649522C572C31312C31322C3130323E",
+            "text": "<VIR,W,11,12,102>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ac460",
+      "signature": "size_t FUN_007ac460(void *param_1,int param_2,undefined4 *param_3)",
+      "parameters": [
+        11,
+        "1920x1080x60Hz"
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          "1920x1080x60Hz"
+        ],
+        "bytes": 11,
+        "hex": "3C5265732C31312C31373E",
+        "text": "<Res,11,17>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              "1920x1080x60Hz"
+            ],
+            "bytes": 12,
+            "hex": "3C5265732C3130302C31373E",
+            "text": "<Res,100,17>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              "X,>;%2"
+            ],
+            "bytes": 10,
+            "hex": "3C5265732C31312C303E",
+            "text": "<Res,11,0>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ac680",
+      "signature": "size_t FUN_007ac680(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 16,
+        "hex": "3C56616C696453697A652C522C31313E",
+        "text": "<ValidSize,R,11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 17,
+            "hex": "3C56616C696453697A652C522C3130303E",
+            "text": "<ValidSize,R,100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ac7f0",
+      "signature": "size_t FUN_007ac7f0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",
+      "parameters": [
+        11,
+        12,
+        13
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13
+        ],
+        "bytes": 19,
+        "hex": "3C4D415247494E2C572C31312C31322C31333E",
+        "text": "<MARGIN,W,11,12,13>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13
+            ],
+            "bytes": 20,
+            "hex": "3C4D415247494E2C572C3130302C31322C31333E",
+            "text": "<MARGIN,W,100,12,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13
+            ],
+            "bytes": 20,
+            "hex": "3C4D415247494E2C572C31312C3130312C31333E",
+            "text": "<MARGIN,W,11,101,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102
+            ],
+            "bytes": 20,
+            "hex": "3C4D415247494E2C572C31312C31322C3130323E",
+            "text": "<MARGIN,W,11,12,102>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7aca40",
+      "signature": "size_t FUN_007aca40(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5,int param_6,int param_7,undefined4 param_8,undefined4 param_9)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18
+        ],
+        "bytes": 31,
+        "hex": "3C57494E2C572C31312C31322C31332C31342C31352C31362C31372C31383E",
+        "text": "<WIN,W,11,12,13,14,15,16,17,18>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C3130302C31322C31332C31342C31352C31362C31372C31383E",
+            "text": "<WIN,W,100,12,13,14,15,16,17,18>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14,
+              15,
+              16,
+              17,
+              18
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C31312C3130312C31332C31342C31352C31362C31372C31383E",
+            "text": "<WIN,W,11,101,13,14,15,16,17,18>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14,
+              15,
+              16,
+              17,
+              18
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C31312C31322C3130322C31342C31352C31362C31372C31383E",
+            "text": "<WIN,W,11,12,102,14,15,16,17,18>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103,
+              15,
+              16,
+              17,
+              18
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C31312C31322C31332C3130332C31352C31362C31372C31383E",
+            "text": "<WIN,W,11,12,13,103,15,16,17,18>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 6,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              104,
+              16,
+              17,
+              18
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C31312C31322C31332C31342C3130342C31362C31372C31383E",
+            "text": "<WIN,W,11,12,13,14,104,16,17,18>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 7,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              15,
+              105,
+              17,
+              18
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C31312C31322C31332C31342C31352C3130352C31372C31383E",
+            "text": "<WIN,W,11,12,13,14,15,105,17,18>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 8,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              106,
+              18
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C31312C31322C31332C31342C31352C31362C3130362C31383E",
+            "text": "<WIN,W,11,12,13,14,15,16,106,18>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 9,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              15,
+              16,
+              17,
+              107
+            ],
+            "bytes": 32,
+            "hex": "3C57494E2C572C31312C31322C31332C31342C31352C31362C31372C3130373E",
+            "text": "<WIN,W,11,12,13,14,15,16,17,107>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ace30",
+      "signature": "size_t FUN_007ace30(void *param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "bytes": 18,
+        "hex": "3C4D4F56452C31312C31322C31332C31343E",
+        "text": "<MOVE,11,12,13,14>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14
+            ],
+            "bytes": 19,
+            "hex": "3C4D4F56452C3130302C31322C31332C31343E",
+            "text": "<MOVE,100,12,13,14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14
+            ],
+            "bytes": 19,
+            "hex": "3C4D4F56452C31312C3130312C31332C31343E",
+            "text": "<MOVE,11,101,13,14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14
+            ],
+            "bytes": 19,
+            "hex": "3C4D4F56452C31312C31322C3130322C31343E",
+            "text": "<MOVE,11,12,102,14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103
+            ],
+            "bytes": 19,
+            "hex": "3C4D4F56452C31312C31322C31332C3130333E",
+            "text": "<MOVE,11,12,13,103>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ad0d0",
+      "signature": "size_t FUN_007ad0d0(void *param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5, undefined4 param_6,undefined4 param_7)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "bytes": 26,
+        "hex": "3C524553495A452C31312C31322C31332C31342C31352C31363E",
+        "text": "<RESIZE,11,12,13,14,15,16>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14,
+              15,
+              16
+            ],
+            "bytes": 27,
+            "hex": "3C524553495A452C3130302C31322C31332C31342C31352C31363E",
+            "text": "<RESIZE,100,12,13,14,15,16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14,
+              15,
+              16
+            ],
+            "bytes": 27,
+            "hex": "3C524553495A452C31312C3130312C31332C31342C31352C31363E",
+            "text": "<RESIZE,11,101,13,14,15,16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14,
+              15,
+              16
+            ],
+            "bytes": 27,
+            "hex": "3C524553495A452C31312C31322C3130322C31342C31352C31363E",
+            "text": "<RESIZE,11,12,102,14,15,16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103,
+              15,
+              16
+            ],
+            "bytes": 27,
+            "hex": "3C524553495A452C31312C31322C31332C3130332C31352C31363E",
+            "text": "<RESIZE,11,12,13,103,15,16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 6,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              104,
+              16
+            ],
+            "bytes": 27,
+            "hex": "3C524553495A452C31312C31322C31332C31342C3130342C31363E",
+            "text": "<RESIZE,11,12,13,14,104,16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 7,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              15,
+              105
+            ],
+            "bytes": 27,
+            "hex": "3C524553495A452C31312C31322C31332C31342C31352C3130353E",
+            "text": "<RESIZE,11,12,13,14,15,105>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ad400",
+      "signature": "size_t FUN_007ad400(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",
+      "parameters": [
+        11,
+        12,
+        13
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13
+        ],
+        "bytes": 16,
+        "hex": "3C4C415945522C31312C31322C31333E",
+        "text": "<LAYER,11,12,13>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13
+            ],
+            "bytes": 17,
+            "hex": "3C4C415945522C3130302C31322C31333E",
+            "text": "<LAYER,100,12,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13
+            ],
+            "bytes": 17,
+            "hex": "3C4C415945522C31312C3130312C31333E",
+            "text": "<LAYER,11,101,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102
+            ],
+            "bytes": 17,
+            "hex": "3C4C415945522C31312C31322C3130323E",
+            "text": "<LAYER,11,12,102>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ad650",
+      "signature": "size_t FUN_007ad650(void *param_1,undefined4 param_2,undefined4 param_3)",
+      "parameters": [
+        11,
+        12
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12
+        ],
+        "bytes": 13,
+        "hex": "3C434C4F53452C31312C31323E",
+        "text": "<CLOSE,11,12>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12
+            ],
+            "bytes": 14,
+            "hex": "3C434C4F53452C3130302C31323E",
+            "text": "<CLOSE,100,12>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101
+            ],
+            "bytes": 14,
+            "hex": "3C434C4F53452C31312C3130313E",
+            "text": "<CLOSE,11,101>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ad850",
+      "signature": "size_t FUN_007ad850(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 14,
+        "hex": "3C434C4F53452C31312C416C6C3E",
+        "text": "<CLOSE,11,All>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 15,
+            "hex": "3C434C4F53452C3130302C416C6C3E",
+            "text": "<CLOSE,100,All>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ada00",
+      "signature": "size_t FUN_007ada00(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)",
+      "parameters": [
+        11,
+        12,
+        13
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13
+        ],
+        "bytes": 13,
+        "hex": "3C4D532C31332C31312C31323E",
+        "text": "<MS,13,11,12>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13
+            ],
+            "bytes": 14,
+            "hex": "3C4D532C31332C3130302C31323E",
+            "text": "<MS,13,100,12>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13
+            ],
+            "bytes": 14,
+            "hex": "3C4D532C31332C31312C3130313E",
+            "text": "<MS,13,11,101>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102
+            ],
+            "bytes": 14,
+            "hex": "3C4D532C3130322C31312C31323E",
+            "text": "<MS,102,11,12>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7adc50",
+      "signature": "undefined4 FUN_007adc50(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 12,
+        "hex": "3C41636B3E00000000000000",
+        "text": "<Ack>\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7ae0b0",
+      "signature": "size_t FUN_007ae0b0(void *param_1,undefined4 *param_2)",
+      "parameters": [
+        "192.0.2.55"
+      ],
+      "sample": {
+        "parameters": [
+          "192.0.2.55"
+        ],
+        "bytes": 10,
+        "hex": "3139322E302E322E3535",
+        "text": "192.0.2.55",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              "X,>;%2"
+            ],
+            "bytes": 6,
+            "hex": "582C3E3B2532",
+            "text": "X,>;%2",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ae3d0",
+      "signature": "size_t FUN_007ae3d0(void *param_1,undefined4 param_2,undefined4 param_3)",
+      "parameters": [
+        11,
+        "1920x1080x60Hz"
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          "1920x1080x60Hz"
+        ],
+        "bytes": 22,
+        "hex": "24496E31312D3E313932307831303830783630487A21",
+        "text": "$In11->1920x1080x60Hz!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              "1920x1080x60Hz"
+            ],
+            "bytes": 23,
+            "hex": "24496E3130302D3E313932307831303830783630487A21",
+            "text": "$In100->1920x1080x60Hz!",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              "X,>;%2"
+            ],
+            "bytes": 14,
+            "hex": "24496E31312D3E582C3E3B253221",
+            "text": "$In11->X,>;%2!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7ae720",
+      "signature": "size_t FUN_007ae720(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 11,
+        "hex": "536574564741496E31312E",
+        "text": "SetVGAIn11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 12,
+            "hex": "536574564741496E3130302E",
+            "text": "SetVGAIn100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7aea30",
+      "signature": "size_t FUN_007aea30(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 12,
+        "hex": "5365745647414F757431312E",
+        "text": "SetVGAOut11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 13,
+            "hex": "5365745647414F75743130302E",
+            "text": "SetVGAOut100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7aed40",
+      "signature": "size_t FUN_007aed40(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 9,
+        "hex": "42726967687431312E",
+        "text": "Bright11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 10,
+            "hex": "4272696768743130302E",
+            "text": "Bright100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7af050",
+      "signature": "size_t FUN_007af050(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 11,
+        "hex": "436F6E747261737431312E",
+        "text": "Contrast11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 12,
+            "hex": "436F6E74726173743130302E",
+            "text": "Contrast100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7af360",
+      "signature": "size_t FUN_007af360(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 13,
+        "hex": "53617475726174696F6E31312E",
+        "text": "Saturation11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 14,
+            "hex": "53617475726174696F6E3130302E",
+            "text": "Saturation100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7af670",
+      "signature": "size_t FUN_007af670(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 8,
+        "hex": "536861727031312E",
+        "text": "Sharp11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 9,
+            "hex": "53686172703130302E",
+            "text": "Sharp100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7af980",
+      "signature": "size_t FUN_007af980(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 6,
+        "hex": "52656431312E",
+        "text": "Red11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 7,
+            "hex": "5265643130302E",
+            "text": "Red100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7afc90",
+      "signature": "size_t FUN_007afc90(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 8,
+        "hex": "477265656E31312E",
+        "text": "Green11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 9,
+            "hex": "477265656E3130302E",
+            "text": "Green100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7affa0",
+      "signature": "size_t FUN_007affa0(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 7,
+        "hex": "426C756531312E",
+        "text": "Blue11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 8,
+            "hex": "426C75653130302E",
+            "text": "Blue100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b02b0",
+      "signature": "undefined4 FUN_007b02b0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 11,
+        "hex": "4175746F436F6E6669672E",
+        "text": "AutoConfig.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b0330",
+      "signature": "undefined4 FUN_007b0330(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 7,
+        "hex": "48506F7355702E",
+        "text": "HPosUp.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b03a0",
+      "signature": "undefined4 FUN_007b03a0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "48506F73446F776E2E",
+        "text": "HPosDown.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b0410",
+      "signature": "undefined4 FUN_007b0410(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 7,
+        "hex": "56506F7355702E",
+        "text": "VPosUp.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b0480",
+      "signature": "undefined4 FUN_007b0480(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "56506F73446F776E2E",
+        "text": "VPosDown.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b04f0",
+      "signature": "undefined4 FUN_007b04f0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "506F7352657365742E",
+        "text": "PosReset.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b0560",
+      "signature": "undefined4 FUN_007b0560(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 8,
+        "hex": "4853697A6555702E",
+        "text": "HSizeUp.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b05d0",
+      "signature": "undefined4 FUN_007b05d0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "4853697A65446F776E2E",
+        "text": "HSizeDown.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b0650",
+      "signature": "undefined4 FUN_007b0650(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 8,
+        "hex": "5653697A6555702E",
+        "text": "VSizeUp.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b06c0",
+      "signature": "undefined4 FUN_007b06c0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "5653697A65446F776E2E",
+        "text": "VSizeDown.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b0740",
+      "signature": "undefined4 FUN_007b0740(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 11,
+        "hex": "3C5E43617264547970653E",
+        "text": "<^CardType>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b0840",
+      "signature": "size_t FUN_007b0840(void *param_1,int param_2,int param_3,int param_4,int param_5)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "bytes": 25,
+        "hex": "3C43686172436F6C6F722C572C31312C31322C31332C31343E",
+        "text": "<CharColor,W,11,12,13,14>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14
+            ],
+            "bytes": 26,
+            "hex": "3C43686172436F6C6F722C572C3130302C31322C31332C31343E",
+            "text": "<CharColor,W,100,12,13,14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14
+            ],
+            "bytes": 26,
+            "hex": "3C43686172436F6C6F722C572C31312C3130312C31332C31343E",
+            "text": "<CharColor,W,11,101,13,14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14
+            ],
+            "bytes": 26,
+            "hex": "3C43686172436F6C6F722C572C31312C31322C3130322C31343E",
+            "text": "<CharColor,W,11,12,102,14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103
+            ],
+            "bytes": 26,
+            "hex": "3C43686172436F6C6F722C572C31312C31322C31332C3130333E",
+            "text": "<CharColor,W,11,12,13,103>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b0c20",
+      "signature": "size_t FUN_007b0c20(void *param_1,int param_2,int param_3,int param_4)",
+      "parameters": [
+        11,
+        12,
+        13
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13
+        ],
+        "bytes": 20,
+        "hex": "3C43686172506F732C572C31312C31322C31333E",
+        "text": "<CharPos,W,11,12,13>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13
+            ],
+            "bytes": 21,
+            "hex": "3C43686172506F732C572C3130302C31322C31333E",
+            "text": "<CharPos,W,100,12,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13
+            ],
+            "bytes": 21,
+            "hex": "3C43686172506F732C572C31312C3130312C31333E",
+            "text": "<CharPos,W,11,101,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102
+            ],
+            "bytes": 21,
+            "hex": "3C43686172506F732C572C31312C31322C3130323E",
+            "text": "<CharPos,W,11,12,102>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b0fd0",
+      "signature": "size_t FUN_007b0fd0(void *param_1,int param_2,int param_3,int param_4)",
+      "parameters": [
+        11,
+        12,
+        13
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13
+        ],
+        "bytes": 21,
+        "hex": "3C4368617253697A652C572C31312C31322C31333E",
+        "text": "<CharSize,W,11,12,13>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13
+            ],
+            "bytes": 22,
+            "hex": "3C4368617253697A652C572C3130302C31322C31333E",
+            "text": "<CharSize,W,100,12,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13
+            ],
+            "bytes": 22,
+            "hex": "3C4368617253697A652C572C31312C3130312C31333E",
+            "text": "<CharSize,W,11,101,13>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102
+            ],
+            "bytes": 22,
+            "hex": "3C4368617253697A652C572C31312C31322C3130323E",
+            "text": "<CharSize,W,11,12,102>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b1380",
+      "signature": "size_t FUN_007b1380(void *param_1,int param_2,undefined1 param_3)",
+      "parameters": [
+        11,
+        12
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12
+        ],
+        "bytes": 21,
+        "hex": "3C43686172446973706C61792C572C31312C31323E",
+        "text": "<CharDisplay,W,11,12>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12
+            ],
+            "bytes": 22,
+            "hex": "3C43686172446973706C61792C572C3130302C31323E",
+            "text": "<CharDisplay,W,100,12>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101
+            ],
+            "bytes": 22,
+            "hex": "3C43686172446973706C61792C572C31312C3130313E",
+            "text": "<CharDisplay,W,11,101>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b2310",
+      "signature": "undefined4 FUN_007b2310(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 8,
+        "hex": "436865636B504A2E",
+        "text": "CheckPJ.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b2380",
+      "signature": "size_t FUN_007b2380(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 7,
+        "hex": "5361766531312E",
+        "text": "Save11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 8,
+            "hex": "536176653130302E",
+            "text": "Save100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b2590",
+      "signature": "size_t FUN_007b2590(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 9,
+        "hex": "526563616C6C31312E",
+        "text": "Recall11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 10,
+            "hex": "526563616C6C3130302E",
+            "text": "Recall100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b27a0",
+      "signature": "size_t FUN_007b27a0(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 8,
+        "hex": "436C65617231312E",
+        "text": "Clear11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 9,
+            "hex": "436C6561723130302E",
+            "text": "Clear100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b29b0",
+      "signature": "size_t FUN_007b29b0(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 8,
+        "hex": "536574495031312E",
+        "text": "SetIP11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 9,
+            "hex": "53657449503130302E",
+            "text": "SetIP100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b2bc0",
+      "signature": "size_t FUN_007b2bc0(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 11,
+        "hex": "53657449504F757431312E",
+        "text": "SetIPOut11.",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 12,
+            "hex": "53657449504F75743130302E",
+            "text": "SetIPOut100.",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b2dd0",
+      "signature": "undefined4 FUN_007b2dd0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "5475726E4C6566742E",
+        "text": "TurnLeft.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b2e40",
+      "signature": "undefined4 FUN_007b2e40(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "5475726E52696768742E",
+        "text": "TurnRight.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b2ec0",
+      "signature": "undefined4 FUN_007b2ec0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 7,
+        "hex": "5475726E55702E",
+        "text": "TurnUp.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b2f30",
+      "signature": "undefined4 FUN_007b2f30(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "5475726E446F776E2E",
+        "text": "TurnDown.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b2fa0",
+      "signature": "undefined4 FUN_007b2fa0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "5475726E53746F702E",
+        "text": "TurnStop.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3010",
+      "signature": "undefined4 FUN_007b3010(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "466F6375734E6561722E",
+        "text": "FocusNear.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3090",
+      "signature": "undefined4 FUN_007b3090(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 9,
+        "hex": "466F6375734661722E",
+        "text": "FocusFar.",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3100",
+      "signature": "undefined4 FUN_007b3100(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 11,
+        "hex": "3C5E4C6F63616C4E65743E",
+        "text": "<^LocalNet>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3180",
+      "signature": "size_t FUN_007b3180(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "bytes": 23,
+        "hex": "3C234C6F63616C5349505231312E31322E31332E31343E",
+        "text": "<#LocalSIPR11.12.13.14>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C534950523130302E31322E31332E31343E",
+            "text": "<#LocalSIPR100.12.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C5349505231312E3130312E31332E31343E",
+            "text": "<#LocalSIPR11.101.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C5349505231312E31322E3130322E31343E",
+            "text": "<#LocalSIPR11.12.102.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C5349505231312E31322E31332E3130333E",
+            "text": "<#LocalSIPR11.12.13.103>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b3430",
+      "signature": "size_t FUN_007b3430(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "bytes": 23,
+        "hex": "3C234C6F63616C5355425231312E31322E31332E31343E",
+        "text": "<#LocalSUBR11.12.13.14>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C535542523130302E31322E31332E31343E",
+            "text": "<#LocalSUBR100.12.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C5355425231312E3130312E31332E31343E",
+            "text": "<#LocalSUBR11.101.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C5355425231312E31322E3130322E31343E",
+            "text": "<#LocalSUBR11.12.102.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103
+            ],
+            "bytes": 24,
+            "hex": "3C234C6F63616C5355425231312E31322E31332E3130333E",
+            "text": "<#LocalSUBR11.12.13.103>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b36e0",
+      "signature": "size_t FUN_007b36e0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "bytes": 22,
+        "hex": "3C234C6F63616C47415231312E31322E31332E31343E",
+        "text": "<#LocalGAR11.12.13.14>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14
+            ],
+            "bytes": 23,
+            "hex": "3C234C6F63616C4741523130302E31322E31332E31343E",
+            "text": "<#LocalGAR100.12.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14
+            ],
+            "bytes": 23,
+            "hex": "3C234C6F63616C47415231312E3130312E31332E31343E",
+            "text": "<#LocalGAR11.101.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14
+            ],
+            "bytes": 23,
+            "hex": "3C234C6F63616C47415231312E31322E3130322E31343E",
+            "text": "<#LocalGAR11.12.102.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103
+            ],
+            "bytes": 23,
+            "hex": "3C234C6F63616C47415231312E31322E31332E3130333E",
+            "text": "<#LocalGAR11.12.13.103>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b3990",
+      "signature": "size_t FUN_007b3990(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5,undefined4 param_6,undefined4 param_7)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "bytes": 29,
+        "hex": "3C234C6F63616C5348415231312E31322E31332E31342E31352E31363E",
+        "text": "<#LocalSHAR11.12.13.14.15.16>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14,
+              15,
+              16
+            ],
+            "bytes": 30,
+            "hex": "3C234C6F63616C534841523130302E31322E31332E31342E31352E31363E",
+            "text": "<#LocalSHAR100.12.13.14.15.16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14,
+              15,
+              16
+            ],
+            "bytes": 30,
+            "hex": "3C234C6F63616C5348415231312E3130312E31332E31342E31352E31363E",
+            "text": "<#LocalSHAR11.101.13.14.15.16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14,
+              15,
+              16
+            ],
+            "bytes": 30,
+            "hex": "3C234C6F63616C5348415231312E31322E3130322E31342E31352E31363E",
+            "text": "<#LocalSHAR11.12.102.14.15.16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103,
+              15,
+              16
+            ],
+            "bytes": 30,
+            "hex": "3C234C6F63616C5348415231312E31322E31332E3130332E31352E31363E",
+            "text": "<#LocalSHAR11.12.13.103.15.16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 6,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              104,
+              16
+            ],
+            "bytes": 30,
+            "hex": "3C234C6F63616C5348415231312E31322E31332E31342E3130342E31363E",
+            "text": "<#LocalSHAR11.12.13.14.104.16>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 7,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              14,
+              15,
+              105
+            ],
+            "bytes": 30,
+            "hex": "3C234C6F63616C5348415231312E31322E31332E31342E31352E3130353E",
+            "text": "<#LocalSHAR11.12.13.14.15.105>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b3cb0",
+      "signature": "undefined4 FUN_007b3cb0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 12,
+        "hex": "3C5E52656D6F74654E65743E",
+        "text": "<^RemoteNet>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3d30",
+      "signature": "undefined4 FUN_007b3d30(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "3C234E65744175746F3E",
+        "text": "<#NetAuto>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3db0",
+      "signature": "undefined4 FUN_007b3db0(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "3C2343524541544F523E",
+        "text": "<#CREATOR>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3e30",
+      "signature": "undefined4 FUN_007b3e30(undefined4 *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 7,
+        "hex": "3C23525453503E",
+        "text": "<#RTSP>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b3ea0",
+      "signature": "size_t FUN_007b3ea0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "bytes": 24,
+        "hex": "3C2352656D6F74655349505231312E31322E31332E31343E",
+        "text": "<#RemoteSIPR11.12.13.14>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14
+            ],
+            "bytes": 25,
+            "hex": "3C2352656D6F7465534950523130302E31322E31332E31343E",
+            "text": "<#RemoteSIPR100.12.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14
+            ],
+            "bytes": 25,
+            "hex": "3C2352656D6F74655349505231312E3130312E31332E31343E",
+            "text": "<#RemoteSIPR11.101.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14
+            ],
+            "bytes": 25,
+            "hex": "3C2352656D6F74655349505231312E31322E3130322E31343E",
+            "text": "<#RemoteSIPR11.12.102.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103
+            ],
+            "bytes": 25,
+            "hex": "3C2352656D6F74655349505231312E31322E31332E3130333E",
+            "text": "<#RemoteSIPR11.12.13.103>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b46b0",
+      "signature": "size_t FUN_007b46b0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)",
+      "parameters": [
+        11,
+        12,
+        13,
+        14
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12,
+          13,
+          14
+        ],
+        "bytes": 21,
+        "hex": "3C2347726F7570495031312E31322E31332E31343E",
+        "text": "<#GroupIP11.12.13.14>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12,
+              13,
+              14
+            ],
+            "bytes": 22,
+            "hex": "3C2347726F757049503130302E31322E31332E31343E",
+            "text": "<#GroupIP100.12.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101,
+              13,
+              14
+            ],
+            "bytes": 22,
+            "hex": "3C2347726F7570495031312E3130312E31332E31343E",
+            "text": "<#GroupIP11.101.13.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 4,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              102,
+              14
+            ],
+            "bytes": 22,
+            "hex": "3C2347726F7570495031312E31322E3130322E31343E",
+            "text": "<#GroupIP11.12.102.14>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 5,
+          "sample": {
+            "parameters": [
+              11,
+              12,
+              13,
+              103
+            ],
+            "bytes": 22,
+            "hex": "3C2347726F7570495031312E31322E31332E3130333E",
+            "text": "<#GroupIP11.12.13.103>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b4960",
+      "signature": "size_t FUN_007b4960(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 14,
+        "hex": "3C2347726F7570506F727431313E",
+        "text": "<#GroupPort11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 15,
+            "hex": "3C2347726F7570506F72743130303E",
+            "text": "<#GroupPort100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b6760",
+      "signature": "size_t FUN_007b6760(void *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 8,
+        "hex": "3C53515F5665723E",
+        "text": "<SQ_Ver>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b6870",
+      "signature": "size_t FUN_007b6870(void *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 13,
+        "hex": "3C4765745F53515F46696C653E",
+        "text": "<Get_SQ_File>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b6980",
+      "signature": "size_t FUN_007b6980(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 12,
+        "hex": "243131496E7075744D736721",
+        "text": "$11InputMsg!",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 13,
+            "hex": "24313030496E7075744D736721",
+            "text": "$100InputMsg!",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b6c80",
+      "signature": "size_t FUN_007b6c80(void *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 18,
+        "hex": "416C6C496E70757443617074696F6E5F3121",
+        "text": "AllInputCaption_1!",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b6dd0",
+      "signature": "size_t FUN_007b6dd0(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 12,
+        "hex": "3C235361766550696331313E",
+        "text": "<#SavePic11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 13,
+            "hex": "3C23536176655069633130303E",
+            "text": "<#SavePic100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b6f60",
+      "signature": "size_t FUN_007b6f60(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 14,
+        "hex": "3C23536176655469746C6531313E",
+        "text": "<#SaveTitle11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 15,
+            "hex": "3C23536176655469746C653130303E",
+            "text": "<#SaveTitle100>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b70f0",
+      "signature": "size_t FUN_007b70f0(void *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 12,
+        "hex": "3C526561645F506F7765723E",
+        "text": "<Read_Power>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b79a0",
+      "signature": "size_t FUN_007b79a0(void *param_1)",
+      "parameters": [],
+      "sample": {
+        "parameters": [],
+        "bytes": 10,
+        "hex": "3C526573496E4F75743E",
+        "text": "<ResInOut>",
+        "completed": true
+      },
+      "parameter_variants": []
+    },
+    {
+      "function": "0x7b7ab0",
+      "signature": "size_t FUN_007b7ab0(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 15,
+        "hex": "3C4368617253656E642C31312C313E",
+        "text": "<CharSend,11,1>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 16,
+            "hex": "3C4368617253656E642C3130302C313E",
+            "text": "<CharSend,100,1>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b7c20",
+      "signature": "size_t FUN_007b7c20(void *param_1,int param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 15,
+        "hex": "3C4368617253656E642C31312C323E",
+        "text": "<CharSend,11,2>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 16,
+            "hex": "3C4368617253656E642C3130302C323E",
+            "text": "<CharSend,100,2>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b7d90",
+      "signature": "size_t FUN_007b7d90(void *param_1,int param_2,int param_3)",
+      "parameters": [
+        11,
+        12
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12
+        ],
+        "bytes": 17,
+        "hex": "3C4D617053656E642C31312C31322C313E",
+        "text": "<MapSend,11,12,1>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12
+            ],
+            "bytes": 18,
+            "hex": "3C4D617053656E642C3130302C31322C313E",
+            "text": "<MapSend,100,12,1>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101
+            ],
+            "bytes": 18,
+            "hex": "3C4D617053656E642C31312C3130312C313E",
+            "text": "<MapSend,11,101,1>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b7f50",
+      "signature": "size_t FUN_007b7f50(void *param_1,int param_2,int param_3)",
+      "parameters": [
+        11,
+        12
+      ],
+      "sample": {
+        "parameters": [
+          11,
+          12
+        ],
+        "bytes": 17,
+        "hex": "3C4D617053656E642C31312C31322C323E",
+        "text": "<MapSend,11,12,2>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100,
+              12
+            ],
+            "bytes": 18,
+            "hex": "3C4D617053656E642C3130302C31322C323E",
+            "text": "<MapSend,100,12,2>",
+            "completed": true
+          }
+        },
+        {
+          "parameter": 3,
+          "sample": {
+            "parameters": [
+              11,
+              101
+            ],
+            "bytes": 18,
+            "hex": "3C4D617053656E642C31312C3130312C323E",
+            "text": "<MapSend,11,101,2>",
+            "completed": true
+          }
+        }
+      ]
+    },
+    {
+      "function": "0x7b8110",
+      "signature": "size_t FUN_007b8110(void *param_1,undefined4 param_2)",
+      "parameters": [
+        11
+      ],
+      "sample": {
+        "parameters": [
+          11
+        ],
+        "bytes": 14,
+        "hex": "3C5072657669657743482C31313E",
+        "text": "<PreviewCH,11>",
+        "completed": true
+      },
+      "parameter_variants": [
+        {
+          "parameter": 2,
+          "sample": {
+            "parameters": [
+              100
+            ],
+            "bytes": 15,
+            "hex": "3C5072657669657743482C3130303E",
+            "text": "<PreviewCH,100>",
+            "completed": true
+          }
+        }
+      ]
+    }
+  ],
+  "boundary": "原文本构造和复制指令；Qt格式化为按5.4源码规则的有限适配，无真实设备或Qt运行时执行。变体仅定位参数，不构成设备支持枚举证明。"
+}

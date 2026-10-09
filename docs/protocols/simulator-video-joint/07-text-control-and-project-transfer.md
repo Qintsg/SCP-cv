@@ -27,9 +27,50 @@
 | 摄像机方向 | `TurnLeft.`、`TurnRight.`、`TurnUp.`、`TurnDown.`、`TurnStop.` |
 | 下载／升级 | `DownLoadCode.`、`DownLoadIn`、`DownLoadOut`、`DownLoadFPGAIn`、`UpdateEDID`、`UpdateEnd.` 等 |
 
-完整模板和函数入口保存在 `catalogs/text-commands.csv`。模板的 `%1…%n` 顺序按原构造参数排列；尚未解释的型号相关参数保持编号，不伪造语义。
+历史静态模板保存在 [text-commands.csv](catalogs/text-commands.csv)。第四版另对106个设备文本构造入口执行原指令及参数变体采样，全部正常返回，完整字节、实参及变体见 [device-text-builders.csv](catalogs/device-text-builders.csv) 和 [采样结果](samples/device-text-probes.json)。另有27组独立完整字节比较；采样完成不等于设备语义或全部型号枚举已经证明。
+
+占位符是格式化顺序，不能无条件当作C函数参数顺序。Qt5.4的`arg`每次替换最低编号的全部剩余占位符，依据[对应源码](https://raw.githubusercontent.com/qt/qtbase/v5.4.0/src/corelib/tools/qstring.cpp)。以下是容易接错的原构造行为，参数编号包括输出缓冲区`param_1`：
+
+| 原入口 | 完整构造／关键行为 |
+| --- | --- |
+| `0x007ADA00` | `<MS,param_4,param_2,param_3>`，有参数重排 |
+| `0x007ACA40` | `<WIN,W,param_2,…,param_9>`；位置`param_6/7`按有符号十进制，其它已测值零扩展 |
+| `0x007ABA60` | `$param_2{输入制式}Out!`；选择0/1/2/3对应VGA/YUV/YC/CV，其它返回空制式串 |
+| `0x007AC460` | `<Res,param_2,枚举>`；`1920x1080x60Hz`映射17，未识别字符串映射0 |
+| `0x007B3990` | `<#LocalSHARa.b.c.d.e.f>`，六段十进制点分MAC参数，不能改成十六进制冒号格式 |
+| `0x007B7D90/7B7F50` | `<MapSend,param_2,param_3,1/2>` |
+| `0x007B8110` | `<PreviewCH,param_2>` |
+
+字符串拼接字段没有发现逗号、尖括号、分号或`%2`的转义步骤，合成输入会原样参与输出；嵌入NUL也包含在返回长度中。相关独立样例见 [文本验证](samples/device-text-verification.json)。本组额外采样不作为全Unicode的真实Qt ABI验证。
+
+**`0x007ADC50`存在长度异常：只写入`<Ack>`的5字节，却返回12。** 后7字节没有由构造器初始化，当前采样缓冲清零才显示零值；不能将零尾巴写成固定协议，也不能据此宣称发送缓冲安全。
+
+非零缓冲哨兵例再次确认此行为：预置A5后，原函数返回`<Ack>`加7个A5，而非7个零。输入制式选择0～3及无效99的完整终止符也纳入独立比较。
 
 部分静态常量只是前缀，例如 `<#SPORT`，后续函数会追加端口和终止符。只找到前缀不等于已经得到完整可发送命令。
+
+## 整数列表与有效尺寸
+
+六个整数列表入口的原循环及输出与独立预期比较，另加5个有效尺寸例，共29组通过，见 [列表验证](samples/ct-list-verification.json)。
+
+| 原入口 | 非空列表完整形式；index=11、列表=[1,4,7] |
+| --- | --- |
+| `0x007C8230` | `11R1,4,7.` |
+| `0x007C84C0` | `11S1,4,7.` |
+| `0x007C8750` | `11Q1,4,7.` |
+| `0x007C89E0` | `11F1,4,7.` |
+| `0x007C8C70` | `11T1,4,7.` |
+| `0x007C8F00` | `<VS,11,1,4,7>` |
+
+列表整数按零扩展值格式化，合成`-1`输出4294967295。原构造在追加后无条件删除末字符，因此空列表前五个入口都输出`11.`，VS入口输出`<VS,11>`；没有设备接受这些空命令的证据。R/S/Q/F/T的固件业务定义不由字母补造。
+
+`0x007C4930`以小写`x`拆分尺寸字符串，恰好两段才构造`<ValidSize,W,index,width,height>`。空串、大写X或三段尺寸返回0；数字转换失败的段变为0，例如`ax1080`生成`<ValidSize,W,11,0,1080>`。这不是输入有效性的保证。
+
+## 分辨率枚举不能混用
+
+`0x007A2A20`与`0x007C1620`是两套辅助表。同一个`1920x1080x60Hz`，前者返回17，后者返回21。前者按完整、区分大小写的字符串匹配；后者的部分路径按包含子串匹配并归一化输入，例如`prefix1920x1080x60Hzsuffix`归一化为`1920x1080x60Hz`并返回21，而前者返回0。
+
+后者接受`0800x0600x60Hz`后返回3，并改写为`800x600x60Hz`；不能将这个归一化输出直接当作该辅助表的等价输入。原常量及未知值共74个采样，5项与静态明确的独立预期一致，见 [枚举表](catalogs/device-resolution-enums.csv) 与 [采样证据](samples/resolution-enum-probes.json)。Qt翻译分支采用英文源文回退，未加载本机翻译目录；枚举表不代表设备允许的输出尺寸全集。
 
 ## CT 工程资料与图像流
 
@@ -42,9 +83,27 @@
 <#DeviceMsg/…> <#DeviceName/…> <#OutputMsg/…>
 ```
 
-图像／标题上传使用 `<Image_start>`、`<Wall_num…>`、`<Image_num…>`、`<Pic_size…>`、`<Image_end>`，标题路径还有 `<Title_start>` 和 `<Image_len…>`。
+图片上传原入口`0x00807990`实际拼接以下单次TCP写入内容：
 
-已确认这些模板和调用位置；完整二进制图像内容、字符编码以及分段确认尚未全部恢复。不能把它们当成前一节 TCP 状态 JSON 的字段。
+```text
+<Image_start><Wall_num{wall}><Image_num{image}><Pic_size1920,1080>
+rawContent[QByteArray实际长度]
+<Image_end>
+```
+
+这里的换行仅用于展示，线上没有新增换行。第三个整数参数在此包装中没有进入内容；尺寸文字固定1920,1080，不能据此证明传入图片的实际像素尺寸。
+
+标题入口`0x00807D70`拼接：
+
+```text
+<Title_start><Wall_num{wall}><Pic_size{width},{height}><Image_len{declaredLength}>
+rawContent[QByteArray实际长度]
+<Title_end><Wall_num{wall}><Pic_size{width},{height}>
+```
+
+`declaredLength`来自独立整数实参，没有用它裁切、填充或验证QByteArray。两入口通过`0x007FCC70`发送；9组原包装及写入参数与独立编码相同，覆盖空内容、嵌入NUL／终止标记、256字节、65536字节及标题声明长度不一致。见 [上传包装验证](samples/ct-upload-verification.json)。
+
+包装里的二进制内容原样保留，没有在这两个入口执行编码、转义或分段确认。内容生产者使用的图像编码、设备接收解析及完成确认仍缺证据；它们与06的`EAEB08`标注PNG包装是两套协议，不能混用。
 
 ## XML-RPC
 

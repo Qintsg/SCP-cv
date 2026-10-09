@@ -1,0 +1,163 @@
+{
+  "cases": 13,
+  "all_match": true,
+  "vectors": [
+    {
+      "kind": "text",
+      "name": "empty",
+      "payload_bytes": 0,
+      "length": 0,
+      "header_hex": "",
+      "tail_hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true,
+      "hex": ""
+    },
+    {
+      "kind": "text",
+      "name": "ascii",
+      "payload_bytes": 5,
+      "length": 12,
+      "header_hex": "EAEB070005",
+      "tail_hex": "FCFD",
+      "sha256": "7cec3a87ca1b16fc70157b7bdba540060c963c545fcc6b75494d80257f31946e",
+      "match": true,
+      "hex": "EAEB07000548656C6C6FFCFD"
+    },
+    {
+      "kind": "text",
+      "name": "unicode",
+      "payload_bytes": 6,
+      "length": 13,
+      "header_hex": "EAEB070006",
+      "tail_hex": "FCFD",
+      "sha256": "d49813f4d4a36f01475c65d665ea8201e755e24a7913525635a5a8449d99a151",
+      "match": true,
+      "hex": "EAEB070006E6A087E6B3A8FCFD"
+    },
+    {
+      "kind": "text",
+      "name": "emoji",
+      "payload_bytes": 4,
+      "length": 11,
+      "header_hex": "EAEB070004",
+      "tail_hex": "FCFD",
+      "sha256": "c14f3b434690d567cfd496bfe1cce940da85bc60dec9ec285bc7fcca847a92ba",
+      "match": true,
+      "hex": "EAEB070004F09F9880FCFD"
+    },
+    {
+      "kind": "text",
+      "name": "embedded_nul",
+      "payload_bytes": 3,
+      "length": 10,
+      "header_hex": "EAEB070003",
+      "tail_hex": "FCFD",
+      "sha256": "0f03757b9ec5ed53877a511c3195bfe7604110e25abd34c084403baac74bf0e2",
+      "match": true,
+      "hex": "EAEB070003410042FCFD"
+    },
+    {
+      "kind": "text",
+      "name": "256",
+      "payload_bytes": 256,
+      "length": 263,
+      "header_hex": "EAEB070100",
+      "tail_hex": "FCFD",
+      "sha256": "83a31838824d034b794df8a49b117a90e9273d13e3e1abfc3dc87165fb387689",
+      "match": true,
+      "hex": "EAEB07010041414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141414141FCFD"
+    },
+    {
+      "kind": "text",
+      "name": "65535",
+      "payload_bytes": 65535,
+      "length": 65542,
+      "header_hex": "EAEB07FFFF",
+      "tail_hex": "FCFD",
+      "sha256": "7d21a41295c4a97547c08890fbcef0e562db917174913021452eb215fe5a47f6",
+      "match": true
+    },
+    {
+      "kind": "text",
+      "name": "65536",
+      "payload_bytes": 65536,
+      "length": 65543,
+      "header_hex": "EAEB070000",
+      "tail_hex": "FCFD",
+      "sha256": "de28e03a09f95a0a7c8f88ed65dfefd4b1c40b43f7b59aed601ae566b0ee4471",
+      "match": true
+    },
+    {
+      "kind": "image_wrapper",
+      "name": "empty_path",
+      "payload_bytes": 33,
+      "image_calls": [],
+      "length": 0,
+      "header_hex": "",
+      "tail_hex": "",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true,
+      "hex": ""
+    },
+    {
+      "kind": "image_wrapper",
+      "name": "encoded_fixture",
+      "payload_bytes": 33,
+      "image_calls": [
+        "load_path",
+        "save_png"
+      ],
+      "length": 40,
+      "header_hex": "EAEB080021",
+      "tail_hex": "FCFD",
+      "sha256": "da0399b545c6b44807c63fca9758380f6487dc28eba2494750a10c829797f622",
+      "match": true,
+      "hex": "EAEB08002189504E470D0A1A0A0000000D49484452000000010000000108060000001F15C489FCFD"
+    },
+    {
+      "kind": "image_wrapper",
+      "name": "save_failed",
+      "payload_bytes": 0,
+      "image_calls": [
+        "load_path",
+        "save_png"
+      ],
+      "length": 7,
+      "header_hex": "EAEB080000",
+      "tail_hex": "FCFD",
+      "sha256": "c8678bf005b4da5ec642dafc94dc8c9893a1757a9da28a92f98e482412b22b59",
+      "match": true,
+      "hex": "EAEB080000FCFD"
+    },
+    {
+      "kind": "image_wrapper",
+      "name": "65535",
+      "payload_bytes": 65535,
+      "image_calls": [
+        "load_path",
+        "save_png"
+      ],
+      "length": 65542,
+      "header_hex": "EAEB08FFFF",
+      "tail_hex": "FCFD",
+      "sha256": "6b960bcf110691df4419431e133f1c5ae40c75dd59361ee5bdef0ee43eb62b29",
+      "match": true
+    },
+    {
+      "kind": "image_wrapper",
+      "name": "65536",
+      "payload_bytes": 65536,
+      "image_calls": [
+        "load_path",
+        "save_png"
+      ],
+      "length": 65543,
+      "header_hex": "EAEB080000",
+      "tail_hex": "FCFD",
+      "sha256": "765f2ee643419ebfb0de2e662e0cfadbd24f18fadea2ed09c5de099be412da07",
+      "match": true
+    }
+  ],
+  "boundary": "原包装代码执行；QImage 编码输出为注入值，不证明真实图片加载、编码或设备渲染。"
+}

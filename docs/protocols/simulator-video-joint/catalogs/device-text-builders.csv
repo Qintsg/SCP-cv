@@ -1,0 +1,107 @@
+function,signature,synthetic_parameters,sample_text,sample_hex,bytes,parameter_variants,evidence
+0x7a2e80,undefined4 FUN_007a2e80(undefined4 *param_1),[],<Protocol-Type>,3C50726F746F636F6C2D547970653E,15,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a30d0,undefined4 FUN_007a30d0(undefined4 *param_1),[],/:MessageOff;,2F3A4D6573736167654F66663B,13,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a32b0,undefined4 FUN_007a32b0(undefined4 *param_1),[],<ResIn><ResOut>,3C526573496E3E3C5265734F75743E,15,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a3330,undefined4 FUN_007a3330(undefined4 *param_1),[],<ScanPortAll>,3C5363616E506F7274416C6C3E,13,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a33b0,"size_t FUN_007a33b0(void *param_1,undefined4 param_2)",[11],"<ResIn,11>",3C526573496E2C31313E,10,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a3660,"size_t FUN_007a3660(void *param_1,undefined4 param_2)",[11],"<ResIn,11>",3C526573496E2C31313E,10,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a43d0,undefined4 FUN_007a43d0(undefined4 *param_1),[],"<Temp,In,All>",3C54656D702C496E2C416C6C3E,13,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a4450,undefined4 FUN_007a4450(undefined4 *param_1),[],"<Temp,Out,All>",3C54656D702C4F75742C416C6C3E,14,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a4540,"size_t FUN_007a4540(void *param_1,undefined4 param_2)",[11],$11DefaultIn!,24313144656661756C74496E21,13,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a47f0,"size_t FUN_007a47f0(void *param_1,undefined4 param_2)",[11],$11DefaultOut!,24313144656661756C744F757421,14,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a4aa0,undefined4 FUN_007a4aa0(undefined4 *param_1),[],<Defaults>,3C44656661756C74733E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a4b20,undefined4 FUN_007a4b20(undefined4 *param_1),[],<Defaults>,3C44656661756C74733E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a5100,"size_t FUN_007a5100(void *param_1,undefined4 param_2)",[11],$11AudioA!,243131417564696F4121,10,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a53b0,"size_t FUN_007a53b0(void *param_1,undefined4 param_2)",[11],$11AudioD!,243131417564696F4421,10,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a5660,"size_t FUN_007a5660(void *param_1,undefined4 param_2)",[11],$11AudioAOut!,243131417564696F414F757421,13,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a5910,"size_t FUN_007a5910(void *param_1,undefined4 param_2)",[11],$11AudioDOut!,243131417564696F444F757421,13,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a5bc0,"size_t FUN_007a5bc0(void *param_1,undefined4 param_2,undefined4 param_3)","[11, 12]",$11EDIDTo12.,24313145444944546F31322E,12,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a6670,"size_t FUN_007a6670(void *param_1,undefined4 param_2)",[11],<#VedioGetIn11>,3C23566564696F476574496E31313E,15,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a6d00,"size_t FUN_007a6d00(void *param_1,undefined4 param_2)",[11],<#VedioGetOut11>,3C23566564696F4765744F757431313E,16,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a7bd0,undefined4 FUN_007a7bd0(undefined4 *param_1),[],"<Close,All>",3C436C6F73652C416C6C3E,11,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a7c50,"size_t FUN_007a7c50(void *param_1,undefined4 param_2)",[11],"<Close,11>",3C436C6F73652C31313E,10,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a7de0,undefined4 FUN_007a7de0(undefined4 *param_1),[],DownLoadCode.,446F776E4C6F6164436F64652E,13,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a9ac0,undefined4 FUN_007a9ac0(undefined4 *param_1),[],<^HSSUBR>,3C5E4853535542523E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a9b30,undefined4 FUN_007a9b30(undefined4 *param_1),[],<^HSGAR>,3C5E48534741523E,8,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7a9c10,"size_t FUN_007a9c10(void *param_1,undefined4 param_2)",[11],<#HSSPORT11>,3C23485353504F525431313E,12,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7aacc0,undefined4 FUN_007aacc0(undefined4 *param_1),[],Status.,5374617475732E,7,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ab240,"size_t FUN_007ab240(void *param_1,undefined4 param_2,undefined4 *param_3)","[11, ""192.0.2.55""]",$11->192.0.2.55!,2431312D3E3139322E302E322E353521,16,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ab4e0,"size_t FUN_007ab4e0(void *param_1,undefined4 *param_2)","[""192.0.2.55""]",$All->192.0.2.55!,24416C6C2D3E3139322E302E322E353521,17,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7aba60,"size_t __thiscall FUN_007aba60(undefined4 param_1,void *param_2,undefined4 param_3,undefined4 param_4)","[11, 0]",$11VGAOut!,2431315647414F757421,10,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7abd00,"size_t FUN_007abd00(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)","[11, 12, 13]","<MAP,W,11,12,13>",3C4D41502C572C31312C31322C31333E,16,3,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ac1a0,"size_t FUN_007ac1a0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)","[11, 12, 13]","<VIR,W,11,12,13>",3C5649522C572C31312C31322C31333E,16,3,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ac460,"size_t FUN_007ac460(void *param_1,int param_2,undefined4 *param_3)","[11, ""1920x1080x60Hz""]","<Res,11,17>",3C5265732C31312C31373E,11,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ac680,"size_t FUN_007ac680(void *param_1,int param_2)",[11],"<ValidSize,R,11>",3C56616C696453697A652C522C31313E,16,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ac7f0,"size_t FUN_007ac7f0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)","[11, 12, 13]","<MARGIN,W,11,12,13>",3C4D415247494E2C572C31312C31322C31333E,19,3,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7aca40,"size_t FUN_007aca40(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5,int param_6,int param_7,undefined4 param_8,undefined4 param_9)","[11, 12, 13, 14, 15, 16, 17, 18]","<WIN,W,11,12,13,14,15,16,17,18>",3C57494E2C572C31312C31322C31332C31342C31352C31362C31372C31383E,31,8,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ace30,"size_t FUN_007ace30(void *param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5)","[11, 12, 13, 14]","<MOVE,11,12,13,14>",3C4D4F56452C31312C31322C31332C31343E,18,4,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ad0d0,"size_t FUN_007ad0d0(void *param_1,undefined4 param_2,undefined4 param_3,int param_4,int param_5, undefined4 param_6,undefined4 param_7)","[11, 12, 13, 14, 15, 16]","<RESIZE,11,12,13,14,15,16>",3C524553495A452C31312C31322C31332C31342C31352C31363E,26,6,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ad400,"size_t FUN_007ad400(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)","[11, 12, 13]","<LAYER,11,12,13>",3C4C415945522C31312C31322C31333E,16,3,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ad650,"size_t FUN_007ad650(void *param_1,undefined4 param_2,undefined4 param_3)","[11, 12]","<CLOSE,11,12>",3C434C4F53452C31312C31323E,13,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ad850,"size_t FUN_007ad850(void *param_1,undefined4 param_2)",[11],"<CLOSE,11,All>",3C434C4F53452C31312C416C6C3E,14,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ada00,"size_t FUN_007ada00(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4)","[11, 12, 13]","<MS,13,11,12>",3C4D532C31332C31312C31323E,13,3,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7adc50,undefined4 FUN_007adc50(undefined4 *param_1),[],<Ack>\x00\x00\x00\x00\x00\x00\x00,3C41636B3E00000000000000,12,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ae0b0,"size_t FUN_007ae0b0(void *param_1,undefined4 *param_2)","[""192.0.2.55""]",192.0.2.55,3139322E302E322E3535,10,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ae3d0,"size_t FUN_007ae3d0(void *param_1,undefined4 param_2,undefined4 param_3)","[11, ""1920x1080x60Hz""]",$In11->1920x1080x60Hz!,24496E31312D3E313932307831303830783630487A21,22,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7ae720,"size_t FUN_007ae720(void *param_1,undefined4 param_2)",[11],SetVGAIn11.,536574564741496E31312E,11,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7aea30,"size_t FUN_007aea30(void *param_1,undefined4 param_2)",[11],SetVGAOut11.,5365745647414F757431312E,12,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7aed40,"size_t FUN_007aed40(void *param_1,undefined4 param_2)",[11],Bright11.,42726967687431312E,9,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7af050,"size_t FUN_007af050(void *param_1,undefined4 param_2)",[11],Contrast11.,436F6E747261737431312E,11,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7af360,"size_t FUN_007af360(void *param_1,undefined4 param_2)",[11],Saturation11.,53617475726174696F6E31312E,13,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7af670,"size_t FUN_007af670(void *param_1,undefined4 param_2)",[11],Sharp11.,536861727031312E,8,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7af980,"size_t FUN_007af980(void *param_1,undefined4 param_2)",[11],Red11.,52656431312E,6,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7afc90,"size_t FUN_007afc90(void *param_1,undefined4 param_2)",[11],Green11.,477265656E31312E,8,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7affa0,"size_t FUN_007affa0(void *param_1,undefined4 param_2)",[11],Blue11.,426C756531312E,7,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b02b0,undefined4 FUN_007b02b0(undefined4 *param_1),[],AutoConfig.,4175746F436F6E6669672E,11,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0330,undefined4 FUN_007b0330(undefined4 *param_1),[],HPosUp.,48506F7355702E,7,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b03a0,undefined4 FUN_007b03a0(undefined4 *param_1),[],HPosDown.,48506F73446F776E2E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0410,undefined4 FUN_007b0410(undefined4 *param_1),[],VPosUp.,56506F7355702E,7,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0480,undefined4 FUN_007b0480(undefined4 *param_1),[],VPosDown.,56506F73446F776E2E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b04f0,undefined4 FUN_007b04f0(undefined4 *param_1),[],PosReset.,506F7352657365742E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0560,undefined4 FUN_007b0560(undefined4 *param_1),[],HSizeUp.,4853697A6555702E,8,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b05d0,undefined4 FUN_007b05d0(undefined4 *param_1),[],HSizeDown.,4853697A65446F776E2E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0650,undefined4 FUN_007b0650(undefined4 *param_1),[],VSizeUp.,5653697A6555702E,8,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b06c0,undefined4 FUN_007b06c0(undefined4 *param_1),[],VSizeDown.,5653697A65446F776E2E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0740,undefined4 FUN_007b0740(undefined4 *param_1),[],<^CardType>,3C5E43617264547970653E,11,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0840,"size_t FUN_007b0840(void *param_1,int param_2,int param_3,int param_4,int param_5)","[11, 12, 13, 14]","<CharColor,W,11,12,13,14>",3C43686172436F6C6F722C572C31312C31322C31332C31343E,25,4,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0c20,"size_t FUN_007b0c20(void *param_1,int param_2,int param_3,int param_4)","[11, 12, 13]","<CharPos,W,11,12,13>",3C43686172506F732C572C31312C31322C31333E,20,3,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b0fd0,"size_t FUN_007b0fd0(void *param_1,int param_2,int param_3,int param_4)","[11, 12, 13]","<CharSize,W,11,12,13>",3C4368617253697A652C572C31312C31322C31333E,21,3,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b1380,"size_t FUN_007b1380(void *param_1,int param_2,undefined1 param_3)","[11, 12]","<CharDisplay,W,11,12>",3C43686172446973706C61792C572C31312C31323E,21,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2310,undefined4 FUN_007b2310(undefined4 *param_1),[],CheckPJ.,436865636B504A2E,8,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2380,"size_t FUN_007b2380(void *param_1,int param_2)",[11],Save11.,5361766531312E,7,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2590,"size_t FUN_007b2590(void *param_1,int param_2)",[11],Recall11.,526563616C6C31312E,9,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b27a0,"size_t FUN_007b27a0(void *param_1,int param_2)",[11],Clear11.,436C65617231312E,8,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b29b0,"size_t FUN_007b29b0(void *param_1,int param_2)",[11],SetIP11.,536574495031312E,8,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2bc0,"size_t FUN_007b2bc0(void *param_1,int param_2)",[11],SetIPOut11.,53657449504F757431312E,11,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2dd0,undefined4 FUN_007b2dd0(undefined4 *param_1),[],TurnLeft.,5475726E4C6566742E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2e40,undefined4 FUN_007b2e40(undefined4 *param_1),[],TurnRight.,5475726E52696768742E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2ec0,undefined4 FUN_007b2ec0(undefined4 *param_1),[],TurnUp.,5475726E55702E,7,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2f30,undefined4 FUN_007b2f30(undefined4 *param_1),[],TurnDown.,5475726E446F776E2E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b2fa0,undefined4 FUN_007b2fa0(undefined4 *param_1),[],TurnStop.,5475726E53746F702E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3010,undefined4 FUN_007b3010(undefined4 *param_1),[],FocusNear.,466F6375734E6561722E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3090,undefined4 FUN_007b3090(undefined4 *param_1),[],FocusFar.,466F6375734661722E,9,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3100,undefined4 FUN_007b3100(undefined4 *param_1),[],<^LocalNet>,3C5E4C6F63616C4E65743E,11,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3180,"size_t FUN_007b3180(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)","[11, 12, 13, 14]",<#LocalSIPR11.12.13.14>,3C234C6F63616C5349505231312E31322E31332E31343E,23,4,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3430,"size_t FUN_007b3430(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)","[11, 12, 13, 14]",<#LocalSUBR11.12.13.14>,3C234C6F63616C5355425231312E31322E31332E31343E,23,4,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b36e0,"size_t FUN_007b36e0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)","[11, 12, 13, 14]",<#LocalGAR11.12.13.14>,3C234C6F63616C47415231312E31322E31332E31343E,22,4,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3990,"size_t FUN_007b3990(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5,undefined4 param_6,undefined4 param_7)","[11, 12, 13, 14, 15, 16]",<#LocalSHAR11.12.13.14.15.16>,3C234C6F63616C5348415231312E31322E31332E31342E31352E31363E,29,6,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3cb0,undefined4 FUN_007b3cb0(undefined4 *param_1),[],<^RemoteNet>,3C5E52656D6F74654E65743E,12,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3d30,undefined4 FUN_007b3d30(undefined4 *param_1),[],<#NetAuto>,3C234E65744175746F3E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3db0,undefined4 FUN_007b3db0(undefined4 *param_1),[],<#CREATOR>,3C2343524541544F523E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3e30,undefined4 FUN_007b3e30(undefined4 *param_1),[],<#RTSP>,3C23525453503E,7,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b3ea0,"size_t FUN_007b3ea0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)","[11, 12, 13, 14]",<#RemoteSIPR11.12.13.14>,3C2352656D6F74655349505231312E31322E31332E31343E,24,4,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b46b0,"size_t FUN_007b46b0(void *param_1,undefined4 param_2,undefined4 param_3,undefined4 param_4, undefined4 param_5)","[11, 12, 13, 14]",<#GroupIP11.12.13.14>,3C2347726F7570495031312E31322E31332E31343E,21,4,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b4960,"size_t FUN_007b4960(void *param_1,int param_2)",[11],<#GroupPort11>,3C2347726F7570506F727431313E,14,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b6760,size_t FUN_007b6760(void *param_1),[],<SQ_Ver>,3C53515F5665723E,8,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b6870,size_t FUN_007b6870(void *param_1),[],<Get_SQ_File>,3C4765745F53515F46696C653E,13,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b6980,"size_t FUN_007b6980(void *param_1,int param_2)",[11],$11InputMsg!,243131496E7075744D736721,12,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b6c80,size_t FUN_007b6c80(void *param_1),[],AllInputCaption_1!,416C6C496E70757443617074696F6E5F3121,18,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b6dd0,"size_t FUN_007b6dd0(void *param_1,undefined4 param_2)",[11],<#SavePic11>,3C235361766550696331313E,12,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b6f60,"size_t FUN_007b6f60(void *param_1,undefined4 param_2)",[11],<#SaveTitle11>,3C23536176655469746C6531313E,14,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b70f0,size_t FUN_007b70f0(void *param_1),[],<Read_Power>,3C526561645F506F7765723E,12,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b79a0,size_t FUN_007b79a0(void *param_1),[],<ResInOut>,3C526573496E4F75743E,10,0,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b7ab0,"size_t FUN_007b7ab0(void *param_1,int param_2)",[11],"<CharSend,11,1>",3C4368617253656E642C31312C313E,15,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b7c20,"size_t FUN_007b7c20(void *param_1,int param_2)",[11],"<CharSend,11,2>",3C4368617253656E642C31312C323E,15,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b7d90,"size_t FUN_007b7d90(void *param_1,int param_2,int param_3)","[11, 12]","<MapSend,11,12,1>",3C4D617053656E642C31312C31322C313E,17,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b7f50,"size_t FUN_007b7f50(void *param_1,int param_2,int param_3)","[11, 12]","<MapSend,11,12,2>",3C4D617053656E642C31312C31322C323E,17,2,原构造完成采样；参数是合成值；独立比较范围见device-text-verification
+0x7b8110,"size_t FUN_007b8110(void *param_1,undefined4 param_2)",[11],"<PreviewCH,11>",3C5072657669657743482C31313E,14,1,原构造完成采样；参数是合成值；独立比较范围见device-text-verification

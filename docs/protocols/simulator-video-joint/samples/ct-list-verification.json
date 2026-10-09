@@ -1,0 +1,341 @@
+{
+  "cases": 29,
+  "all_match": true,
+  "vectors": [
+    {
+      "function": "0x7c8230",
+      "name": "empty",
+      "index": 11,
+      "values": [],
+      "text": "11.",
+      "hex": "31312E",
+      "expected": "11.",
+      "match": true
+    },
+    {
+      "function": "0x7c8230",
+      "name": "one",
+      "index": 11,
+      "values": [
+        3
+      ],
+      "text": "11R3.",
+      "hex": "313152332E",
+      "expected": "11R3.",
+      "match": true
+    },
+    {
+      "function": "0x7c8230",
+      "name": "several",
+      "index": 11,
+      "values": [
+        1,
+        4,
+        7
+      ],
+      "text": "11R1,4,7.",
+      "hex": "313152312C342C372E",
+      "expected": "11R1,4,7.",
+      "match": true
+    },
+    {
+      "function": "0x7c8230",
+      "name": "unsigned",
+      "index": 11,
+      "values": [
+        -1,
+        65536
+      ],
+      "text": "11R4294967295,65536.",
+      "hex": "313152343239343936373239352C36353533362E",
+      "expected": "11R4294967295,65536.",
+      "match": true
+    },
+    {
+      "function": "0x7c84c0",
+      "name": "empty",
+      "index": 11,
+      "values": [],
+      "text": "11.",
+      "hex": "31312E",
+      "expected": "11.",
+      "match": true
+    },
+    {
+      "function": "0x7c84c0",
+      "name": "one",
+      "index": 11,
+      "values": [
+        3
+      ],
+      "text": "11S3.",
+      "hex": "313153332E",
+      "expected": "11S3.",
+      "match": true
+    },
+    {
+      "function": "0x7c84c0",
+      "name": "several",
+      "index": 11,
+      "values": [
+        1,
+        4,
+        7
+      ],
+      "text": "11S1,4,7.",
+      "hex": "313153312C342C372E",
+      "expected": "11S1,4,7.",
+      "match": true
+    },
+    {
+      "function": "0x7c84c0",
+      "name": "unsigned",
+      "index": 11,
+      "values": [
+        -1,
+        65536
+      ],
+      "text": "11S4294967295,65536.",
+      "hex": "313153343239343936373239352C36353533362E",
+      "expected": "11S4294967295,65536.",
+      "match": true
+    },
+    {
+      "function": "0x7c8750",
+      "name": "empty",
+      "index": 11,
+      "values": [],
+      "text": "11.",
+      "hex": "31312E",
+      "expected": "11.",
+      "match": true
+    },
+    {
+      "function": "0x7c8750",
+      "name": "one",
+      "index": 11,
+      "values": [
+        3
+      ],
+      "text": "11Q3.",
+      "hex": "313151332E",
+      "expected": "11Q3.",
+      "match": true
+    },
+    {
+      "function": "0x7c8750",
+      "name": "several",
+      "index": 11,
+      "values": [
+        1,
+        4,
+        7
+      ],
+      "text": "11Q1,4,7.",
+      "hex": "313151312C342C372E",
+      "expected": "11Q1,4,7.",
+      "match": true
+    },
+    {
+      "function": "0x7c8750",
+      "name": "unsigned",
+      "index": 11,
+      "values": [
+        -1,
+        65536
+      ],
+      "text": "11Q4294967295,65536.",
+      "hex": "313151343239343936373239352C36353533362E",
+      "expected": "11Q4294967295,65536.",
+      "match": true
+    },
+    {
+      "function": "0x7c89e0",
+      "name": "empty",
+      "index": 11,
+      "values": [],
+      "text": "11.",
+      "hex": "31312E",
+      "expected": "11.",
+      "match": true
+    },
+    {
+      "function": "0x7c89e0",
+      "name": "one",
+      "index": 11,
+      "values": [
+        3
+      ],
+      "text": "11F3.",
+      "hex": "313146332E",
+      "expected": "11F3.",
+      "match": true
+    },
+    {
+      "function": "0x7c89e0",
+      "name": "several",
+      "index": 11,
+      "values": [
+        1,
+        4,
+        7
+      ],
+      "text": "11F1,4,7.",
+      "hex": "313146312C342C372E",
+      "expected": "11F1,4,7.",
+      "match": true
+    },
+    {
+      "function": "0x7c89e0",
+      "name": "unsigned",
+      "index": 11,
+      "values": [
+        -1,
+        65536
+      ],
+      "text": "11F4294967295,65536.",
+      "hex": "313146343239343936373239352C36353533362E",
+      "expected": "11F4294967295,65536.",
+      "match": true
+    },
+    {
+      "function": "0x7c8c70",
+      "name": "empty",
+      "index": 11,
+      "values": [],
+      "text": "11.",
+      "hex": "31312E",
+      "expected": "11.",
+      "match": true
+    },
+    {
+      "function": "0x7c8c70",
+      "name": "one",
+      "index": 11,
+      "values": [
+        3
+      ],
+      "text": "11T3.",
+      "hex": "313154332E",
+      "expected": "11T3.",
+      "match": true
+    },
+    {
+      "function": "0x7c8c70",
+      "name": "several",
+      "index": 11,
+      "values": [
+        1,
+        4,
+        7
+      ],
+      "text": "11T1,4,7.",
+      "hex": "313154312C342C372E",
+      "expected": "11T1,4,7.",
+      "match": true
+    },
+    {
+      "function": "0x7c8c70",
+      "name": "unsigned",
+      "index": 11,
+      "values": [
+        -1,
+        65536
+      ],
+      "text": "11T4294967295,65536.",
+      "hex": "313154343239343936373239352C36353533362E",
+      "expected": "11T4294967295,65536.",
+      "match": true
+    },
+    {
+      "function": "0x7c8f00",
+      "name": "empty",
+      "index": 11,
+      "values": [],
+      "text": "<VS,11>",
+      "hex": "3C56532C31313E",
+      "expected": "<VS,11>",
+      "match": true
+    },
+    {
+      "function": "0x7c8f00",
+      "name": "one",
+      "index": 11,
+      "values": [
+        3
+      ],
+      "text": "<VS,11,3>",
+      "hex": "3C56532C31312C333E",
+      "expected": "<VS,11,3>",
+      "match": true
+    },
+    {
+      "function": "0x7c8f00",
+      "name": "several",
+      "index": 11,
+      "values": [
+        1,
+        4,
+        7
+      ],
+      "text": "<VS,11,1,4,7>",
+      "hex": "3C56532C31312C312C342C373E",
+      "expected": "<VS,11,1,4,7>",
+      "match": true
+    },
+    {
+      "function": "0x7c8f00",
+      "name": "unsigned",
+      "index": 11,
+      "values": [
+        -1,
+        65536
+      ],
+      "text": "<VS,11,4294967295,65536>",
+      "hex": "3C56532C31312C343239343936373239352C36353533363E",
+      "expected": "<VS,11,4294967295,65536>",
+      "match": true
+    },
+    {
+      "function": "0x7c4930",
+      "resolution": "1920x1080",
+      "text": "<ValidSize,W,11,1920,1080>",
+      "hex": "3C56616C696453697A652C572C31312C313932302C313038303E",
+      "expected": "<ValidSize,W,11,1920,1080>",
+      "match": true
+    },
+    {
+      "function": "0x7c4930",
+      "resolution": "",
+      "text": "",
+      "hex": "",
+      "expected": "",
+      "match": true
+    },
+    {
+      "function": "0x7c4930",
+      "resolution": "1920X1080",
+      "text": "",
+      "hex": "",
+      "expected": "",
+      "match": true
+    },
+    {
+      "function": "0x7c4930",
+      "resolution": "ax1080",
+      "text": "<ValidSize,W,11,0,1080>",
+      "hex": "3C56616C696453697A652C572C31312C302C313038303E",
+      "expected": "<ValidSize,W,11,0,1080>",
+      "match": true
+    },
+    {
+      "function": "0x7c4930",
+      "resolution": "1920x1080x60",
+      "text": "",
+      "hex": "",
+      "expected": "",
+      "match": true
+    }
+  ],
+  "boundary": "原构造循环和输出复制执行；Qt 数值格式、容器和日志使用有限适配；未证明设备接受空列表。"
+}

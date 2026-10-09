@@ -1,0 +1,304 @@
+[
+  {
+    "class": "CTcpSocketSubtitle",
+    "method": "sl_Connected",
+    "index": 2,
+    "target": "0x7229b0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CTcpSocketSubtitle",
+    "method": "sl_TimerOut",
+    "index": 3,
+    "target": "0x7229e0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_Refresh_clicked",
+    "index": 0,
+    "target": "0x762740",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_LoadIn_clicked",
+    "index": 1,
+    "target": "0x7668b0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_Upgrade_clicked",
+    "index": 2,
+    "target": "0x75db40",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_Close_clicked",
+    "index": 3,
+    "target": "0x75e320",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_SetDevInfo_clicked",
+    "index": 4,
+    "target": "0x7603d0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_SetOutput_clicked",
+    "index": 5,
+    "target": "0x75f3f0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_RestartDevice_clicked",
+    "index": 6,
+    "target": "0x75e330",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "sl_TimerOut",
+    "index": 7,
+    "target": "0x766860",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_CallTheRoll_clicked",
+    "index": 8,
+    "target": "0x75e7d0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_Recover_clicked",
+    "index": 9,
+    "target": "0x75ec70",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_SetNetwork_clicked",
+    "index": 10,
+    "target": "0x75ec80",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_SetServerIp_clicked",
+    "index": 11,
+    "target": "0x767270",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "sl_SendSetServerIp",
+    "index": 12,
+    "target": "0x75ec90",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_SelectAllIn_clicked",
+    "index": 13,
+    "target": "0x75ef90",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_SelectAllOut_clicked",
+    "index": 14,
+    "target": "0x75f1c0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgBoxUpgrade",
+    "method": "on_Btn_DifferentCheck_clicked",
+    "index": 15,
+    "target": "0x767710",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Close_clicked",
+    "index": 0,
+    "target": "0x77a500",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Rect_clicked",
+    "index": 1,
+    "target": "0x779d30",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Ellipse_clicked",
+    "index": 2,
+    "target": "0x779d50",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Arrow_clicked",
+    "index": 3,
+    "target": "0x779d70",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Line_clicked",
+    "index": 4,
+    "target": "0x779d90",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Undo_clicked",
+    "index": 5,
+    "target": "0x77a240",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Redo_clicked",
+    "index": 6,
+    "target": "0x77a320",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Clear_clicked",
+    "index": 7,
+    "target": "0x77a400",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_SizeSmall_clicked",
+    "index": 8,
+    "target": "0x77a6e0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_SizeMiddle_clicked",
+    "index": 9,
+    "target": "0x77a800",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_SizeBig_clicked",
+    "index": 10,
+    "target": "0x77a920",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_ColorRed_clicked",
+    "index": 11,
+    "target": "0x77aa40",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_ColorYellow_clicked",
+    "index": 12,
+    "target": "0x77b240",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_ColorBlue_clicked",
+    "index": 13,
+    "target": "0x77b390",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_ColorGreen_clicked",
+    "index": 14,
+    "target": "0x77b4e0",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_ColorWhite_clicked",
+    "index": 15,
+    "target": "0x77b630",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_PreSet_clicked",
+    "index": 16,
+    "target": "0x77b930",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Circle_clicked",
+    "index": 17,
+    "target": "0x779f00",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Pennant_clicked",
+    "index": 18,
+    "target": "0x779f20",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_RedFlag_clicked",
+    "index": 19,
+    "target": "0x779f40",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_CustomPic_clicked",
+    "index": 20,
+    "target": "0x779f60",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_ColorAny_clicked",
+    "index": 21,
+    "target": "0x77bb50",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "sl_CurrentIndexChanged",
+    "index": 22,
+    "target": "0x77b780",
+    "mechanism": "call",
+    "site": "0x88edfd"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Text_clicked",
+    "index": 23,
+    "target": "0x77bd70",
+    "mechanism": "tail_jump"
+  },
+  {
+    "class": "CDlgMark",
+    "method": "on_Btn_Eraser_clicked",
+    "index": 24,
+    "target": "0x77a220",
+    "mechanism": "tail_jump"
+  }
+]

@@ -1,0 +1,356 @@
+{
+  "cases": 27,
+  "all_match": true,
+  "vectors": [
+    {
+      "function": "0x7a2e80",
+      "parameters": [],
+      "bytes": 15,
+      "hex": "3C50726F746F636F6C2D547970653E",
+      "text": "<Protocol-Type>",
+      "completed": true,
+      "expected": "3C50726F746F636F6C2D547970653E",
+      "match": true
+    },
+    {
+      "function": "0x7a32b0",
+      "parameters": [],
+      "bytes": 15,
+      "hex": "3C526573496E3E3C5265734F75743E",
+      "text": "<ResIn><ResOut>",
+      "completed": true,
+      "expected": "3C526573496E3E3C5265734F75743E",
+      "match": true
+    },
+    {
+      "function": "0x7a5bc0",
+      "parameters": [
+        11,
+        22
+      ],
+      "bytes": 12,
+      "hex": "24313145444944546F32322E",
+      "text": "$11EDIDTo22.",
+      "completed": true,
+      "expected": "24313145444944546F32322E",
+      "match": true
+    },
+    {
+      "function": "0x7a7c50",
+      "parameters": [
+        9
+      ],
+      "bytes": 9,
+      "hex": "3C436C6F73652C393E",
+      "text": "<Close,9>",
+      "completed": true,
+      "expected": "3C436C6F73652C393E",
+      "match": true
+    },
+    {
+      "function": "0x7a9c10",
+      "parameters": [
+        4830
+      ],
+      "bytes": 14,
+      "hex": "3C23485353504F5254343833303E",
+      "text": "<#HSSPORT4830>",
+      "completed": true,
+      "expected": "3C23485353504F5254343833303E",
+      "match": true
+    },
+    {
+      "function": "0x7ab240",
+      "parameters": [
+        1,
+        "X,>;%2"
+      ],
+      "bytes": 11,
+      "hex": "24312D3E582C3E3B253221",
+      "text": "$1->X,>;%2!",
+      "completed": true,
+      "expected": "24312D3E582C3E3B253221",
+      "match": true
+    },
+    {
+      "function": "0x7ab4e0",
+      "parameters": [
+        "a\u0000b"
+      ],
+      "bytes": 10,
+      "hex": "24416C6C2D3E61006221",
+      "text": "$All->a\u0000b!",
+      "completed": true,
+      "expected": "24416C6C2D3E61006221",
+      "match": true
+    },
+    {
+      "function": "0x7abd00",
+      "parameters": [
+        1,
+        5,
+        10
+      ],
+      "bytes": 14,
+      "hex": "3C4D41502C572C312C352C31303E",
+      "text": "<MAP,W,1,5,10>",
+      "completed": true,
+      "expected": "3C4D41502C572C312C352C31303E",
+      "match": true
+    },
+    {
+      "function": "0x7ac1a0",
+      "parameters": [
+        2,
+        1920,
+        1080
+      ],
+      "bytes": 19,
+      "hex": "3C5649522C572C322C313932302C313038303E",
+      "text": "<VIR,W,2,1920,1080>",
+      "completed": true,
+      "expected": "3C5649522C572C322C313932302C313038303E",
+      "match": true
+    },
+    {
+      "function": "0x7ac460",
+      "parameters": [
+        2,
+        "1920x1080x60Hz"
+      ],
+      "bytes": 10,
+      "hex": "3C5265732C322C31373E",
+      "text": "<Res,2,17>",
+      "completed": true,
+      "expected": "3C5265732C322C31373E",
+      "match": true
+    },
+    {
+      "function": "0x7ac460",
+      "parameters": [
+        2,
+        "invalid"
+      ],
+      "bytes": 9,
+      "hex": "3C5265732C322C303E",
+      "text": "<Res,2,0>",
+      "completed": true,
+      "expected": "3C5265732C322C303E",
+      "match": true
+    },
+    {
+      "function": "0x7aca40",
+      "parameters": [
+        1,
+        2,
+        3,
+        4,
+        -5,
+        -6,
+        1920,
+        1080
+      ],
+      "bytes": 31,
+      "hex": "3C57494E2C572C312C322C332C342C2D352C2D362C313932302C313038303E",
+      "text": "<WIN,W,1,2,3,4,-5,-6,1920,1080>",
+      "completed": true,
+      "expected": "3C57494E2C572C312C322C332C342C2D352C2D362C313932302C313038303E",
+      "match": true
+    },
+    {
+      "function": "0x7ace30",
+      "parameters": [
+        1,
+        2,
+        -3,
+        -4
+      ],
+      "bytes": 16,
+      "hex": "3C4D4F56452C312C322C2D332C2D343E",
+      "text": "<MOVE,1,2,-3,-4>",
+      "completed": true,
+      "expected": "3C4D4F56452C312C322C2D332C2D343E",
+      "match": true
+    },
+    {
+      "function": "0x7ada00",
+      "parameters": [
+        1,
+        2,
+        3
+      ],
+      "bytes": 10,
+      "hex": "3C4D532C332C312C323E",
+      "text": "<MS,3,1,2>",
+      "completed": true,
+      "expected": "3C4D532C332C312C323E",
+      "match": true
+    },
+    {
+      "function": "0x7adc50",
+      "parameters": [],
+      "bytes": 12,
+      "hex": "3C41636B3E00000000000000",
+      "text": "<Ack>\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "completed": true,
+      "expected": "3C41636B3E00000000000000",
+      "match": true
+    },
+    {
+      "function": "0x7ae0b0",
+      "parameters": [
+        "X,>;%2"
+      ],
+      "bytes": 6,
+      "hex": "582C3E3B2532",
+      "text": "X,>;%2",
+      "completed": true,
+      "expected": "582C3E3B2532",
+      "match": true
+    },
+    {
+      "function": "0x7ae3d0",
+      "parameters": [
+        4,
+        "1920x1080x60Hz"
+      ],
+      "bytes": 21,
+      "hex": "24496E342D3E313932307831303830783630487A21",
+      "text": "$In4->1920x1080x60Hz!",
+      "completed": true,
+      "expected": "24496E342D3E313932307831303830783630487A21",
+      "match": true
+    },
+    {
+      "function": "0x7b3180",
+      "parameters": [
+        192,
+        0,
+        2,
+        55
+      ],
+      "bytes": 22,
+      "hex": "3C234C6F63616C534950523139322E302E322E35353E",
+      "text": "<#LocalSIPR192.0.2.55>",
+      "completed": true,
+      "expected": "3C234C6F63616C534950523139322E302E322E35353E",
+      "match": true
+    },
+    {
+      "function": "0x7b3990",
+      "parameters": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        55
+      ],
+      "bytes": 24,
+      "hex": "3C234C6F63616C53484152322E302E302E302E302E35353E",
+      "text": "<#LocalSHAR2.0.0.0.0.55>",
+      "completed": true,
+      "expected": "3C234C6F63616C53484152322E302E302E302E302E35353E",
+      "match": true
+    },
+    {
+      "function": "0x7b7d90",
+      "parameters": [
+        1,
+        50
+      ],
+      "bytes": 16,
+      "hex": "3C4D617053656E642C312C35302C313E",
+      "text": "<MapSend,1,50,1>",
+      "completed": true,
+      "expected": "3C4D617053656E642C312C35302C313E",
+      "match": true
+    },
+    {
+      "function": "0x7b8110",
+      "parameters": [
+        8
+      ],
+      "bytes": 13,
+      "hex": "3C5072657669657743482C383E",
+      "text": "<PreviewCH,8>",
+      "completed": true,
+      "expected": "3C5072657669657743482C383E",
+      "match": true
+    },
+    {
+      "function": "0x7aba60",
+      "parameters": [
+        11,
+        0
+      ],
+      "bytes": 10,
+      "hex": "2431315647414F757421",
+      "text": "$11VGAOut!",
+      "completed": true,
+      "expected": "2431315647414F757421",
+      "match": true
+    },
+    {
+      "function": "0x7aba60",
+      "parameters": [
+        11,
+        1
+      ],
+      "bytes": 10,
+      "hex": "2431315955564F757421",
+      "text": "$11YUVOut!",
+      "completed": true,
+      "expected": "2431315955564F757421",
+      "match": true
+    },
+    {
+      "function": "0x7aba60",
+      "parameters": [
+        11,
+        2
+      ],
+      "bytes": 9,
+      "hex": "24313159434F757421",
+      "text": "$11YCOut!",
+      "completed": true,
+      "expected": "24313159434F757421",
+      "match": true
+    },
+    {
+      "function": "0x7aba60",
+      "parameters": [
+        11,
+        3
+      ],
+      "bytes": 9,
+      "hex": "24313143564F757421",
+      "text": "$11CVOut!",
+      "completed": true,
+      "expected": "24313143564F757421",
+      "match": true
+    },
+    {
+      "function": "0x7aba60",
+      "parameters": [
+        11,
+        99
+      ],
+      "bytes": 7,
+      "hex": "2431314F757421",
+      "text": "$11Out!",
+      "completed": true,
+      "expected": "2431314F757421",
+      "match": true
+    },
+    {
+      "function": "0x7adc50",
+      "name": "nonzero_buffer_sentinel",
+      "bytes": 12,
+      "hex": "3C41636B3EA5A5A5A5A5A5A5",
+      "expected": "3C41636B3EA5A5A5A5A5A5A5",
+      "match": true
+    }
+  ],
+  "boundary": "原文本构造、长度和复制指令；Qt格式化/Latin1为有限适配，无实机设备或Qt DLL执行。Ack剩余7字节在合成零缓冲中为零，原构造本身不初始化这些字节。"
+}

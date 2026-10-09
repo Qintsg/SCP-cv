@@ -1,0 +1,271 @@
+{
+  "cases": 12,
+  "all_match": true,
+  "vectors": [
+    {
+      "kind": 2,
+      "button": 1,
+      "delta": 120,
+      "signals": [
+        [
+          1,
+          480,
+          270,
+          0
+        ]
+      ],
+      "packets": [
+        "FCFD06010103C0021C00DE"
+      ],
+      "buttons_state": 1,
+      "completed": true,
+      "expected": "FCFD06010103C0021C00DE",
+      "match": true
+    },
+    {
+      "kind": 2,
+      "button": 2,
+      "delta": 120,
+      "signals": [
+        [
+          2,
+          480,
+          270,
+          0
+        ]
+      ],
+      "packets": [
+        "FCFD06010203C0021C00DE"
+      ],
+      "buttons_state": 2,
+      "completed": true,
+      "expected": "FCFD06010203C0021C00DE",
+      "match": true
+    },
+    {
+      "kind": 2,
+      "button": 4,
+      "delta": 120,
+      "signals": [
+        [
+          4,
+          480,
+          270,
+          0
+        ]
+      ],
+      "packets": [
+        "FCFD06010403C0021C00DE"
+      ],
+      "buttons_state": 4,
+      "completed": true,
+      "expected": "FCFD06010403C0021C00DE",
+      "match": true
+    },
+    {
+      "kind": 2,
+      "button": 8,
+      "delta": 120,
+      "signals": [
+        [
+          0,
+          480,
+          270,
+          0
+        ]
+      ],
+      "packets": [
+        "FCFD06010003C0021C00DE"
+      ],
+      "buttons_state": 0,
+      "completed": true,
+      "expected": "FCFD06010003C0021C00DE",
+      "match": true
+    },
+    {
+      "kind": 3,
+      "button": 1,
+      "delta": 120,
+      "signals": [
+        [
+          0,
+          480,
+          270,
+          0
+        ]
+      ],
+      "packets": [
+        "FCFD06010003C0021C00DE"
+      ],
+      "buttons_state": 0,
+      "completed": true,
+      "expected": "FCFD06010003C0021C00DE",
+      "match": true
+    },
+    {
+      "kind": 4,
+      "button": 1,
+      "delta": 120,
+      "signals": [
+        [
+          1,
+          480,
+          270,
+          0
+        ]
+      ],
+      "packets": [
+        "FCFD06010103C0021C00DE"
+      ],
+      "buttons_state": 1,
+      "completed": true,
+      "expected": "FCFD06010103C0021C00DE",
+      "match": true
+    },
+    {
+      "kind": 5,
+      "button": 1,
+      "delta": 120,
+      "signals": [
+        [
+          0,
+          480,
+          270,
+          0
+        ]
+      ],
+      "packets": [
+        "FCFD06010003C0021C00DE"
+      ],
+      "buttons_state": 0,
+      "completed": true,
+      "expected": "FCFD06010003C0021C00DE",
+      "match": true
+    },
+    {
+      "kind": 31,
+      "button": 1,
+      "delta": 120,
+      "signals": [],
+      "packets": [
+        "FCFD06010103C0021C01DE"
+      ],
+      "buttons_state": 0,
+      "completed": true,
+      "expected": "FCFD06010103C0021C01DE",
+      "match": true
+    },
+    {
+      "kind": 31,
+      "button": 1,
+      "delta": -120,
+      "signals": [],
+      "packets": [
+        "FCFD06010103C0021CFFDE"
+      ],
+      "buttons_state": 0,
+      "completed": true,
+      "expected": "FCFD06010103C0021CFFDE",
+      "match": true
+    },
+    {
+      "kind": 31,
+      "button": 1,
+      "delta": 0,
+      "signals": [],
+      "packets": [
+        "FCFD06010103C0021CFFDE"
+      ],
+      "buttons_state": 0,
+      "completed": true,
+      "expected": "FCFD06010103C0021CFFDE",
+      "match": true
+    },
+    {
+      "kind": 82,
+      "button": 1,
+      "delta": 120,
+      "signals": [],
+      "packets": [
+        "FCFD06010203C0021C00DE",
+        "FCFD06010003C0021C00DE"
+      ],
+      "buttons_state": 0,
+      "completed": true,
+      "expected": [
+        "FCFD06010203C0021C00DE",
+        "FCFD06010003C0021C00DE"
+      ],
+      "match": true
+    },
+    {
+      "name": "press_move_release",
+      "sequence": [
+        {
+          "kind": 2,
+          "button": 1,
+          "delta": 120,
+          "signals": [
+            [
+              1,
+              480,
+              270,
+              0
+            ]
+          ],
+          "packets": [
+            "FCFD06010103C0021C00DE"
+          ],
+          "buttons_state": 1
+        },
+        {
+          "kind": 5,
+          "button": 1,
+          "delta": 120,
+          "signals": [
+            [
+              1,
+              481,
+              271,
+              0
+            ]
+          ],
+          "packets": [
+            "FCFD06010103C2021E00DE"
+          ],
+          "buttons_state": 1
+        },
+        {
+          "kind": 3,
+          "button": 1,
+          "delta": 120,
+          "signals": [
+            [
+              0,
+              481,
+              271,
+              0
+            ]
+          ],
+          "packets": [
+            "FCFD06010003C2021E00DE"
+          ],
+          "buttons_state": 0
+        }
+      ],
+      "expected": [
+        [
+          "FCFD06010103C0021C00DE"
+        ],
+        [
+          "FCFD06010103C2021E00DE"
+        ],
+        [
+          "FCFD06010003C2021E00DE"
+        ]
+      ],
+      "match": true
+    }
+  ],
+  "boundary": "合成QEvent字段；原分派和短帧构造执行，Qt信号/UDP只捕获，焦点与睡眠被拦截；信号连接用明确槽调用替代。"
+}

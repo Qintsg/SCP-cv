@@ -18,7 +18,7 @@
 | 长度字段 | 原函数是两个控制字节加大端 u16 长度 | 不是无条件的大端 u32 长度 |
 | 映射校验 | 只累加偏移 2～39 | 历史“加模式字节再减 1”仅在模式为1时等价 |
 | 坐标 | 原函数输入右下点包含最后像素 | 接口使用宽高时须转换为 `x+w-1`、`y+h-1` |
-| 第二标识、A/B/C控制字段 | 创建调用链分别对应WindowLevel、窗口总数、跨屏分片计数、屏幕索引 | 黄金参数来自黄金包，固定9/1/1的业务正确性需另验证 |
+| 第二标识、A/B/C控制字段 | 创建调用链及完整业务13组对照；50屏场景A=1，B/C递增至50 | 固定9/1/1不适用于任意布局；统一节点测试不等于现场画面证明 |
 | 屏幕位置 | 登录响应的50位置全部匹配项目节点算法 | 包括45/46互换；仍不是网线／实体画面观察 |
 | 传输模式 | 原软件还有可选DES外层 | 不能认为所有版本／配置都只发明文 FBFC |
 | 应答 | 原客户端确实解析多种返回消息 | 当前项目只写路径不能冒充设备状态回读 |
@@ -38,8 +38,18 @@
 | UDP视频分类 | 7／7 | 原分类函数的NAL起始码和结束标记分支 |
 | 固定应答 | 34类、99字段；1193次字段比较通过 | 原环形解析采样与独立网络字节解码；半包、环绕分别核对 |
 | 扩展／变长应答 | 8条完整样例均相同 | 非空名称、语音文本、远程登录及关闭；单独记录原用户名环绕错误 |
-| 多点触摸 | 18／18 | 三个原入口、0～12点、前10点截断、19字节实际UDP长度 |
-| Dante与标注 | 56／56 | 13个Dante入口各4组，加4个标注格式 |
+| 多点触摸 | 30／30 | 三个原入口，数量／截断与19字节长度；新增负数、半像素和越界坐标 |
+| Dante与标注短帧 | 58／58 | 13个Dante入口各4组，加6个标注短帧 |
+| 完整跨屏业务 | 13／13 | 原591E50，最多50节点、部分相交、裁剪、分屏、备用输入及SendType2/3逐节点顺序 |
+| 跨屏配置／混合尺寸 | 9／9 | 同步裁剪、IGMPv3、分类端口、6120完整字节及一个混合尺寸场景 |
+| 鼠标事件分派 | 12／12 | 原Qt事件→原打包槽；包括拖动状态、滚轮及特殊事件82 |
+| 键盘 | 227键三库一致；37常用键独立一致；7序列三库一致 | 按下、释放、重复抑制、六键上限与组合状态；一致性与独立证明分开 |
+| CT文本 | 106入口完成采样；27独立例相同 | 参数变体定位字节，包含MS重排、制式选择、MAC十进制表示、NUL及Ack非零哨兵 |
+| CT分辨率辅助表 | 两套表74个采样完成；5项独立预期相同 | 具名尺寸枚举、归一化、未知／大小写及子串匹配；英文翻译回退 |
+| CT列表／有效尺寸 | 29／29 | 六个原列表循环、空列表、无符号值，以及尺寸字符串边界 |
+| CT图片／标题包装 | 9／9 | 完整写入参数，包括65536字节内容与独立声明长度不一致 |
+| 设备维护 | 6构造及18参数变体全部相同 | 三种原始以太网与三种TCP维护构造；网卡及写入被拦截 |
+| 标注变长包装 | 13／13 | UTF-8文本、NUL、16位长度边界；QImage编码结果注入，未测试图像编解码 |
 | 媒体序号与音频类型 | 8+4，全部相同 | 原序号分支、关键帧请求截点、前4音频包的AAC／PCM选择 |
 | 矩形舍入 | 8／8 | 原内联toRect指令；正／负半像素、空尺寸及含末像素坐标 |
 | 注册中间串 | 45组归一化一致 | 合成源串；脚本原调用存在2个大写输入差异 |
@@ -72,6 +82,14 @@ Unicorn执行的是原始构造／解析指令；Qt字符串、容器和内存�
 
 150个设备构造候选在合成参数／配置下完成采样，131个入口生成可识别帧。Qt字符串、系统设置单例、旧型号开关的适配都有明确值；这一数量表示代码入口覆盖，不表示131个不同厂商操作均已实机验证。
 
+## 第四版的设备分支补充
+
+原Qt元调用中多个按钮共用跳板，旧标签曾将所有标注操作写成相同地址。第四版沿原分派指令跨过紧邻跳板，停在实际业务调用之前，恢复43个槽；主表不把旧跳板名称继续当作每个按钮的业务入口。131个旧设备构造中100个发现直接引用，31个未发现直接引用；没有直接引用不等于代码不可达，更不能由此删除协议候选。
+
+重要原行为单独保留：维护配置实际102字节但内部长度字段仍004C；CT `<Ack>`仅初始化5字节却返回12；标注超过65535字节声明长度回绕，仍拼接完整内容；标题上传不比较声明长度与内容长度。设备是否接受这些异常、或将其判为错误，没有在实体设备上验证。
+
+新增证据不改变旧400黄金包的编码一致性结论，也不把旧抓包视为已经恢复。客户端业务参数选择、网络消息编码和实机完成状态分别保留证据等级。
+
 ## 本地证据位置与复现
 
 完整分析目录：`E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/`。其中包含程序指纹、带地址字符串、Qt元数据、反汇编、原函数伪代码、调用图、脱敏前的登录资料和所有验证脚本。
@@ -88,6 +106,16 @@ uv run --offline --default-index https://pypi.org/simple --with pefile --with ca
 uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_aux_frames.py
 uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_variable_replies.py
 uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_geometry.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_device_layout.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_device_keyboard.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_device_input_events.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_device_text.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_device_maintenance.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_painter_payloads.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_ct_lists.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_ct_uploads.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_layout_branches.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/probe_resolution_enums.py
 ```
 
 仓库目录的 `samples/` 保存可版本管理的测试向量与摘要，`catalogs/` 保存命令和函数索引。它们不是重新生成原厂二进制的源码。
@@ -98,16 +126,20 @@ uv run --offline --default-index https://pypi.org/simple --with pefile --with ca
 
 ## 范围与剩余边界
 
+用户最新范围只继续实际设备相关客户端逻辑。下表不将仅本地资料、仅软件与服务端的处理及服务端实现计入后续设备逆向；此前章节保留历史记录。
+
 | 范围 | 还缺什么 |
 | --- | --- |
 | 实体画面与旧抓包 | 原抓包不可恢复；需要另一次有日期、软件版本、动作和画面对应的新证据 |
-| 任意跨屏布局 | 创建参数来源、相交／裁剪分支与原矩形转换已记录；整个业务函数尚未整体模拟，现场结果未验证 |
+| 任意跨屏布局 | 完整业务13组加配置／混合尺寸9组已比较；更多混合行列、拼缝、不能整除的源尺寸及其它输入／型号选择仍缺独立对照 |
 | 固件／型号 | 构造及解析字段已索引；客户端没有名字的设备枚举和固件内部约束无法仅凭本版本确认 |
 | 设备回读 | 34类固定及8条扩展路径已核对；不代表每个写操作都有完成ACK |
-| 触摸与标注 | 基础打包已差分；操作系统生命周期、负触点坐标和JSON图形动作的全部适用条件未实测 |
-| 工程固定记录 | 全部字节范围和接收侧读取已明确；未使用元数据按原样保留，发送程序未提供 |
+| KVM与标注 | 基础及状态分派已补充；系统短帧value尚无具名调用枚举，操作系统实际生命周期及设备图形呈现未实测 |
+| 设备维护 | 6种构造完成对照；原始发现响应的完整结构及部分控制选择值只有静态消费证据 |
+| 设备升级 | 客户端TFTP启动／61FD触发已恢复；固件侧文件请求、校验、分区和成功确认不在所给程序中 |
+| CT图像／工程命令 | 文本、列表及上传包装已比较；图像内容生产者、设备解析／完成确认及R/S/Q/F/T业务定义尚需关联证据 |
 | 媒体 | 分类、序号、请求与共享内存读写已记录；现场流持续解码、声卡与采样格式未验证 |
-| 工程数据 | 宏与命令发送逻辑已恢复；空示例表不包含实际电源／网关／逻辑命令内容 |
-| 服务器 | 实现按用户明确要求排除；客户端实际请求与可读取字段继续保留，服务端未出现于现有二进制的部分不补造 |
+| 自定义设备命令 | 已恢复宏与原样发送路径；示例工程没有实际电源／网关的自定义命令内容，不能补造现场协议 |
+| 软件本地与纯服务端交互 | 按用户最新要求排除继续调查；旧资料保留，不作为当前未完成设备工作 |
 
-本轮是逆向调查和文档，没有进入SCP-cv功能实现，也没有改变当前008功能指针。新增接入仍按项目Spec Kit推进。完整客户端函数目录已导出4647项，但这不表示所有UI函数和第三方库都逐函数完成语义恢复；本次交付以通信及其本地业务来源为范围。
+本轮是逆向调查和文档，没有进入SCP-cv功能实现，也没有改变当前008功能指针。新增接入仍按项目Spec Kit推进。已导出的客户端函数及恢复候选不表示所有UI函数和第三方库都逐函数完成语义恢复；本次交付以设备通信及其客户端业务来源为范围。

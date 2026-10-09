@@ -56,12 +56,12 @@
     "boundary": "合成地址和文本；无真实输入事件、识别服务或网络连接。环绕结果按原代码保留，包括已发现的字符串复制问题。"
   },
   "touch-verification": {
-    "cases": 18,
+    "cases": 30,
     "all_match": true,
     "boundary": "Qt 触点是纯内存适配，原打包和数量截断指令执行；UDP 仅截取。"
   },
   "aux-frame-verification": {
-    "cases": 56,
+    "cases": 58,
     "all_match": true,
     "boundary": "原构造算法与独立编码比较，无设备写入。"
   },
@@ -126,5 +126,101 @@
     "synthetic_volume": "E5F60789",
     "synthetic_install_time": 1700000000,
     "boundary": "所有系统读取被合成值替代；未读取实际设备指纹，未调用授权写入。"
+  },
+  "device-layout-verification": {
+    "cases": 13,
+    "all_match": true,
+    "boundary": "原跨屏算法、参数选择及设备包执行；合成目录、统一1920x1080节点、无拼缝和明确源尺寸。所有发送拦截，非实机画面。"
+  },
+  "device-input-events": {
+    "cases": 12,
+    "all_match": true,
+    "boundary": "合成QEvent字段；原分派和短帧构造执行，Qt信号/UDP只捕获，焦点与睡眠被拦截；信号连接用明确槽调用替代。"
+  },
+  "device-keyboard-verification": {
+    "keys_per_module": 227,
+    "mapping_cross_module_match": true,
+    "sequence_cross_module_match": true,
+    "boundary": "Qt事件值是合成输入；原转换、按下、释放与组合状态执行，发送仅在模拟器截取。三库一致性不是独立编码证明；另37个常用键比较独立表。",
+    "common_keys": 37,
+    "common_mapping_match": true,
+    "all_match": true,
+    "sequences": 7
+  },
+  "device-text-verification": {
+    "cases": 27,
+    "all_match": true,
+    "boundary": "原文本构造、长度和复制指令；Qt格式化/Latin1为有限适配，无实机设备或Qt DLL执行。Ack剩余7字节在合成零缓冲中为零，原构造本身不初始化这些字节。"
+  },
+  "device-maintenance-probes": {
+    "constructors": 6,
+    "completed": 6,
+    "all_match": true,
+    "boundary": "原维护构造，pcap和TCP调用均只截取；合成网卡MAC、Qt字符串、零初始化栈，不操作网卡、不启动TFTP或升级设备。",
+    "parameter_variants": 18
+  },
+  "painter-payload-verification": {
+    "cases": 13,
+    "all_match": true,
+    "boundary": "原包装代码执行；QImage 编码输出为注入值，不证明真实图片加载、编码或设备渲染。"
+  },
+  "ct-list-verification": {
+    "cases": 29,
+    "all_match": true,
+    "boundary": "原构造循环和输出复制执行；Qt 数值格式、容器和日志使用有限适配；未证明设备接受空列表。"
+  },
+  "device-text-probes": {
+    "constructors": 106,
+    "completed": 106,
+    "boundary": "原文本构造和复制指令；Qt格式化为按5.4源码规则的有限适配，无真实设备或Qt运行时执行。变体仅定位参数，不构成设备支持枚举证明。"
+  },
+  "ct-upload-verification": {
+    "cases": 9,
+    "all_match": true,
+    "boundary": "原包装代码与完整写入参数；内容为合成字节，未证明生产者图像编码、设备解析、TCP分段或完成确认。"
+  },
+  "layout-branch-verification": {
+    "cases": 9,
+    "all_match": true,
+    "boundary": "原完整业务执行；节点目录和配置为有限适配；混合尺寸只覆盖一个两节点场景，无拼缝或实机画面验证。"
+  },
+  "resolution-enum-probes": {
+    "samples": 74,
+    "completed": 74,
+    "independent_cases": 5,
+    "all_match": true,
+    "checks": [
+      {
+        "function": "0x7a2a20",
+        "input": "800x600x60Hz",
+        "expected_enum": 1,
+        "match": true
+      },
+      {
+        "function": "0x7a2a20",
+        "input": "1920x1080x60Hz",
+        "expected_enum": 17,
+        "match": true
+      },
+      {
+        "function": "0x7c1620",
+        "input": "0800x0600x60Hz",
+        "expected_enum": 3,
+        "match": true
+      },
+      {
+        "function": "0x7a2a20",
+        "input": "invalid",
+        "expected_enum": 0,
+        "match": true
+      },
+      {
+        "function": "0x7c1620",
+        "input": "invalid",
+        "expected_enum": 0,
+        "match": true
+      }
+    ],
+    "boundary": "原枚举比较与字符串赋值执行；Qt翻译使用英文源文回退，不代表本机翻译目录；常量候选不是设备接受列表；独立预期仅覆盖明确列出的5项。"
   }
 }

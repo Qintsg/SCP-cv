@@ -1,5 +1,5 @@
 {
-  "cases": 56,
+  "cases": 58,
   "all_match": true,
   "vectors": [
     {
@@ -571,6 +571,26 @@
       ],
       "native": "EAEB040203C0021CFCFD",
       "expected": "EAEB040203C0021CFCFD",
+      "match": true
+    },
+    {
+      "function": "0x65e610",
+      "parameters": [
+        9,
+        128,
+        256
+      ],
+      "native": "EAEB050900800100FCFD",
+      "expected": "EAEB050900800100FCFD",
+      "match": true
+    },
+    {
+      "function": "0x65e6c0",
+      "parameters": [
+        2
+      ],
+      "native": "EAEB0602FCFD",
+      "expected": "EAEB0602FCFD",
       "match": true
     }
   ],

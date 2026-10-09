@@ -1,0 +1,559 @@
+{
+  "samples": 74,
+  "completed": 74,
+  "independent_cases": 5,
+  "all_match": true,
+  "rows": [
+    {
+      "function": "0x7a2a20",
+      "input": "1024x768x60Hz",
+      "enum": 2,
+      "normalized": "1024x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1280x1024x60Hz",
+      "enum": 8,
+      "normalized": "1280x1024x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1280x720x50Hz",
+      "enum": 3,
+      "normalized": "1280x720x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1280x720x60Hz",
+      "enum": 4,
+      "normalized": "1280x720x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1280x768x60Hz",
+      "enum": 5,
+      "normalized": "1280x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1280x800x60Hz",
+      "enum": 6,
+      "normalized": "1280x800x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1280x960x60Hz",
+      "enum": 7,
+      "normalized": "1280x960x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1360x768x60Hz",
+      "enum": 9,
+      "normalized": "1360x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1366x768x60Hz",
+      "enum": 10,
+      "normalized": "1366x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1440x900x60Hz",
+      "enum": 11,
+      "normalized": "1440x900x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1600x1200x60Hz",
+      "enum": 13,
+      "normalized": "1600x1200x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1600x900x60Hz",
+      "enum": 12,
+      "normalized": "1600x900x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920X1080X60HZ",
+      "enum": 0,
+      "normalized": "1920X1080X60HZ",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x1080x25Hz",
+      "enum": 14,
+      "normalized": "1920x1080x25Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x1080x30Hz",
+      "enum": 15,
+      "normalized": "1920x1080x30Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x1080x50Hz",
+      "enum": 16,
+      "normalized": "1920x1080x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x1080x60Hz",
+      "enum": 17,
+      "normalized": "1920x1080x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x1200x60Hz",
+      "enum": 18,
+      "normalized": "1920x1200x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x540x50Hz",
+      "enum": 19,
+      "normalized": "1920x540x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x540x60Hz",
+      "enum": 20,
+      "normalized": "1920x540x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "3840x2160x24Hz",
+      "enum": 21,
+      "normalized": "3840x2160x24Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "3840x2160x25Hz",
+      "enum": 22,
+      "normalized": "3840x2160x25Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "3840x2160x30Hz",
+      "enum": 23,
+      "normalized": "3840x2160x30Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "3840x2160x50Hz",
+      "enum": 24,
+      "normalized": "3840x2160x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "3840x2160x60Hz",
+      "enum": 25,
+      "normalized": "3840x2160x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "4096x2160x24Hz",
+      "enum": 26,
+      "normalized": "4096x2160x24Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "4096x2160x25Hz",
+      "enum": 27,
+      "normalized": "4096x2160x25Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "4096x2160x30Hz",
+      "enum": 28,
+      "normalized": "4096x2160x30Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "4096x2160x50Hz",
+      "enum": 29,
+      "normalized": "4096x2160x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "4096x2160x60Hz",
+      "enum": 30,
+      "normalized": "4096x2160x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "800x600x60Hz",
+      "enum": 1,
+      "normalized": "800x600x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "invalid",
+      "enum": 0,
+      "normalized": "invalid",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "noinput",
+      "enum": 0,
+      "normalized": "noinput",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "nooutput",
+      "enum": 0,
+      "normalized": "nooutput",
+      "completed": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "prefix1920x1080x60Hzsuffix",
+      "enum": 0,
+      "normalized": "prefix1920x1080x60Hzsuffix",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "0800x0600x60Hz",
+      "enum": 3,
+      "normalized": "800x600x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1024x0768x60Hz",
+      "enum": 4,
+      "normalized": "1024x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1024x768x60Hz",
+      "enum": 0,
+      "normalized": "1024x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x0720x50Hz",
+      "enum": 5,
+      "normalized": "1280x720x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x0720x60Hz",
+      "enum": 6,
+      "normalized": "1280x720x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x0768x60Hz",
+      "enum": 7,
+      "normalized": "1280x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x0800x60Hz",
+      "enum": 8,
+      "normalized": "1280x800x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x0960x60Hz",
+      "enum": 9,
+      "normalized": "1280x960x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x1024x60Hz",
+      "enum": 10,
+      "normalized": "1280x1024x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x720x50Hz",
+      "enum": 0,
+      "normalized": "1280x720x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x720x60Hz",
+      "enum": 0,
+      "normalized": "1280x720x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x768x60Hz",
+      "enum": 0,
+      "normalized": "1280x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x800x60Hz",
+      "enum": 0,
+      "normalized": "1280x800x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1280x960x60Hz",
+      "enum": 0,
+      "normalized": "1280x960x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1360x0768x60Hz",
+      "enum": 11,
+      "normalized": "1360x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1360x768x60Hz",
+      "enum": 0,
+      "normalized": "1360x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1366x0768x60Hz",
+      "enum": 12,
+      "normalized": "1366x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1366x768x60Hz",
+      "enum": 0,
+      "normalized": "1366x768x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1400x1050x60Hz",
+      "enum": 23,
+      "normalized": "1400x1050x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1440x0900x60Hz",
+      "enum": 13,
+      "normalized": "1440x900x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1440x900x60Hz",
+      "enum": 0,
+      "normalized": "1440x900x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1600x0900x60Hz",
+      "enum": 14,
+      "normalized": "1600x900x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1600x1200x60Hz",
+      "enum": 15,
+      "normalized": "1600x1200x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1600x900x60Hz",
+      "enum": 0,
+      "normalized": "1600x900x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920X1080X60HZ",
+      "enum": 0,
+      "normalized": "1920X1080X60HZ",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x0540x50Hz",
+      "enum": 16,
+      "normalized": "1920x540x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x0540x60Hz",
+      "enum": 17,
+      "normalized": "1920x540x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x1080x25Hz",
+      "enum": 18,
+      "normalized": "1920x1080x25Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x1080x30Hz",
+      "enum": 19,
+      "normalized": "1920x1080x30Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x1080x50Hz",
+      "enum": 20,
+      "normalized": "1920x1080x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x1080x60Hz",
+      "enum": 21,
+      "normalized": "1920x1080x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x1200x60Hz",
+      "enum": 22,
+      "normalized": "1920x1200x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x540x50Hz",
+      "enum": 0,
+      "normalized": "1920x540x50Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "1920x540x60Hz",
+      "enum": 0,
+      "normalized": "1920x540x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "800x600x60Hz",
+      "enum": 0,
+      "normalized": "800x600x60Hz",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "invalid",
+      "enum": 0,
+      "normalized": "invalid",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "noinput",
+      "enum": 1,
+      "normalized": "noinput",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "nooutput",
+      "enum": 0,
+      "normalized": "nooutput",
+      "completed": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "prefix1920x1080x60Hzsuffix",
+      "enum": 21,
+      "normalized": "1920x1080x60Hz",
+      "completed": true
+    }
+  ],
+  "checks": [
+    {
+      "function": "0x7a2a20",
+      "input": "800x600x60Hz",
+      "expected_enum": 1,
+      "match": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "1920x1080x60Hz",
+      "expected_enum": 17,
+      "match": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "0800x0600x60Hz",
+      "expected_enum": 3,
+      "match": true
+    },
+    {
+      "function": "0x7a2a20",
+      "input": "invalid",
+      "expected_enum": 0,
+      "match": true
+    },
+    {
+      "function": "0x7c1620",
+      "input": "invalid",
+      "expected_enum": 0,
+      "match": true
+    }
+  ],
+  "boundary": "原枚举比较与字符串赋值执行；Qt翻译使用英文源文回退，不代表本机翻译目录；常量候选不是设备接受列表；独立预期仅覆盖明确列出的5项。"
+}
