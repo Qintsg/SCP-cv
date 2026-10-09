@@ -48,6 +48,7 @@
 | CT分辨率辅助表 | 两套表74个采样完成；5项独立预期相同 | 具名尺寸枚举、归一化、未知／大小写及子串匹配；英文翻译回退 |
 | CT列表／有效尺寸 | 29／29 | 六个原列表循环、空列表、无符号值，以及尺寸字符串边界 |
 | CT图片／标题包装 | 9／9 | 完整写入参数，包括65536字节内容与独立声明长度不一致 |
+| CT图片分段 | 16／16 | 两条原1024字节循环，末块和空内容；另一分支每块50毫秒等待仅截取 |
 | 设备维护 | 6构造及18参数变体全部相同 | 三种原始以太网与三种TCP维护构造；网卡及写入被拦截 |
 | 标注变长包装 | 13／13 | UTF-8文本、NUL、16位长度边界；QImage编码结果注入，未测试图像编解码 |
 | 媒体序号与音频类型 | 8+4，全部相同 | 原序号分支、关键帧请求截点、前4音频包的AAC／PCM选择 |
@@ -116,6 +117,7 @@ uv run --offline --default-index https://pypi.org/simple --with pefile --with ca
 uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_ct_uploads.py
 uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_layout_branches.py
 uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/probe_resolution_enums.py
+uv run --offline --default-index https://pypi.org/simple --with pefile --with capstone --with unicorn --with pycryptodome python E:/Projects/SSPU/Resources/SimulatorVideoJoint-analysis/verify_ct_chunks.py
 ```
 
 仓库目录的 `samples/` 保存可版本管理的测试向量与摘要，`catalogs/` 保存命令和函数索引。它们不是重新生成原厂二进制的源码。
@@ -137,7 +139,7 @@ uv run --offline --default-index https://pypi.org/simple --with pefile --with ca
 | KVM与标注 | 基础及状态分派已补充；系统短帧value尚无具名调用枚举，操作系统实际生命周期及设备图形呈现未实测 |
 | 设备维护 | 6种构造完成对照；原始发现响应的完整结构及部分控制选择值只有静态消费证据 |
 | 设备升级 | 客户端TFTP启动／61FD触发已恢复；固件侧文件请求、校验、分区和成功确认不在所给程序中 |
-| CT图像／工程命令 | 文本、列表及上传包装已比较；图像内容生产者、设备解析／完成确认及R/S/Q/F/T业务定义尚需关联证据 |
+| CT图像／工程命令 | 文本、列表、上传包装及分段已比较；原专用接收槽没有完成ACK解析；图像内容生产者、设备解析及R/S/Q/F/T业务定义尚需关联证据 |
 | 媒体 | 分类、序号、请求与共享内存读写已记录；现场流持续解码、声卡与采样格式未验证 |
 | 自定义设备命令 | 已恢复宏与原样发送路径；示例工程没有实际电源／网关的自定义命令内容，不能补造现场协议 |
 | 软件本地与纯服务端交互 | 按用户最新要求排除继续调查；旧资料保留，不作为当前未完成设备工作 |

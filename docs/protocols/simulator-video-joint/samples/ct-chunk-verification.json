@@ -1,0 +1,378 @@
+{
+  "cases": 16,
+  "all_match": true,
+  "vectors": [
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 0,
+      "chunk_lengths": [],
+      "waits_ms": [],
+      "reassembled_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 1,
+      "chunk_lengths": [
+        1
+      ],
+      "waits_ms": [],
+      "reassembled_sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "match": true
+    },
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 1023,
+      "chunk_lengths": [
+        1023
+      ],
+      "waits_ms": [],
+      "reassembled_sha256": "84d353b0e5a01f3e12370cd86b340c1fa07fd8a91490d67eb06b91206df54bc4",
+      "match": true
+    },
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 1024,
+      "chunk_lengths": [
+        1024
+      ],
+      "waits_ms": [],
+      "reassembled_sha256": "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9",
+      "match": true
+    },
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 1025,
+      "chunk_lengths": [
+        1024,
+        1
+      ],
+      "waits_ms": [],
+      "reassembled_sha256": "b3981d93eeb64aa900f3e48cfcd48e9bbc89b77732c49ea201c93656c62b6a09",
+      "match": true
+    },
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 2048,
+      "chunk_lengths": [
+        1024,
+        1024
+      ],
+      "waits_ms": [],
+      "reassembled_sha256": "10fc3c51a152e90e5b90319b601d92ccf37290ef53c35ff92507687d8a911a08",
+      "match": true
+    },
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 2050,
+      "chunk_lengths": [
+        1024,
+        1024,
+        2
+      ],
+      "waits_ms": [],
+      "reassembled_sha256": "4999dc01a74574f694032b62115778f28019a30fda8c9e5a4d74e837f60c5f4d",
+      "match": true
+    },
+    {
+      "function": "0x7fc810",
+      "payload_bytes": 65536,
+      "chunk_lengths": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "waits_ms": [],
+      "reassembled_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 0,
+      "chunk_lengths": [],
+      "waits_ms": [],
+      "reassembled_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 1,
+      "chunk_lengths": [
+        1
+      ],
+      "waits_ms": [
+        50
+      ],
+      "reassembled_sha256": "6e340b9cffb37a989ca544e6bb780a2c78901d3fb33738768511a30617afa01d",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 1023,
+      "chunk_lengths": [
+        1023
+      ],
+      "waits_ms": [
+        50
+      ],
+      "reassembled_sha256": "84d353b0e5a01f3e12370cd86b340c1fa07fd8a91490d67eb06b91206df54bc4",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 1024,
+      "chunk_lengths": [
+        1024
+      ],
+      "waits_ms": [
+        50
+      ],
+      "reassembled_sha256": "785b0751fc2c53dc14a4ce3d800e69ef9ce1009eb327ccf458afe09c242c26c9",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 1025,
+      "chunk_lengths": [
+        1024,
+        1
+      ],
+      "waits_ms": [
+        50,
+        50
+      ],
+      "reassembled_sha256": "b3981d93eeb64aa900f3e48cfcd48e9bbc89b77732c49ea201c93656c62b6a09",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 2048,
+      "chunk_lengths": [
+        1024,
+        1024
+      ],
+      "waits_ms": [
+        50,
+        50
+      ],
+      "reassembled_sha256": "10fc3c51a152e90e5b90319b601d92ccf37290ef53c35ff92507687d8a911a08",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 2050,
+      "chunk_lengths": [
+        1024,
+        1024,
+        2
+      ],
+      "waits_ms": [
+        50,
+        50,
+        50
+      ],
+      "reassembled_sha256": "4999dc01a74574f694032b62115778f28019a30fda8c9e5a4d74e837f60c5f4d",
+      "match": true
+    },
+    {
+      "function": "0x7fce40",
+      "payload_bytes": 65536,
+      "chunk_lengths": [
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024,
+        1024
+      ],
+      "waits_ms": [
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50
+      ],
+      "reassembled_sha256": "7daca2095d0438260fa849183dfc67faa459fdf4936e1bc91eec6b281b27e4c2",
+      "match": true
+    }
+  ],
+  "boundary": "原分段循环；Qt mid和日志为有限适配；85D5B0发送及7FCDF0等待仅截取，未验证TCP或设备完成。"
+}
