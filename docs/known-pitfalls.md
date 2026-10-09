@@ -15,7 +15,7 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
-| 拼接屏画面映射（视频墙） | 草稿PUT、应用POST、快捷预设及预案兼容入口 | Service→操作门禁/组合Planner→控制器→50节点4830；55/56/81组合，未知输入/几何拒绝；被动回读仅诊断 | 相同预检与Planner，明确simulated | Planner/Protocol/Dispatch、SQLite/HTTP/DOM；现场抓包/出画另验，不把回环称实体通过 |
+| 拼接屏画面映射（视频墙） | 草稿PUT、应用POST、快捷预设及预案兼容入口 | Service→操作门禁/组合Planner→控制器→50节点4830；D4的63/64/81组合，未知输入/几何拒绝；被动回读仅诊断 | 相同预检与Planner，明确simulated | Planner/Protocol/Dispatch、SQLite/HTTP/DOM；现场抓包/出画另验，不把回环称实体通过 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`；3/4 请求拒绝、旧命令不重放 |
@@ -376,6 +376,27 @@
 ### LibreOffice运行时后续记录（坑51起）
 
 为保持本文件可维护，2026-10-03的布局、协议、进程、预览、队列与动画记录已移到[LibreOffice运行时记录](known-pitfalls/libreoffice-runtime.md)。编号及历史结论保持，不以本轮修复覆盖旧失败。
+
+### 坑 74 - 历史设备输入被当作当前主机默认绑定（2026-10-09 本机修复，待部署/实机）
+
+- **症状**：页面选择窗口1/2、规划及发送成功，却可能指向旧D2的55/56，而不是用户明确指定的D4输入63/64。
+- **根因**：沿用历史拓扑/黄金包地址作为当前配置；测试也依赖相同默认值，绿色不证明选中了当前设备。
+- **检出方式**：将预期63/64写成独立断言，覆盖12组合、旧两预设、四种成帧及真实Hardware配置装配；明确检查192.168.5.63/64及224.1.1.63/64。旧黄金测试必须显式配置55/56，不修改fixture字节来迎合新默认值。
+- **现状**：当前默认值和Host配置已修正；63项协议/映射及9项Host回归通过。现有Planner只在完整匹配历史配置时走固定旧序列，D4两预设也使用63/64。紧凑选源仅编辑草稿，仍显式保存和应用。本轮未部署D4、未发实体包，出画需另验。
+
+### 坑 75 - 测试依赖缺失时只有构建成功、没有执行测试（2026-10-09 QA修正）
+
+- **症状**：`dotnet test --no-restore`退出0，但输出没有测试计数或TRX，不能算测试通过。
+- **根因**：NuGet生成导入存在，缓存中的Microsoft.NET.Test.Sdk props缺失，IsTestProject未设置；该环境还带有不被NuGet支持的代理配置。
+- **检出方式**：核对测试实际发现/执行数量和TRX，而不只核对退出码；使用MSBuild读取IsTestProject并检查导入。
+- **现状**：仅为当前命令清空代理，按锁文件恢复测试依赖后实际执行红绿回归，不改全局代理、仓库镜像或生产代码，也不计入最初的空跑。
+
+### 坑 76 - DOM通过不代表几何正确，computed样式也不等于源码写法（2026-10-09 本机视觉修正）
+
+- **症状**：DOM交互回归通过，但44px分段超出Naive的34px外框；360px顶栏把应急入口挤出视口。减少动效测试要求0s，而浏览器返回1e-05s。
+- **根因**：DOM测试不进行真实排版；组件默认高度及内层label布局需要分层核对，顶栏原本不换行。inline-flex作为flex子项会被计算为flex，全局减少动效!important为0.01ms，不能把源码值与计算值混用。
+- **检出方式**：真实浏览器核对外框/子项包含关系、实际可操作区域和整页scrollWidth；浅深主题/360/390原图自审，焦点和动效按可观察数值预算断言，不隐藏溢出或放宽功能门禁。
+- **现状**：外框auto高度和内层间隔、顶栏自然换行已修；最终293项前端回归和六主题/宽度检查通过，手机交互块高410px。测试误判保留原记录，未改实体控制或据此称D4出画通过，见009视觉验证。
 
 ## 3. 相关沉淀点（不在这里重复）
 
