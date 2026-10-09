@@ -10,6 +10,8 @@ import { api, type SessionSnapshot } from '@/services/api';
 interface SessionState {
   /** 后端返回的两个大屏窗口会话；首次启动前为空数组。 */
   sessions: SessionSnapshot[];
+  /** 本客户端操作围栏，仅内存，不代替服务端租约或持久终态。 */
+  commandFeedbackRevisions: Record<number, number>;
 }
 
 export interface SessionCommandObservation {
@@ -32,6 +34,7 @@ function newerOrSameSession(incoming: SessionSnapshot, existing: SessionSnapshot
 export const useSessionStore = defineStore('sessions', {
   state: (): SessionState => ({
     sessions: [],
+    commandFeedbackRevisions: {},
   }),
   getters: {
     /** 至少一个输出窗口播放器在最近心跳窗口内在线。 */
@@ -63,6 +66,10 @@ export const useSessionStore = defineStore('sessions', {
     },
   },
   actions: {
+    /** :param windowId: 本次客户端目标。:returns: 使更早的本客户端反馈失效，不撤销外部命令。 */
+    beginCommandFeedbackScope(windowId: number): void {
+      this.commandFeedbackRevisions[windowId] = (this.commandFeedbackRevisions[windowId] ?? 0) + 1;
+    },
     ensurePlayerOnline(windowId: number): void {
       const session = this.sessions.find((item) => item.window_id === windowId);
       if (!session?.player_online) throw new Error('PlayerWorker 当前离线，已拒绝发送控制命令。');
@@ -82,27 +89,50 @@ export const useSessionStore = defineStore('sessions', {
 
       this.sessions = mergedSessions.sort((left, right) => left.window_id - right.window_id);
     },
-    async openSource(windowId: number, sourceId: number, autoplay = true, targetSlide = 0): Promise<void> {
+    async openSource(windowId: number, sourceId: number, autoplay = true, targetSlide = 0, presentationMode?: 'libreoffice' | 'slide_images' | 'pdf', fitText = false): Promise<void> {
       this.ensurePlayerOnline(windowId);
-      const payload = targetSlide > 0
-        ? await api.openSourceWithOptions(windowId, { source_id: sourceId, autoplay, target_slide: targetSlide || undefined })
+      this.beginCommandFeedbackScope(windowId);
+      const payload = targetSlide > 0 || presentationMode || fitText
+        ? await api.openSourceWithOptions(windowId, { source_id: sourceId, autoplay, target_slide: targetSlide || undefined, presentation_mode: presentationMode, fit_text: fitText })
         : await api.openSource(windowId, sourceId, autoplay);
       this.applyRemoteSessions(payload.sessions);
     },
     async closeSource(windowId: number): Promise<void> {
       this.ensurePlayerOnline(windowId);
+      this.beginCommandFeedbackScope(windowId);
       const payload = await api.closeSource(windowId);
       this.applyRemoteSessions(payload.sessions);
     },
-    async control(windowId: number, action: string): Promise<void> {
+    /**
+     * 重开已确认的当前画面资源，不把失败的新源意图或其布局套到旧画面。
+     * :param windowId: 输出窗口。
+     * :returns: 请求受理后仍等待Worker实际观测，不宣称已经出画。
+     * :raises Error: 当前离线或明确没有实际画面源。
+     */
+    async reopenCurrentSource(windowId: number): Promise<void> {
       this.ensurePlayerOnline(windowId);
+      const session = this.sessions.find((item) => item.window_id === windowId)!;
+      const legacy = session.actual_source_id === undefined;
+      const sourceId = legacy ? session.source_id : session.actual_source_id;
+      if (!sourceId) throw new Error('当前没有已确认的画面源，请从源列表明确选择。');
+      const adapter = legacy ? session.playback_mode : session.actual_adapter_kind;
+      const mode = ['libreoffice', 'slide_images', 'pdf'].includes(adapter ?? '')
+        ? adapter as 'libreoffice' | 'slide_images' | 'pdf' : undefined;
+      await this.openSource(windowId, sourceId, true, 0, mode, !!mode && session.actual_fit_text === true);
+    },
+    async control(windowId: number, action: string): Promise<SessionSnapshot | undefined> {
+      this.ensurePlayerOnline(windowId);
+      this.beginCommandFeedbackScope(windowId);
       const payload = await api.controlPlayback(windowId, action);
       this.applyRemoteSessions(payload.sessions);
+      return payload.sessions.find((session) => session.window_id === windowId);
     },
-    async navigate(windowId: number, action: string, targetIndex = 0, positionMs = 0): Promise<void> {
+    async navigate(windowId: number, action: string, targetIndex = 0, positionMs = 0): Promise<SessionSnapshot | undefined> {
       this.ensurePlayerOnline(windowId);
+      this.beginCommandFeedbackScope(windowId);
       const payload = await api.navigateContent(windowId, action, targetIndex, positionMs);
       this.applyRemoteSessions(payload.sessions);
+      return payload.sessions.find((session) => session.window_id === windowId);
     },
     async controlPptMedia(windowId: number, action: string, mediaId: string, mediaIndex: number): Promise<void> {
       this.ensurePlayerOnline(windowId);

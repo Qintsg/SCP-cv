@@ -34,7 +34,7 @@ export default {
     loadFail: '背景音乐状态加载失败',
     actionFail: '背景音乐操作失败',
     addedOk: '已加入背景音乐列表',
-    playingOk: '已开始播放 {name}',
+    playRequested: '已提交播放请求：{name}',
     removedOk: '已移除播放列表项',
     clearedOk: '播放列表已清空',
     clearPlaylist: '清空列表',

@@ -81,7 +81,9 @@ function captureFromCurrent(): void {
   const draft: ScenarioDraft = createEmptyDraft();
   draft.name = '';
   draft.bigScreenModeState = 'set';
-  draft.bigScreenMode = runtime.runtime?.big_screen_mode ?? 'single';
+  // 旧预案只支持两个固定预设；手动布局默认保持，不强行投影成窗口1全屏。
+  if (runtime.runtime?.big_screen_mode === 'custom') draft.bigScreenModeState = 'unset';
+  else draft.bigScreenMode = runtime.runtime?.big_screen_mode ?? 'single';
   draft.volumeState = 'set';
   draft.volumeLevel = runtime.systemVolume.level;
 

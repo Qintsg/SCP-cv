@@ -2,13 +2,12 @@
 /**
  * 背景音乐控制台：展示全局音频状态、播放列表和可加入的音频源。
  */
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onScopeDispose, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NButton,
   NCard,
   NEmpty,
-  NProgress,
   NSlider,
   NSwitch,
   NTag,
@@ -25,25 +24,32 @@ import { formatBytes, formatDuration } from '@/design-system/utils';
 import { type BackgroundAudioPlaylistItem, type MediaSourceItem } from '@/services/api';
 import { useBackgroundAudioStore } from '@/stores/backgroundAudio';
 import { useSourceStore } from '@/stores/sources';
+import { useRuntimeStore } from '@/stores/runtime';
 
 const { t } = useI18n();
 const audioStore = useBackgroundAudioStore();
 const sourceStore = useSourceStore();
+const runtimeStore = useRuntimeStore();
 const toast = useToast();
 const dialog = useDialog();
 
 const drawerOpen = ref(false);
 const busyAction = ref('');
+let busyOwner: symbol | undefined;
+let pageActive = true;
+onScopeDispose(() => { pageActive = false; });
 
 const currentState = computed(() => audioStore.state);
 const playlist = computed(() => audioStore.playlist);
 const audioSources = computed(() => sourceStore.sources.filter((source) => source.source_type === 'audio'));
 const currentSource = computed(() => currentState.value?.source ?? null);
-const progressPercent = computed(() => {
-  const duration = currentState.value?.duration_ms ?? 0;
-  if (duration <= 0) return 0;
-  return Math.min(100, Math.round(((currentState.value?.position_ms ?? 0) / duration) * 100));
-});
+const canSeek = computed(() => Boolean(currentState.value?.source_id)
+  && ['playing', 'paused'].includes(currentState.value?.playback_state ?? '')
+  && Number.isSafeInteger(currentState.value?.duration_ms) && (currentState.value?.duration_ms ?? 0) > 0);
+/** :returns: 源/列表项/主机改变使未发定位失效，普通时钟更新不改变操作域。 */
+function audioControlScope(): string {
+  return JSON.stringify([runtimeStore.connectionGeneration, currentState.value?.source_id, currentState.value?.current_item_id]);
+}
 const statusLabel = computed(() => {
   const status = currentState.value?.playback_state ?? 'idle';
   return t(`backgroundAudio.status.${status}`);
@@ -57,6 +63,8 @@ const playPauseAria = computed(() => audioStore.isPlaying
 const backgroundVolume = useThrottledSlider(
   () => currentState.value?.volume ?? 70,
   {
+    scope: () => runtimeStore.connectionGeneration,
+    isActive: () => currentState.value !== null,
     commit: (value: number) => audioStore.setVolume(value),
     onError: (error) => {
       toast.error(t('backgroundAudio.actionFail'), error instanceof Error ? error.message : t('common.retry'));
@@ -64,30 +72,54 @@ const backgroundVolume = useThrottledSlider(
   },
 );
 
+const backgroundProgress = useThrottledSlider(() => currentState.value?.position_ms ?? 0, {
+  scope: audioControlScope,
+  isActive: () => canSeek.value,
+  commit: (positionMs: number) => audioStore.control('seek', positionMs),
+  onError: (error) => toast.error(t('backgroundAudio.actionFail'), error instanceof Error ? error.message : t('common.retry')),
+});
+
 onMounted(() => {
   void refreshAll();
 });
 
+/** :returns: 刷新共享状态；迟到错误只反馈给仍存活的原页面和原主机。 */
 async function refreshAll(): Promise<void> {
+  const connectionGeneration = runtimeStore.connectionGeneration;
+  const owner = Symbol('audio-refresh');
+  busyOwner = owner;
   busyAction.value = 'refresh';
   try {
     await Promise.all([audioStore.refresh(), sourceStore.refresh()]);
   } catch (error) {
-    toast.error(t('backgroundAudio.loadFail'), error instanceof Error ? error.message : t('common.retry'));
+    if (pageActive && connectionGeneration === runtimeStore.connectionGeneration) {
+      toast.error(t('backgroundAudio.loadFail'), error instanceof Error ? error.message : t('common.retry'));
+    }
   } finally {
-    busyAction.value = '';
+    if (busyOwner === owner) busyAction.value = '';
   }
 }
 
+/**
+ * :param actionKey: 本次操作标识。
+ * :param action: 既有HTTP动作，不因迟到而重放。
+ * :param successMessage: 请求/列表完成提示，不冒称原生播放完成。
+ * :returns: 只向仍然存在的发起页面和主机展示通知，不取消已提交动作。
+ */
 async function runAction(actionKey: string, action: () => Promise<void>, successMessage = ''): Promise<void> {
+  const connectionGeneration = runtimeStore.connectionGeneration;
+  const owner = Symbol(actionKey);
+  busyOwner = owner;
   busyAction.value = actionKey;
   try {
     await action();
-    if (successMessage) toast.success(successMessage);
+    if (pageActive && connectionGeneration === runtimeStore.connectionGeneration && successMessage) toast.success(successMessage);
   } catch (error) {
-    toast.error(t('backgroundAudio.actionFail'), error instanceof Error ? error.message : t('common.retry'));
+    if (pageActive && connectionGeneration === runtimeStore.connectionGeneration) {
+      toast.error(t('backgroundAudio.actionFail'), error instanceof Error ? error.message : t('common.retry'));
+    }
   } finally {
-    busyAction.value = '';
+    if (busyOwner === owner) busyAction.value = '';
   }
 }
 
@@ -99,11 +131,11 @@ function playOrPause(): Promise<void> {
 }
 
 function playItem(item: BackgroundAudioPlaylistItem): Promise<void> {
-  return runAction('play-item', () => audioStore.playItem(item.id), t('backgroundAudio.playingOk', { name: item.source_name }));
+  return runAction('play-item', () => audioStore.playItem(item.id), t('backgroundAudio.playRequested', { name: item.source_name }));
 }
 
 function playSource(source: MediaSourceItem): Promise<void> {
-  return runAction('play-source', () => audioStore.playSource(source.id), t('backgroundAudio.playingOk', { name: source.name }));
+  return runAction('play-source', () => audioStore.playSource(source.id), t('backgroundAudio.playRequested', { name: source.name }));
 }
 
 function addSource(source: MediaSourceItem): Promise<void> {
@@ -170,7 +202,12 @@ function setMute(muted: boolean): Promise<void> {
           </div>
           <div class="background-audio__progress-row">
             <span>{{ formatDuration(currentState?.position_ms ?? 0) }}</span>
-            <n-progress type="line" :percentage="progressPercent" :show-indicator="false" />
+            <n-slider v-slider-aria-label="t('backgroundAudio.progress')"
+              :value="backgroundProgress.value.value" :min="0" :max="currentState?.duration_ms || 1" :step="1000"
+              :disabled="!canSeek" :aria-label="t('backgroundAudio.progress')"
+              @update:value="backgroundProgress.handleInput"
+              @dragend="backgroundProgress.handleChange(backgroundProgress.value.value)"
+              @keyup="backgroundProgress.handleChange(backgroundProgress.value.value)" />
             <span>{{ formatDuration(currentState?.duration_ms ?? 0) }}</span>
           </div>
           <p v-if="currentState?.error_message" class="background-audio__error">{{ currentState.error_message }}</p>
@@ -214,6 +251,7 @@ function setMute(muted: boolean): Promise<void> {
             <span>{{ t('backgroundAudio.volume') }}</span>
             <n-slider
               v-slider-aria-label="t('backgroundAudio.volume')"
+              :disabled="!currentState"
               :value="backgroundVolume.value.value"
               :min="0"
               :max="100"

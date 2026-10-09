@@ -14,15 +14,18 @@ const props = withDefaults(defineProps<{
   source: MediaSourceItem;
   size?: 'compact' | 'comfortable' | 'stage';
   imageUrl?: string;
+  allowSourcePreview?: boolean;
 }>(), {
   size: 'compact',
   imageUrl: '',
+  allowSourcePreview: true,
 });
 
 const loadFailed = ref(false);
-const rawPreviewUrl = computed(() => props.imageUrl || props.source.thumbnail_url || props.source.preview_url || '');
+const rawPreviewUrl = computed(() => props.imageUrl
+  || (props.allowSourcePreview ? props.source.thumbnail_url || props.source.preview_url || '' : ''));
 const previewUrl = computed(() => (rawPreviewUrl.value ? buildBackendUrl(rawPreviewUrl.value) : ''));
-const previewKind = computed(() => props.source.preview_kind || 'icon');
+const previewKind = computed(() => props.imageUrl ? 'image' : props.source.preview_kind || 'icon');
 const fallbackIcon = computed(() => sourceCategoryIcon(props.source));
 const canRenderPreview = computed(() => !!previewUrl.value && previewKind.value !== 'icon' && !loadFailed.value);
 

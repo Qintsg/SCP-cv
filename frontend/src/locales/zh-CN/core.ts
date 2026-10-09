@@ -41,6 +41,7 @@ export default {
     },
   },
   screen: {
+    custom: '手动大屏布局',
     single: '窗口 1 全屏',
     double: '窗口 1 左 / 窗口 2 右',
   },

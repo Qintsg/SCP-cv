@@ -40,6 +40,7 @@ const currentSession = computed(() => {
 });
 
 const targetCaption = computed(() => {
+  if (runtime.runtime?.big_screen_mode === 'custom') return t('videoWall.logicalWindowHint');
   if (targetMeta.value?.windowId === 1) {
     return runtime.isDoubleScreen
       ? t('display.bigLeftSubtitle')
@@ -56,8 +57,14 @@ const blocksForSingleMode = computed(
 );
 
 const availableTargets = computed(() =>
-  DISPLAY_TARGETS.filter((target) => !(target.doubleScreenOnly && !runtime.isDoubleScreen)),
+  DISPLAY_TARGETS.filter((target) => !(target.doubleScreenOnly && !runtime.isDoubleScreen)).map((target) => ({
+    ...target,
+    title: runtime.runtime?.big_screen_mode === 'custom'
+      ? t(target.windowId === 1 ? 'videoWall.window1' : 'videoWall.window2') : target.title,
+  })),
 );
+const targetTitle = computed(() => availableTargets.value.find((target) => target.param === targetParam.value)?.title
+  ?? t('display.windowUnknown'));
 
 type TabId = 'source' | 'control';
 const mobileTab = ref<TabId>('source');
@@ -98,7 +105,7 @@ const segmentValue = computed({
 
     <header class="display-view__hero">
       <p class="display-view__eyebrow">{{ t('display.windowEyebrow', { id: targetMeta?.windowId ?? '?' }) }}</p>
-      <h2 class="display-view__title">{{ targetMeta?.title ?? t('display.windowUnknown') }}{{ t('display.titleSuffix') }}</h2>
+      <h2 class="display-view__title">{{ targetTitle }}{{ t('display.titleSuffix') }}</h2>
       <p class="display-view__caption">
         {{ targetCaption }}
       </p>

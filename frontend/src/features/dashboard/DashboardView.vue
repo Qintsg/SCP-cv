@@ -36,7 +36,7 @@ const dialog = useDialog();
 
 const pendingMode = ref<'single' | 'double' | null>(null);
 const isModeSwitching = computed(() => pendingMode.value !== null);
-const currentScreenMode = computed<'single' | 'double'>(() => runtime.runtime?.big_screen_mode ?? 'single');
+const currentScreenMode = computed(() => runtime.runtime?.big_screen_mode ?? 'single');
 
 async function switchScreenMode(mode: 'single' | 'double'): Promise<void> {
   if (isModeSwitching.value) return;

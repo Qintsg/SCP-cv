@@ -28,7 +28,7 @@ export interface MediaSourceItem {
    */
   preheat_enabled: boolean;
   keep_alive: boolean;
-  /** 演示文稿默认模式：pdf / slide_images；会话另报告实际模式。 */
+  /** 演示文稿默认模式：libreoffice / pdf；会话另报告实际模式。 */
   playback_mode: string;
   preparation_state?: string;
   page_count?: number;
@@ -57,6 +57,8 @@ export interface MediaSourceUpdate {
 }
 
 export interface SessionSnapshot {
+  /** 仅本次入队响应携带；普通GET/SSE不持有提交回执。 */
+  submitted_command_id?: string;
   window_id: number;
   session_id: number;
   source_id: number | null;
@@ -64,7 +66,7 @@ export interface SessionSnapshot {
   source_type: string;
   source_type_label: string;
   source_uri: string;
-  /** 演示文稿实际模式：pdf / slide_images / powerpoint；其它类型为空字符串。 */
+  /** 演示文稿实际模式：libreoffice / pdf / slide_images；其它类型为空字符串。 */
   playback_mode: string;
   playback_state: string;
   playback_state_label: string;
@@ -74,8 +76,15 @@ export interface SessionSnapshot {
   target_display_label: string;
   current_slide: number;
   total_slides: number;
-  position_ms: number;
-  duration_ms: number;
+  position_ms: number | null;
+  duration_ms: number | null;
+  actual_source_id?: number | null;
+  actual_adapter_kind?: string;
+  /** Worker已发布文稿的实际文字布局；null/缺失表示未知或非文稿。 */
+  actual_fit_text?: boolean | null;
+  desired_generation?: number;
+  observed_generation?: number;
+  cleanup_pending?: boolean;
   pending_command: string;
   player_online: boolean;
   player_last_seen_at: string;
@@ -83,6 +92,17 @@ export interface SessionSnapshot {
   volume: number;
   is_muted: boolean;
   loop_enabled: boolean;
+}
+
+/** 单个显示命令的只读持久状态，不包含领取凭证和命令参数。 */
+export interface PlaybackCommandSnapshot {
+  command_id: string;
+  window_id: number;
+  command: string;
+  source_generation: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'superseded' | 'uncertain';
+  result_code: string;
+  completed_at: string | null;
 }
 
 export interface BackgroundAudioStateSnapshot {
@@ -124,7 +144,7 @@ export interface BackgroundAudioPayload {
 }
 
 export interface RuntimeSnapshot {
-  big_screen_mode: 'single' | 'double';
+  big_screen_mode: 'single' | 'double' | 'custom';
   volume_level: number;
   muted_windows: number[];
 }
@@ -186,13 +206,43 @@ export interface VideoWallLayoutItem {
 export interface VideoWallLayoutState {
   draft: VideoWallLayoutItem | null;
   draft_revision: number;
-  active_preset: 'single' | 'double';
+  active_preset: 'single' | 'double' | 'custom';
+  applied: VideoWallLayoutItem | null;
+  applied_revision: number;
+  dispatch_status: 'none' | 'dispatching' | 'simulated' | 'sent_unconfirmed' | 'uncertain';
+  dispatch_detail: string;
 }
 
 export interface PowerPointSettingsItem {
   experimental_enabled: boolean;
   available: boolean;
   detail: string;
+}
+
+/** 单个运行依赖的只读静态诊断，不包含配置路径或原生执行对象。 */
+export interface PresentationDependencyComponent {
+  id: string;
+  status: 'installed' | 'unavailable';
+  detail: string;
+  reason_code: string;
+}
+
+/** 文稿依赖检查结果；installed只表示静态检查，不代表引擎或文稿已播放。 */
+export interface PresentationSettingsItem {
+  default_engine: 'libreoffice';
+  available: boolean;
+  dependency_status: 'installed' | 'unavailable';
+  detail: string;
+  components: PresentationDependencyComponent[];
+  capabilities: {
+    slide_navigation: boolean;
+    effect_navigation: boolean;
+    media_pause: boolean;
+    media_resume: boolean;
+    media_seek: boolean;
+    media_volume: boolean;
+    media_mute: boolean;
+  };
 }
 
 export interface DeviceItem {

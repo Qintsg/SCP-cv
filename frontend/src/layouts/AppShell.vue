@@ -44,7 +44,7 @@ const primaryItems = computed<NavItemDef[]>(() =>
   ).map((item) => ({
     ...item,
     label: item.path.startsWith('/display/')
-      ? resolveDisplayLabel(item.path, runtime.isDoubleScreen)
+      ? resolveDisplayLabel(item.path, runtime.isDoubleScreen, runtime.runtime?.big_screen_mode === 'custom')
       : item.label,
   })),
 );

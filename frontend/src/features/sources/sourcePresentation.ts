@@ -90,6 +90,29 @@ export function pptPreparationStateLabel(state: string | null | undefined): stri
 }
 
 /**
+ * 将准备状态与页数投影到同一个选定布局，缺失适配制品不借用原排版页数。
+ * :param source: 当前媒体记录；关闭抽屉时可以为空。
+ * :param fitText: 是否选择文字适配制品。
+ * :returns: 当前布局的准备状态及已准备页数；旧原排版记录保留顶层页数兼容。
+ */
+export function pptPreparationSummary(source: MediaSourceItem | null, fitText: boolean): {
+  state: string | undefined;
+  pageCount: number;
+} {
+  const metadata = source?.metadata[fitText ? 'fitted_slide_images' : 'slide_images'];
+  const artifact = metadata && typeof metadata === 'object' && !Array.isArray(metadata)
+    ? metadata as Record<string, unknown> : undefined;
+  const state = fitText
+    ? (typeof artifact?.status === 'string' ? artifact.status : undefined)
+    : source?.preparation_state;
+  const pages = artifact?.page_count ?? (fitText ? undefined : source?.page_count);
+  return {
+    state,
+    pageCount: typeof pages === 'number' && Number.isSafeInteger(pages) && pages >= 0 ? pages : 0,
+  };
+}
+
+/**
  * 区分 PPT 准备与真正离线，供源列表和切换面板共用。
  * :param source: 不可用的媒体记录。
  * :returns: 可读准备/故障原因。

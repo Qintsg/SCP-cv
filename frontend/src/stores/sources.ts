@@ -230,8 +230,8 @@ export const useSourceStore = defineStore('sources', {
       this.sources = this.sources.map((item) => (item.id === sourceId ? payload.source : item));
       return payload.source;
     },
-    async retryPptImages(sourceId: number): Promise<MediaSourceItem> {
-      const payload = await api.preparePptImages(sourceId);
+    async retryPptImages(sourceId: number, fitText = false): Promise<MediaSourceItem> {
+      const payload = await api.preparePptImages(sourceId, fitText);
       this.sources = this.sources.map((item) => item.id === sourceId ? payload.source : item);
       return payload.source;
     },

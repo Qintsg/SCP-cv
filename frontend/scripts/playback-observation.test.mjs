@@ -30,3 +30,11 @@ test('未加载会话或没有有效源时不得宣称播出', () => {
     assert.equal(isConfirmedPlayback({ source_id, player_online: true, playback_state: 'playing' }), false);
   }
 });
+
+test('明确的实际源不同或尚未观测到当前代次时不能标记新源播出', () => {
+  const base = { source_id: 41, player_online: true, playback_state: 'playing' };
+  assert.equal(isConfirmedPlayback({ ...base, actual_source_id: null }), false);
+  assert.equal(isConfirmedPlayback({ ...base, actual_source_id: 40 }), false);
+  assert.equal(isConfirmedPlayback({ ...base, actual_source_id: 41, desired_generation: 3, observed_generation: 2 }), false);
+  assert.equal(isConfirmedPlayback({ ...base, actual_source_id: 41, desired_generation: 3, observed_generation: 3 }), true);
+});

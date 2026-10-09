@@ -36,9 +36,12 @@ export const MOBILE_TAB_BAR: NavItemDef[] = [
  * 名称化大屏路径标题：根据当前大屏模式显示「大屏 / 大屏左」。
  * @param path 路径
  * @param isDoubleScreen 是否双屏
+ * :param isCustom: 手动布局时显示逻辑窗口号，不冒称物理左右位置。
  * @return 当前应显示的中文标题
  */
-export function resolveDisplayLabel(path: string, isDoubleScreen: boolean): string {
+export function resolveDisplayLabel(path: string, isDoubleScreen: boolean, isCustom = false): string {
+  if (isCustom && path === '/display/big-left') return t('videoWall.window1');
+  if (isCustom && path === '/display/big-right') return t('videoWall.window2');
   if (path === '/display/big-left') return isDoubleScreen ? t('nav.bigScreenLeft') : t('nav.bigScreen');
   if (path === '/display/big-right') return t('nav.bigScreenRight');
   return '';

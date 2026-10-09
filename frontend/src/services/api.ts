@@ -8,9 +8,9 @@ import {
 import { resolveCsrfToken } from '@/platform/csrf';
 
 import type {
-  ApiStatePayload, BackgroundAudioPayload, DeviceItem, DisplayTargetItem, MediaFolderItem,
+  ApiStatePayload, BackgroundAudioPayload, DeviceItem, DisplayTargetItem, MediaFolderItem, PlaybackCommandSnapshot,
   MediaSourceItem, MediaSourceUpdate,
-  PptResourceItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload, StreamSourceCreate, UploadOptions,
+  PptResourceItem, PresentationSettingsItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload, StreamSourceCreate, UploadOptions,
   VideoWallLayoutItem, VideoWallLayoutState,
 } from './apiTypes';
 export type {
@@ -20,7 +20,7 @@ export type {
   PlaybackWindowId, PptMediaItem, PptResourceItem, RuntimeSnapshot, ScenarioItem, ScenarioPayload,
   ScenarioTargetItem, SessionSnapshot, StreamSourceCreate, UploadOptions, VideoWallInputKind, VideoWallLayoutItem,
   VideoWallLayoutState, VideoWallMappingItem, VideoWallRegion,
-  PowerPointSettingsItem,
+  PowerPointSettingsItem, PresentationDependencyComponent, PresentationSettingsItem,
 } from './apiTypes';
 
 interface ApiDetailPayload {
@@ -67,8 +67,13 @@ export function buildBackendUrl(path: string): string {
   return resolveBackendBase() + normalizedPath;
 }
 
+/**
+ * 读取当前主机及页面的端口摘要，沿用 REST 请求的配置优先级。
+ * :returns: 仅含端口的诊断信息，不返回主机地址或认证信息。
+ */
 export function getConnectionPorts(): { backendPort: string; frontendPort: string } {
-  const configuredTarget = String(import.meta.env.VITE_BACKEND_TARGET || '').trim();
+  const configuredTarget = clientConnection.profile?.origin
+    || String(import.meta.env.VITE_BACKEND_TARGET || '').trim();
   let backendPort = DEFAULT_BACKEND_PORT;
   if (configuredTarget) {
     try {
@@ -267,21 +272,20 @@ export const api = {
   updateSource: (sourceId: number, payload: MediaSourceUpdate) => requestJson<{ success: boolean; source: MediaSourceItem }>(`/api/sources/${sourceId}/`, { method: 'PATCH', body: JSON.stringify(payload) }),
   deleteSource: (sourceId: number) => requestJson<{ success: boolean }>(`/api/sources/${sourceId}/`, { method: 'DELETE' }),
   downloadSourceUrl: (sourceId: number) => buildBackendUrl(`/api/sources/${sourceId}/download/`),
-  listPptResources: (sourceId: number) => requestJson<{ success: boolean; resources: PptResourceItem[] }>(`/api/sources/${sourceId}/ppt-resources/`),
-  preparePptImages: (sourceId: number) => requestJson<{ success: boolean; source: MediaSourceItem }>(
-    `/api/sources/${sourceId}/prepare/`, { method: 'POST' }),
+  listPptResources: (sourceId: number, fitText = false) => requestJson<{ success: boolean; resources: PptResourceItem[] }>(
+    `/api/sources/${sourceId}/ppt-resources/${fitText ? '?fit_text=true' : ''}`),
+  preparePptImages: (sourceId: number, fitText = false) => requestJson<{ success: boolean; source: MediaSourceItem }>(
+    `/api/sources/${sourceId}/prepare/`, { method: 'POST', body: JSON.stringify({ fit_text: fitText }) }),
   listSessions: () => requestJson<ApiStatePayload>('/api/sessions/'),
   getRuntime: () => requestJson<{ success: boolean; runtime: RuntimeSnapshot }>('/api/runtime/'),
-  getPowerPointSettings: () => requestJson<{ success: boolean; settings: import('./apiTypes').PowerPointSettingsItem }>('/api/settings/powerpoint/'),
-  setPowerPointSettings: (enabled: boolean) => requestJson<{ success: boolean; settings: import('./apiTypes').PowerPointSettingsItem }>(
-    '/api/settings/powerpoint/', { method: 'PATCH', body: JSON.stringify({ experimental_enabled: enabled }) }),
+  getPresentationSettings: () => requestJson<{ success: boolean; settings: PresentationSettingsItem }>('/api/settings/presentation/'),
   getVideoWallLayout: () => requestJson<{ success: boolean; layout: VideoWallLayoutState }>('/api/video-wall/layout/'),
   saveVideoWallLayout: (payload: Pick<VideoWallLayoutItem, 'name' | 'mappings'>) =>
     requestJson<{ success: boolean; layout: VideoWallLayoutState }>('/api/video-wall/layout/', {
       method: 'PUT', body: JSON.stringify(payload),
     }),
-  applyVideoWallDraft: () => requestJson<ApiStatePayload & { layout: VideoWallLayoutState; runtime: RuntimeSnapshot }>(
-    '/api/video-wall/layout/apply/', { method: 'POST' }, RUNTIME_MODE_TIMEOUT_MS),
+  applyVideoWallDraft: (expectedRevision?: number) => requestJson<ApiStatePayload & { layout: VideoWallLayoutState; runtime: RuntimeSnapshot }>(
+    '/api/video-wall/layout/apply/', { method: 'POST', body: JSON.stringify({ expected_revision: expectedRevision }) }, RUNTIME_MODE_TIMEOUT_MS),
   applyVideoWallPreset: (preset: 'window_1_fullscreen' | 'window_1_left_window_2_right') =>
     requestJson<ApiStatePayload & { layout: VideoWallLayoutState; runtime: RuntimeSnapshot }>(
       `/api/video-wall/presets/${preset}/apply/`, { method: 'POST' }, RUNTIME_MODE_TIMEOUT_MS),
@@ -303,8 +307,9 @@ export const api = {
   setBackgroundAudioMute: (muted: boolean) => requestJson<BackgroundAudioPayload>('/api/background-audio/mute/', { method: 'PATCH', body: JSON.stringify({ muted }) }),
   setBackgroundAudioLoop: (enabled: boolean) => requestJson<BackgroundAudioPayload>('/api/background-audio/loop/', { method: 'PATCH', body: JSON.stringify({ enabled }) }),
   openSource: (windowId: number, sourceId: number, autoplay = true) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/open/`, { method: 'POST', body: JSON.stringify({ source_id: sourceId, autoplay }) }),
-  openSourceWithOptions: (windowId: number, payload: { source_id: number; autoplay?: boolean; target_slide?: number }) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/open/`, { method: 'POST', body: JSON.stringify(payload) }),
+  openSourceWithOptions: (windowId: number, payload: { source_id: number; autoplay?: boolean; target_slide?: number; presentation_mode?: 'libreoffice' | 'slide_images' | 'pdf'; fit_text?: boolean }) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/open/`, { method: 'POST', body: JSON.stringify(payload) }),
   controlPlayback: (windowId: number, action: string) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/control/`, { method: 'POST', body: JSON.stringify({ action }) }),
+  getPlaybackCommand: (windowId: number, commandId: string) => requestJson<{ success: boolean; command: PlaybackCommandSnapshot }>(`/api/playback/${windowId}/commands/${encodeURIComponent(commandId)}/`),
   navigateContent: (windowId: number, action: string, targetIndex = 0, positionMs = 0) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/navigate/`, { method: 'POST', body: JSON.stringify({ action, target_index: targetIndex, position_ms: positionMs }) }),
   controlPptMedia: (windowId: number, action: string, mediaId: string, mediaIndex: number) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/ppt-media/`, { method: 'POST', body: JSON.stringify({ action, media_id: mediaId, media_index: mediaIndex }) }),
   closeSource: (windowId: number) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/close/`, { method: 'POST' }),

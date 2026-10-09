@@ -30,7 +30,7 @@ const session = useSessionStore();
 const toast = useToast();
 const pendingMode = ref<'single' | 'double' | null>(null);
 
-const currentScreenMode = computed<'single' | 'double'>(() => runtime.runtime?.big_screen_mode ?? 'single');
+const currentScreenMode = computed(() => runtime.runtime?.big_screen_mode ?? 'single');
 
 async function switchScreenMode(mode: 'single' | 'double'): Promise<void> {
   if (pendingMode.value !== null) return;

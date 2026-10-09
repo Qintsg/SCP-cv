@@ -25,6 +25,8 @@ let createPinia;
 let SourcesView;
 let EmergencyMenu;
 let useSourceStore;
+let useSessionStore;
+let useToastStore;
 let i18n;
 let app;
 let requests;
@@ -42,10 +44,13 @@ before(async () => {
   ({ default: SourcesView } = await server.ssrLoadModule('/src/features/sources/SourcesView.vue'));
   ({ default: EmergencyMenu } = await server.ssrLoadModule('/src/layouts/EmergencyMenu.vue'));
   ({ useSourceStore } = await server.ssrLoadModule('/src/stores/sources.ts'));
+  ({ useSessionStore } = await server.ssrLoadModule('/src/stores/sessions.ts'));
+  ({ useToastStore } = await server.ssrLoadModule('/src/composables/useToast.ts'));
   ({ i18n } = await server.ssrLoadModule('/src/locales/index.ts'));
 });
 
 afterEach(async () => {
+  useToastStore?.().clear();
   app?.unmount();
   app = undefined;
   browser.document.body.replaceChildren();
@@ -174,6 +179,36 @@ test('鼠标从源菜单移动一次只发送一条命令', async () => {
   target.click();
   await flushUi();
   assert.equal(requests.filter((request) => request.pathname === '/api/sources/1/move/').length, 1);
+});
+
+test('媒体库打开受理不冒称已在窗口出画', async () => {
+  const pinia = await mountMenu();
+  const session = { window_id: 1, player_online: true, source_id: null, actual_source_id: null,
+    playback_state: 'idle', last_updated_at: '2026-10-05T00:00:00Z' };
+  useSessionStore(pinia).applyRemoteSessions([session]);
+  const fallback = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (new URL(String(url), browser.location.href).pathname !== '/api/playback/1/open/') return fallback(url, options);
+    return new Response(JSON.stringify({ success: true, sessions: [{ ...session, source_id: 1, playback_state: 'loading', pending_command: 'OPEN', last_updated_at: '2026-10-05T00:00:01Z' }] }), { headers: { 'Content-Type': 'application/json' } });
+  };
+  browser.document.querySelector('button[aria-label="受控图卡 的操作菜单"]').click(); await flushUi();
+  menuItem('打开到窗口').dispatchEvent(new browser.MouseEvent('mouseenter', { bubbles: true })); await flushUi();
+  menuItem('窗口 1').click(); await flushUi();
+  assert.equal(useToastStore().items.at(-1)?.message, '已向窗口 1 提交打开请求：受控图卡');
+});
+
+test('媒体库背景音乐受理不冒称已开始播放', async () => {
+  const pinia = await mountMenu();
+  source = { ...source, source_type: 'audio', name: '受控音乐' };
+  useSourceStore(pinia).sources = [source]; await flushUi();
+  const fallback = globalThis.fetch;
+  globalThis.fetch = async (url, options = {}) => {
+    if (new URL(String(url), browser.location.href).pathname !== '/api/background-audio/play-source/') return fallback(url, options);
+    return new Response(JSON.stringify({ success: true, background_audio: { state: { source_id: 1, playback_state: 'loading', pending_command: 'OPEN', updated_at: '2026-10-05T00:00:01Z' }, playlist: [] } }), { headers: { 'Content-Type': 'application/json' } });
+  };
+  browser.document.querySelector('button[aria-label="受控音乐 的操作菜单"]').click(); await flushUi();
+  menuItem('立即播放背景音乐').click(); await flushUi();
+  assert.equal(useToastStore().items.at(-1)?.message, '已提交播放请求：受控音乐');
 });
 
 test('键盘从源菜单移动一次只发送一条命令', async () => {

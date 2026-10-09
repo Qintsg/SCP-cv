@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 文稿专注控制页；动态动画步与静态翻页分开，不暴露未支持的媒体控制。 */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -16,13 +17,18 @@ import FIcon from '@/design-system/FIcon.vue';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useTheme, type ThemeMode } from '@/composables/useTheme';
 import { useToast } from '@/composables/useToast';
-import { api, buildBackendUrl, type PptMediaItem, type PptResourceItem } from '@/services/api';
+import { buildBackendUrl, type PptMediaItem } from '@/services/api';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useSessionStore } from '@/stores/sessions';
+import { useSourceStore } from '@/stores/sources';
 import { windowIdToSlug } from '@/features/display/displayTargets';
 
 import PptSlideRail from './PptSlideRail.vue';
+import PresentationEffectControls from '../display/PresentationEffectControls.vue';
 import { sanitizeSpeakerNotes } from './speakerNotes';
+import { usePresentationPreview } from '../display/usePresentationPreview';
+import { usePresentationCommandFeedback } from '../display/usePresentationCommandFeedback';
+import { supportsRequestedPlaybackControls } from '../display/playbackCapabilities';
 
 type KnownMediaType = 'audio' | 'video' | 'image';
 const KNOWN_MEDIA_TYPES = new Set<KnownMediaType>(['audio', 'video', 'image']);
@@ -32,8 +38,6 @@ const PRESENTATION_KEY_ACTIONS: Record<string, 'prev' | 'next'> = {
   PageUp: 'prev',
   PageDown: 'next',
 };
-const RESOURCE_POLL_INTERVAL_MS = 1000;
-const RESOURCE_POLL_MAX_ATTEMPTS = 8;
 const KEYBOARD_NAVIGATION_SKIP_SELECTOR = [
   'input',
   'textarea',
@@ -59,22 +63,27 @@ const router = useRouter();
 const { isLandscape } = useBreakpoint();
 const runtimeStore = useRuntimeStore();
 const sessionStore = useSessionStore();
+const sourceStore = useSourceStore();
 const toast = useToast();
 const { pushOverride, popOverride } = useTheme();
 
 const isFullscreen = ref(false);
-const resources = ref<PptResourceItem[]>([]);
-const loadError = ref('');
-const isLoading = ref(false);
 const selectedMediaKey = ref<string | null>(null);
 const _restoreTheme = ref<ThemeMode | null>(null);
-const resourcePollTimer = ref<number | null>(null);
-const resourcePollAttempts = ref(0);
 
 const windowId = computed(() => Number.parseInt(String(route.params.windowId ?? '0'), 10));
 const session = computed(() => sessionStore.byWindowId(windowId.value));
-const pptSourceId = computed(() => (session.value?.source_type === 'ppt' ? session.value.source_id : null));
+const controlsDisabled = computed(() => !session.value?.player_online || !supportsRequestedPlaybackControls(session.value));
+const feedback = usePresentationCommandFeedback(() => session.value,
+  () => sessionStore.commandFeedbackRevisions[windowId.value] ?? 0);
+const { context: previewContext, resources, error: loadError, loading: isLoading,
+  unavailable: previewUnavailable, pending: previewPending,
+  refresh: refreshPreview } = usePresentationPreview(() => session.value, true);
+const actualPresentationTitle = computed(() => previewContext.value
+  ? sourceStore.findById(previewContext.value.sourceId)?.name || `实际文稿源${previewContext.value.sourceId}`
+  : '实际文稿预览未确认');
 const isStaticSlideMode = computed(() => session.value?.playback_mode === 'pdf' || session.value?.playback_mode === 'slide_images');
+const isLibreOffice = computed(() => session.value?.playback_mode === 'libreoffice');
 const orientationKey = computed<'landscape' | 'portrait'>(() => (isLandscape.value ? 'landscape' : 'portrait'));
 
 const slidesProgress = computed(() => ({
@@ -133,7 +142,7 @@ const selectedMedia = computed(() =>
   currentMediaItems.value.find((media) => mediaSelectionValue(media) === selectedMediaKey.value) ?? null,
 );
 
-const canControlSelectedMedia = computed(() => !!session.value && !!selectedMedia.value);
+const canControlSelectedMedia = computed(() => !controlsDisabled.value && !!selectedMedia.value && !isLibreOffice.value);
 const isMediaPickerDisabled = computed(() => currentMediaOptions.value.length === 0);
 const mediaSelectPlaceholder = computed(() => {
   if (!currentMediaOptions.value.length) return t('pptFocus.noMedia');
@@ -176,8 +185,6 @@ watch(currentMediaItems, (items) => {
   }
 }, { immediate: true });
 
-watch(pptSourceId, loadResources, { immediate: true });
-
 function syncFullscreen(): void {
   isFullscreen.value = !!document.fullscreenElement;
 }
@@ -191,7 +198,7 @@ function shouldSkipKeyboardNavigation(target: EventTarget | null): boolean {
 function handlePresentationKeydown(event: KeyboardEvent): void {
   const action = PRESENTATION_KEY_ACTIONS[event.key];
   if (!action || event.defaultPrevented || event.repeat || event.altKey || event.ctrlKey || event.metaKey) return;
-  if (session.value?.source_type !== 'ppt' || !session.value.source_id) return;
+  if (session.value?.source_type !== 'ppt' || controlsDisabled.value) return;
   if (shouldSkipKeyboardNavigation(event.target)) return;
   event.preventDefault();
   void nav(action);
@@ -208,7 +215,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  clearResourcePoll();
   popOverride();
   document.removeEventListener('fullscreenchange', syncFullscreen);
   document.removeEventListener('keydown', handlePresentationKeydown);
@@ -218,99 +224,17 @@ function mediaSelectionValue(media: PptMediaItem): string {
   return `${media.id}:${media.media_index}`;
 }
 
-async function loadResources(sourceId: number | null): Promise<void> {
-  clearResourcePoll();
-  if (!sourceId) {
-    resources.value = [];
-    loadError.value = '';
-    isLoading.value = false;
-    return;
-  }
-  isLoading.value = true;
-  loadError.value = '';
-  try {
-    const payload = await api.listPptResources(sourceId);
-    if (pptSourceId.value === sourceId) {
-      resources.value = payload.resources;
-      scheduleResourcePollIfNeeded(sourceId);
-    }
-  } catch (error) {
-    if (pptSourceId.value === sourceId) {
-      loadError.value = error instanceof Error ? error.message : t('pptFocus.loadFailTitle');
-    }
-  } finally {
-    if (pptSourceId.value === sourceId) {
-      isLoading.value = false;
-    }
-  }
-}
-
-function hasCompleteSlideResources(): boolean {
-  const totalSlides = slidesProgress.value.total;
-  if (!resources.value.length) return false;
-  const currentSlide = slidesProgress.value.current || 1;
-  const hasCurrentSlide = resources.value.some(
-    (resource) => resource.page_index === currentSlide && Boolean(resource.slide_image),
-  );
-  if (!hasCurrentSlide) return false;
-  if (totalSlides <= 0) return resources.value.every((resource) => Boolean(resource.slide_image));
-  return resources.value.length >= totalSlides && resources.value.every((resource) => Boolean(resource.slide_image));
-}
-
-function clearResourcePoll(): void {
-  if (resourcePollTimer.value !== null) {
-    window.clearTimeout(resourcePollTimer.value);
-    resourcePollTimer.value = null;
-  }
-  resourcePollAttempts.value = 0;
-}
-
-function scheduleResourcePollIfNeeded(sourceId: number): void {
-  if (resourcePollTimer.value !== null) return;
-  if (hasCompleteSlideResources() || resourcePollAttempts.value >= RESOURCE_POLL_MAX_ATTEMPTS) {
-    resourcePollTimer.value = null;
-    return;
-  }
-  resourcePollTimer.value = window.setTimeout(() => {
-    resourcePollTimer.value = null;
-    void pollResources(sourceId);
-  }, RESOURCE_POLL_INTERVAL_MS);
-}
-
-watch(
-  () => [pptSourceId.value, slidesProgress.value.current, slidesProgress.value.total] as const,
-  ([sourceId]) => {
-    if (!sourceId || !resources.value.length) return;
-    scheduleResourcePollIfNeeded(sourceId);
-  },
-);
-
-async function pollResources(sourceId: number): Promise<void> {
-  if (pptSourceId.value !== sourceId) return;
-  resourcePollAttempts.value += 1;
-  try {
-    const payload = await api.listPptResources(sourceId);
-    if (pptSourceId.value !== sourceId) return;
-    resources.value = payload.resources;
-    loadError.value = '';
-    scheduleResourcePollIfNeeded(sourceId);
-  } catch (error) {
-    if (pptSourceId.value !== sourceId) return;
-    loadError.value = error instanceof Error ? error.message : t('pptFocus.loadFailTitle');
-  }
-}
-
 async function nav(action: 'prev' | 'next'): Promise<void> {
-  if (!session.value) return;
+  if (!session.value || controlsDisabled.value) return;
   try {
-    await sessionStore.navigate(session.value.window_id, action);
+    await feedback.submit(() => sessionStore.navigate(session.value!.window_id, action), action === 'next' ? 'NEXT' : 'PREV');
   } catch (error) {
     toast.error(t('pptFocus.navFail'), error instanceof Error ? error.message : t('common.retry'));
   }
 }
 
 async function jumpToSlide(pageIndex: number): Promise<void> {
-  if (!session.value || pageIndex === session.value.current_slide) return;
+  if (!session.value || controlsDisabled.value || pageIndex === session.value.current_slide) return;
   try {
     await sessionStore.navigate(session.value.window_id, 'goto', pageIndex);
   } catch (error) {
@@ -319,6 +243,7 @@ async function jumpToSlide(pageIndex: number): Promise<void> {
 }
 
 async function controlSelectedMedia(action: 'play' | 'pause' | 'stop'): Promise<void> {
+  if (controlsDisabled.value) return;
   if (!session.value || !selectedMedia.value) {
     if (currentMediaItems.value.length > 1) {
       toast.info(t('pptFocus.pickMediaFirst'));
@@ -363,7 +288,7 @@ function exitFocus(): void {
       </n-button>
       <div class="ppt-focus__topbar-center">
         <n-tag type="info" size="small" round>{{ windowLabel }}</n-tag>
-        <span class="ppt-focus__topbar-title">{{ session?.source_name || t('pptFocus.noSourceSelected') }}</span>
+        <span class="ppt-focus__topbar-title">{{ actualPresentationTitle }}</span>
         <n-tag :type="session?.playback_state === 'playing' ? 'success' : 'default'" size="small" round>
           {{ session?.playback_state_label || session?.playback_state || t('pptFocus.unknown') }}
         </n-tag>
@@ -380,6 +305,14 @@ function exitFocus(): void {
     </header>
 
     <main class="ppt-focus__stage" :data-orientation="orientationKey">
+      <n-alert v-if="session?.actual_source_id && !supportsRequestedPlaybackControls(session)" type="warning">
+        {{ t('playback.controlsTypeMismatch') }}
+      </n-alert>
+      <n-button v-if="previewContext" :loading="previewPending" :disabled="previewPending"
+        @click="refreshPreview">刷新预览</n-button>
+      <n-alert v-if="previewUnavailable" type="info">
+        所选布局预览尚未准备；此提示仅指静态参考图，不表示原生播放失败。
+      </n-alert>
       <n-alert v-if="loadError" type="error" :title="t('pptFocus.loadFailTitle')">
         {{ loadError }}
       </n-alert>
@@ -389,8 +322,8 @@ function exitFocus(): void {
         <span>{{ t('pptFocus.loadingPages') }}</span>
       </div>
 
-      <template v-else-if="!session?.source_id">
-        <n-empty :description="t('pptFocus.noPptDesc')">
+      <template v-else-if="!previewContext">
+        <n-empty description="实际文稿源或文字布局尚未确认，不能显示默认预览。">
           <template #icon>
             <FIcon name="document_24_regular" />
           </template>
@@ -449,7 +382,8 @@ function exitFocus(): void {
         </div>
 
         <div class="ppt-focus__controls" :aria-label="t('pptFocus.controlsAria')">
-          <template v-if="!isStaticSlideMode">
+          <PresentationEffectControls v-if="isLibreOffice" :window-id="windowId" :disabled="controlsDisabled || !!session?.pending_command" />
+          <template v-if="!isStaticSlideMode && !isLibreOffice">
             <div class="ppt-focus__media-picker">
               <n-select
                 v-model:value="selectedMediaKey"
@@ -474,11 +408,11 @@ function exitFocus(): void {
               <span class="ppt-focus__control-label">{{ t('pptFocus.stopMedia') }}</span>
             </n-button>
           </template>
-          <n-button @click="nav('prev')">
+          <n-button :disabled="controlsDisabled" @click="nav('prev')">
             <template #icon><FIcon name="previous_24_regular" /></template>
             <span class="ppt-focus__control-label">{{ t('pptFocus.prevPage') }}</span>
           </n-button>
-          <n-button @click="nav('next')">
+          <n-button :disabled="controlsDisabled" @click="nav('next')">
             <template #icon><FIcon name="next_24_regular" /></template>
             <span class="ppt-focus__control-label">{{ t('pptFocus.nextPage') }}</span>
           </n-button>

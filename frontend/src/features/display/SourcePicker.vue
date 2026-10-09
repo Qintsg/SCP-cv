@@ -17,6 +17,8 @@ import {
   NFormItem,
   NInput,
   NProgress,
+  NSelect,
+  NSwitch,
   NSpin,
   NTabs,
   NTabPane,
@@ -34,6 +36,7 @@ import { getNativePlatformAdapter } from '@/platform/native';
 import SourceThumbnail from '../sources/SourceThumbnail.vue';
 import { sourceAvailabilityLabel, sourceCategoryLabel } from '../sources/sourcePresentation';
 import { isConfirmedPlayback } from './playbackObservation';
+import { resolveActualOutputSource } from './playbackOutput';
 
 const props = defineProps<{ windowId: number }>();
 const emit = defineEmits<{ (event: 'opened'): void }>();
@@ -44,19 +47,30 @@ const backgroundAudioStore = useBackgroundAudioStore();
 const sessionStore = useSessionStore();
 const toast = useToast();
 const currentSession = computed(() => sessionStore.byWindowId(props.windowId));
+const actualSource = computed(() => currentSession.value
+  ? resolveActualOutputSource(currentSession.value, sourceStore.findById) : null);
 const controlsDisabled = computed(() => !currentSession.value?.player_online);
 const currentSourceIsPlaying = computed(() => isConfirmedPlayback(currentSession.value));
-const currentSourceStatus = computed(() => {
-  if (controlsDisabled.value) return t('playback.playerOfflineTitle');
-  return currentSourceIsPlaying.value
-    ? t('sourcePicker.onAir')
-    : currentSession.value?.playback_state_label || currentSession.value?.playback_state || t('playback.idle');
+const requestedSourceStatus = computed(() => {
+  if (controlsDisabled.value) return '请求源（播放器离线）';
+  if (currentSession.value?.error_message) return '请求失败';
+  if (currentSession.value?.pending_command) return '请求中';
+  return '请求源（输出未确认）';
 });
 
 const filterValue = ref<SourceCategory>('all');
+const presentationMode = ref<'libreoffice' | 'slide_images' | 'pdf'>('libreoffice');
+const fitText = ref(false);
+const presentationOptions = [
+  { label: 'LibreOffice 动态放映', value: 'libreoffice' },
+  { label: '静态逐页图片（无动画／媒体）', value: 'slide_images' },
+  { label: '静态 PDF（无动画／媒体）', value: 'pdf' },
+];
 const searchKeyword = ref('');
 const expanded = ref(false);
 const fileToUpload = ref<File | null>(null);
+// 仅保存上传接口已明确返回的源；OPEN失败后显式重试不再重复上传。
+const uploadedSource = ref<MediaSourceItem | null>(null);
 const fileDisplayName = ref('');
 const uploadProgress = ref(0);
 const uploading = ref(false);
@@ -109,7 +123,7 @@ async function selectSource(source: MediaSourceItem): Promise<void> {
   }
   switchingSourceId.value = source.id;
   try {
-    await sessionStore.openSource(props.windowId, source.id, true);
+    await openWindowSource(source);
     toast.success(t('sourcePicker.openedOk', { name: source.name }));
     emit('opened');
   } catch (error) {
@@ -119,15 +133,41 @@ async function selectSource(source: MediaSourceItem): Promise<void> {
   }
 }
 
-function isCurrentSource(source: MediaSourceItem): boolean {
-  return sessionStore.byWindowId(props.windowId)?.source_id === source.id;
+/**
+ * 普通选源和上传后打开共用文稿决策，PDF原源与非文稿不携带布局参数。
+ * :param source: 服务端已经登记的媒体源。
+ * :param requestedMode: 点击时选定的播放模式。
+ * :param requestedFit: 点击时选定的文字布局。
+ * :returns: OPEN请求完成，实际出画仍由会话观测确认。
+ */
+async function openWindowSource(source: MediaSourceItem, requestedMode = presentationMode.value,
+  requestedFit = fitText.value): Promise<void> {
+  const mode = source.source_type === 'ppt' && source.playback_mode !== 'pdf' ? requestedMode : undefined;
+  await sessionStore.openSource(props.windowId, source.id, true, 0, mode, !!mode && requestedFit);
 }
 
+/** :param source: 列表元数据。:returns: 仅实际源与适配器/类型一致时标当前项。 */
+function isCurrentSource(source: MediaSourceItem): boolean {
+  return actualSource.value?.id === source.id;
+}
+
+/** :param source: 列表源。:returns: 只标记与实际输出不同的明确请求；受理不等于出画。 */
+function isRequestedSource(source: MediaSourceItem): boolean {
+  return currentSession.value?.source_id === source.id && !isCurrentSource(source);
+}
+
+/**
+ * 新的文件选择开始新的上传意图，不复用此前已确认源。
+ * :param event: 原生文件输入的change事件。
+ * :returns: 更新所选文件并清除旧上传源缓存。
+ */
 function onFileSelect(event: Event): void {
   const target = event.target as HTMLInputElement;
   fileToUpload.value = target.files?.[0] ?? null;
+  uploadedSource.value = null;
 }
 
+/** :returns: 明确选到新文件才清除旧上传源，取消选择保留当前恢复入口。 */
 async function triggerFilePicker(): Promise<void> {
   const adapter = getNativePlatformAdapter();
   if (!adapter) {
@@ -138,6 +178,7 @@ async function triggerFilePicker(): Promise<void> {
     const selected = await pickUploadFile(adapter, acceptedFileTypes);
     if (!selected) return;
     fileToUpload.value = new File([selected.data], selected.name, { type: selected.mimeType });
+    uploadedSource.value = null;
     uploadError.value = '';
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : t('sourcePicker.pickFileFirst');
@@ -149,29 +190,34 @@ async function triggerFilePicker(): Promise<void> {
  * :returns: 上传和打开请求完成，失败保留可读原因。
  */
 async function uploadAndOpen(): Promise<void> {
-  if (controlsDisabled.value) return;
+  if (controlsDisabled.value || uploading.value) return;
   if (!fileToUpload.value) {
     uploadError.value = t('sourcePicker.pickFileFirst');
     return;
   }
   uploading.value = true;
-  uploadPhase.value = 'uploading';
+  uploadPhase.value = uploadedSource.value ? 'processing' : 'uploading';
   uploadProgress.value = 0;
   uploadError.value = '';
+  // 上传在途的开关变化只影响后续点击，不改写本次已提交的意图。
+  const requestedMode = presentationMode.value;
+  const requestedFit = fitText.value;
   try {
-    const result = await sourceStore.upload(fileToUpload.value, {
+    const result = uploadedSource.value ?? await sourceStore.upload(fileToUpload.value, {
       name: fileDisplayName.value.trim() || undefined,
       isTemporary: true,
       onProgress: handleUploadProgress,
     });
+    uploadedSource.value = result;
     if (result.source_type === 'audio') {
       await backgroundAudioStore.playSource(result.id);
-      toast.success(t('backgroundAudio.playingOk', { name: result.name }));
+      toast.success(t('backgroundAudio.playRequested', { name: result.name }));
     } else {
-      await sessionStore.openSource(props.windowId, result.id, true);
+      await openWindowSource(result, requestedMode, requestedFit);
       toast.success(t('sourcePicker.uploadedOpened'), t('sourcePicker.sourceNameDetail', { name: result.name }));
       emit('opened');
     }
+    uploadedSource.value = null;
     fileToUpload.value = null;
     fileDisplayName.value = '';
     if (fileInputRef.value) fileInputRef.value.value = '';
@@ -241,6 +287,14 @@ async function uploadOnly(): Promise<void> {
       </n-tabs>
     </div>
 
+    <n-form-item v-if="filterValue === 'ppt'" label="文稿打开方式">
+      <n-select v-model:value="presentationMode" :options="presentationOptions" aria-label="文稿打开方式" />
+    </n-form-item>
+
+    <n-form-item v-if="filterValue === 'ppt'" label="文字适配（不修改原件）">
+      <n-switch v-model:value="fitText" aria-label="文字适配（不修改原件）" />
+    </n-form-item>
+
     <ul class="source-picker__list">
       <li v-if="filteredSources.length === 0" class="source-picker__empty">
         {{ t('sourcePicker.empty') }}
@@ -266,7 +320,12 @@ async function uploadOnly(): Promise<void> {
           <div class="source-picker__meta">
             <p class="source-picker__name">{{ source.name }}</p>
             <p class="source-picker__sub">
-              <n-tag v-if="isCurrentSource(source)" :type="currentSourceIsPlaying ? 'success' : 'warning'" size="small" round>{{ currentSourceStatus }}</n-tag>
+              <n-tag v-if="isCurrentSource(source)" :type="currentSourceIsPlaying ? 'success' : 'warning'" size="small" round>
+                当前输出{{ controlsDisabled ? '（离线，最后报告）' : '' }}
+              </n-tag>
+              <n-tag v-if="isRequestedSource(source)" type="warning" size="small" round>
+                {{ requestedSourceStatus }}
+              </n-tag>
               <n-tag :type="source.is_available ? 'default' : source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error'" size="small" round>
                 {{ source.is_available ? sourceCategoryLabel(source) : sourceAvailabilityLabel(source) }}
               </n-tag>
@@ -299,8 +358,11 @@ async function uploadOnly(): Promise<void> {
           </div>
         </n-form-item>
         <n-form-item :label="t('sourcePicker.displayName')">
-          <n-input v-model:value="fileDisplayName" :placeholder="t('sourcePicker.displayNamePlaceholder')" />
+          <n-input v-model:value="fileDisplayName" :disabled="!!uploadedSource" :placeholder="t('sourcePicker.displayNamePlaceholder')" />
         </n-form-item>
+        <p v-if="uploadedSource" class="source-picker__upload-state">
+          文件已上传为“{{ uploadedSource.name }}”；重试仅打开该源，重新选文件才会再次上传。
+        </p>
         <p v-if="uploadError" class="source-picker__upload-error">{{ uploadError }}</p>
         <template v-if="uploading">
           <n-progress type="line" :percentage="uploadProgress" :show-indicator="false" />
@@ -308,12 +370,12 @@ async function uploadOnly(): Promise<void> {
         </template>
 
         <div class="source-picker__upload-actions">
-          <n-button :disabled="uploading || !fileToUpload" :loading="uploading" @click="uploadOnly">
+          <n-button :disabled="uploading || !fileToUpload || !!uploadedSource" :loading="uploading" @click="uploadOnly">
             {{ t('sourcePicker.uploadOnly') }}
           </n-button>
           <n-button type="primary" :disabled="controlsDisabled || uploading || !fileToUpload" :loading="uploading"
             @click="uploadAndOpen">
-            {{ t('sourcePicker.uploadOpen') }}
+            {{ uploadedSource ? '重试打开已上传源' : t('sourcePicker.uploadOpen') }}
           </n-button>
         </div>
       </div>

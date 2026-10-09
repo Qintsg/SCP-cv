@@ -189,6 +189,13 @@
   color: var(--colorStatusDangerForeground1);
 }
 
+/* 进度条保留可见时钟，并提供手机端44px操作高度。 */
+.background-audio__progress-row :deep(.n-slider) {
+  height: 44px;
+  box-sizing: border-box;
+  padding-block: calc((44px - var(--n-rail-height)) / 2);
+}
+
 .background-audio__controls,
 .background-audio__mix-row {
   display: flex;
@@ -388,12 +395,8 @@
   }
 
   .background-audio__progress-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--spacing-xs);
-  }
-
-  .background-audio__progress-row span {
-    display: none;
   }
 
   .background-audio__mix-row label,

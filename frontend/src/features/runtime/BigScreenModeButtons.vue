@@ -11,7 +11,7 @@ import { t } from '@/locales';
 type BigScreenMode = 'single' | 'double';
 
 const props = withDefaults(defineProps<{
-  currentMode: BigScreenMode;
+  currentMode: BigScreenMode | 'custom';
   pendingMode?: BigScreenMode | null;
   disabled?: boolean;
   block?: boolean;

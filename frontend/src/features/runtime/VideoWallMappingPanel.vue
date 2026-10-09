@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
- * 大屏信号映射草稿：用实体墙面比例预览左右/全屏，不为未知帧提供假“应用成功”。
+ * 大屏输入组合：服务端能力、草稿版本与已发送意图分开，不以网络写出冒充画面确认。
  */
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { NAlert, NButton, NCard, NFormItem, NInput, NRadio, NRadioGroup, NSelect } from 'naive-ui';
 
 import { useToast } from '@/composables/useToast';
-import { api, type VideoWallInputKind, type VideoWallLayoutItem, type VideoWallMappingItem } from '@/services/api';
+import { api, type VideoWallInputKind, type VideoWallLayoutItem, type VideoWallLayoutState, type VideoWallMappingItem } from '@/services/api';
 import { useRuntimeStore } from '@/stores/runtime';
 
 type InputChoice = VideoWallInputKind | 'none';
@@ -29,6 +29,9 @@ const loading = ref(false);
 const saving = ref(false);
 const applying = ref(false);
 const errorMessage = ref('');
+const serverState = ref<VideoWallLayoutState | null>(null);
+let alive = true;
+const busy = computed(() => loading.value || saving.value || applying.value);
 
 const inputOptions = computed(() => [
   { label: t('videoWall.none'), value: 'none' },
@@ -55,9 +58,20 @@ const mappings = computed<VideoWallMappingItem[]>(() => {
 
 const currentSignature = computed(() => JSON.stringify({ name: name.value.trim(), mappings: mappings.value }));
 const isSaved = computed(() => savedSignature.value !== '' && savedSignature.value === currentSignature.value);
-const matchesCapturedPreset = computed(() =>
-  (layoutKind.value === 'fullscreen' && fullInput.value === 'window_1') ||
-  (layoutKind.value === 'split' && leftInput.value === 'window_1' && rightInput.value === 'window_2'));
+const canApply = computed(() => isSaved.value && serverState.value?.draft?.can_apply === true);
+const capabilityMessage = computed(() => !isSaved.value ? t('videoWall.unsaved')
+  : canApply.value ? t('videoWall.presetReady') : serverState.value?.draft?.unavailable_reason || t('videoWall.pendingFrames'));
+const dispatchLabel = computed(() => {
+  const status = serverState.value?.dispatch_status;
+  return status === 'simulated' ? t('videoWall.statusSimulated')
+    : status === 'sent_unconfirmed' ? t('videoWall.statusSent')
+      : status === 'uncertain' ? t('videoWall.statusUncertain')
+        : status === 'dispatching' ? t('videoWall.statusSending') : t('videoWall.statusNone');
+});
+const appliedLabel = computed(() => serverState.value?.applied?.mappings
+  .map((mapping) => `${mapping.region === 'fullscreen' ? t('videoWall.fullscreen')
+    : mapping.region === 'left' ? t('videoWall.left') : t('videoWall.right')}：${inputLabel(mapping.input.kind, mapping.input.ip_address || '')}`)
+  .join(' / ') || t('videoWall.noApplied'));
 
 function inputLabel(kind: InputChoice, ipAddress: string): string {
   const label = kind === 'none' ? t('videoWall.none')
@@ -85,10 +99,13 @@ function restoreDraft(draft: VideoWallLayoutItem): void {
 }
 
 async function load(): Promise<void> {
+  const generation = runtime.connectionGeneration;
   loading.value = true;
   errorMessage.value = '';
   try {
     const response = await api.getVideoWallLayout();
+    if (!alive || generation !== runtime.connectionGeneration) return;
+    serverState.value = response.layout;
     if (response.layout.draft) restoreDraft(response.layout.draft);
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('videoWall.loadFail');
@@ -98,13 +115,19 @@ async function load(): Promise<void> {
 }
 
 async function save(): Promise<void> {
+  if (busy.value) return;
   if (!name.value.trim()) { errorMessage.value = t('videoWall.invalidName'); return; }
   if (!mappings.value.length) { errorMessage.value = t('videoWall.emptyRegion'); return; }
   saving.value = true;
+  const submittedSignature = currentSignature.value;
+  const generation = runtime.connectionGeneration;
   errorMessage.value = '';
   try {
     const response = await api.saveVideoWallLayout({ name: name.value.trim(), mappings: mappings.value });
-    if (response.layout.draft) restoreDraft(response.layout.draft);
+    if (!alive || generation !== runtime.connectionGeneration) return;
+    serverState.value = response.layout;
+    if (response.layout.draft && submittedSignature === currentSignature.value) restoreDraft(response.layout.draft);
+    else savedSignature.value = submittedSignature;
     toast.success(t('videoWall.saved'));
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('videoWall.saveFail');
@@ -114,30 +137,43 @@ async function save(): Promise<void> {
 }
 
 async function apply(): Promise<void> {
-  if (!isSaved.value || !matchesCapturedPreset.value) return;
+  if (busy.value || !canApply.value || !serverState.value) return;
+  const generation = runtime.connectionGeneration;
   applying.value = true;
   errorMessage.value = '';
   try {
-    await runtime.applySavedVideoWallLayout();
+    const state = await runtime.applySavedVideoWallLayout(serverState.value.draft_revision);
+    if (!alive || generation !== runtime.connectionGeneration) return;
+    serverState.value = state;
     toast.success(t('videoWall.applied'));
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : t('videoWall.applyFail');
+    try {
+      const response = await api.getVideoWallLayout();
+      if (alive && generation === runtime.connectionGeneration) {
+        serverState.value = response.layout;
+        // 另一客户端更新草稿时，不让旧表单借用新草稿的可应用能力。
+        if (response.layout.draft && JSON.stringify({ name: response.layout.draft.name,
+          mappings: response.layout.draft.mappings }) !== currentSignature.value) savedSignature.value = '';
+      }
+    } catch { /* 保留原发送错误，不猜测墙面已经恢复。 */ }
   } finally {
     applying.value = false;
   }
 }
 
 onMounted(() => { void load(); });
+onBeforeUnmount(() => { alive = false; });
 </script>
 
 <template>
   <n-card :title="t('videoWall.title')" class="wall-map">
     <p class="wall-map__description">{{ t('videoWall.description') }}</p>
     <n-form-item :label="t('videoWall.name')">
-      <n-input v-model:value="name" :placeholder="t('videoWall.namePlaceholder')" />
+      <n-input v-model:value="name" :disabled="busy" :input-props="{ 'aria-label': t('videoWall.name') }" :placeholder="t('videoWall.namePlaceholder')" />
     </n-form-item>
     <n-form-item :label="t('videoWall.layout')">
-      <n-radio-group v-model:value="layoutKind">
+      <n-radio-group v-model:value="layoutKind" :disabled="busy">
         <n-radio value="fullscreen">{{ t('videoWall.fullscreen') }}</n-radio>
         <n-radio value="split">{{ t('videoWall.split') }}</n-radio>
       </n-radio-group>
@@ -164,29 +200,34 @@ onMounted(() => { void load(); });
     <div class="wall-map__inputs">
       <template v-if="layoutKind === 'fullscreen'">
         <n-form-item :label="t('videoWall.fullscreen')">
-          <n-select v-model:value="fullInput" :options="fullOptions" />
+          <n-select v-model:value="fullInput" :disabled="busy" :options="fullOptions" :aria-label="t('videoWall.fullscreen') + t('videoWall.input')" />
         </n-form-item>
-        <n-input v-if="fullInput === 'ip_stream'" v-model:value="fullIp" :placeholder="t('videoWall.ipAddress')" />
+        <n-input v-if="fullInput === 'ip_stream'" v-model:value="fullIp" :disabled="busy" :placeholder="t('videoWall.ipAddress')" />
       </template>
       <template v-else>
         <div>
-          <n-form-item :label="t('videoWall.left')"><n-select v-model:value="leftInput" :options="inputOptions" /></n-form-item>
-          <n-input v-if="leftInput === 'ip_stream'" v-model:value="leftIp" :placeholder="t('videoWall.ipAddress')" />
+          <n-form-item :label="t('videoWall.left')"><n-select v-model:value="leftInput" :disabled="busy" :options="inputOptions" :aria-label="t('videoWall.left') + t('videoWall.input')" /></n-form-item>
+          <n-input v-if="leftInput === 'ip_stream'" v-model:value="leftIp" :disabled="busy" :placeholder="t('videoWall.ipAddress')" />
         </div>
         <div>
-          <n-form-item :label="t('videoWall.right')"><n-select v-model:value="rightInput" :options="inputOptions" /></n-form-item>
-          <n-input v-if="rightInput === 'ip_stream'" v-model:value="rightIp" :placeholder="t('videoWall.ipAddress')" />
+          <n-form-item :label="t('videoWall.right')"><n-select v-model:value="rightInput" :disabled="busy" :options="inputOptions" :aria-label="t('videoWall.right') + t('videoWall.input')" /></n-form-item>
+          <n-input v-if="rightInput === 'ip_stream'" v-model:value="rightIp" :disabled="busy" :placeholder="t('videoWall.ipAddress')" />
         </div>
       </template>
     </div>
 
-    <n-alert :type="matchesCapturedPreset ? 'info' : 'warning'" class="wall-map__notice">
-      {{ matchesCapturedPreset ? t('videoWall.presetReady') : t('videoWall.pendingFrames') }}
+    <n-alert :type="canApply ? 'info' : 'warning'" class="wall-map__notice">
+      {{ capabilityMessage }}
+    </n-alert>
+    <n-alert v-if="serverState" :type="serverState.dispatch_status === 'uncertain' ? 'warning' : 'info'" class="wall-map__notice" data-wall-dispatch>
+      <strong>{{ dispatchLabel }}</strong>
+      <p>{{ t('videoWall.lastApplied') }}：{{ appliedLabel }}</p>
+      <p v-if="serverState.dispatch_detail">{{ serverState.dispatch_detail }}</p>
     </n-alert>
     <n-alert v-if="errorMessage" type="error" class="wall-map__notice">{{ errorMessage }}</n-alert>
     <div class="wall-map__actions">
-      <n-button :loading="saving" :disabled="loading" @click="save">{{ t('videoWall.save') }}</n-button>
-      <n-button type="primary" :loading="applying" :disabled="!isSaved || !matchesCapturedPreset || loading"
+      <n-button :loading="saving" :disabled="busy" @click="save">{{ t('videoWall.save') }}</n-button>
+      <n-button type="primary" :loading="applying" :disabled="!canApply || busy"
         @click="apply">{{ t('videoWall.apply') }}</n-button>
     </div>
   </n-card>

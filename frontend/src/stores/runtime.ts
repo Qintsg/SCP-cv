@@ -75,9 +75,10 @@ export const useRuntimeStore = defineStore('runtime', {
   }),
   getters: {
     /** 当前是否处于双屏模式；仪表盘、Nav、预案预览均会用到。 */
-    isDoubleScreen: (state): boolean => state.runtime?.big_screen_mode === 'double',
+    isDoubleScreen: (state): boolean => state.runtime?.big_screen_mode === 'double' || state.runtime?.big_screen_mode === 'custom',
     /** 大屏模式中文标签。 */
-    bigScreenLabel: (state): string => (state.runtime?.big_screen_mode === 'double' ? t('screen.double') : t('screen.single')),
+    bigScreenLabel: (state): string => state.runtime?.big_screen_mode === 'custom' ? t('screen.custom')
+      : state.runtime?.big_screen_mode === 'double' ? t('screen.double') : t('screen.single'),
   },
   actions: {
     /** 拉取最新 runtime 快照。 */
@@ -106,10 +107,11 @@ export const useRuntimeStore = defineStore('runtime', {
       useSessionStore().applyRemoteSessions(payload.sessions);
     },
     /** 应用已经保存且具备控制帧的布局；未知帧会由后端明确拒绝。 */
-    async applySavedVideoWallLayout(): Promise<void> {
-      const payload = await api.applyVideoWallDraft();
+    async applySavedVideoWallLayout(expectedRevision?: number) {
+      const payload = await api.applyVideoWallDraft(expectedRevision);
       this.runtime = payload.runtime;
       useSessionStore().applyRemoteSessions(payload.sessions);
+      return payload.layout;
     },
     /** 设置系统音量；后端可能返回未同步标记（无 Windows Core Audio 时）。 */
     async setSystemVolume(level: number, muted?: boolean): Promise<void> {

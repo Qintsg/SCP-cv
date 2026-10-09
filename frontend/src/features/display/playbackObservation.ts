@@ -13,7 +13,11 @@ import type { SessionSnapshot } from '@/services/api';
  * :returns: 仅有效源、在线 Worker 且实际 playing 时为真；不证明实体出帧。
  */
 export function isConfirmedPlayback(
-  session: Pick<SessionSnapshot, 'source_id' | 'player_online' | 'playback_state'> | null | undefined,
+  session: (Pick<SessionSnapshot, 'source_id' | 'player_online' | 'playback_state'>
+    & Partial<Pick<SessionSnapshot, 'actual_source_id' | 'desired_generation' | 'observed_generation'>>) | null | undefined,
 ): boolean {
+  if (session?.actual_source_id !== undefined && session.actual_source_id !== session.source_id) return false;
+  if (session?.desired_generation !== undefined && session.observed_generation !== undefined
+    && session.observed_generation !== session.desired_generation) return false;
   return Boolean(session?.source_id && session.player_online && session.playback_state === 'playing');
 }

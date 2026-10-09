@@ -27,7 +27,7 @@ import {
 import { useToast } from '@/composables/useToast';
 import { useSourceStore } from '@/stores/sources';
 import type { MediaSourceItem, MediaSourceUpdate } from '@/services/api';
-import { pptPreparationStateLabel } from './sourcePresentation';
+import { pptPreparationStateLabel, pptPreparationSummary } from './sourcePresentation';
 
 const props = defineProps<{
   open: boolean;
@@ -48,15 +48,18 @@ const draftUri = ref('');
 const draftPreheatEnabled = ref(true);
 const saving = ref(false);
 const retrying = ref(false);
+const fitText = ref(false);
 const errorMessage = ref('');
 const editScopeVersion = ref(0);
 
 const isWebSource = computed(() => props.source?.source_type === 'web');
 const isStreamSource = computed(() => ['rtsp_stream', 'srt_stream', 'custom_stream'].includes(props.source?.source_type ?? ''));
 const isUrlSource = computed(() => isWebSource.value || isStreamSource.value);
-const isPptWithImages = computed(() => props.source?.source_type === 'ppt' && props.source.playback_mode === 'slide_images');
+const isPptWithImages = computed(() => props.source?.source_type === 'ppt' && props.source.playback_mode !== 'pdf');
+const previewSummary = computed(() => pptPreparationSummary(props.source, fitText.value));
+const previewState = computed(() => previewSummary.value.state);
 const canRetryPpt = computed(() => isPptWithImages.value &&
-  (!props.source?.preparation_state || ['missing', 'failed'].includes(props.source.preparation_state)));
+  (!previewState.value || ['missing', 'failed'].includes(previewState.value)));
 
 /**
  * 旧请求只能更新其仍打开的原编辑周期，不能接管重开的同源或新源。
@@ -76,16 +79,18 @@ async function retryPptImages(): Promise<void> {
   if (!props.source || !canRetryPpt.value || retrying.value) return;
   const sourceId = props.source.id;
   const scopeVersion = editScopeVersion.value;
+  const fittedRequest = fitText.value;
   retrying.value = true;
   errorMessage.value = '';
   try {
     // 请求已受理后不承诺撤销；store 正常同步原源，UI 副作用单独检查归属。
-    const updated = await sourceStore.retryPptImages(sourceId);
+    const updated = await sourceStore.retryPptImages(sourceId, fittedRequest);
     if (!isCurrentRetryScope(sourceId, scopeVersion)) return;
     // prepare 可以复用已有作业或制品；响应状态不证明新建了转换作业。
+    const updatedState = pptPreparationSummary(updated, fittedRequest).state;
     toast.info(
-      t(updated.preparation_state === 'queued' ? 'sources.editDrawer.pptQueued' : 'sources.editDrawer.pptStateUpdated'),
-      t('sources.editDrawer.pptStateDetail', { name: updated.name, status: pptPreparationStateLabel(updated.preparation_state) }),
+      t(updatedState === 'queued' ? 'sources.editDrawer.pptQueued' : 'sources.editDrawer.pptStateUpdated'),
+      t('sources.editDrawer.pptStateDetail', { name: updated.name, status: pptPreparationStateLabel(updatedState) }),
     );
     emit('updated', updated);
     emit('update:open', false);
@@ -108,6 +113,7 @@ watch(
   ([isOpenVal, sourceId]) => {
     editScopeVersion.value += 1;
     retrying.value = false;
+    fitText.value = false;
     if (!isOpenVal || sourceId === undefined) return;
     const source = props.source!;
     draftName.value = source.name ?? '';
@@ -175,9 +181,12 @@ function close(): void {
       <p v-if="source" class="edit-source__desc">{{ t('sources.editDrawer.desc', { name: source.name }) }}</p>
 
       <template v-if="source">
-        <n-alert v-if="isPptWithImages" :type="source.preparation_state === 'ready' ? 'success' : source.preparation_state === 'failed' || source.preparation_state === 'uncertain' ? 'warning' : 'info'"
+        <n-alert v-if="isPptWithImages" :type="previewState === 'ready' ? 'success' : previewState === 'failed' || previewState === 'uncertain' ? 'warning' : 'info'"
           class="edit-source__preparation">
-          {{ t('sources.editDrawer.pptStatus', { status: pptPreparationStateLabel(source.preparation_state), pages: source.page_count ?? 0 }) }}
+          <n-form-item label="静态制品文字适配（不修改原件）">
+            <n-switch v-model:value="fitText" aria-label="静态制品文字适配（不修改原件）" :disabled="retrying" />
+          </n-form-item>
+          {{ t('sources.editDrawer.pptStatus', { status: pptPreparationStateLabel(previewState), pages: previewSummary.pageCount }) }}
           <n-button v-if="canRetryPpt" size="small" :disabled="retrying" :loading="retrying" @click="retryPptImages">
             {{ t('sources.editDrawer.pptRetry') }}
           </n-button>
