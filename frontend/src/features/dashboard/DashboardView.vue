@@ -1,25 +1,24 @@
 <script setup lang="ts">
 /**
- * 仪表盘：Hero + 大屏模式 + 系统音量 + 设备电源四块。
+ * 仪表盘：概览 + 紧凑大屏交互块 + 系统音量 + 设备电源。
  * 仅承载顶层、无需进入子页即可完成的指令。
  *  - 不放预案调用、上传、窗口状态等明细能力；
  *  - 关机统一走 useDialog 二次确认。
  */
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NAlert,
   NButton,
   NCard,
   NSlider,
-  NSpin,
   NSwitch,
   NTag,
 } from 'naive-ui';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
-import BigScreenModeButtons from '@/features/runtime/BigScreenModeButtons.vue';
+import VideoWallMappingPanel from '@/features/runtime/VideoWallMappingPanel.vue';
 import { useDialog } from '@/composables/useDialog';
 import { useThrottledSlider } from '@/composables/useThrottledSlider';
 import { useToast } from '@/composables/useToast';
@@ -33,32 +32,6 @@ const sessionStore = useSessionStore();
 const device = useDeviceStore();
 const toast = useToast();
 const dialog = useDialog();
-
-const pendingMode = ref<'single' | 'double' | null>(null);
-const isModeSwitching = computed(() => pendingMode.value !== null);
-const currentScreenMode = computed(() => runtime.runtime?.big_screen_mode ?? 'single');
-
-async function switchScreenMode(mode: 'single' | 'double'): Promise<void> {
-  if (isModeSwitching.value) return;
-  pendingMode.value = mode;
-  try {
-    await runtime.setBigScreenMode(mode);
-    toast.push({
-      level: 'success',
-      message: mode === 'double' ? t('dashboard.switchedDouble') : t('dashboard.switchedSingle'),
-      action: {
-        label: t('dashboard.undo'),
-        onTrigger: async () => {
-          await runtime.setBigScreenMode(mode === 'double' ? 'single' : 'double');
-        },
-      },
-    });
-  } catch (error) {
-    toast.error(t('dashboard.switchFail'), error instanceof Error ? error.message : t('common.retry'));
-  } finally {
-    pendingMode.value = null;
-  }
-}
 
 const volume = useThrottledSlider(
   () => runtime.systemVolume.level,
@@ -161,21 +134,7 @@ const hasDeviceError = computed(() =>
     </n-alert>
 
     <section class="dashboard__grid" :aria-label="t('dashboard.topCommands')">
-      <n-card class="dashboard__card" :title="t('dashboard.bigScreenTitle')">
-        <template #header-extra>
-          <span class="dashboard__eyebrow">{{ t('dashboard.bigScreenEyebrow') }}</span>
-        </template>
-        <BigScreenModeButtons
-          :current-mode="currentScreenMode"
-          :pending-mode="pendingMode"
-          block
-          @select="switchScreenMode"
-        />
-        <p v-if="isModeSwitching" class="dashboard__hint dashboard__hint--switching">
-          <n-spin :size="14" /> {{ t('dashboard.switching') }}
-        </p>
-        <p v-else class="dashboard__hint">{{ t('dashboard.bigScreenHint') }}</p>
-      </n-card>
+      <VideoWallMappingPanel class="dashboard__card" />
 
       <n-card class="dashboard__card" :title="t('dashboard.volumeTitle')">
         <template #header-extra>
@@ -312,20 +271,6 @@ const hasDeviceError = computed(() =>
 
 .dashboard__card {
   min-height: 220px;
-}
-
-.dashboard__hint {
-  margin: var(--spacingVerticalS) 0 0;
-  color: var(--colorNeutralForeground3);
-  font-size: var(--fontSizeBase200);
-}
-
-.dashboard__hint--switching {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacingHorizontalXS);
-  color: var(--colorBrandForeground1);
-  font-weight: 600;
 }
 
 .dashboard__eyebrow {

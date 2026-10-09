@@ -77,6 +77,7 @@ test('共享壳层使用 Tailwind utilities 表达响应式几何并保留 Fluen
   assert.match(navigation, /grid grid-cols-5/);
   assert.match(navigation, /pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom,0px\)\)\]/);
   assert.match(topBar, /hidden min-w-0 flex-col leading-none sm:flex/);
+  assert.match(topBar, /app-shell__bar-meta[^"\n]*flex-wrap/, '窄屏状态标签不能把主题及应急入口挤出视口');
   assert.match(stateCss, /colorNeutralBackground3/);
   assert.doesNotMatch(stateCss, /\.app-shell\s*\{[\s\S]*?display:\s*flex/);
 });

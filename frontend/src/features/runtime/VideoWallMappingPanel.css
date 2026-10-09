@@ -1,0 +1,164 @@
+/*
+ * 紧凑大屏控制面板：10×5拼接纹理、区域选源和草稿/发送状态视觉层级。
+ * 仅使用现有主题令牌，不修改控制语义；减少动效时关闭短过渡。
+ */
+.wall-map {
+  min-width: 0;
+  font-family: var(--fontFamilyBase);
+  border: var(--strokeWidthThin) solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusXLarge);
+  box-shadow: var(--shadow2);
+}
+.wall-map :deep(.n-card-header) { padding: var(--spacingVerticalM) var(--spacingHorizontalL); }
+.wall-map :deep(.n-card__content) { padding: 0 var(--spacingHorizontalL) var(--spacingVerticalL); }
+.wall-map__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  color: var(--colorNeutralForeground1);
+  font-size: var(--fontSizeBase400);
+  font-weight: var(--fontWeightSemibold);
+}
+.wall-map__title-icon {
+  display: flex;
+  padding: var(--spacingVerticalXS);
+  border-radius: var(--borderRadiusLarge);
+  color: var(--colorBrandForeground1);
+  background: var(--colorBrandBackground2);
+}
+.wall-map__draft-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacingHorizontalXS);
+  padding: var(--spacingVerticalXS) var(--spacingHorizontalS);
+  border-radius: var(--borderRadiusCircular);
+  color: var(--colorNeutralForeground3);
+  background: var(--colorNeutralBackground3);
+  font-size: var(--fontSizeBase200);
+  white-space: nowrap;
+}
+.wall-map__draft-state--saved { color: var(--colorBrandForeground2); background: var(--colorBrandBackground2); }
+.wall-map__state-dot { width: var(--spacingHorizontalSNudge); height: var(--spacingVerticalSNudge); border-radius: var(--borderRadiusCircular); background: currentColor; flex-shrink: 0; }
+.wall-map__toolbar { margin-bottom: var(--spacingVerticalM); }
+.wall-map__toolbar :deep(.n-radio-group) {
+  display: inline-flex;
+  height: auto;
+  gap: var(--spacingHorizontalXS);
+  padding: var(--spacingVerticalXS);
+  border: var(--strokeWidthThin) solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusXLarge);
+  background: var(--colorNeutralBackground3);
+}
+.wall-map__toolbar :deep(.n-radio-button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 var(--spacingHorizontalM);
+  border: 0;
+  border-radius: var(--borderRadiusMedium);
+  color: var(--colorNeutralForeground2);
+  background: transparent;
+  transition: color var(--durationFast), background-color var(--durationFast), box-shadow var(--durationFast);
+}
+.wall-map__toolbar :deep(.n-radio__label) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacingHorizontalSNudge);
+  line-height: var(--lineHeightBase300);
+}
+.wall-map__toolbar :deep(.n-radio-button--checked) { color: var(--colorBrandForeground1); background: var(--colorNeutralBackground1); box-shadow: var(--shadow2); }
+.wall-map__toolbar :deep(.n-radio-group__splitor), .wall-map__toolbar :deep(.n-radio-button__state-border) { display: none; }
+.wall-map__toolbar :deep(.n-radio-button:focus-within) { outline: var(--strokeWidthThick) solid var(--colorStrokeFocus2); outline-offset: var(--spacingHorizontalXXS); }
+.wall-map__layout-icon { display: inline-flex; gap: var(--spacingHorizontalXXS); width: var(--spacingHorizontalXL); height: var(--spacingVerticalM); }
+.wall-map__layout-icon i { flex: 1; border: var(--strokeWidthThin) solid currentColor; border-radius: var(--borderRadiusSmall); }
+.wall-map__screen {
+  display: grid;
+  gap: var(--strokeWidthThick);
+  padding: var(--strokeWidthThick);
+  border: var(--strokeWidthThin) solid var(--colorNeutralStroke1);
+  border-radius: var(--borderRadiusXLarge);
+  background: var(--colorNeutralStroke2);
+  overflow: hidden;
+}
+.wall-map__screen--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wall-map__region {
+  --wall-column-size: 10%;
+  --wall-grid-line: color-mix(in srgb, var(--colorBrandStroke2) 32%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--spacingVerticalS);
+  min-width: 0;
+  min-height: 6rem;
+  padding: var(--spacingVerticalM) var(--spacingHorizontalMNudge);
+  background:
+    linear-gradient(to right, var(--wall-grid-line) var(--strokeWidthThin), transparent var(--strokeWidthThin)) 0 0 / var(--wall-column-size) 100%,
+    linear-gradient(to bottom, var(--wall-grid-line) var(--strokeWidthThin), transparent var(--strokeWidthThin)) 0 0 / 100% 20%,
+    linear-gradient(135deg, var(--colorBrandBackground2), var(--colorNeutralBackground2));
+  transition: box-shadow var(--durationFast);
+}
+.wall-map__screen--split .wall-map__region { --wall-column-size: 20%; }
+.wall-map__region:focus-within { box-shadow: inset 0 0 0 var(--strokeWidthThick) var(--colorBrandStroke1); }
+.wall-map__region--empty { background: var(--colorNeutralBackground2); }
+.wall-map__region-label {
+  color: var(--colorNeutralForeground2);
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightMedium);
+  text-align: center;
+}
+.wall-map__region :deep(.n-base-selection) { border-radius: var(--borderRadiusLarge); box-shadow: var(--shadow2); }
+.wall-map__region :deep(.n-base-selection-label), .wall-map__region :deep(.n-input) { min-height: 44px; }
+.wall-map__region :deep(.n-base-selection-label) { font-size: var(--fontSizeBase300); font-weight: var(--fontWeightSemibold); color: var(--colorNeutralForeground1); background: var(--colorNeutralBackground1); }
+.wall-map__region--empty :deep(.n-base-selection-label) { color: var(--colorNeutralForeground3); font-weight: var(--fontWeightRegular); }
+.wall-map__capability {
+  margin: var(--spacingVerticalS) 0;
+  color: var(--colorNeutralForeground3);
+  font-size: var(--fontSizeBase200);
+  line-height: var(--lineHeightBase200);
+}
+.wall-map__capability--unavailable { color: var(--colorStatusWarningForeground1); }
+.wall-map__notice { margin-bottom: var(--spacingVerticalM); }
+.wall-map__actions { display: flex; flex-wrap: wrap; gap: var(--spacingHorizontalS); }
+.wall-map__actions :deep(.n-button) { flex: 1 1 auto; min-height: 44px; border-radius: var(--borderRadiusLarge); font-size: var(--fontSizeBase200); font-weight: var(--fontWeightSemibold); }
+.wall-map__apply-icon { margin-left: var(--spacingHorizontalSNudge); }
+.wall-map__options, .wall-map__dispatch { font-size: var(--fontSizeBase200); color: var(--colorNeutralForeground2); overflow-wrap: anywhere; }
+.wall-map__options { margin-top: var(--spacingVerticalXS); }
+.wall-map summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacingHorizontalXS);
+  min-height: 44px;
+  width: fit-content;
+  padding: 0 var(--spacingHorizontalXS);
+  border-radius: var(--borderRadiusMedium);
+  color: var(--colorNeutralForeground3);
+  cursor: pointer;
+  list-style: none;
+}
+.wall-map summary::-webkit-details-marker { display: none; }
+.wall-map summary:hover { color: var(--colorBrandForeground1); background: var(--colorNeutralBackground1Hover); }
+.wall-map summary:focus-visible { outline: var(--strokeWidthThick) solid var(--colorStrokeFocus2); outline-offset: var(--spacingHorizontalXXS); }
+.wall-map__chevron { transition: transform var(--durationFast); }
+.wall-map details[open] > summary .wall-map__chevron { transform: rotate(90deg); }
+.wall-map__options :deep(.n-form-item) { margin-top: var(--spacingVerticalXS); }
+.wall-map details p { margin: 0 0 var(--spacingVerticalS); line-height: var(--lineHeightBase200); }
+.wall-map__dispatch {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 var(--spacingHorizontalS);
+  min-height: 44px;
+  padding: var(--spacingVerticalXXS) var(--spacingHorizontalS);
+  border-radius: var(--borderRadiusLarge);
+  background: var(--colorNeutralBackground3);
+  color: var(--colorNeutralForeground3);
+}
+.wall-map__dispatch-label { display: inline-flex; align-items: center; gap: var(--spacingHorizontalSNudge); line-height: var(--lineHeightBase200); }
+.wall-map__dispatch--simulated { color: var(--colorBrandForeground2); background: var(--colorBrandBackground2); }
+.wall-map__dispatch--uncertain { color: var(--colorStatusWarningForeground1); background: var(--colorStatusWarningBackground1); }
+.wall-map__dispatch summary { color: inherit; }
+.wall-map__dispatch details[open] { grid-column: 1 / -1; }
+@media (prefers-reduced-motion: reduce) {
+  .wall-map__toolbar :deep(.n-radio-button), .wall-map__region, .wall-map__chevron { transition: none; }
+}

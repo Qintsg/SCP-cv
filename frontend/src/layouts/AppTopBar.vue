@@ -70,7 +70,7 @@ const playerLabel = computed(() => (sessions.hasOnlinePlayer
       </div>
     </div>
 
-    <div class="app-shell__bar-meta inline-flex min-w-0 items-center gap-1 sm:gap-2">
+    <div class="app-shell__bar-meta inline-flex min-w-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
       <n-tag :type="runtime.isDoubleScreen ? 'info' : 'default'" round size="small">
         {{ runtime.bigScreenLabel }}
       </n-tag>

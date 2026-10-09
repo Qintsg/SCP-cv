@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
  * 设置中心运行态 Tab。
- * 承载大屏模式、系统音量、SSE 状态与重置全部窗口等全局运行控制。
+ * 承载紧凑大屏布局、系统音量、SSE 状态与重置全部窗口等全局运行控制。
  */
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import {
@@ -16,7 +16,6 @@ import {
 
 import FIcon from '@/design-system/FIcon.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
-import BigScreenModeButtons from '@/features/runtime/BigScreenModeButtons.vue';
 import VideoWallMappingPanel from '@/features/runtime/VideoWallMappingPanel.vue';
 import { useThrottledSlider } from '@/composables/useThrottledSlider';
 import { useToast } from '@/composables/useToast';
@@ -28,23 +27,6 @@ const router = useRouter();
 const runtime = useRuntimeStore();
 const session = useSessionStore();
 const toast = useToast();
-const pendingMode = ref<'single' | 'double' | null>(null);
-
-const currentScreenMode = computed(() => runtime.runtime?.big_screen_mode ?? 'single');
-
-async function switchScreenMode(mode: 'single' | 'double'): Promise<void> {
-  if (pendingMode.value !== null) return;
-  pendingMode.value = mode;
-  try {
-    await runtime.setBigScreenMode(mode);
-    toast.success(mode === 'double' ? t('more.switchedDouble') : t('more.switchedSingle'));
-  } catch (error) {
-    toast.error(t('more.switchFail'), error instanceof Error ? error.message : t('common.retry'));
-  } finally {
-    pendingMode.value = null;
-  }
-}
-
 const volume = useThrottledSlider(
   () => runtime.systemVolume.level,
   {
@@ -104,15 +86,7 @@ async function resetAll(): Promise<void> {
 
 <template>
   <section class="settings-view__grid">
-    <n-card :title="t('settings.bigScreenMode')">
-      <BigScreenModeButtons
-        :current-mode="currentScreenMode"
-        :pending-mode="pendingMode"
-        block
-        @select="switchScreenMode"
-      />
-      <p class="settings-view__hint">{{ t('settings.bigScreenHint') }}</p>
-    </n-card>
+    <VideoWallMappingPanel />
 
     <n-card :title="t('settings.systemVolume')">
       <div class="settings-view__volume-row">
@@ -152,10 +126,6 @@ async function resetAll(): Promise<void> {
         {{ t('settings.changeServer') }}
       </n-button>
     </n-card>
-  </section>
-
-  <section class="settings-view__grid">
-    <VideoWallMappingPanel />
   </section>
 
   <section class="settings-view__danger-zone">

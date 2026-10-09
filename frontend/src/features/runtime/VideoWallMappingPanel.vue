@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * 大屏输入组合：服务端能力、草稿版本与已发送意图分开，不以网络写出冒充画面确认。
+ * 紧凑大屏交互块：输入直接放在单屏或左右区域内，选择不自动下发。
+ * 服务端能力、草稿版本与已发送意图分开，不以网络写出冒充画面确认。
  */
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NAlert, NButton, NCard, NFormItem, NInput, NRadio, NRadioGroup, NSelect } from 'naive-ui';
+import { NAlert, NButton, NCard, NFormItem, NInput, NRadioButton, NRadioGroup, NSelect } from 'naive-ui';
 
 import { useToast } from '@/composables/useToast';
+import FIcon from '@/design-system/FIcon.vue';
 import { api, type VideoWallInputKind, type VideoWallLayoutItem, type VideoWallLayoutState, type VideoWallMappingItem } from '@/services/api';
 import { useRuntimeStore } from '@/stores/runtime';
 
@@ -34,14 +36,15 @@ let alive = true;
 const busy = computed(() => loading.value || saving.value || applying.value);
 
 const inputOptions = computed(() => [
-  { label: t('videoWall.none'), value: 'none' },
   { label: t('videoWall.window1'), value: 'window_1' },
   { label: t('videoWall.window2'), value: 'window_2' },
-  { label: t('videoWall.laptop'), value: 'laptop' },
+  { label: t('videoWall.ip81'), value: 'laptop' },
+  { label: t('videoWall.none'), value: 'none' },
   { label: t('videoWall.ipStream'), value: 'ip_stream' },
 ]);
 const fullOptions = computed(() => inputOptions.value.filter((option) => option.value !== 'none'));
 
+/** :param kind: 逻辑输入。:param ipAddress: 自定义地址。:returns: 既有布局合同。 */
 function input(kind: InputChoice, ipAddress: string): VideoWallMappingItem['input'] {
   return { kind: kind as VideoWallInputKind, ip_address: kind === 'ip_stream' ? ipAddress.trim() : '' };
 }
@@ -73,6 +76,7 @@ const appliedLabel = computed(() => serverState.value?.applied?.mappings
     : mapping.region === 'left' ? t('videoWall.left') : t('videoWall.right')}：${inputLabel(mapping.input.kind, mapping.input.ip_address || '')}`)
   .join(' / ') || t('videoWall.noApplied'));
 
+/** :param kind: 逻辑输入。:param ipAddress: 自定义地址。:returns: 发送记录的完整输入名称。 */
 function inputLabel(kind: InputChoice, ipAddress: string): string {
   const label = kind === 'none' ? t('videoWall.none')
     : kind === 'window_1' ? t('videoWall.window1')
@@ -81,6 +85,7 @@ function inputLabel(kind: InputChoice, ipAddress: string): string {
   return kind === 'ip_stream' && ipAddress.trim() ? `${label} · ${ipAddress.trim()}` : label;
 }
 
+/** :param draft: 服务端草稿。:returns: 恢复当前布局；另一布局的未提交选择不清空。 */
 function restoreDraft(draft: VideoWallLayoutItem): void {
   name.value = draft.name;
   const full = draft.mappings.find((mapping) => mapping.region === 'fullscreen');
@@ -89,15 +94,18 @@ function restoreDraft(draft: VideoWallLayoutItem): void {
     fullInput.value = full.input.kind;
     fullIp.value = full.input.ip_address ?? '';
   }
-  const left = draft.mappings.find((mapping) => mapping.region === 'left');
-  const right = draft.mappings.find((mapping) => mapping.region === 'right');
-  leftInput.value = left?.input.kind ?? 'none';
-  rightInput.value = right?.input.kind ?? 'none';
-  leftIp.value = left?.input.ip_address ?? '';
-  rightIp.value = right?.input.ip_address ?? '';
+  else {
+    const left = draft.mappings.find((mapping) => mapping.region === 'left');
+    const right = draft.mappings.find((mapping) => mapping.region === 'right');
+    leftInput.value = left?.input.kind ?? 'none';
+    rightInput.value = right?.input.kind ?? 'none';
+    leftIp.value = left?.input.ip_address ?? '';
+    rightIp.value = right?.input.ip_address ?? '';
+  }
   savedSignature.value = currentSignature.value;
 }
 
+/** :returns: 读取草稿和发送状态，不改变实体墙面。 */
 async function load(): Promise<void> {
   const generation = runtime.connectionGeneration;
   loading.value = true;
@@ -114,6 +122,7 @@ async function load(): Promise<void> {
   }
 }
 
+/** :returns: 保存当前选择及版本，不自动应用。 */
 async function save(): Promise<void> {
   if (busy.value) return;
   if (!name.value.trim()) { errorMessage.value = t('videoWall.invalidName'); return; }
@@ -136,6 +145,7 @@ async function save(): Promise<void> {
   }
 }
 
+/** :returns: 显式应用已保存的版本，失败读取状态但不自动重发。 */
 async function apply(): Promise<void> {
   if (busy.value || !canApply.value || !serverState.value) return;
   const generation = runtime.connectionGeneration;
@@ -167,105 +177,91 @@ onBeforeUnmount(() => { alive = false; });
 </script>
 
 <template>
-  <n-card :title="t('videoWall.title')" class="wall-map">
-    <p class="wall-map__description">{{ t('videoWall.description') }}</p>
-    <n-form-item :label="t('videoWall.name')">
-      <n-input v-model:value="name" :disabled="busy" :input-props="{ 'aria-label': t('videoWall.name') }" :placeholder="t('videoWall.namePlaceholder')" />
-    </n-form-item>
-    <n-form-item :label="t('videoWall.layout')">
-      <n-radio-group v-model:value="layoutKind" :disabled="busy">
-        <n-radio value="fullscreen">{{ t('videoWall.fullscreen') }}</n-radio>
-        <n-radio value="split">{{ t('videoWall.split') }}</n-radio>
+  <n-card class="wall-map">
+    <template #header>
+      <span class="wall-map__title">
+        <span class="wall-map__title-icon"><FIcon name="desktop_24_regular" :size="20" /></span>
+        {{ t('videoWall.title') }}
+      </span>
+    </template>
+    <template #header-extra>
+      <span class="wall-map__draft-state" :class="{ 'wall-map__draft-state--saved': isSaved && !loading }"
+        role="status" data-wall-draft>
+        <FIcon v-if="isSaved && !loading" name="checkmark_16_filled" :size="14" />
+        <span v-else class="wall-map__state-dot" aria-hidden="true" />
+        {{ loading ? t('videoWall.loading') : isSaved ? t('videoWall.draftSaved') : t('videoWall.draftEdited') }}
+      </span>
+    </template>
+    <div class="wall-map__toolbar">
+      <n-radio-group v-model:value="layoutKind" :disabled="busy" :aria-label="t('videoWall.layout')">
+        <n-radio-button value="fullscreen">
+          <span class="wall-map__layout-icon" aria-hidden="true"><i /></span>{{ t('videoWall.singleScreen') }}
+        </n-radio-button>
+        <n-radio-button value="split">
+          <span class="wall-map__layout-icon" aria-hidden="true"><i /><i /></span>{{ t('videoWall.doubleScreen') }}
+        </n-radio-button>
       </n-radio-group>
-    </n-form-item>
+    </div>
 
     <div class="wall-map__screen" :class="{ 'wall-map__screen--split': layoutKind === 'split' }"
-      :aria-label="t('videoWall.title')">
+      :aria-label="t('videoWall.preview')">
       <div v-if="layoutKind === 'fullscreen'" class="wall-map__region">
         <span class="wall-map__region-label">{{ t('videoWall.fullscreen') }}</span>
-        <strong>{{ inputLabel(fullInput, fullIp) }}</strong>
+        <n-select v-model:value="fullInput" :disabled="busy" :options="fullOptions" :virtual-scroll="false"
+          :aria-label="t('videoWall.fullscreen') + t('videoWall.input')" />
+        <n-input v-if="fullInput === 'ip_stream'" v-model:value="fullIp" :disabled="busy"
+          :input-props="{ 'aria-label': t('videoWall.fullscreen') + t('videoWall.ipAddress') }" :placeholder="t('videoWall.ipAddress')" />
       </div>
       <template v-else>
-        <div class="wall-map__region">
+        <div class="wall-map__region" :class="{ 'wall-map__region--empty': leftInput === 'none' }">
           <span class="wall-map__region-label">{{ t('videoWall.left') }}</span>
-          <strong>{{ inputLabel(leftInput, leftIp) }}</strong>
+          <n-select v-model:value="leftInput" :disabled="busy" :options="inputOptions" :virtual-scroll="false"
+            :aria-label="t('videoWall.left') + t('videoWall.input')" />
+          <n-input v-if="leftInput === 'ip_stream'" v-model:value="leftIp" :disabled="busy"
+            :input-props="{ 'aria-label': t('videoWall.left') + t('videoWall.ipAddress') }" :placeholder="t('videoWall.ipAddress')" />
         </div>
-        <div class="wall-map__region">
+        <div class="wall-map__region" :class="{ 'wall-map__region--empty': rightInput === 'none' }">
           <span class="wall-map__region-label">{{ t('videoWall.right') }}</span>
-          <strong>{{ inputLabel(rightInput, rightIp) }}</strong>
+          <n-select v-model:value="rightInput" :disabled="busy" :options="inputOptions" :virtual-scroll="false"
+            :aria-label="t('videoWall.right') + t('videoWall.input')" />
+          <n-input v-if="rightInput === 'ip_stream'" v-model:value="rightIp" :disabled="busy"
+            :input-props="{ 'aria-label': t('videoWall.right') + t('videoWall.ipAddress') }" :placeholder="t('videoWall.ipAddress')" />
         </div>
       </template>
     </div>
 
-    <div class="wall-map__inputs">
-      <template v-if="layoutKind === 'fullscreen'">
-        <n-form-item :label="t('videoWall.fullscreen')">
-          <n-select v-model:value="fullInput" :disabled="busy" :options="fullOptions" :aria-label="t('videoWall.fullscreen') + t('videoWall.input')" />
-        </n-form-item>
-        <n-input v-if="fullInput === 'ip_stream'" v-model:value="fullIp" :disabled="busy" :placeholder="t('videoWall.ipAddress')" />
-      </template>
-      <template v-else>
-        <div>
-          <n-form-item :label="t('videoWall.left')"><n-select v-model:value="leftInput" :disabled="busy" :options="inputOptions" :aria-label="t('videoWall.left') + t('videoWall.input')" /></n-form-item>
-          <n-input v-if="leftInput === 'ip_stream'" v-model:value="leftIp" :disabled="busy" :placeholder="t('videoWall.ipAddress')" />
-        </div>
-        <div>
-          <n-form-item :label="t('videoWall.right')"><n-select v-model:value="rightInput" :disabled="busy" :options="inputOptions" :aria-label="t('videoWall.right') + t('videoWall.input')" /></n-form-item>
-          <n-input v-if="rightInput === 'ip_stream'" v-model:value="rightIp" :disabled="busy" :placeholder="t('videoWall.ipAddress')" />
-        </div>
-      </template>
-    </div>
-
-    <n-alert :type="canApply ? 'info' : 'warning'" class="wall-map__notice">
+    <p class="wall-map__capability" :class="{ 'wall-map__capability--unavailable': isSaved && !canApply }" aria-live="polite">
       {{ capabilityMessage }}
-    </n-alert>
-    <n-alert v-if="serverState" :type="serverState.dispatch_status === 'uncertain' ? 'warning' : 'info'" class="wall-map__notice" data-wall-dispatch>
-      <strong>{{ dispatchLabel }}</strong>
-      <p>{{ t('videoWall.lastApplied') }}：{{ appliedLabel }}</p>
-      <p v-if="serverState.dispatch_detail">{{ serverState.dispatch_detail }}</p>
-    </n-alert>
+    </p>
     <n-alert v-if="errorMessage" type="error" class="wall-map__notice">{{ errorMessage }}</n-alert>
     <div class="wall-map__actions">
       <n-button :loading="saving" :disabled="busy" @click="save">{{ t('videoWall.save') }}</n-button>
       <n-button type="primary" :loading="applying" :disabled="!canApply || busy"
-        @click="apply">{{ t('videoWall.apply') }}</n-button>
+        @click="apply">
+        {{ t('videoWall.apply') }}
+        <FIcon class="wall-map__apply-icon" name="arrow_right_24_regular" :size="16" />
+      </n-button>
+    </div>
+    <details class="wall-map__options">
+      <summary><FIcon class="wall-map__chevron" name="chevron_right_20_regular" :size="16" />{{ t('videoWall.options') }}</summary>
+      <n-form-item :label="t('videoWall.name')">
+        <n-input v-model:value="name" :disabled="busy" :input-props="{ 'aria-label': t('videoWall.name') }" :placeholder="t('videoWall.namePlaceholder')" />
+      </n-form-item>
+      <p>{{ t('videoWall.ip81Hint') }}</p>
+      <p>{{ t('videoWall.streamHint') }}</p>
+    </details>
+    <div v-if="serverState" class="wall-map__dispatch" :class="{
+      'wall-map__dispatch--uncertain': serverState.dispatch_status === 'uncertain' || serverState.dispatch_status === 'sent_unconfirmed',
+      'wall-map__dispatch--simulated': serverState.dispatch_status === 'simulated',
+    }" data-wall-dispatch aria-live="polite">
+      <span class="wall-map__dispatch-label"><span class="wall-map__state-dot" aria-hidden="true" />{{ dispatchLabel }}</span>
+      <details v-if="serverState.applied || serverState.dispatch_detail">
+        <summary><FIcon class="wall-map__chevron" name="chevron_right_20_regular" :size="14" />{{ t('videoWall.dispatchDetails') }}</summary>
+        <p>{{ t('videoWall.lastApplied') }}：{{ appliedLabel }}</p>
+        <p v-if="serverState.dispatch_detail">{{ serverState.dispatch_detail }}</p>
+      </details>
     </div>
   </n-card>
 </template>
 
-<style scoped>
-.wall-map__description {
-  margin: 0 0 var(--spacingVerticalM);
-  color: var(--colorNeutralForeground2);
-}
-.wall-map__screen {
-  display: grid;
-  min-height: 8rem;
-  margin-bottom: var(--spacingVerticalM);
-  border: 1px solid var(--colorNeutralStroke1);
-  border-radius: var(--borderRadiusMedium);
-  background: var(--colorNeutralBackground2);
-}
-.wall-map__screen--split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.wall-map__region {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--spacingVerticalXS);
-  min-width: 0;
-  padding: var(--spacingVerticalM) var(--spacingHorizontalM);
-  text-align: center;
-}
-.wall-map__region + .wall-map__region { border-left: 1px solid var(--colorNeutralStroke1); }
-.wall-map__region-label { color: var(--colorNeutralForeground3); font-size: var(--fontSizeBase200); }
-.wall-map__region strong { overflow-wrap: anywhere; color: var(--colorBrandForeground1); }
-.wall-map__inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--spacingHorizontalM); }
-.wall-map__inputs > :only-child { grid-column: 1 / -1; }
-.wall-map__notice { margin-top: var(--spacingVerticalM); }
-.wall-map__actions { display: flex; flex-wrap: wrap; gap: var(--spacingHorizontalS); margin-top: var(--spacingVerticalM); }
-@media (max-width: 640px) {
-  .wall-map__inputs { grid-template-columns: 1fr; }
-  .wall-map__inputs > :only-child { grid-column: auto; }
-  .wall-map__actions :deep(.n-button) { flex: 1 1 100%; }
-}
-</style>
+<style scoped src="./VideoWallMappingPanel.css" />
