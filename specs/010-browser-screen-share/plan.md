@@ -101,3 +101,9 @@ docs/screen-sharing.md
 - `ScreenShareProcessTracker`至多观察两个原Player，先核数据库归属与OS验证登记的PID/start/session/role/instance，再持有原进程退出观察。离线、换组、新Worker、取消或取证失败都不是死亡证明。宿主停止取消并等待自有观察收尾；Simulation缺实际OS观察器不造证明。
 - 已绑定但OPEN事务回滚且无审计时，在同Service门禁内可以释放无原生接收可能的预约。服务重启后不恢复cap/SDP，只核当前动态OPEN审计并条件清除孤立意图；不从历史pending、actual或null源恢复共享。
 - 预案捕获在同一写事务内拒绝共享意图/实际，失败不覆盖已有预案。网页本地捕获草稿也核请求ID/实际ID/适配器并提示；手动固定源、保持和清空仍可用，set零/负/空ID不持久化。
+
+## T012本机双接收资源门禁（2026-10-11）
+
+- 两独立Chromium进程真实采集自有DOM运动标签页；正式Panel/Publisher/RTC与正式receiver保留，只有账号/HTTP信令为内存夹具，cap和SDP不落盘。
+- 同一自有WPF应用内两个正式PlayerRuntimeHost持续复用十轮；双共享、交替停止、再共享、旧条件CLOSE/旧消息、图片替换与非目标保持分别核状态和像素。这个层级不代替两个正式Worker或D4。
+- 释放分别核轨道/peer、原生Dispose回执及0控制器、旧Core不可使用、原浏览器OS对象退出。十轮总时长超过五分钟不等于双共享连续五分钟，SC-003仍留T016；实测见[专项记录](verification/t012-native-pair.md)。
