@@ -13,7 +13,8 @@ export function useScreenShare(target: () => number, online: () => boolean) {
   const auth = useAuthStore();
   const generation = clientConnection.captureGeneration();
   const ownerId = auth.user?.id;
-  const availability = computed(() => screenShareAvailability({
+  const expired = shallowRef(false);
+  const availability = computed(() => expired.value ? 'share_context_changed' : screenShareAvailability({
     secure: window.isSecureContext, web: getClientBuildTarget() === 'web',
     capture: typeof navigator.mediaDevices?.getDisplayMedia === 'function',
     peer: typeof RTCPeerConnection === 'function', authenticated: auth.isAuthenticated, online: online(),
@@ -27,7 +28,12 @@ export function useScreenShare(target: () => number, online: () => boolean) {
   const view = shallowRef(publisher.view);
   const active = computed(() => ['selecting', 'connecting', 'sharing', 'stopping'].includes(view.value.phase));
   const stop = (): Promise<void> => publisher.stop();
-  const pageEnded = (): void => { void publisher.dispose(); };
+  const pageEnded = (): void => {
+    expired.value = true;
+    removeGenerationWatch();
+    void publisher.dispose();
+  };
+  const removeGenerationWatch = clientConnection.onGenerationChanged(pageEnded);
   window.addEventListener('pagehide', pageEnded);
   watch(() => auth.user?.id, pageEnded);
   watch(online, (value) => { if (!value) void publisher.stop('share_player_offline'); });

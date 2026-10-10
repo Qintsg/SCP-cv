@@ -1,3 +1,4 @@
+/* 控制端主机代次、只读回调与离线拒绝回归；共享资源在主机切换开始时即失效。SCP-cv 2026-10-11。 */
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -54,6 +55,22 @@ test('切换播放主机递增 generation 并清理旧 SSE、会话和业务状�
     'clear-stores',
     'save:https://control.example.test',
   ]);
+});
+
+test('主机代次订阅在异步清会话前同步通知；恢复配置和取消订阅遵循同一寿命', async () => {
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  const coordinator = new ClientConnectionCoordinator({ clearSession: () => pending });
+  const versions = [];
+  const remove = coordinator.onGenerationChanged((version) => versions.push(version));
+  const switching = coordinator.switchServer({ origin: 'https://new.example.test', displayName: '新主机' });
+  assert.deepEqual(versions, [1], '本地采集不能等HTTP登出完成才释放');
+  release(); await switching;
+  coordinator.restoreProfile({ origin: 'https://restored.example.test', displayName: '恢复' });
+  assert.deepEqual(versions, [1, 2]);
+  remove(); remove();
+  coordinator.restoreProfile({ origin: 'https://last.example.test', displayName: '最后' });
+  assert.deepEqual(versions, [1, 2], '卸载后不能遗留共享回调');
 });
 
 test('切主机后的迟到请求和旧 SSE 事件不能写入新主机状态', async () => {

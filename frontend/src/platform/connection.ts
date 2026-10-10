@@ -1,3 +1,4 @@
+/** 控制端主机代次与离线围栏；共享资源订阅同步代次变化，不等待网络注销后才释放。SCP-cv 2026-10-11。 */
 export type ClientConnectionStatus =
   | 'disconnected'
   | 'connecting'
@@ -84,6 +85,7 @@ export class ClientConnectionCoordinator {
   private reconnectScheduled = false;
   private dependencies: ConnectionCoordinatorDependencies;
   private currentProfile: ServerProfile | null = null;
+  private readonly generationListeners = new Set<(generation: number) => void>();
 
   status: ClientConnectionStatus = 'disconnected';
 
@@ -99,9 +101,21 @@ export class ClientConnectionCoordinator {
     return this.generation;
   }
 
+  /** :param listener: 主机寿命改变时的本地释放回调。:returns: 幂等取消订阅，不触发媒体或HTTP。 */
+  onGenerationChanged(listener: (generation: number) => void): () => void {
+    this.generationListeners.add(listener);
+    return () => { this.generationListeners.delete(listener); };
+  }
+
+  /** :returns: 先失效原身份再同步通知资源所有者，不能等异步清会话结束。 */
+  private advanceGeneration(): void {
+    this.generation += 1;
+    for (const listener of [...this.generationListeners]) listener(this.generation);
+  }
+
   restoreProfile(profile: ServerProfile): number {
     this.currentProfile = normalizeServerProfile(profile);
-    this.generation += 1;
+    this.advanceGeneration();
     this.status = 'disconnected';
     return this.generation;
   }
@@ -111,7 +125,7 @@ export class ClientConnectionCoordinator {
     dependencies: ConnectionCoordinatorDependencies = this.dependencies,
   ): Promise<number> {
     const normalized = normalizeServerProfile(profile);
-    this.generation += 1;
+    this.advanceGeneration();
     this.status = 'disconnected';
     this.reconnectScheduled = false;
     dependencies.closeEvents?.();

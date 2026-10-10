@@ -122,23 +122,59 @@ public sealed class ScreenShareRuntimeTests
         Assert.Equal(1, await database.CommandRecords.CountAsync(command => command.Command == "CLOSE"));
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task ConcurrentOrdinaryOpenAndOldShareStopNeverCancelTheReplacement(int window)
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var target = await SeedOnlineAsync(fixture, window);
+        var runtime = Runtime(fixture);
+        var id = Guid.NewGuid();
+        var shared = await runtime.OpenScreenShareAsync(target, id, _ => { });
+        long sourceId;
+        await using (var seed = fixture.Database.CreateDbContext())
+        {
+            var source = new MediaSource { Name = "并发替换图", SourceType = MediaSourceType.Image, Uri = "replacement.png", CreatedAt = fixture.TimeProvider.GetUtcNow() };
+            seed.MediaSources.Add(source); await seed.SaveChangesAsync(); sourceId = source.Id;
+        }
+        var closing = runtime.CloseScreenShareAsync(window, id, shared.SourceGeneration);
+        var opening = runtime.OpenSourceAsync(window, sourceId, true, 1);
+        await Task.WhenAll(closing, opening);
+        await using var database = fixture.Database.CreateDbContext();
+        var current = await database.PlaybackSessions.SingleAsync(item => item.WindowId == window);
+        Assert.Equal(sourceId, current.MediaSourceId);
+        Assert.True(current.DesiredGeneration > shared.SourceGeneration);
+        var pending = await database.CommandRecords.SingleAsync(item => item.TargetId == window && item.Status == CommandStatus.Pending);
+        Assert.Equal("OPEN", pending.Command);
+        Assert.Equal(current.DesiredGeneration, pending.SourceGeneration);
+        var count = await database.CommandRecords.CountAsync();
+        Assert.Equal(ScreenShareCloseDisposition.NoLongerDesired, (await runtime.CloseScreenShareAsync(window, id, shared.SourceGeneration)).Disposition);
+        Assert.Equal(count, await database.CommandRecords.CountAsync());
+        Assert.Equal(CommandStatus.Pending, (await database.CommandRecords.AsNoTracking().SingleAsync(item => item.CommandId == pending.CommandId)).Status);
+        var other = await database.PlaybackSessions.SingleAsync(item => item.WindowId != window);
+        Assert.Equal(0, other.DesiredGeneration); Assert.Null(other.MediaSourceId);
+    }
+
+    /// <summary>:returns: 真实事务及仅排队唤醒的共享运行时，不启动实体输出。</summary>
     private static RuntimeStateService Runtime(ControlHostFixture fixture) => new(
         fixture.Database, fixture.Writes, new CommandCoordinator(fixture.Commands, new QueuedCommandWakeNotifier()), fixture.TimeProvider);
 
-    private static async Task<ScreenShareTargetIdentity> SeedOnlineAsync(ControlHostFixture fixture)
+    /// <summary>:param window: 独立目标。:returns: 模拟在线身份，仅用于事务围栏，非实际Player。</summary>
+    private static async Task<ScreenShareTargetIdentity> SeedOnlineAsync(ControlHostFixture fixture, int window = 1)
     {
-        var identity = new ScreenShareTargetIdentity(1, Guid.NewGuid(), 7, 19);
+        var identity = new ScreenShareTargetIdentity(window, Guid.NewGuid(), 7, 19);
         await using var database = fixture.Database.CreateDbContext();
         var group = await database.RuntimeGroupControls.SingleAsync();
         group.State = RuntimeGroupState.Armed;
         group.GroupEpoch = identity.GroupEpoch;
         database.WorkerOwnerships.Add(new WorkerOwnership
         {
-            TargetKind = CommandTargetKind.Display, TargetId = 1, WorkerInstanceId = identity.WorkerInstanceId,
+            TargetKind = CommandTargetKind.Display, TargetId = window, WorkerInstanceId = identity.WorkerInstanceId,
             OwnerEpoch = identity.OwnerEpoch, Status = WorkerOwnershipState.Online,
             LastTransportHeartbeat = fixture.TimeProvider.GetUtcNow(),
         });
-        var session = await database.PlaybackSessions.SingleAsync(session => session.WindowId == 1);
+        var session = await database.PlaybackSessions.SingleAsync(session => session.WindowId == window);
         session.PlayerLastSeenAt = fixture.TimeProvider.GetUtcNow();
         session.TargetDisplayLabel = "独立模拟大屏";
         await database.SaveChangesAsync();

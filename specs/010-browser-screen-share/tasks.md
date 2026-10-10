@@ -32,7 +32,7 @@
 
 **Independent Test**: 十轮及迟到消息交错、两窗口隔离与实际资源释放。
 
-- [ ] T010 [US2] 在`ScreenShareLifecycleTests.cs`、Integration及`frontend/scripts/screen-sharing.test.mjs`先补重复停止、停止失败待确认、旧代次结束不关新源、页面/主机/登录寿命和并发换源。
+- [X] T010 [US2] 在`ScreenShareLifecycleTests.cs`、Integration及`frontend/scripts/screen-sharing.test.mjs`先补重复停止、停止失败待确认、旧代次结束不关新源、页面/主机/登录寿命和并发换源；相关前端32、Host3与运行事务7项通过，修复失效身份绕过清理/迟到catch污染及主机同步寿命订阅。正式面板五轮共40次真实采集释放通过，HTTP信令替身不计Player/D4释放；后台确认仍留T011。
 - [ ] T011 [US2] 实现`ScreenShareCleanupService.cs`、Registry终态与原子条件CLOSE，接入普通换源/系统停机；receiver和前端结束先停采集，不自动重试副作用，`ScenarioService`不保存/恢复共享并提示。
 - [ ] T012 [US2] 在`.validation/qa-screen-share-010/`执行真实两peer与原生十轮共享/停止/换源/旧回调隔离，明确核track/peer/native资源释放，不只核状态。
 

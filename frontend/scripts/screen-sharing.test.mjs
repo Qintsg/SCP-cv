@@ -162,3 +162,55 @@ test('停止后迟到的预约只撤销原ID，不发offer或重新取得采集'
   assert.equal(calls.filter((c) => Array.isArray(c) && c[0] === 'offer').length, 0);
   assert.ok(media.getTracks().every((t) => t.readyState === 'ended'));
 });
+
+test('切主机后在途状态请求拒绝仍必须释放本地采集，不向新主机发送旧停止', async () => {
+  let current = true, requested = false;
+  const poll = deferred();
+  const { owner, calls, media, peer } = fixture(1, {
+    isCurrent: () => current,
+    api: { get: () => { requested = true; return poll.promise; } },
+  });
+  await owner.start(false); await until(() => requested);
+  current = false;
+  poll.reject(Object.assign(new Error('old host response'), { name: 'StaleConnectionResponseError' }));
+  await nextTurn();
+  assert.ok(media.getTracks().every((t) => t.readyState === 'ended'), '旧请求被拒绝不能绕过本地释放');
+  assert.equal(peer.closes, 1);
+  assert.equal(owner.view.captureActive, false);
+  assert.equal(calls.filter((c) => Array.isArray(c) && c[0] === 'stop').length, 0);
+});
+
+test('只读停止查询的迟到失败不能污染已确认关闭的结果', async () => {
+  const { owner, api, getSnapshot } = fixture();
+  await owner.start(false); await owner.stop();
+  const old = deferred(), terminal = deferred(); let polls = 0;
+  api.get = () => (++polls === 1 ? old.promise : terminal.promise);
+  const a = owner.refreshStop(), b = owner.refreshStop();
+  terminal.resolve({ ...getSnapshot(), state: 'closed' }); await b;
+  assert.equal(owner.view.phase, 'closed'); assert.equal(owner.view.errorCode, '');
+  old.reject(new Error('late old request')); await a;
+  assert.equal(owner.view.phase, 'closed');
+  assert.equal(owner.view.errorCode, '', '旧查询catch也须核本次资源归属');
+});
+
+test('停止请求失败只释放一次资源，明确待确认；查询和重复停止不重发DELETE', async () => {
+  let stops = 0;
+  const { owner, media, peer, api, getSnapshot } = fixture(1, { api: { stop: async () => { stops++; throw new Error('unreachable'); } } });
+  await owner.start(false); await owner.stop();
+  assert.equal(owner.view.phase, 'stopping'); assert.equal(owner.view.errorCode, 'share_stop_unconfirmed');
+  assert.ok(media.getTracks().every((t) => t.readyState === 'ended')); assert.equal(peer.closes, 1);
+  await owner.stop(); assert.equal(stops, 1); assert.equal(peer.closes, 1);
+  api.get = async () => ({ ...getSnapshot(), state: 'stopping' }); await owner.refreshStop();
+  assert.equal(stops, 1); assert.equal(owner.view.phase, 'stopping');
+  api.get = async () => ({ ...getSnapshot(), state: 'closed' }); await owner.refreshStop();
+  assert.equal(owner.view.phase, 'failed', '保留失败事实，但远端关闭确认后本次寿命已结束');
+  assert.equal(stops, 1);
+});
+
+test('页面所有者销毁后迟到许可必须结束自有轨道，且永不重开选择器', async () => {
+  const capture = deferred(); let captures = 0;
+  const { owner, calls, media } = fixture(1, { capture: () => { captures++; return capture.promise; } });
+  const starting = owner.start(false); await owner.dispose(); capture.resolve(media); await starting;
+  assert.ok(media.getTracks().every((t) => t.readyState === 'ended'));
+  await owner.start(false); assert.equal(captures, 1); assert.deepEqual(calls, []);
+});

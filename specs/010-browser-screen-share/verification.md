@@ -83,10 +83,24 @@
 - Redocly通过、退出0，`t009-redocly-direct.log`，仍为四项既有PowerPoint退役/背景音频组合告警。第一次根目录pnpm exec触发依赖检查并因非TTY中止，没有成功验证；后直接运行既有缓存Redocly CLI，不安装依赖、不删除node_modules、不更改CERNET配置或生成Node锁。最终Spec Kit全目录通过，`t009-final-spec-kit.log`；diff校验通过，所有本轮代码不足500行，extensions.yml不存在。
 - 本机自有Vite5210已关闭（中断退出1不是测试失败），CIM核匹配本轮浏览器QA/该Vite进程0，TCP5210监听0；浏览器finally关闭独占上下文。没有推送/部署010、更换D4源或发送墙面/电源。最新D4旧稳定部署只读复核不计本功能验收。
 
+## 2026-10-11 / T010页面寿命与并发停止回归
+
+- 从签名保存点5e2de85继续；先写重复停止/失败待确认/旧代次/主机及登录寿命回归，再修改缺陷。没有新增依赖、Node锁、镜像配置或任何D4媒体/墙面/电源副作用。
+- 发布者先红16/18：旧主机请求被拒绝后清理被live条件绕过、迟到停止查询失败覆盖已确认closed。修复只释放仍属于自己的尝试，catch更新须同尝试/当前上下文/仍stopping；原始红与绿分别在`t010-publisher-lifecycle-red.log`、`t010-publisher-lifecycle-green.log`。
+- 面板主机切换用例先红6/7，普通类generation字段不会触发Vue订阅。协调器新增同步代次订阅，在等待清会话之前即失效；面板结束后取消订阅并dispose，原面板禁用自动重采，重新打开页才能开始新许可。订阅用例先红6/7、后绿，日志`t010-connection-lifecycle-red.log`、`t010-panel-lifecycle-red.log`保留。
+- 相关前端32/32、0失败/取消/跳过，实际退出0，`t010-frontend-lifecycle-green.log`；18发布者、7面板、7协调器。停止失败先核轨道/peer只释放一次，再核只读查询及重复停止不重发DELETE；已确认关闭保留原失败事实，不假报请求成功。
+- 真实Program/SQLite Host3/3、Integration共享运行事务7/7，0失败/跳过，实际退出0，`t010-results/`两独立TRX。12个同时停止只撤销原目标授权并排一次CLOSE，另一窗有效；唤醒异常发生于提交之后，仍stopping/observed未推进，重复请求不重新副作用。普通OPEN与旧共享停止并发及迟到停止不取消新pending，两个目标分别核独立；没有Player或原生资源，不将排队受理计作实际释放。
+- `.validation/qa-screen-share-010/t010-panel-lifecycle-browser.py`挂正式Panel/composable/RTC/HTTP客户端；保留真实完整Chromium原生getDisplayMedia及实际RTCPeerConnection，仅自动选择唯一自有运动标签页。HTTP信令/账号隔离夹具，未接answer/receiver/正式Worker/D4；不计正常系统选择器或实际接收帧。
+- 五轮×两目标×主机切换/账号退出/pagehide信号/实际Vue卸载，共40次实际采集，结果`PASS`，40自有轨道ended、40peer的connection/signaling均closed，页面错误0。主机/账号失效不发旧DELETE；同上下文pagehide/卸载各一次；无二次采集。pagehide是分发真实事件类型的结束信号，不冒称实际导航或操作系统关窗。完整证据`t010-browser-runs/fe9dacf07cd745cd9eb44743f35bef5c/result.json`，主代理查看第五轮桌面浅色主机失效与390深色账号退出原图。
+- 本阶段D4只读检查再次实际退出0，稳定源码fd64de6干净，两正式Player在线、HTTP200、新009组件/样式及63/64/IP81配置均在；没有部署010，也不能将这个检查计作本功能跨机出画。
+- 最终重新构建、串行全非Physical.NET1322/1322、0失败/跳过，命令实际退出0，`t010-full-dotnet.log`与`t010-full-results/`六独立TRX逐项核total=executed=passed：Contracts324、ControlHost350、Domain41、Infrastructure171、Integration273、Windows163。全前端342/342、0失败/取消/跳过，实际退出0，`t010-full-frontend.log`，172438ms。
+- 最后`build:web`含vue-tsc通过并实际退出0，`t010-build-web.log`；保留既有入口>500kB告警，未更改阈值。Spec Kit全目录通过，`t010-spec-kit.log`；diff校验通过，本阶段代码均不足500行。未更改API/IPC合同，未将上一阶段Redocly结果计作新运行，最终T018仍须功能完整后重验。
+- 本机QA浏览器在finally关闭；自有Vite5210精确中断（退出1为主动停止，不是测试失败），实际匹配进程0与TCP5210监听0，不结束其他浏览器/Node或D4服务。
+
 ## 仍未实现/未验证
 
 此前基础阶段全非Physical1231/1231的独立证据保留于`.validation/qa-screen-share-010/retained-full-test-results/`与`full-test-retained.log`；当时未改API/前端而未跑的验证现已在上述后端接入阶段执行。旧失败、覆盖TRX及调试输出不删除，最终T018仍待完整功能接线后重验。
 
-T010及之后未完成：后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
+T011及之后未完成：后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
 
 上述本机prototype不能勾选FR-001至FR-011或SC-001至SC-005全部完成，不把以前D4部署/媒体测试作为本功能证据。

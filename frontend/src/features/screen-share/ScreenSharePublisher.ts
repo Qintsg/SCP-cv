@@ -152,7 +152,10 @@ export class ScreenSharePublisher {
         await nextPoll(attempt.abort.signal);
       }
       if (this.attempt === attempt && !attempt.abort.signal.aborted) await this.stop('share_context_changed');
-    } catch (error) { if (this.live(attempt)) await this.stop(errorCode(error)); }
+    } catch (error) {
+      if (this.attempt === attempt && !attempt.abort.signal.aborted)
+        await this.stop(this.deps.isCurrent() ? errorCode(error) : 'share_context_changed');
+    }
   }
   /** :param reason: 可选固定失败键。:returns: 先释放采集再发一次DELETE，受理不是实际释放；不向新主机发送旧停止。 */
   stop(reason = ''): Promise<void> {
@@ -191,7 +194,10 @@ export class ScreenSharePublisher {
       if (snapshot.state === 'closed' || snapshot.state === 'failed') {
         this.attempt = undefined; this.update({ phase: this.view.errorCode ? 'failed' : snapshot.state });
       }
-    } catch { this.update({ errorCode: 'share_stop_unconfirmed' }); }
+    } catch {
+      if (this.attempt === attempt && this.deps.isCurrent() && this.view.phase === 'stopping')
+        this.update({ errorCode: 'share_stop_unconfirmed' });
+    }
   }
   /** :returns: 页面退出先停全部本地采集；远端失败仍保持待确认，不清除事实。 */
   async dispose(): Promise<void> { this.disposed = true; await this.stop(); }

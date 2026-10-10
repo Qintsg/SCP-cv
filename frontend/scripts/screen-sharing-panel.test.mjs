@@ -14,13 +14,14 @@ for (const name of names.filter((name) => name !== 'RTCPeerConnection')) Object.
 });
 Object.defineProperty(globalThis, 'RTCPeerConnection', { value: function PeerAvailabilityOnly() {}, configurable: true });
 Object.defineProperty(browser, 'isSecureContext', { value: true, configurable: true });
-let server, vue, createPinia, i18n, Component, useAuthStore, app, calls, rejectCapture;
+let server, vue, createPinia, i18n, Component, useAuthStore, clientConnection, app, calls, rejectCapture, resolveCapture, auth;
 const originalFetch = globalThis.fetch;
 before(async () => {
   [vue, { createPinia }, server] = await Promise.all([import('vue'), import('pinia'), createDomTestServer()]);
   ({ default: Component } = await server.ssrLoadModule('/src/features/screen-share/ScreenSharePanel.vue'));
   ({ i18n } = await server.ssrLoadModule('/src/locales/index.ts'));
   ({ useAuthStore } = await server.ssrLoadModule('/src/stores/auth.ts'));
+  ({ clientConnection } = await server.ssrLoadModule('/src/platform/connection.ts'));
 });
 afterEach(async () => {
   app?.unmount(); app = undefined;
@@ -37,10 +38,10 @@ async function flush() { await vue?.nextTick(); await nextTurn(); await vue?.nex
 async function mount(windowId = 1, online = true) {
   calls = [];
   Object.defineProperty(browser.navigator, 'mediaDevices', { value: { getDisplayMedia: () => {
-    calls.push('capture'); return new Promise((_, reject) => { rejectCapture = reject; });
+    calls.push('capture'); return new Promise((resolve, reject) => { resolveCapture = resolve; rejectCapture = reject; });
   } }, configurable: true });
   globalThis.fetch = async () => { calls.push('api'); throw new Error('不应发出HTTP'); };
-  const pinia = createPinia(); useAuthStore(pinia).user = { id: 1, username: 'qa', is_staff: true, is_superuser: true };
+  const pinia = createPinia(); auth = useAuthStore(pinia); auth.user = { id: 1, username: 'qa', is_staff: true, is_superuser: true };
   const host = browser.document.createElement('div'); browser.document.body.append(host);
   app = vue.createApp(Component, { windowId, playerOnline: online }); app.use(pinia); app.use(i18n); app.mount(host); await flush();
 }
@@ -64,4 +65,16 @@ test('许可拒绝文案明确，状态不冒充已经出画', async () => {
 test('播放器离线禁用采集入口并给出明确提示', async () => {
   await mount(2, false); assert.equal(button('选择共享内容').disabled, true);
   assert.match(browser.document.body.textContent, /播放器.*离线/); assert.deepEqual(calls, []);
+});
+
+for (const reason of ['pagehide', 'logout', 'host']) test(`${reason}结束面板寿命；迟到原生许可释放轨道，不向新账号/主机创建预约`, async () => {
+  await mount(); button('选择共享内容').click(); await flush();
+  if (reason === 'pagehide') browser.dispatchEvent(new browser.Event('pagehide'));
+  else if (reason === 'logout') auth.user = null;
+  else clientConnection.restoreProfile({ origin: 'https://qa-new-host.invalid', displayName: '本机测试替身' });
+  await flush();
+  assert.doesNotMatch(browser.document.querySelector('[role="status"]').textContent, /选择器/, '主机/页面/账号切换不能继续等待许可');
+  const video = { readyState: 'live', stop() { this.readyState = 'ended'; } };
+  resolveCapture({ getTracks: () => [video], getVideoTracks: () => [video] }); await flush();
+  assert.equal(video.readyState, 'ended'); assert.deepEqual(calls, ['capture']);
 });
