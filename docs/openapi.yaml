@@ -105,6 +105,8 @@ paths:
     $ref: './screen-sharing/publisher-paths.yaml#/Offer'
   /screen-shares/{share_id}/heartbeat/:
     $ref: './screen-sharing/publisher-paths.yaml#/Heartbeat'
+  /screen-shares/{share_id}/audio/:
+    $ref: './screen-sharing/publisher-paths.yaml#/Audio'
   /screen-share/receiver/{share_id}/:
     $ref: './screen-sharing/receiver-paths.yaml#/Page'
   /screen-share/receiver/{share_id}/offer/:

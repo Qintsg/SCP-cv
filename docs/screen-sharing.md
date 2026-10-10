@@ -6,7 +6,7 @@
 
 目标是从桌面Chrome/Edge的原生屏幕/应用/标签页选择器直接共享到窗口1或2，不用额外推流程序。不请求麦克风，不保存屏幕媒体，不新增媒体库源，不改变墙面布局或电源。
 
-T013已完成原生专用音量/静音桥的身份校验、实际属性回执及无音轨双接收测试；网页仍未开放该控制，默认接收仍静音。认证API、公共回读、真实内容音频、HTTPS与D4验收仍待完成，详见[原生阶段记录](../specs/010-browser-screen-share/verification/t013-native-audio.md)。
+T013已完成原生专用音量/静音桥及无音轨双接收测试，随后接入本人认证API、领取复核及公共实际属性回读；网页仍未开放该控制，默认接收仍静音。真实内容音频、网页控件、HTTPS与D4验收仍待完成，详见[原生阶段记录](../specs/010-browser-screen-share/verification/t013-native-audio.md)及[HTTP阶段记录](../specs/010-browser-screen-share/verification/t013-audio-http.md)。
 
 ## 网页操作区（开发阶段）
 
@@ -36,6 +36,7 @@ T013已完成原生专用音量/静音桥的身份校验、实际属性回执及
 - `POST .../{id}/offer/`只接受一次offer，再在SQLite事务中重核原Worker实例/owner/group并排动态OPEN；202不是已经出画。
 - `GET .../{id}/`只返回本人状态和answer；`POST .../{id}/heartbeat/`不增加视频帧；`DELETE .../{id}/`先撤销媒体授权，再按share_id/source_generation条件停止。
 - 已OPEN停止返回`stopping`，不把CLOSE入队或“不再是当前意图”当作资源已退出；实际确认后才能释放目标预约。未OPEN取消直接`closed`，不排CLOSE。
+- `PATCH .../{id}/audio/`严格仅volume整数0..100及muted布尔。只允许本人当前已接收的分享；事务核原Worker/组、当前OPEN及真实后帧，领取时再核授权。202仅提供submitted_command_id，使用`GET /api/playback/{window_id}/commands/{command_id}/`核精确终态，再读本人分享的actual_volume/actual_muted或会话/SSE的actual_share_volume/actual_share_muted；不以请求值冒充应用成功。失败/缺失/非当前或离线时实际值为null，不证明声音已停止；不会修改普通媒体音量或源代次，网页控件仍未开放。
 
 SDP解码后UTF-8字节不超过64KiB，HTTP请求体另有有限上限（含JSON转义开销）。所有共享响应no-store；错误只返回稳定说明/代码，不输出SDP、候选地址或私有授权。完整[OpenAPI](openapi.yaml)已登记端点；开发期间不要用这些入口替代尚未完成的控制台流程。
 

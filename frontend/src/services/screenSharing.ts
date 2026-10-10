@@ -14,6 +14,8 @@ export interface ScreenShareSnapshot {
   last_frame_at: string | null;
   answer: ScreenShareSdp | null;
   stop_reason: string;
+  actual_volume: number | null;
+  actual_muted: boolean | null;
 }
 export interface ScreenSharingApi {
   create(window: number, hasAudio: boolean, signal?: AbortSignal): Promise<ScreenShareSnapshot>;

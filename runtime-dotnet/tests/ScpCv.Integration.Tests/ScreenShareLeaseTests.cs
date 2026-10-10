@@ -82,6 +82,44 @@ public sealed class ScreenShareLeaseTests
         Assert.Equal(CommandStatus.Failed, (await database.CommandRecords.SingleAsync()).Status);
     }
 
+    [Theory]
+    [InlineData("matching")]
+    [InlineData("replacement-worker")]
+    [InlineData("revoked")]
+    [InlineData("wrong-id")]
+    [InlineData("wrong-generation")]
+    [InlineData("missing-authority")]
+    public async Task AudioLeaseRechecksOriginalShareAndWorkerWithoutInjectingReceiverUri(string kind)
+    {
+        await using var fixture = await ControlHostFixture.CreateAsync();
+        var (runtime, registry, target, share) = await ArrangeAsync(fixture);
+        var dispatcher = Dispatcher(fixture, runtime, registry);
+        var openResponse = await dispatcher.DispatchAsync(Claim(target));
+        var open = openResponse.Payload.Deserialize<CommandLeaseDto>()!;
+        await new CommandResultService(fixture.Commands).AcceptAsync(new CompleteCommand(open.CommandId,
+            open.ClaimToken, target.OwnerEpoch, CommandStatus.Completed, "ok", "", "{}"));
+        var record = await fixture.Commands.EnqueueAsync(new EnqueueCommand(CommandTargetKind.Display, 1, "SCREEN_SHARE_AUDIO",
+            JsonSerializer.Serialize(new { share_id = kind == "wrong-id" ? Guid.NewGuid() : share.Id,
+                window_id = 1, volume = 29, muted = false }),
+            kind == "wrong-generation" ? open.SourceGeneration + 1 : open.SourceGeneration, 0));
+        if (kind == "revoked") registry.BeginStop("alice", share.Id, "publisher_stop");
+        if (kind == "replacement-worker")
+        {
+            target = target with { WorkerInstanceId = Guid.NewGuid(), OwnerEpoch = 8 };
+            await using var database = fixture.Database.CreateDbContext();
+            var worker = await database.WorkerOwnerships.SingleAsync();
+            worker.WorkerInstanceId = target.WorkerInstanceId;
+            worker.OwnerEpoch = target.OwnerEpoch;
+            await database.SaveChangesAsync();
+        }
+        var response = await Dispatcher(fixture, runtime, registry, configured: kind != "missing-authority").DispatchAsync(Claim(target));
+        Assert.Equal(kind == "matching" ? "command_lease" : "no_work", response.MessageType);
+        Assert.DoesNotContain("receiver_uri", response.Payload.GetRawText(), StringComparison.Ordinal);
+        await using var check = fixture.Database.CreateDbContext();
+        var actual = await check.CommandRecords.SingleAsync(item => item.CommandId == record.CommandId);
+        Assert.Equal(kind == "matching" ? CommandStatus.Processing : CommandStatus.Failed, actual.Status);
+    }
+
     private static async Task<(RuntimeStateService Runtime, ScreenShareRegistry Registry, ScreenShareTargetIdentity Target, ScreenShareSnapshot Share)> ArrangeAsync(ControlHostFixture fixture)
     {
         var target = new ScreenShareTargetIdentity(1, Guid.NewGuid(), 7, 19);

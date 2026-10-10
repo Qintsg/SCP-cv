@@ -45,7 +45,7 @@ Sdp:
       description: 以v=0和CRLF开头，解码后的UTF-8字节数不超过65536；Unicode可能更早达到字节上限。
 Share:
   type: object
-  required: [id, window_id, state, has_audio, receiver_has_audio, source_generation, expires_at, actual_frames, last_frame_at, answer, stop_reason]
+  required: [id, window_id, state, has_audio, receiver_has_audio, source_generation, expires_at, actual_frames, last_frame_at, answer, stop_reason, actual_volume, actual_muted]
   properties:
     id:
       type: string
@@ -85,6 +85,16 @@ Share:
         - $ref: '#/Sdp'
     stop_reason:
       type: string
+    actual_volume:
+      type: integer
+      minimum: 0
+      maximum: 100
+      nullable: true
+      description: GET本人当前接收分享时，来自原Worker已提交严格属性回执；未知、离线、停止或缺失为null，不是请求值或可听声音证明。
+    actual_muted:
+      type: boolean
+      nullable: true
+      description: 与actual_volume成对的接收页实际属性。无音轨不能报告非静音；未知为null，不能推断声音已停止。
 ShareResponse:
   description: 本人内存分享状态，无接收token；仅受理或停止待确认不是实际出画或实际释放证明。
   headers:
@@ -108,3 +118,42 @@ SuccessResponse:
     application/json:
       schema:
         $ref: ../components/schemas/SuccessResponse.yaml
+AudioRequest:
+  type: object
+  additionalProperties: false
+  required: [volume, muted]
+  properties:
+    volume:
+      type: integer
+      minimum: 0
+      maximum: 100
+    muted:
+      type: boolean
+AudioAcceptedResponse:
+  description: 共享专用音频命令已入队；不更新实际音量或源代次，不表示已经出声。
+  headers:
+    Cache-Control:
+      schema:
+        type: string
+        enum: [no-store]
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: ../components/schemas/SuccessResponse.yaml
+          - type: object
+            required: [submitted_command_id, window_id, share_id, source_generation]
+            properties:
+              submitted_command_id:
+                type: string
+                format: uuid
+              window_id:
+                type: integer
+                enum: [1, 2]
+              share_id:
+                type: string
+                format: uuid
+              source_generation:
+                type: integer
+                format: int64
+                minimum: 1

@@ -26,7 +26,8 @@ internal static class ScreenShareHttpSupport
         catch (ScreenShareException error) { return ApiEndpointSupport.Error(error.Message, error.Code, error.StatusCode); }
         catch (PlaybackServiceException error)
         {
-            return ApiEndpointSupport.Error(error.Message, error.Code, error.Code == "share_player_offline" ? 503 : 400);
+            return ApiEndpointSupport.Error(error.Message, error.Code, error.Code switch
+            { "share_player_offline" => 503, "share_audio_unavailable" => 409, _ => 400 });
         }
     }
 

@@ -85,6 +85,9 @@ export interface SessionSnapshot {
   actual_share_id?: string | null;
   actual_frames?: number;
   actual_audio?: boolean | null;
+  /** 共享接收页实际属性；未知/非共享为null，不从普通volume/is_muted推断。 */
+  actual_share_volume?: number | null;
+  actual_share_muted?: boolean | null;
   /** Worker已发布文稿的实际文字布局；null/缺失表示未知或非文稿。 */
   actual_fit_text?: boolean | null;
   desired_generation?: number;

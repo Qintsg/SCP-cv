@@ -86,6 +86,8 @@ public sealed class LegacyHttpContractTests
                 Assert.Equal(JsonValueKind.Null, session.GetProperty("actual_share_id").ValueKind);
                 Assert.Equal(0, session.GetProperty("actual_frames").GetInt64());
                 Assert.Equal(JsonValueKind.Null, session.GetProperty("actual_audio").ValueKind);
+                Assert.Equal(JsonValueKind.Null, session.GetProperty("actual_share_volume").ValueKind);
+                Assert.Equal(JsonValueKind.Null, session.GetProperty("actual_share_muted").ValueKind);
             }
         }
 
@@ -277,7 +279,7 @@ public sealed class LegacyHttpContractTests
         "position_ms", "duration_ms", "pending_command", "player_online", "player_last_seen_at",
         "last_updated_at", "volume", "is_muted", "loop_enabled", "actual_source_id", "actual_adapter_kind", "actual_fit_text",
         "desired_generation", "observed_generation", "cleanup_pending",
-        "share_id", "actual_share_id", "actual_frames", "actual_audio");
+        "share_id", "actual_share_id", "actual_frames", "actual_audio", "actual_share_volume", "actual_share_muted");
 
     private static void AssertObjectHasExactly(JsonElement element, params string[] expectedNames)
     {

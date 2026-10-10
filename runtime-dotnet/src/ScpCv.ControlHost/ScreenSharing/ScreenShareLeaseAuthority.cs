@@ -30,4 +30,21 @@ public sealed class ScreenShareLeaseAuthority(ScreenShareRegistry registry, Scre
     public static bool IsScreenShareOpen(string command, Dictionary<string, JsonElement> args) =>
         command == "OPEN" && args.TryGetValue("source_type", out var kind) &&
         kind.ValueKind == JsonValueKind.String && kind.GetString() == "screen_share";
+
+    /// <summary>:param target: 已认证领取者。:returns: 同原共享Worker才允许领取；不向音频命令注入接收URI。</summary>
+    public void AuthorizeAudio(CommandRecord command, ScreenShareTargetIdentity target, Dictionary<string, JsonElement> args)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(args);
+        if (command.TargetKind != CommandTargetKind.Display || command.TargetId != target.WindowId || args.Count != 4 ||
+            !args.TryGetValue("share_id", out var raw) || raw.ValueKind != JsonValueKind.String || !raw.TryGetGuid(out var id) ||
+            !args.TryGetValue("window_id", out var window) || window.ValueKind != JsonValueKind.Number ||
+            !window.TryGetInt32(out var windowId) || windowId != target.WindowId ||
+            !args.TryGetValue("volume", out var level) || level.ValueKind != JsonValueKind.Number ||
+            !level.TryGetInt32(out var volume) || volume is < 0 or > 100 ||
+            !args.TryGetValue("muted", out var mute) || mute.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+            throw new ScreenShareException("分享音频授权已失效。", "share_receiver_denied", 404);
+        registry.GetReceiverGrant(id, target, command.SourceGeneration);
+    }
 }

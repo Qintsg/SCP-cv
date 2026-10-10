@@ -15,6 +15,7 @@ public static class ScreenShareEndpoints
         shares.MapGet("/{id:guid}/", GetAsync);
         shares.MapPost("/{id:guid}/heartbeat/", HeartbeatAsync);
         shares.MapDelete("/{id:guid}/", StopAsync);
+        shares.MapPatch("/{id:guid}/audio/", AudioAsync);
         return endpoints;
     }
 
@@ -37,8 +38,23 @@ public static class ScreenShareEndpoints
             return ScreenShareHttpSupport.Response(share, 202);
         });
 
-    private static Task<IResult> GetAsync(Guid id, HttpContext context, ScreenShareRegistry registry) =>
-        ScreenShareHttpSupport.ExecuteAsync(context, () => Task.FromResult(ScreenShareHttpSupport.Response(registry.GetOwned(Owner(context), id))));
+    private static Task<IResult> GetAsync(Guid id, HttpContext context, ScreenShareService service, CancellationToken cancellationToken) =>
+        ScreenShareHttpSupport.ExecuteAsync(context, async () => ScreenShareHttpSupport.Response(
+            await service.GetOwnedAsync(Owner(context), id, cancellationToken).ConfigureAwait(false)));
+
+    /// <summary>:returns: 202仅表示排队，不能以请求值覆盖实际音量；额外/重复/缺少字段均拒绝。</summary>
+    private static Task<IResult> AudioAsync(Guid id, HttpContext context, ScreenShareService service, CancellationToken cancellationToken) =>
+        ScreenShareHttpSupport.ExecuteAsync(context, async () =>
+        {
+            var body = await ScreenShareHttpSupport.ReadBodyAsync(context.Request, cancellationToken).ConfigureAwait(false);
+            if (body.EnumerateObject().Count() != 2 || !body.TryGetProperty("volume", out var level) ||
+                level.ValueKind != JsonValueKind.Number || !level.TryGetInt32(out var volume) || volume is < 0 or > 100 ||
+                !body.TryGetProperty("muted", out var mute) || mute.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+                throw ScreenShareHttpSupport.InvalidBody();
+            var receipt = await service.SetAudioAsync(Owner(context), id, volume, mute.GetBoolean(), cancellationToken).ConfigureAwait(false);
+            return Results.Json(new { success = true, submitted_command_id = receipt.CommandId, window_id = receipt.WindowId,
+                share_id = receipt.ShareId, source_generation = receipt.SourceGeneration }, statusCode: 202);
+        });
 
     private static Task<IResult> HeartbeatAsync(Guid id, HttpContext context, ScreenShareRegistry registry) =>
         ScreenShareHttpSupport.ExecuteAsync(context, () => Task.FromResult(ScreenShareHttpSupport.Response(registry.Heartbeat(Owner(context), id))));

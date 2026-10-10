@@ -42,7 +42,9 @@ public sealed class ScreenSharePlaybackProjection
                 && state.TryGetProperty("actual_frames", out var frames) && frames.ValueKind == JsonValueKind.Number && frames.TryGetInt64(out var count) && count >= 0
                 && state.TryGetProperty("actual_audio", out var audio) && audio.ValueKind is JsonValueKind.True or JsonValueKind.False)
             {
-                actual = new(Math.Max(entry.Actual?.Frames ?? 0, count), audio.GetBoolean());
+                var hasAudio = audio.GetBoolean();
+                var receipt = ReadAudio(state, hasAudio);
+                actual = new(Math.Max(entry.Actual?.Frames ?? 0, count), hasAudio, receipt.Volume, receipt.Muted);
             }
             _windows[windowId] = entry with { UpdatedAt = updatedAt, Actual = actual };
         }
@@ -70,11 +72,23 @@ public sealed class ScreenSharePlaybackProjection
                 ActualShareId = actual is not null ? entry.Id : null,
                 ActualFrames = actual?.Frames ?? 0,
                 ActualAudio = actual?.Audio,
+                ActualShareVolume = actual?.Volume,
+                ActualShareMuted = actual?.Muted,
             };
         }
     }
 
-    private sealed record Observation(long Frames, bool Audio);
+    /// <summary>:param audio: 同一报告的活跃音轨事实。:returns: 严格成对的实际值；缺失、畸形或无音轨却非静音时保持未知。</summary>
+    private static (int? Volume, bool? Muted) ReadAudio(JsonElement state, bool audio)
+    {
+        if (state.TryGetProperty("actual_share_volume", out var level) && level.ValueKind == JsonValueKind.Number &&
+            level.TryGetInt32(out var volume) && volume is >= 0 and <= 100 &&
+            state.TryGetProperty("actual_share_muted", out var silent) && silent.ValueKind is JsonValueKind.True or JsonValueKind.False &&
+            (audio || silent.GetBoolean())) return (volume, silent.GetBoolean());
+        return (null, null);
+    }
+
+    private sealed record Observation(long Frames, bool Audio, int? Volume, bool? Muted);
     private sealed record Entry(ScreenShareTargetIdentity Target, Guid Id, long Generation,
         DateTimeOffset UpdatedAt, Observation? Actual);
 }

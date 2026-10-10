@@ -117,3 +117,35 @@ Heartbeat:
         $ref: ../components/responses/ErrorResponse.yaml
       '409':
         $ref: ../components/responses/ErrorResponse.yaml
+Audio:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+  patch:
+    tags: [screen-sharing]
+    summary: 受理本人当前共享的音量与静音，不控制普通VLC媒体
+    operationId: setScreenShareAudio
+    description: 原预约Worker、组、当前OPEN和已提交实际帧在同一事务重核。源代次不变，命令从创建时刻起三秒截止；领取时再次核原共享授权。202仅受理，使用submitted_command_id查询精确命令终态并GET本人分享或会话实际属性，不能将请求值当已生效。无音轨时接收页仍强制静音，不证明声卡出声。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ./schemas.yaml#/AudioRequest
+    responses:
+      '202':
+        $ref: ./schemas.yaml#/AudioAcceptedResponse
+      '400':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '401':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '409':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '413':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '503':
+        $ref: ../components/responses/ErrorResponse.yaml

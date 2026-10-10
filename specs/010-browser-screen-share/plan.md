@@ -114,3 +114,10 @@ docs/screen-sharing.md
 - `IScreenShareSurface.ApplyAudioAsync`调用实际接收页`setAudio`；有界精确schema的`ScreenShareAudioReceipt`核accepted、实际volume/muted/活跃音轨与原请求一致，激活另核frames字段。不回显原始结果或凭据；仅已切入资源可控制，不以回执增加视频帧或playing。
 - 外部动作开始后清除旧音频观测，失败保持未知；退役/音轨改变同样撤销。内部`actual_share_volume/actual_share_muted`只来自回执，不是公共SessionSnapshot字段，也不是声音可听证明。默认激活仍静音，实际内容音频与前端开放留后续。
 - 本机真实两浏览器采集→两个正式Host五次无音轨控制、真实video属性及另一窗运动保持通过，详见[阶段记录](verification/t013-native-audio.md)。不代替有声内容、正式队列/鉴权、两Worker或D4验收。
+
+## T013认证受理与实际投影（部分，2026-10-11）
+
+- `PATCH /api/screen-shares/{id}/audio/`只接受volume/muted两字段，登录/CSRF及本人身份先于控制。与停止共用Service窗口门禁；SQLite事务再次核原instance/owner/group、当前OPEN审计/源代次和已提交实际后帧。`SCREEN_SHARE_AUDIO`不修改普通音量/静音或源代次，截止从命令CreatedAt起三秒计算。
+- 202包含submitted_command_id，仅受理；精确命令查询与实际状态是独立证据。领取阶段再次核内存分享授权和原Worker，授权撤销/替换或缺装配则终结已领取命令，不返回可重放租约，不注入receiver_uri。
+- 原Worker已提交报告投影成可空actual_share_volume/actual_share_muted；两字段须成对合法，无音轨不能非静音。缺失/畸形/新资源清除旧实际值，旧版本不能复活。本人GET分享按当前身份/代次/在线/实际帧合并actual_volume/actual_muted，其他账号不能读取。
+- 已补HTTP、正式IPC/SQLite、HTTP/SSE、失败未知和领取复核回归；没有新增真实原生声音证据，网页控制与有声内容仍留T013。详见[HTTP阶段记录](verification/t013-audio-http.md)。

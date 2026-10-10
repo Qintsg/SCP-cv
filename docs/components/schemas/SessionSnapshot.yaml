@@ -105,6 +105,16 @@ properties:
     type: boolean
     nullable: true
     description: Worker成功发布的当前文稿文字布局；true为适配，false为原排版，null表示未观测、非文稿或确认无实际输出。失败换源仍有旧资源时保留旧实际布局；旧资源与候选均确认释放时清空，不从desired或OPEN受理推断。
+  actual_share_volume:
+    type: integer
+    minimum: 0
+    maximum: 100
+    nullable: true
+    description: 原Worker已提交共享接收页属性回执，动作失败、缺失或非共享为null，不沿用普通volume或请求值。
+  actual_share_muted:
+    type: boolean
+    nullable: true
+    description: 与actual_share_volume成对的实际静音属性；无音轨只能true，未知为null。不是声卡可听声音或静音证明。
   desired_generation:
     type: integer
   observed_generation:

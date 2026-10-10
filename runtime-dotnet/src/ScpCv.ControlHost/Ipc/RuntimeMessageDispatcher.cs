@@ -97,17 +97,19 @@ public sealed class RuntimeMessageDispatcher(
             }
 
             var args = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(command.ArgsJson) ?? [];
-            if (ScreenShareLeaseAuthority.IsScreenShareOpen(command.Command, args))
+            if (ScreenShareLeaseAuthority.IsScreenShareOpen(command.Command, args) || command.Command == "SCREEN_SHARE_AUDIO")
             {
                 try
                 {
                     if (screenShares is null)
                         throw new ScreenShareException("分享接收授权未装配。", "share_receiver_denied", 404);
-                    screenShares.Enrich(command, new ScreenShareTargetIdentity(targetId, frame.InstanceId, frame.OwnerEpoch, request.GroupEpoch), args);
+                    var target = new ScreenShareTargetIdentity(targetId, frame.InstanceId, frame.OwnerEpoch, request.GroupEpoch);
+                    if (command.Command == "SCREEN_SHARE_AUDIO") screenShares.AuthorizeAudio(command, target, args);
+                    else screenShares.Enrich(command, target, args);
                 }
                 catch (ScreenShareException error)
                 {
-                    // 已领取但不能接收的OPEN必须终结，不能阻塞后续命令或把旧共享交给新Worker重放。
+                    // 已领取但原共享授权失效的命令必须终结，不能阻塞队列或交给新Worker重放。
                     await results.AcceptAsync(new CompleteCommand(command.CommandId, command.ClaimToken!.Value,
                         command.OwnerEpoch, CommandStatus.Failed, error.Code, string.Empty, "{}"), cancellationToken).ConfigureAwait(false);
                     projections.PublishCommandResult();

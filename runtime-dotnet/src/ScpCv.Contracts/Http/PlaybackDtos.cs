@@ -78,6 +78,10 @@ public sealed record PlaybackSessionDto
     public long ActualFrames { get; init; }
     [JsonPropertyName("actual_audio")]
     public bool? ActualAudio { get; init; }
+    [JsonPropertyName("actual_share_volume")]
+    public int? ActualShareVolume { get; init; }
+    [JsonPropertyName("actual_share_muted")]
+    public bool? ActualShareMuted { get; init; }
     [JsonPropertyName("actual_fit_text")]
     public bool? ActualFitText { get; init; }
     [JsonPropertyName("desired_generation")]

@@ -24,7 +24,11 @@ public sealed record ScreenShareSnapshot(
     long ActualFrames,
     DateTimeOffset? LastFrameAt,
     ScreenShareSdp? Answer,
-    string StopReason);
+    string StopReason)
+{
+    public int? ActualVolume { get; init; }
+    public bool? ActualMuted { get; init; }
+}
 
 /// <summary>仅供已认证Worker领取的内存能力，不允许自动格式化输出token。</summary>
 public sealed class ScreenShareReceiverGrant(Guid id, int windowId, long sourceGeneration, string token)

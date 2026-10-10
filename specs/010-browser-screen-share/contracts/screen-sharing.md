@@ -9,6 +9,7 @@
 - GET `/api/screen-shares/{id}/`：本人状态、answer/未准备及实际接收信息；no-store。
 - POST `/api/screen-shares/{id}/heartbeat/`：续本人寿命，不授予实际帧。
 - DELETE `/api/screen-shares/{id}/`：撤销及条件CLOSE，重复幂等；受理/实际释放分别表示。
+- PATCH `/api/screen-shares/{id}/audio/`：严格仅volume整数0..100及muted布尔，登录/CSRF和本人receiving分享；事务重核原Worker/组、当前OPEN代次及已提交后帧。202返回submitted_command_id/window_id/share_id/source_generation，源代次不变；精确命令查询与实际属性回读分开，受理不代表应用成功。
 
 401未登录；400输入/CSRF；404非本人或不存在；409占用/协商冲突；413超大信令；503播放器/运行组离线。取消、过期、重复、迟到均须测试。
 
@@ -25,7 +26,7 @@
 
 Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。当前默认静音且普通媒体控制明确拒绝，音量/静音桥留T013。
 
-T013已实现原生专用`SCREEN_SHARE_AUDIO`，args严格仅`share_id`字符串GUID、`window_id`数值1/2、`volume`整数0..100、`muted`布尔；lease.source_generation须等于当前资源的原OPEN代次。错误身份/类型/范围/额外字段、过期或资源结束均拒绝，不能推进源代次或调用VLC。控制预算最多三秒且不超过deadline；真实接收属性与请求一致才返回completed。内部实际快照新增可空`actual_share_volume/actual_share_muted`，外部动作开始即失效旧值，失败保持未知。无活跃音轨时实际muted固定true；轨道存在不代表声音已播出。这一原生合同尚无发布者HTTP入口/公共投影/网页控件，不改变公共API，也不开放普通SET_VOLUME/SET_MUTE。
+T013已实现原生专用`SCREEN_SHARE_AUDIO`，args严格仅`share_id`字符串GUID、`window_id`数值1/2、`volume`整数0..100、`muted`布尔；lease.source_generation须等于当前资源的原OPEN代次。错误身份/类型/范围/额外字段、过期或资源结束均拒绝，不能推进源代次或调用VLC。命令从CreatedAt起三秒截止，原生控制预算也不超过deadline；真实接收属性与请求一致才返回completed。领取时再次核内存授权及原Worker，撤销/更换/缺装配则终结已领取命令，不下发控制、不注入receiver_uri。实际快照可空`actual_share_volume/actual_share_muted`，外部动作开始即失效旧值，失败保持未知。无活跃音轨时实际muted固定true；轨道存在不代表声音已播出。发布者HTTP和公共投影已接线，网页控件与真实内容声音未验证，普通SET_VOLUME/SET_MUTE仍未开放。
 
 内部状态另有`released_screen_shares`，最多32项，每项严格仅非空GUID `share_id`和正int64 `source_generation`，不包含接收授权；只在原生控制器Dispose及Surface移除完成后产生，并随空闲/新源状态重复回报。原Worker身份检查及事务提交后才采信；当前源报告被围栏不妨碍采信其原资源释放，但不能更新新源公共状态。JS closed、CLOSE排队、offline、新Worker和取消不能代替释放证据。原Player已验证OS身份的确证退出可以释放原分享，取证失败保持stopping。
 
@@ -34,6 +35,8 @@ T013已实现原生专用`SCREEN_SHARE_AUDIO`，args严格仅`share_id`字符串
 ## 公共会话HTTP/SSE
 
 `SessionSnapshot`新增可空`share_id`（请求）与`actual_share_id`（实际），`actual_frames`为非负int64，`actual_audio`为可空boolean。普通源为null/null/0/null；共享不造永久媒体ID，source_uri保持空字符串。只有通过原Worker实例/owner/源代次门禁的已提交报告能更新实际身份，字段缺失或身份不匹配不能由adapter或playing补齐。两窗口内存投影有版本围栏、重启清空，不公开cap/SDP/receiver URI。
+
+`actual_share_volume/actual_share_muted`是成对的可空实际接收页属性，不是普通volume/is_muted或202请求值；缺失/畸形报告清除旧值，不丢弃仍有效的视频帧。本人GET分享增加`actual_volume/actual_muted`，只在当前请求/实际身份、原代次、正帧、在线及receiving/playing匹配时提供，否则null。停止/离线或未知null不能当声音已停止。
 
 意图切走后实际旧共享可暂留，不能把CLOSE入队当原生释放。网页确认共享须请求/实际GUID及源代次相同、正帧、online且playing；停止待确认不显示成功色。控制条仅DELETE原共享ID后GET刷新，明确临时、不支持普通媒体控制及自动重开；两逻辑窗口导航与墙面单/双/自定义布局解耦。
 
