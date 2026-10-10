@@ -7,7 +7,7 @@
 ## 分层验收
 
 1. `uv run --no-project .specify/scripts/python/validate_specs.py --specs-dir specs`。
-2. xUnit ScreenShare子集核Owner/cap/SDP上限/争抢/过期/条件CLOSE，记录实际计数/TRX。
+2. xUnit ScreenShare子集核Owner/cap/SDP上限/争抢/过期/条件CLOSE、后台定时器、原Worker完整Dispose/原OS身份退出、重启孤立意图和预案捕获拒绝，记录实际计数/TRX；新Worker/离线/取消不能当释放证据。
 3. `pnpm --pm-on-fail=ignore --prefix frontend exec node --test scripts/screen-sharing.test.mjs scripts/screen-sharing-output.test.mjs scripts/screen-sharing-navigation.test.mjs`、typecheck/build:web及全前端；CLI版本与packageManager不同时本命令不自动下载，仓库CERNET配置保持不变。
 4. 独立本机数据目录，Playwright真实getDisplayMedia共享自有标签页、真实WebRTC及接收video运动像素；mock与canvas.captureStream不算原生采集。
 5. 两专用原生WebView资源的激活后帧、关闭、十轮交错与旧回调隔离；本机一显示器不称D4两大屏。

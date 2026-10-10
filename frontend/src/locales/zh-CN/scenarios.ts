@@ -8,6 +8,8 @@ export default {
     caption: '浏览、调用、编辑预案；从当前状态可一键生成新预案。',
     refreshAria: '刷新预案列表',
     captureFromState: '从当前状态生成',
+    transientCaptureTitle: '临时共享不能保存为预案',
+    transientCaptureDetail: '窗口 {id} 仍有屏幕共享。请先停止共享或切换到媒体库中的固定源；手动新建预案仍可选择保持或清空目标。',
     create: '新建预案',
     label: '预案',
     pinned: '置顶',

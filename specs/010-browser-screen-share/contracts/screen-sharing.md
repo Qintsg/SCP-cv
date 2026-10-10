@@ -1,6 +1,6 @@
 # Contract: 屏幕共享
 
-最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player专用资源、网页原生采集面板与动态HTTP/SSE身份已实现，清理确认等仍待后续任务，不代表完整功能可使用。
+最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player专用资源、网页原生采集面板、动态HTTP/SSE身份及后台释放确认已接线，音频/HTTPS/两窗稳定性及D4验收仍待后续任务，不代表完整功能可使用。
 
 ## 发布者（登录及CSRF）
 
@@ -24,6 +24,10 @@
 持久OPEN：source_type=screen_share、source_id=0、share_id；不含token。已认证且原instance/owner/group均匹配的Worker领取时内存注入receiver_uri；失效授权的已领取OPEN记为Failed，不能返回无授权OPEN或卡住Processing。SourceGeneration事务分配；真实视频帧前loading，激活后也需观测。CLOSE/换源/退出Dispose，不保温。未实现暂停/定位/页码/循环明确禁用；音量/静音桥只在实际接通时呈现。
 
 Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。当前默认静音且普通媒体控制明确拒绝，音量/静音桥留T013。
+
+内部状态另有`released_screen_shares`，最多32项，每项严格仅非空GUID `share_id`和正int64 `source_generation`，不包含接收授权；只在原生控制器Dispose及Surface移除完成后产生，并随空闲/新源状态重复回报。原Worker身份检查及事务提交后才采信；当前源报告被围栏不妨碍采信其原资源释放，但不能更新新源公共状态。JS closed、CLOSE排队、offline、新Worker和取消不能代替释放证据。原Player已验证OS身份的确证退出可以释放原分享，取证失败保持stopping。
+
+后台每秒撤销过期/换源/组失效共享并条件停止，不自动重采集或重播。重启仅通过当前OPEN审计清除孤立意图、不还原cap/SDP。预案捕获当前请求或实际共享返回400 `scenario_screen_share_not_persistable`，不新增/覆盖预案；创建/编辑预案的set目标必须是正媒体库ID，否则400 `scenario_source_invalid`。unset保持当前共享，empty或有效固定源是明确替换，不恢复共享。
 
 ## 公共会话HTTP/SSE
 

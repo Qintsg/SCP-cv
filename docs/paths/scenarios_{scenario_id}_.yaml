@@ -18,6 +18,9 @@ patch:
   tags:
     - scenarios
   summary: 更新预案
+  description: >-
+    目标source_state为set时必须提供正媒体库source_id；零、负值或空值返回400及
+    code scenario_source_invalid，不覆盖已有预案。临时屏幕共享不能保存或恢复。
   operationId: updateScenario
   requestBody:
     required: true

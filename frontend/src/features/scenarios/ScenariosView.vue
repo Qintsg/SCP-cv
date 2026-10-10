@@ -77,7 +77,13 @@ function openEdit(scenario: ScenarioItem): void {
   editOpen.value = true;
 }
 
+/** :returns: 临时共享先明确拒绝，不生成可被误解为已保存共享的草稿。 */
 function captureFromCurrent(): void {
+  const shared = sessionStore.sessions.find((session) => session.share_id || session.actual_share_id || session.actual_adapter_kind === 'screen_share');
+  if (shared) {
+    toast.warning(t('scenarios.transientCaptureTitle'), t('scenarios.transientCaptureDetail', { id: shared.window_id }));
+    return;
+  }
   const draft: ScenarioDraft = createEmptyDraft();
   draft.name = '';
   draft.bigScreenModeState = 'set';

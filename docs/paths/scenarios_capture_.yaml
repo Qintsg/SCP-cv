@@ -2,6 +2,10 @@ post:
   tags:
     - scenarios
   summary: 从当前状态捕获预案
+  description: >-
+    当前请求或实际输出包含临时屏幕共享时，返回400及code
+    scenario_screen_share_not_persistable，不创建或覆盖已有预案。
+    请先停止共享或切换固定媒体源；共享授权和媒体内容不能持久化到预案。
   operationId: captureScenario
   requestBody:
     required: true

@@ -16,6 +16,9 @@ post:
   tags:
     - scenarios
   summary: 创建预案
+  description: >-
+    目标source_state为set时必须提供正媒体库source_id；零、负值或空值返回400及
+    code scenario_source_invalid。临时屏幕共享不能保存；unset保持当前内容，empty明确清空。
   operationId: createScenario
   requestBody:
     required: true

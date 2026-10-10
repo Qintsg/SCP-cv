@@ -97,10 +97,26 @@
 - 最后`build:web`含vue-tsc通过并实际退出0，`t010-build-web.log`；保留既有入口>500kB告警，未更改阈值。Spec Kit全目录通过，`t010-spec-kit.log`；diff校验通过，本阶段代码均不足500行。未更改API/IPC合同，未将上一阶段Redocly结果计作新运行，最终T018仍须功能完整后重验。
 - 本机QA浏览器在finally关闭；自有Vite5210精确中断（退出1为主动停止，不是测试失败），实际匹配进程0与TCP5210监听0，不结束其他浏览器/Node或D4服务。
 
+## 2026-10-11 / T011后台回收、释放证明与预案
+
+- 从签名保存点53bae03继续，requirements只读门禁16/16。`ScreenShareCleanupService`在两模式真实注册，独立一秒周期；不依赖发布者GET，过期/换源/组失效先撤销cap，再按原分享/OPEN代次条件CLOSE。无OPEN审计的回滚预约只在同Service门禁内确认无原生接收可能；已提交OPEN仍须实际释放证明。后端周期/数据库验证不当作实际Player。
+- 原生完整Dispose后才生成两字段`ScreenShareReleaseEvidenceDto`，最多32条去重历史；空闲/后来图片重复采样。`RuntimeProjectionPublisher`提交原Worker身份后采信释放，旧源状态围栏不妨碍原资源释放、也不允许覆盖新源。实际释放未到或失败保持stopping，JS closed、轨道ended、offline、换组、新Worker和取消均不算原生死亡。
+- 原Player退出观察至多两条，先核持久instance/owner和已验证OS登记PID/start/session/role。ControlledExitObserver只替代OS等待，真实Program/SQLite核换组/换Worker不提前closed、五种登记不匹配不观察、取消后迟到confirmed不采信；没有实际杀进程或宣称这八项是Windows退出实验。正常宿主停止取消并等待自有观察，Simulation缺OS观察器不造证明。
+- 重启边界以真实DB加全新Registry测试：当前动态OPEN审计只排一次原条件CLOSE，不重建cap/SDP或恢复旧分享；后来普通OPEN保持。预案捕获在同写事务检查请求审计/实际适配器，失败不新增或覆盖；set零/负ID不保存，unset激活不重播/终止共享。七项预案及六项正式Vue DOM先红后绿；后端测试曾错误断言error字段，改核实际detail及code，原失败TRX保留。
+- 最终新增31项.NET：后台11（含真实一秒HostedService无需GET/手工cycle）、原进程观察8、预案7、重启2、正式STA Host释放2、IPC序列化合同1。Windows生命周期相关48/48通过；两个旧空闲null采样断言严格升级为idle及原分享两字段回执，过期零原生创建仍保持null，未删除门禁。Contracts新增用例最初被CA1861阻断，改静态字段而非关闭分析器。
+- 最后串行全非Physical.NET实际1353/1353、0失败/跳过，六个独立TRX在`t011-full-results/`：Contracts325、ControlHost378、Domain41、Infrastructure171、Integration273、Windows165。每项核total=executed=passed，六项目命令均实际退出0；完整Release解决方案另构建退出0、0警告0错误，`t011-solution-build.log`。并行早期构建DLL锁失败原件保留，未计作通过。
+- 全前端348/348、0失败/取消/跳过，实际退出0，`t011-frontend-full.log`，130683ms；新预案DOM6/6同时覆盖两窗×请求ID/实际ID/适配器。最后`build:web`内含vue-tsc，退出0，`t011-web-build.log`；保留既有入口>500kB告警。
+- 真实Chromium渲染正式AppShell/ScenariosView/Pinia/Naive Provider，仅HTTP公开快照替身、不采集或控制D4。1440/390×浅深共4场景，24次键盘Enter明确拒绝捕获、4次手动新建可用，只有读取sessions、零写请求、无横溢、pageerror/console error为0。首次旧通知离场DOM并存严格检查失败，等待其真实退出，未用first掩盖。截图自审发现手机提示仍在入场过渡，追加实际祖先opacity及视口边界等待，最终28检查再次通过，证据`t011-browser-runs/c76f407bd329489fb0350bd31f2f402a/`；主代理已查看最后手机浅深拒绝/新建原图及桌面深色原图。
+- 重新编译自有HostProbe，调用正式PlayerRuntimeHost、独占WebView2和正式receiver HTML/JS/CSP；仅loopback信令夹具，真实getDisplayMedia自动选择唯一自有运动标签页，非canvas.captureStream。两目标**分别**授权到激活后帧2665ms/2410ms，帧2→62，实际InPrivate；不是同时正式Worker、正常系统选择器、5分钟或十轮。最终证据`host-runs/7222a2f241ad47068469912b1937446b/`、`8d2600b0a83947609893b7e45e5068e0/`，主代理查看两目标原生运动截图。
+- 两次停止均核自有轨道ended/peer closed、原生CLOSE idle/null、实际WebView0、空闲采样重复原分享/OPEN代次回执、Host退出0；原浏览器PID37392/13184由Windows句柄WaitForSingleObject确认WAIT_OBJECT_0，保持10秒预算。真实首次文档HTTP授权拒绝释放失败候选、回执对应失败原身份，旧图片101/gen1和原Surface保持，0WebView及Host退出0；证据`host-runs/4512df61151b4b1cb948f2263cb64d25/`。
+- 第一次本机原生运行在浏览器PID十秒退出等待失败，日志`t011-native-host.log`及`host-runs/e1e4a1060fc94a89954d452e6bfe3346/`保留；因缺返回码/PID落盘，不能确定当时原生退出根因。随后仅补自有QA明确Win32参数/返回码并在断言前落盘，最终两句柄成功，`t011-native-host-observed.log`；未放宽时间、不强杀其他浏览器、不宣称修复原生泄漏。
+- 文档、预案REST错误码、私有IPC合同及坑84同步；最终Redocly直接用已存在的CLI校验退出0，`t011-redocly-final.log`，本次实际三项既有退役PowerPoint端点无2xx告警保留，不沿用以前四项计数。第一次误读旧C盘shim导致模块不存在，未执行校验，`t011-redocly.log`保留；按实际Get-Command定位E盘缓存后运行，不安装依赖、不改CERNET、不生成Node锁。Spec Kit全目录与diff检查通过，全部本轮代码不足500行；extensions.yml不存在。
+- 本机自有Vite5210精确中断并确认退出（主动退出1不是测试失败），所有本轮QA/Host/共享WebView匹配进程0、TCP5208/5210监听0；浏览器finally关闭独占上下文，不结束其他Node/浏览器。D4仍稳定009，本阶段没有010部署、打开原媒体或下发墙面/电源。T011完成不代表十轮/跨机及最终010验收。
+
 ## 仍未实现/未验证
 
 此前基础阶段全非Physical1231/1231的独立证据保留于`.validation/qa-screen-share-010/retained-full-test-results/`与`full-test-retained.log`；当时未改API/前端而未跑的验证现已在上述后端接入阶段执行。旧失败、覆盖TRX及调试输出不删除，最终T018仍待完整功能接线后重验。
 
-T011及之后未完成：后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
+T012及之后未完成：真实两peer/原生十轮交错与实际旧回调隔离、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
 
 上述本机prototype不能勾选FR-001至FR-011或SC-001至SC-005全部完成，不把以前D4部署/媒体测试作为本功能证据。

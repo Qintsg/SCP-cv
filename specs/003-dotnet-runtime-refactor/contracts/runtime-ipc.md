@@ -86,6 +86,12 @@ ControlHost是直接派发者，必须持久保存RuntimeGroupControl及group_ep
 - 租约过期只证明失联，不证明旧进程停止；转移执行权先冻结目标、由Supervisor证明旧进程已退出或完成显式停机握手，再增加epoch。若无法证明则uncertain/离线，禁止同时派发给两个物理执行端。
 - ControlHost重启读取持久代次并提高服务epoch；重新认证活Worker，优先对账结果。不得直接将所有processing重置pending。
 
+### 临时共享释放证据（010，2026-10-11补充）
+
+Player的内部state可含`released_screen_shares`数组，上限32，每项严格只有`share_id`（非空GUID）及`source_generation`（原OPEN的正int64）。该字段不公开到HTTP/SSE、不持久化，不含SDP/cap/receiver URI。只在原生WebView控制器Dispose及Surface移除真正完成后追加；JS closed、轨道ended、CLOSE入队和取证取消不构成证明。原Worker有界去重并随空闲/后来内容重复采样，不能依赖一次CommandResult到达。
+
+`RuntimeProjectionPublisher`先核已认证的原窗口/Worker instance/owner并提交身份事务，再采信严格schema及同分享/原代次的释放回执。新源状态仍完全受现有generation/report围栏：旧源状态拒绝不等于丢弃已验证原Worker的原资源释放证明，不得借回执覆盖新意图。错Worker或畸形数组不确认释放。周期清理只排原身份条件CLOSE；有实际回执或已登记原PID/start/session/role身份的真实退出才能将已提交OPEN的共享标closed。离线、组变化或新Worker不是死亡证据；服务重启不恢复共享授权，只清理当前孤立动态意图。
+
 ## Office子操作的独立去重
 
 每个实际COM动作使用稳定office_operation_id，与父command/job、claim_token、source_generation、group/host/slot epoch及deadline绑定；传输重试不生成新operation_id。Host在入队时校验，并在STA实际取出准备调用COM前再次检查授权/闩锁/版本/deadline。

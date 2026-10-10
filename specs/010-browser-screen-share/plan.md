@@ -93,3 +93,11 @@ docs/screen-sharing.md
 - `ClientConnectionCoordinator`的代次是非响应式身份围栏；共享面板通过显式同步订阅结束原寿命，通知发生在异步清会话之前。取消订阅幂等，页面结束/账号改变/卸载共用一次dispose，不增加全局媒体store。
 - 本地清理按原资源所有权判断，不能因账号/主机已失效而跳过；向远端停止仍须当前上下文。查询成功及失败分支都核同尝试，旧catch不能覆盖已确认终态。停止失败不自动重复副作用，原面板结束后不能重用旧原生授权。
 - 公开HTTP/SSE与IPC合同不因本阶段改变。后端真实SQLite并发/提交后失败回归仅核排队、授权撤销与新意图保持；下一步T011还须独立的原Worker/分享/代次实际释放或原进程退出证据，禁止以offline、换Worker、NoLongerDesired或CLOSE入队推断原生死亡。
+
+## T011后台回收与原生证据（2026-10-11）
+
+- `ScreenShareCleanupService`在Hardware/Simulation均显式装配，独立一秒周期，不依赖发布者GET。过期、原Worker/组失效或普通换源先撤销cap；同窗口Service门禁内以原分享/OPEN代次执行原子条件CLOSE，不重发物理CLOSE或关闭后来内容。
+- Player仅在原生控制器Dispose及待显示Surface移除实际完成后记录`ScreenShareReleaseEvidenceDto`。原Worker的有界32条回执随当前状态重复报告，空闲/图片也采样，避免一次结果报告丢失后永久占用槽。原资源释放和当前源状态是两条不同证据：已提交且匹配原Worker的旧源报告可确认原分享释放，不能推进新源公共状态；错误Worker、身份/代次或畸形数组整批拒绝。
+- `ScreenShareProcessTracker`至多观察两个原Player，先核数据库归属与OS验证登记的PID/start/session/role/instance，再持有原进程退出观察。离线、换组、新Worker、取消或取证失败都不是死亡证明。宿主停止取消并等待自有观察收尾；Simulation缺实际OS观察器不造证明。
+- 已绑定但OPEN事务回滚且无审计时，在同Service门禁内可以释放无原生接收可能的预约。服务重启后不恢复cap/SDP，只核当前动态OPEN审计并条件清除孤立意图；不从历史pending、actual或null源恢复共享。
+- 预案捕获在同一写事务内拒绝共享意图/实际，失败不覆盖已有预案。网页本地捕获草稿也核请求ID/实际ID/适配器并提示；手动固定源、保持和清空仍可用，set零/负/空ID不持久化。
