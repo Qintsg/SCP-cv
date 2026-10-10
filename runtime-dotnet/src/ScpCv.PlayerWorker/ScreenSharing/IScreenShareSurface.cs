@@ -10,4 +10,7 @@ internal interface IScreenShareSurface : IAsyncDisposable
 
     /// <summary>:param volume: 窗口音量。:param muted: 窗口静音。:param token: 本次OPEN的有限寿命。:returns: 实际接收页激活完成；宿主仍须独立核后帧。</summary>
     Task ActivateAsync(int volume, bool muted, CancellationToken token);
+
+    /// <summary>:param volume: 专用音量。:param muted: 专用静音。:param token: 控制寿命。:returns: 真实接收页属性确认后更新本资源状态，不调用VLC。</summary>
+    Task ApplyAudioAsync(int volume, bool muted, CancellationToken token);
 }

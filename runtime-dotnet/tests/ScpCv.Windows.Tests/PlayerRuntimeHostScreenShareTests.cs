@@ -190,7 +190,7 @@ public sealed partial class PlayerRuntimeHostLifecycleTests
         });
     }
 
-    /// <summary>:returns: 共享不能用普通媒体动作伪成功；内容音频桥在T013实测接通前也明确拒绝。</summary>
+    /// <summary>:returns: 共享不能用普通VLC媒体动作伪成功；专用音频不开放普通SET_VOLUME/SET_MUTE。</summary>
     [Theory]
     [InlineData("PLAY")]
     [InlineData("PAUSE")]
@@ -251,17 +251,23 @@ public sealed partial class PlayerRuntimeHostLifecycleTests
     private sealed class ControlledShare : IScreenShareSurface
     {
         private readonly bool _activate;
+        private readonly bool _hasAudio;
         internal int CloseCalls { get; private set; }
+        internal int AudioCalls { get; private set; }
+        internal Exception? AudioFailure { get; init; }
         public FrameworkElement Surface { get; } = new Grid();
         public ScreenSharePlaybackState State { get; }
-        internal ControlledShare(ScreenShareReceiverIdentity identity, bool prepare = true, bool activate = true)
+        internal ControlledShare(ScreenShareReceiverIdentity identity, bool prepare = true, bool activate = true, bool hasAudio = false)
         {
-            State = new(identity); _activate = activate;
-            if (prepare) { Emit("ready", new { frames = 0 }); Emit("frame", new { frames = 1, activated = false, has_audio = false, media_time = 1d }); }
+            State = new(identity); _activate = activate; _hasAudio = hasAudio;
+            if (prepare) { Emit("ready", new { frames = 0 }); Emit("frame", new { frames = 1, activated = false, has_audio = hasAudio, media_time = 1d }); }
         }
-        /// <summary>:param volume: 未测试音频。:param muted: 未测试音频。:param token: OPEN寿命。:returns: 实际后帧或明确失败，由Host处理。</summary>
+        /// <summary>:param volume: 测试音量。:param muted: 测试静音。:param token: OPEN寿命。:returns: IO替身后帧或明确失败，由正式Host处理，不当真实WebView出声。</summary>
         public Task ActivateAsync(int volume, bool muted, CancellationToken token)
-        { State.BeginActivation(); if (_activate) Emit("frame", new { frames = 2, activated = true, has_audio = false, media_time = 2d }); else State.Fail("share_video_play_failed"); return Task.CompletedTask; }
+        { State.BeginActivation(); if (_activate) { Emit("frame", new { frames = 2, activated = true, has_audio = _hasAudio, media_time = 2d }); State.RecordAudio(new(volume, muted || !_hasAudio, _hasAudio)); } else State.Fail("share_video_play_failed"); return Task.CompletedTask; }
+        /// <summary>:param volume: 测试请求。:param muted: 测试请求。:param token: 控制寿命。:returns: IO接缝提供受控音轨属性，不冒称真实WebView出声。</summary>
+        public Task ApplyAudioAsync(int volume, bool muted, CancellationToken token)
+        { token.ThrowIfCancellationRequested(); AudioCalls++; if (AudioFailure is not null) throw AudioFailure; State.RecordAudio(new(volume, muted || !_hasAudio, _hasAudio)); return Task.CompletedTask; }
         /// <summary>:returns: 每次外部调用计数，退役之后拒绝晚消息。</summary>
         public ValueTask DisposeAsync() { CloseCalls++; State.Retire(); return ValueTask.CompletedTask; }
         /// <summary>:param type: 正式消息类型。:param fields: 实际字段。:returns: 相同来源/身份的纯值消息。</summary>

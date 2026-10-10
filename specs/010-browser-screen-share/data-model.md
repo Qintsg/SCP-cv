@@ -35,3 +35,7 @@
 ## 原生释放回执（仅内部IPC）
 
 `released_screen_shares`最多32条，每条仅`share_id`非空GUID和`source_generation`正int64。Player保留有界去重历史并重复采样；只有完整原生Dispose完成才追加，不因JS closed/轨道ended或取消追加。ControlHost在原Worker身份事务提交后核窗口/instance/owner/原分享/原代次；整个数组schema不合法即不采信。不是公共HTTP/SSE字段，不存数据库、cap或receiver URI。原Player观察最多两条且绑定原身份，取消只结束观察、不确认死亡。
+
+## 原生音频观测（T013部分，仅内部IPC）
+
+当前共享资源拥有可空`ScreenShareAudioReceipt(Volume, Muted, HasAudio)`，从实际接收页脚本结果严格解析。内部`actual_share_volume/actual_share_muted`在普通源、退役或动作尚未确认时为null；输入意图不更新它们，失败不能沿用先前值。音轨变化使旧回执失效。实际音轨仅核readyState=live，不意味着硬件实际出声；公共HTTP/SSE及网页控件仍须后续接线。

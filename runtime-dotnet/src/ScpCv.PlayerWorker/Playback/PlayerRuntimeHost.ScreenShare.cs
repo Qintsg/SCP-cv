@@ -53,12 +53,15 @@ public sealed partial class PlayerRuntimeHost
 
     /// <summary>:param lease: 共享OPEN。:param token: 上层取消。:returns: 共享所有阶段共用最多20秒且不超过租约deadline，不逐阶段延长预算。</summary>
     private static CancellationTokenSource ScreenShareOpenLifetime(CommandLeaseDto lease, CancellationToken token)
+        => ScreenShareCommandLifetime(lease, TimeSpan.FromSeconds(20), token);
+
+    /// <summary>:param lease: OPEN或专用控制。:param token: 上层取消。:param budget: 对应阶段上限。:returns: 有界寿命永不超过原租约deadline。</summary>
+    private static CancellationTokenSource ScreenShareCommandLifetime(CommandLeaseDto lease, TimeSpan budget, CancellationToken token)
     {
-        var budget = TimeSpan.FromSeconds(20);
         if (lease.Deadline is not null)
         {
             if (!DateTimeOffset.TryParse(lease.Deadline, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var deadline))
-                throw new InvalidDataException("屏幕共享OPEN截止时间无效。");
+                throw new InvalidDataException("屏幕共享命令截止时间无效。");
             var remaining = deadline - DateTimeOffset.UtcNow;
             if (remaining < budget) budget = remaining;
         }

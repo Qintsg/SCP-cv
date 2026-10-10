@@ -62,6 +62,8 @@ public sealed partial class PlayerRuntimeHost(
             if (_unconfirmedCandidates.Count > 0 && command is not ("CLOSE" or "RESET_PPT"))
                 throw new ScpCv.Contracts.Presentations.PresentationTransportException("候选资源清理未确认，普通播放命令已隔离。",
                     new InvalidOperationException("unconfirmed_presentation_candidate"));
+            if (command == "SCREEN_SHARE_AUDIO")
+                return await ExecuteScreenShareAudioAsync(lease, cancellationToken);
             if (_current?.Kind == "libreoffice" && command is "PLAY" or "PAUSE" or "STOP" or "SEEK" or "SET_VOLUME" or "SET_MUTE" or "SET_LOOP" or "PPT_MEDIA")
                 throw new InvalidOperationException("LibreOffice当前未支持统一媒体控制");
             if (_current?.Kind == "screen_share" && command is not ("OPEN" or "CLOSE" or "RESET_PPT" or "SELECT_DISPLAY"))

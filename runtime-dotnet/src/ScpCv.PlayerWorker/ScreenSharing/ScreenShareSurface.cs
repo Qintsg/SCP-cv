@@ -1,7 +1,6 @@
 // 每次共享独占WebView控制器与隐私profile；授权只用于本机接收，关闭不进入网页保温池。
 using System.Globalization;
 using System.IO;
-using System.Text.Json;
 using System.Windows;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
@@ -102,12 +101,26 @@ internal sealed class ScreenShareSurface : IScreenShareSurface
         State.BeginActivation();
         var script = string.Create(CultureInfo.InvariantCulture, $"window.scpScreenShare.activate({Math.Clamp(volume, 0, 100)},{(muted ? "true" : "false")})");
         var result = await _view.CoreWebView2.ExecuteScriptAsync(script).WaitAsync(token);
-        using var document = JsonDocument.Parse(result);
-        if (document.RootElement.ValueKind != JsonValueKind.Object ||
-            !document.RootElement.TryGetProperty("accepted", out var accepted) || accepted.ValueKind != JsonValueKind.True)
-            throw new IOException("屏幕共享接收端未接受激活。");
+        State.RecordAudio(ScreenShareAudioReceipt.Parse(result, volume, muted, activation: true));
         await State.WaitActivatedAsync(token);
         token.ThrowIfCancellationRequested();
+    }
+
+    /// <summary>:param volume: 专用音量0..100。:param muted: 明确静音。:param token: 当前命令寿命。:returns: 仅已出画且未退役的当前对象可控制；有限等待与固定错误不泄漏私有地址。</summary>
+    public async Task ApplyAudioAsync(int volume, bool muted, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        if (_disposal is not null || !State.IsPlaying || volume is < 0 or > 100)
+            throw new InvalidOperationException("屏幕共享音频资源未就绪或已结束。");
+        State.InvalidateAudio();
+        var script = string.Create(CultureInfo.InvariantCulture, $"window.scpScreenShare.setAudio({volume},{(muted ? "true" : "false")})");
+        string result;
+        try { result = await _view.CoreWebView2.ExecuteScriptAsync(script).WaitAsync(TimeSpan.FromSeconds(3), token); }
+        catch (Exception error) when (error is InvalidOperationException or ObjectDisposedException or
+            TimeoutException or System.Runtime.InteropServices.COMException)
+        { throw new IOException("屏幕共享音频控制未确认：" + error.GetType().Name); }
+        token.ThrowIfCancellationRequested();
+        State.RecordAudio(ScreenShareAudioReceipt.Parse(result, volume, muted));
     }
 
     /// <summary>:returns: 一次自有关闭终态；页面closed只是媒体清理报告，不代替控件Dispose完成。</summary>

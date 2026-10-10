@@ -107,3 +107,10 @@ docs/screen-sharing.md
 - 两独立Chromium进程真实采集自有DOM运动标签页；正式Panel/Publisher/RTC与正式receiver保留，只有账号/HTTP信令为内存夹具，cap和SDP不落盘。
 - 同一自有WPF应用内两个正式PlayerRuntimeHost持续复用十轮；双共享、交替停止、再共享、旧条件CLOSE/旧消息、图片替换与非目标保持分别核状态和像素。这个层级不代替两个正式Worker或D4。
 - 释放分别核轨道/peer、原生Dispose回执及0控制器、旧Core不可使用、原浏览器OS对象退出。十轮总时长超过五分钟不等于双共享连续五分钟，SC-003仍留T016；实测见[专项记录](verification/t012-native-pair.md)。
+
+## T013原生音频桥（部分，2026-10-11）
+
+- 独立`SCREEN_SHARE_AUDIO`在媒体锁内核share/window/原OPEN代次和严格四字段；三秒寿命不超过租约截止，过期同步拒绝，不推进源代次或触及VLC。公共认证入口和投影尚未接线，不能从普通音量端点绕过共享身份。
+- `IScreenShareSurface.ApplyAudioAsync`调用实际接收页`setAudio`；有界精确schema的`ScreenShareAudioReceipt`核accepted、实际volume/muted/活跃音轨与原请求一致，激活另核frames字段。不回显原始结果或凭据；仅已切入资源可控制，不以回执增加视频帧或playing。
+- 外部动作开始后清除旧音频观测，失败保持未知；退役/音轨改变同样撤销。内部`actual_share_volume/actual_share_muted`只来自回执，不是公共SessionSnapshot字段，也不是声音可听证明。默认激活仍静音，实际内容音频与前端开放留后续。
+- 本机真实两浏览器采集→两个正式Host五次无音轨控制、真实video属性及另一窗运动保持通过，详见[阶段记录](verification/t013-native-audio.md)。不代替有声内容、正式队列/鉴权、两Worker或D4验收。

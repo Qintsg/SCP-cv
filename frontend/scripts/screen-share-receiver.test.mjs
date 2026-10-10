@@ -140,3 +140,56 @@ test('两套资源独立，停止窗口1不停止窗口2的轨道或后帧', asy
   assert.equal(second.messages.find(message => message.type === 'frame').window_id, 2);
   second.window.scpScreenShare.stop();
 });
+
+test('音量和静音回执读取真实video属性，无音轨不允许假报解除静音', async () => {
+  const resource = receiver();
+  await nextTurn();
+  resource.window.scpScreenShare.activate(100, true);
+  const silent = resource.window.scpScreenShare.setAudio(29, false);
+  assert.equal(silent.has_audio, false);
+  assert.equal(silent.muted, true);
+  const audio = resource.track('audio');
+  const applied = resource.window.scpScreenShare.setAudio(29, false);
+  assert.equal(applied.has_audio, true);
+  assert.equal(applied.muted, false);
+  assert.ok(Math.abs(applied.volume - 29) < 1e-9);
+  assert.equal(resource.video.volume, 0.29);
+  audio.stop();
+  const ended = resource.window.scpScreenShare.setAudio(80, false);
+  assert.equal(ended.has_audio, false);
+  assert.equal(ended.muted, true);
+  resource.window.scpScreenShare.stop();
+});
+
+test('音频控制只在已激活的本资源生效，不能靠控制调用激活预备资源', async () => {
+  const resource = receiver();
+  await nextTurn();
+  resource.track();
+  resource.track('audio');
+  assert.equal(resource.window.scpScreenShare.setAudio(50, false).accepted, false);
+  assert.equal(resource.video.muted, true);
+  assert.equal(resource.window.scpScreenShare.activate(100, true).accepted, true);
+  assert.equal(resource.window.scpScreenShare.setAudio(50, false).accepted, true);
+  resource.window.scpScreenShare.stop();
+  assert.equal(resource.window.scpScreenShare.setAudio(50, false).accepted, false);
+});
+
+test('无效音频参数不修改video，两个窗口的音量静音彼此独立', async () => {
+  const first = receiver();
+  const second = receiver({ windowId: 2 });
+  await nextTurn();
+  first.track('audio'); second.track('audio');
+  first.window.scpScreenShare.activate(100, true);
+  second.window.scpScreenShare.activate(80, true);
+  for (const [volume, muted] of [[-1, false], [101, false], [1.5, true], ['40', true], [NaN, true], [50, 'false']]) {
+    assert.equal(first.window.scpScreenShare.setAudio(volume, muted).accepted, false);
+    assert.equal(first.video.volume, 1);
+    assert.equal(first.video.muted, true);
+  }
+  assert.equal(first.window.scpScreenShare.setAudio(0, false).accepted, true);
+  assert.equal(first.video.volume, 0);
+  assert.equal(first.video.muted, false);
+  assert.equal(second.video.volume, 0.8);
+  assert.equal(second.video.muted, true);
+  first.window.scpScreenShare.stop(); second.window.scpScreenShare.stop();
+});

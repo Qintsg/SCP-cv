@@ -42,7 +42,7 @@
 
 **Independent Test**: 有/无音轨、实际帧、断线、桌面/390px、键盘及安全访问。
 
-- [ ] T013 [US3] 在前端及Windows测试补首连接不当playing、无音轨与音量/静音桥；实现真实receiver帧/音轨状态与专用控件，不向普通VLC发送伪音频控制。
+- [ ] T013 [US3] 在前端及Windows测试补首连接不当playing、无音轨与音量/静音桥；实现真实receiver帧/音轨状态与专用控件，不向普通VLC发送伪音频控制。原生专用命令/严格回执/三秒寿命及无音轨双接收属性和隔离已验证；认证API、公共回读、网页控件及真实内容声音仍未完成，不勾选。
 - [ ] T014 [US3] 为`frontend/vite.config.ts`或既有托管入口接入显式HTTPS证书配置与校验，在`docs/screen-sharing.md`记录正常LAN信任证书步骤及不支持浏览器，禁止以关闭安全策略替代。
 - [ ] T015 [US3] 在`.validation/qa-screen-share-010/`以真实浏览器验证权限取消/拒绝、失败清理、390/桌面/浅深主题/键盘、实际状态和控制台错误；正常capture与mock用例分别计数。
 

@@ -76,17 +76,21 @@
   }
 
   /** :param volume: 窗口音量0..100；:param muted: 实际静音选择。 */
-  function setAudio(volume, muted) {
+  function applyAudio(volume, muted) {
     if (stopped || !Number.isInteger(volume) || volume < 0 || volume > 100 || typeof muted !== 'boolean')
       return { accepted: false };
     video.volume = volume / 100;
-    video.muted = muted || remote.getAudioTracks().length === 0;
-    return { accepted: true, volume: video.volume * 100, muted: video.muted, has_audio: remote.getAudioTracks().length > 0 };
+    const hasAudio = remote.getAudioTracks().some(track => track.readyState === 'live');
+    video.muted = muted || !hasAudio;
+    return { accepted: true, volume: video.volume * 100, muted: video.muted, has_audio: hasAudio };
   }
+
+  /** :param volume: 专用音量；:param muted: 明确静音；:returns: 未激活/已结束不开放独立音频控制。 */
+  function setAudio(volume, muted) { return activated ? applyAudio(volume, muted) : { accepted: false }; }
 
   /** :returns: 此后首个实际视频帧才可授予实际播出，不把预备帧或连接当作激活。 */
   function activate(volume, muted) {
-    const audio = setAudio(volume, muted);
+    const audio = applyAudio(volume, muted);
     if (!audio.accepted) return audio;
     activated = true;
     return { ...audio, frames };

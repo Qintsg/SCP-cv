@@ -15,6 +15,7 @@ internal sealed class ScreenSharePlaybackState(ScreenShareReceiverIdentity ident
     internal ScreenShareReceiverIdentity Identity { get; } = identity;
     internal long Frames { get; private set; }
     internal bool HasAudio { get; private set; }
+    internal ScreenShareAudioReceipt? Audio { get; private set; }
     internal bool IsPrepared => !_terminal && _ready && Frames > 0;
     internal bool IsPlaying { get; private set; }
     internal string ErrorCode { get; private set; } = string.Empty;
@@ -67,7 +68,9 @@ internal sealed class ScreenSharePlaybackState(ScreenShareReceiverIdentity ident
             !Boolean(message, "has_audio", out var hasAudio) ||
             !message.TryGetProperty("media_time", out var time) || time.ValueKind != JsonValueKind.Number ||
             !time.TryGetDouble(out var seconds) || !double.IsFinite(seconds) || seconds < 0) return false;
-        Frames = frames; HasAudio = hasAudio;
+        Frames = frames;
+        if (HasAudio != hasAudio) Audio = null;
+        HasAudio = hasAudio;
         CompletePreparation();
         if (activated && _ready && frames > _activationFloor)
         { IsPlaying = true; _activated.TrySetResult(); }
@@ -100,11 +103,21 @@ internal sealed class ScreenSharePlaybackState(ScreenShareReceiverIdentity ident
         if (!IsPlaying) throw new IOException("屏幕共享激活资源已结束：" + ErrorCode);
     }
 
+    /// <summary>:param receipt: 当前原生对象实际脚本回读。:returns: 退役或尚未切入的资源不能凭音频回执复活；不改变视频帧/playing。</summary>
+    internal void RecordAudio(ScreenShareAudioReceipt receipt)
+    {
+        if (_terminal || !_activationRequested) throw new IOException("屏幕共享音频资源已结束或尚未切入。");
+        Audio = receipt; HasAudio = receipt.HasAudio;
+    }
+
+    /// <summary>:returns: 外部音频动作开始后旧属性不再代表当前结果；失败保持未知，不重试或改变视频身份。</summary>
+    internal void InvalidateAudio() => Audio = null;
+
     /// <summary>:param code: 固定错误码。:returns: 原生故障与主动退役均撤销当前资源的后续消息，唤醒等待者。</summary>
     internal void Fail(string code)
     {
         if (_terminal) return;
-        _terminal = true; IsPlaying = false; HasAudio = false; ErrorCode = code;
+        _terminal = true; IsPlaying = false; HasAudio = false; Audio = null; ErrorCode = code;
         _prepared.TrySetException(new IOException("屏幕共享接收结束：" + code));
         _activated.TrySetException(new IOException("屏幕共享接收结束：" + code));
         // 未走到激活的失败路径也观察两个任务的终态；以后await仍会得到原异常。

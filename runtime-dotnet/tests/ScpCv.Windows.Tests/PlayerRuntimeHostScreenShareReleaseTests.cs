@@ -73,6 +73,8 @@ public sealed partial class PlayerRuntimeHostLifecycleTests
         public ScreenSharePlaybackState State => _prepared.State;
         internal int Closes { get; private set; }
         public Task ActivateAsync(int volume, bool muted, CancellationToken token) => _prepared.ActivateAsync(volume, muted, token);
+        /// <summary>:param volume: 专用音量。:param muted: 明确静音。:param token: 控制寿命。:returns: 仅委托已有IO替身，不改变释放验证语义。</summary>
+        public Task ApplyAudioAsync(int volume, bool muted, CancellationToken token) => _prepared.ApplyAudioAsync(volume, muted, token);
 
         /// <summary>:returns: 退役媒体不代表控制器已退出，测试显式控制真实Dispose完成/失败的边界。</summary>
         public ValueTask DisposeAsync()

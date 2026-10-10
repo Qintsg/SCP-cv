@@ -25,6 +25,8 @@
 
 Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。当前默认静音且普通媒体控制明确拒绝，音量/静音桥留T013。
 
+T013已实现原生专用`SCREEN_SHARE_AUDIO`，args严格仅`share_id`字符串GUID、`window_id`数值1/2、`volume`整数0..100、`muted`布尔；lease.source_generation须等于当前资源的原OPEN代次。错误身份/类型/范围/额外字段、过期或资源结束均拒绝，不能推进源代次或调用VLC。控制预算最多三秒且不超过deadline；真实接收属性与请求一致才返回completed。内部实际快照新增可空`actual_share_volume/actual_share_muted`，外部动作开始即失效旧值，失败保持未知。无活跃音轨时实际muted固定true；轨道存在不代表声音已播出。这一原生合同尚无发布者HTTP入口/公共投影/网页控件，不改变公共API，也不开放普通SET_VOLUME/SET_MUTE。
+
 内部状态另有`released_screen_shares`，最多32项，每项严格仅非空GUID `share_id`和正int64 `source_generation`，不包含接收授权；只在原生控制器Dispose及Surface移除完成后产生，并随空闲/新源状态重复回报。原Worker身份检查及事务提交后才采信；当前源报告被围栏不妨碍采信其原资源释放，但不能更新新源公共状态。JS closed、CLOSE排队、offline、新Worker和取消不能代替释放证据。原Player已验证OS身份的确证退出可以释放原分享，取证失败保持stopping。
 
 后台每秒撤销过期/换源/组失效共享并条件停止，不自动重采集或重播。重启仅通过当前OPEN审计清除孤立意图、不还原cap/SDP。预案捕获当前请求或实际共享返回400 `scenario_screen_share_not_persistable`，不新增/覆盖预案；创建/编辑预案的set目标必须是正媒体库ID，否则400 `scenario_source_invalid`。unset保持当前共享，empty或有效固定源是明确替换，不恢复共享。
