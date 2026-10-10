@@ -1,8 +1,10 @@
+/** 共享网页构建与同源代理；TLS配置仅在服务器读取，构建不读取私钥。SCP-cv 2026-10-11。 */
 import { fileURLToPath, URL } from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv } from 'vite';
+import { loadFrontendHttps } from './config/https';
 
 /**
  * Vite 构建配置。
@@ -16,10 +18,11 @@ import { defineConfig, loadEnv } from 'vite';
  *    ControlHost：让前端与后端共享同一个 origin（http://<host>:5173），从根本上
  *    避免跨 origin + SameSite cookie 导致 csrftoken 不随登录请求发送的问题。
  */
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
   const isPackagedApp = mode === 'app';
   const envDir = fileURLToPath(new URL('.', import.meta.url));
   const env = loadEnv(mode, envDir, '');
+  const https = command === 'serve' && !isPackagedApp ? loadFrontendHttps(env, envDir) : undefined;
   const fallbackPort = 5173;
   const parsedPort = Number.parseInt(env.VITE_FRONTEND_PORT || '', 10);
   const frontendPort = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : fallbackPort;
@@ -29,11 +32,11 @@ export default defineConfig(({ mode }) => {
   //   - changeOrigin=false：保留浏览器原始 Host 头，让 ControlHost 的 CSRF Origin 校验
   //     拿到与 Origin 头一致的 host（同 origin 验证天然通过），否则 Host 被改为
   //     backend host 后 ControlHost 计算的可信 origin 与浏览器 Origin 不匹配 → 403。
-  //   - secure=false：本地 dev 后端通常用 http；忽略证书校验。
+  //   - 明确HTTPS前端启用时，也校验HTTPS后端证书；既有无TLS开发流程保持原行为。
   const proxyRule = {
     target: backendTarget,
     changeOrigin: false,
-    secure: false,
+    secure: Boolean(https),
   } as const;
 
   return {
@@ -47,6 +50,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      https,
       host: '0.0.0.0',
       port: frontendPort,
       proxy: {
@@ -59,6 +63,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     preview: {
+      https,
       host: '0.0.0.0',
       port: frontendPort,
       proxy: {

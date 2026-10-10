@@ -43,7 +43,7 @@
 **Independent Test**: 有/无音轨、实际帧、断线、桌面/390px、键盘及安全访问。
 
 - [X] T013 [US3] 首连接不当playing、无音轨、原生音量/静音桥、本人认证API与实际属性、专用网页控件已接线。新增43前端回归、全前端394/394及浅深1440/390px组件QA通过；真实内容音轨分别到两本机Host、六组控制和非目标运动/释放通过，窗口1重复通过。HTTP夹具不代替正式队列/双Worker，系统端点保持原静音，不称扬声器可听；现场边界留T016，见`verification/t013-audio-ui.md`。
-- [ ] T014 [US3] 为`frontend/vite.config.ts`或既有托管入口接入显式HTTPS证书配置与校验，在`docs/screen-sharing.md`记录正常LAN信任证书步骤及不支持浏览器，禁止以关闭安全策略替代。
+- [ ] T014 [US3] 显式HTTPS证书配置/校验、私钥路径门禁和正常LAN信任文档已接入；31专项及全前端425/425、真实TLS认证/CSRF/私钥403及未信任上游502通过。Windows临时CA导入仍等待系统确认，普通浏览器可信LAN采集未通过，不勾完成；见`verification/t014-https.md`。禁止关闭安全策略替代。
 - [ ] T015 [US3] 在`.validation/qa-screen-share-010/`以真实浏览器验证权限取消/拒绝、失败清理、390/桌面/浅深主题/键盘、实际状态和控制台错误；正常capture与mock用例分别计数。
 
 ## Phase 6: Polish & Cross-Cutting

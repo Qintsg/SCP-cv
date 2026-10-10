@@ -2,7 +2,7 @@
 
 ## 当前实现状态
 
-010正在开发，尚未部署到D4，尚不能作为完整功能使用。已完成内存会话、HTTP信令、Worker租约授权、正式Player接收资源、网页采集/音频控件、HTTP/SSE身份及后台释放确认。本机两个正式Host十轮共30次真实采集/换源/释放，以及两目标分别有声传输/音量/静音验证通过；不等于正式双Worker或D4验收。可信HTTPS、连续两会话及现场可听效果仍待验证，阶段门禁不当完整交付。
+010正在开发，尚未部署到D4，尚不能作为完整功能使用。已完成内存会话、HTTP信令、Worker租约授权、正式Player接收资源、网页采集/音频控件、HTTP/SSE身份及后台释放确认。本机两个正式Host十轮共30次真实采集/换源/释放，以及两目标分别有声传输/音量/静音验证通过；不等于正式双Worker或D4验收。显式HTTPS配置及真实TLS/API已验，普通浏览器的CA信任确认、连续两会话及现场可听效果仍待，阶段门禁不当完整交付。
 
 目标是从桌面Chrome/Edge的原生屏幕/应用/标签页选择器直接共享到窗口1或2，不用额外推流程序。不请求麦克风，不保存屏幕媒体，不新增媒体库源，不改变墙面布局或电源。
 
@@ -66,6 +66,59 @@ Worker纯值观测包含`share_id/actual_frames/actual_audio`和null媒体ID，�
 
 接收地址从ControlHost的`urls`首个监听地址派生，0.0.0.0/IPv6通配绑定转换为本机地址；沿用正式启动脚本的默认`https://localhost:18443`。可通过`ScreenSharing__ReceiverBaseUrl`显式选择**已监听**的loopback HTTP(S)纯地址；拒绝远程主机、用户信息、路径、query或fragment，且不自动新增监听或绕过证书验证。非通配LAN绑定需另行提供本机监听与明确接收地址。
 
-浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。正常LAN可信证书部署步骤尚待T014实现，不能使用关闭安全策略/不安全来源flag作为正式方法。
+浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。配置步骤见下节，不能使用关闭安全策略/不安全来源flag作为正式方法。T014尚欠普通浏览器可信LAN实测，不因服务器TLS/API通过而当整项完成。
 
 当前自动化覆盖登录/CSRF、争抢、有界信令、原身份围栏、失败撤销、接收来源、停止及专用音频。真实本机Host/有声链路不当D4两Worker；正式双窗5分钟、十轮/异常切换、正常选择器取消、可信LAN及现场可听效果仍须执行，见[010任务](../specs/010-browser-screen-share/tasks.md)与[验证记录](../specs/010-browser-screen-share/verification.md)。
+
+## LAN可信HTTPS配置（实施前置，尚未部署D4）
+
+首版支持同一局域网内的桌面Chrome/Edge。手机、Electron/Capacitor内置控制端、无getDisplayMedia或被浏览器/组织策略禁止的环境明确不支持；不要请求麦克风补音轨，不用忽略证书错误、点击继续访问或不安全来源flag替代可信连接。
+
+### 1. 获取并安全保管证书
+
+优先使用现场已信任的组织CA证书。服务器叶证书的SAN必须包含实际访问的DNS/IP，也包含Node代理和Player访问ControlHost时使用的localhost/127.0.0.1；证书须在有效期内、允许服务器认证，不能用CA根代替叶证书。
+
+无现有CA时，可按[mkcert官方说明](https://github.com/FiloSottile/mkcert)在专用私有目录签发仅现场使用的证书。以下是操作示例，不表示已在D4执行；已有证书/CA目录不要覆盖。先创建并限制私有目录只允许服务账号读取，用`Get-Command mkcert`确认工具可用：
+
+```powershell
+$scpPreviousCaRoot = $env:CAROOT
+try {
+  $env:CAROOT = 'D:/SCP-cv-private/tls/ca'
+  mkcert -cert-file D:/SCP-cv-private/tls/d4.pem -key-file D:/SCP-cv-private/tls/d4-key.pem 192.168.5.194 localhost 127.0.0.1
+  if ($LASTEXITCODE -ne 0) { throw '签发证书失败，不能继续部署' }
+} finally { $env:CAROOT = $scpPreviousCaRoot }
+```
+
+先创建并限制上述目录只允许服务账号读取，生成后恢复本次进程原CAROOT设置。`d4-key.pem`和`rootCA-key.pem`都是秘密，不能分发、提交、打包或放入frontend/public；访问设备只需要公开的`rootCA.pem`。配置的证书/私钥必须是frontend目录外、不超过256KiB的普通`.pem`文件（推荐整个仓库外）；配置路径和实体路径均检查，不接受从frontend通过目录链接指向外部密钥。保管好私有目录，不能把它链接进public。
+
+### 2. 在访问设备正常建立CA信任
+
+在服务机器和每台访问机器上，通过可信渠道核对公开根证书的SHA256及证书指纹，导入相应登录账号的“受信任的根证书颁发机构”。Windows当前用户导入公开根的示例：
+
+```powershell
+certutil -user -addstore Root D:/SCP-cv-private/tls/ca/rootCA.pem
+```
+
+Windows可能要求系统确认；核对身份后由操作者确认，等待命令退出并检查该精确指纹确已在CurrentUser/Root中，再用新浏览器会话访问。命令仍活着、超时或出现“签名与公钥匹配”不代表导入成功，不能因此重复导入或禁用保护。临时QA结束时只移除本轮精确CA指纹，不能批量删除其他根证书。Player所在D4交互用户也须信任对应CA，否则私有接收页同样会拒绝TLS。
+
+### 3. 配置ControlHost和同源前端
+
+ControlHost使用[官方Kestrel证书配置](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel/endpoints?view=aspnetcore-10.0)：本机监听的HTTPS端点、`Kestrel__Certificates__Default__Path`及`Kestrel__Certificates__Default__KeyPath`指向上面的叶证书/私钥。保留原认证、CSRF及明确AllowedHosts/AllowedOrigins，不关闭Secure Cookie或扩大来源名单；接收loopback地址必须是已监听且证书有效的地址。修改启动环境前先停止原项目运行组并确认退出，不能让两组同时占用显示器/端口；数据库和媒体沿用原DataRoot。
+
+`frontend/.env`中的配置示例（该文件忽略，不提交）：
+
+```dotenv
+VITE_FRONTEND_PORT=5173
+VITE_BACKEND_TARGET=https://localhost:18443
+SCP_CV_HTTPS_CERT_FILE=D:/SCP-cv-private/tls/d4.pem
+SCP_CV_HTTPS_KEY_FILE=D:/SCP-cv-private/tls/d4-key.pem
+SCP_CV_HTTPS_HOSTS=192.168.5.194,localhost,127.0.0.1
+```
+
+启动Node进程前另外配置`NODE_EXTRA_CA_CERTS=D:/SCP-cv-private/tls/ca/rootCA.pem`，让HTTPS代理正常验证本地CA的后端；它不是前端VITE变量。前端三个SCP项必须同时提供，完全没配保持既有HTTP，部分/错误配置拒绝启动，不降级。SCP项只在服务器读取，不进入客户端；build:web/封装构建不读取密钥。
+
+使用pnpm启动既有`dev:web`或Web构建后的`preview --mode web`。两入口复用[Vite HTTPS配置](https://vite.dev/config/server-options#server-https)和同源代理；显式HTTPS开启后，未信任的上游证书会被拒绝，不设置secure=false或NODE_TLS_REJECT_UNAUTHORIZED=0。Vite dev/preview用于本项目开发/联调，不把它宣称为生产静态服务器。替换证书/私钥后重启其自有服务并复核，不能仅凭原页面缓存认为新证书生效。
+
+### 4. 分层检查
+
+先访问`https://192.168.5.194:5173/`，确认浏览器无证书警告；验证登录、Secure/HttpOnly会话Cookie和原CSRF，再在显示控制页主动选择自有测试标签页。只有浏览器安全上下文、原生采集返回、指定Player激活后真实帧及停止实际释放分别成立，才算功能可用。禁止把HTTPS200、本机localhost采集或API受理当作D4出画证明。本轮服务器TLS、安全API及私钥访问/上游拒绝证据见[T014阶段记录](../specs/010-browser-screen-share/verification/t014-https.md)，普通浏览器CA确认仍待。
