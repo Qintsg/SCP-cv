@@ -19,6 +19,7 @@ import {
 import FIcon from '@/design-system/FIcon.vue';
 import PlaybackControl from './PlaybackControl.vue';
 import SourcePicker from './SourcePicker.vue';
+import ScreenSharePanel from '../screen-share/ScreenSharePanel.vue';
 import { DISPLAY_TARGETS, resolveDisplayTarget } from './displayTargets';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useRuntimeStore } from '@/stores/runtime';
@@ -127,6 +128,8 @@ const segmentValue = computed({
     >
       {{ t('playback.commandAcceptedHint', { state: commandObservation.actualState }) }}
     </n-alert>
+
+    <ScreenSharePanel v-if="targetMeta && currentSession" :key="targetMeta.windowId" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
 
     <n-card v-if="blocksForSingleMode">
       <n-empty :description="t('display.blockedDesc')">

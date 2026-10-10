@@ -57,10 +57,22 @@
 - 真实错误cap首次文档返回404，正式Host候选失败并释放；旧图片source101/gen1及原Surface保留，0原生WebView，Host退出0。证据`host-runs/df4325eb90db4edbbb404f377276a8d4/failure-evidence.json`，不以导航成功冒充出画。
 - 本阶段未更改前端UI或HTTP API结构，不将前轮298项、typecheck/build或Redocly算作新运行；最终T018仍须功能完整后重跑。文档/合同/已知坑80同步，本机QA资源已退出；本阶段没有更新D4包、打开原始媒体、下发墙面或电源。
 
+## 2026-10-11 / T008网页原生采集入口
+
+- `ScreenSharePublisher`独占一次尝试/轨道/peer/计时器，原点击栈同步getDisplayMedia；许可前零API/OPEN。两个目标独立，用户内容音频默认关闭，has_audio按实际轨道；不请求麦克风、不造媒体库源。
+- 前端接正式共享HTTP，复用cookie/CSRF/no-store及主机代次，调用方abort不被超时controller覆盖；offer和连接不冒充实际出画。关闭优先释放本地，仅向原身份发一次DELETE，stopping保持待确认，只读GET查询、不自动重采或重试。
+- 先缺实现红；迟到预约未撤销、结构化占用码被泛化两项实际红后修。迟到有效分配仅撤销原ID、不offer；公开code/status由固定白名单翻译，任意share_自由文本不进入页面。生命周期更全面异常边界仍留T010。
+- 相关正式模块/DOM/API边界24项通过（控制器14、面板4、API6）；API新测试第一次伪document不含createElement导致Vue初始化失败，改完整Happy DOM，仅修自有夹具，不算生产缺陷或功能红绿。
+- 最终全前端实际322/322、0失败/跳过，`t008-final-all-frontend.log`，执行235583ms；此前同数首次完整85秒结果独立保留，不冒称页面操作耗时。最终build:web内含vue-tsc类型检查并退出0，`t008-final-build-web.log`；Vite保留既有>500kB大入口/插件计时告警，未改变阈值。未改后端/HTTP结构，不重跑或计入前轮1303及Redocly；最终T018仍待完整功能后执行。
+- `.validation/qa-screen-share-010/t008-panel-browser.py`实际挂正式Panel/composable/RTC/API模块，只有发布者账号夹具和HTTP信令替身；真实完整Chromium原生getDisplayMedia自动选择唯一自有动态标签页，非canvas.captureStream，非正常系统选择器验收。没有receiver、answer、实际接收帧或D4，不能计SC-001/002/003。
+- 本机首次六轮通过后，自审补查发现按钮获得焦点但没有独立轮廓；两次红的JSON和截图保留。Naive默认仅填色/内边线不足清晰键盘标识，按主题令牌补:focus-visible。最终五轮独立目录：`e6e364500250408b971dd17a73fa4a6a`、`392b004246604c41a878c359d56dfcab`、`66ba5c7a0bd9494cbcde2c0a3fbaea1c`、`bbb7ccbed9a34529a26d4069bc567c22`、`d1853249912e47a3a2d9e336d9e9f509`，均在`t008-browser-runs/`；每轮两次真实采集/RTC offer、浅深1440/390无横溢、按钮/复选框44px、四场景可见2px实线焦点及offline入口拒绝、pageerror/console error为0。
+- 每轮两个页面同时持有自己的真实video live轨道/peer；先停目标1，目标2仍live及have-local-offer；最终两轨道ended、两peer实际connection/signaling closed。替身DELETE各一次，返回stopping时禁止新共享，手动GET closed才重新允许；这证明前端资源释放/状态边界，不证明实际原生Player释放。主代理查看首轮浅/深/停止及最终浅深键盘原图。
+- 在线uv请求CERNET PyPI页面超时，实际进程终止后用已有uv离线缓存运行Playwright，不更改镜像/安装依赖。pnpm11.24对旧manage_package_manager_versions=false忽略并试图下载项目11.22；按当前本地CLI实现用仅本命令`--pm-on-fail=ignore`避免下载，不修改仓库或全局配置、不改依赖。新增代码均不足500行，文档/合同/坑81同步；本阶段没有部署010、操作墙面/电源或原媒体。
+
 ## 仍未实现/未验证
 
 此前基础阶段全非Physical1231/1231的独立证据保留于`.validation/qa-screen-share-010/retained-full-test-results/`与`full-test-retained.log`；当时未改API/前端而未跑的验证现已在上述后端接入阶段执行。旧失败、覆盖TRX及调试输出不删除，最终T018仍待完整功能接线后重验。
 
-T008及之后未完成：前端原生采集与HTTP/SSE/null源身份、后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
+T009及之后未完成：HTTP/SSE/null源身份、后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
 
 上述本机prototype不能勾选FR-001至FR-011或SC-001至SC-005全部完成，不把以前D4部署/媒体测试作为本功能证据。

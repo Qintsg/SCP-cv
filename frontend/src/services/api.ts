@@ -25,6 +25,7 @@ export type {
 
 interface ApiDetailPayload {
   detail?: string;
+  code?: string;
 }
 
 const REQUEST_TIMEOUT_MS = 10000;
@@ -139,12 +140,22 @@ function readCookie(name: string): string {
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+/** 服务端拒绝保留稳定错误码；业务按白名单翻译，不依赖自由文本推断原因。 */
+export class ApiRequestError extends Error {
+  readonly code: string;
+  readonly status: number;
+  /** :param message: 既有公开说明。:param code: 服务端稳定码。:param status: HTTP拒绝状态。 */
+  constructor(message: string, code: string, status: number) {
+    super(message); this.name = 'ApiRequestError'; this.code = code; this.status = status;
+  }
+}
+
 async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
   try {
     try {
-      return await fetch(url, { ...init, signal: controller.signal });
+      return await fetch(url, { ...init, signal: init.signal ? AbortSignal.any([controller.signal, init.signal]) : controller.signal });
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') {
         throw new Error(t('api.timeout'));
@@ -156,7 +167,8 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
   }
 }
 
-async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+/** :param url: API路由。:param init: 请求及可选上层取消。:param timeoutMs: 请求硬限。:returns: 沿用认证/CSRF/主机代次校验的JSON结果。 */
+export async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
   const requestGeneration = clientConnection.captureGeneration();
   const absoluteUrl = buildBackendUrl(url);
   const method = (init.method || 'GET').toUpperCase();
@@ -186,7 +198,7 @@ async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = R
     throw new UnauthorizedError(payload.detail || t('api.requestFail', { status: 401 }));
   }
   if (!response.ok) {
-    throw new Error(payload.detail || t('api.requestFail', { status: response.status }));
+    throw new ApiRequestError(payload.detail || t('api.requestFail', { status: response.status }), payload.code || '', response.status);
   }
   return payload;
 }

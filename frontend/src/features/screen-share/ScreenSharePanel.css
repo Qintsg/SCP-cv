@@ -1,0 +1,37 @@
+/* 当前逻辑窗口的共享工具区；只用Fluent令牌，状态文字不依赖颜色。SCP-cv 2026-10-11。 */
+.screen-share {
+  min-width: 0;
+  padding: var(--spacingVerticalM) var(--spacingHorizontalL);
+  border: var(--strokeWidthThin) solid var(--colorNeutralStroke2);
+  border-radius: var(--borderRadiusXLarge);
+  background: var(--colorNeutralBackground1);
+  color: var(--colorNeutralForeground1);
+  font-family: var(--fontFamilyBase);
+}
+.screen-share__heading { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacingHorizontalS); }
+.screen-share__heading h3 { margin: 0; font-size: var(--fontSizeBase400); font-weight: var(--fontWeightSemibold); }
+.screen-share__icon { display: flex; color: var(--colorBrandForeground1); }
+.screen-share__target {
+  margin-left: auto;
+  padding: var(--spacingVerticalXS) var(--spacingHorizontalS);
+  border: var(--strokeWidthThin) solid var(--colorBrandStroke2);
+  border-radius: var(--borderRadiusMedium);
+  font-size: var(--fontSizeBase200);
+  font-weight: var(--fontWeightSemibold);
+  color: var(--colorBrandForeground1);
+  background: var(--colorBrandBackground2);
+}
+.screen-share__hint { margin: var(--spacingVerticalS) 0; color: var(--colorNeutralForeground2); font-size: var(--fontSizeBase200); overflow-wrap: anywhere; }
+.screen-share__status { display: flex; align-items: baseline; flex-wrap: wrap; gap: var(--spacingHorizontalS); font-size: var(--fontSizeBase300); line-height: var(--lineHeightBase300); }
+.screen-share__dot { align-self: center; flex-shrink: 0; width: var(--spacingHorizontalSNudge); height: var(--spacingVerticalSNudge); border-radius: var(--borderRadiusCircular); background: var(--colorNeutralForeground3); }
+.screen-share--receiving .screen-share__dot { background: var(--colorPaletteGreenForeground1); }
+.screen-share__frames { color: var(--colorNeutralForeground3); font-size: var(--fontSizeBase200); font-family: var(--fontFamilyMonospace); }
+.screen-share__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacingHorizontalS); margin-top: var(--spacingVerticalM); }
+.screen-share__actions :deep(.n-button), .screen-share__actions :deep(.n-checkbox) { min-height: 44px; }
+.screen-share__actions :deep(.n-button:focus-visible) { outline: var(--strokeWidthThick) solid var(--colorBrandStroke1); outline-offset: var(--spacingHorizontalXXS); }
+.screen-share__actions :deep(.n-checkbox) { margin-right: auto; }
+.screen-share__actions :deep(.n-checkbox:focus-within) { outline: var(--strokeWidthThick) solid var(--colorBrandStroke1); outline-offset: var(--spacingHorizontalXXS); }
+@media (max-width: 767px) {
+  .screen-share { padding: var(--spacingVerticalM) var(--spacingHorizontalM); }
+  .screen-share__actions :deep(.n-checkbox) { flex-basis: 100%; }
+}
