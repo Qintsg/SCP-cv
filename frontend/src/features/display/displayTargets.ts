@@ -7,17 +7,15 @@ import { t } from '@/locales';
 export interface DisplayTargetMeta {
   windowId: number;
   param: string;
-  /** 桌面侧边栏 / 移动 SegmentedControl 显示标题。 */
+  /** 桌面侧边栏 / 移动窗口单选组显示标题。 */
   title: string;
-  /** 副标题：双屏时大屏左/右展开。 */
+  /** 逻辑播放器说明，不代表当前墙面的物理左右映射。 */
   subtitle?: string;
-  /** 仅双屏可访问。 */
-  doubleScreenOnly?: boolean;
 }
 
 export const DISPLAY_TARGETS: DisplayTargetMeta[] = [
-  { windowId: 1, param: 'big-left', title: t('display.bigTitle'), subtitle: t('display.bigSubtitle') },
-  { windowId: 2, param: 'big-right', title: t('display.bigRightTitle'), subtitle: t('display.bigRightSubtitle'), doubleScreenOnly: true },
+  { windowId: 1, param: 'big-left', title: t('videoWall.window1'), subtitle: t('videoWall.logicalWindowHint') },
+  { windowId: 2, param: 'big-right', title: t('videoWall.window2'), subtitle: t('videoWall.logicalWindowHint') },
 ];
 
 /**

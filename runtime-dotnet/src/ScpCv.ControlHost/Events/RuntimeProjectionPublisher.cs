@@ -4,16 +4,21 @@ using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
+using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.Events;
 
-public sealed record StateReportAcceptance(bool Accepted, string Reason);
+public sealed record StateReportAcceptance(bool Accepted, string Reason)
+{
+    internal DateTimeOffset? UpdatedAt { get; init; }
+}
 
 /// <summary>只把通过 instance/epoch/generation fencing 的实际状态写入兼容 SSE 投影。</summary>
 public sealed class RuntimeProjectionPublisher(
     WriteCoordinator writes,
     SseEventHub events,
-    TimeProvider? timeProvider = null)
+    TimeProvider? timeProvider = null,
+    ScreenSharePlaybackProjection? screenSharePlayback = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
@@ -54,6 +59,8 @@ public sealed class RuntimeProjectionPublisher(
 
         if (accepted.Accepted)
         {
+            if (targetKind == CommandTargetKind.Display && accepted.UpdatedAt is { } updatedAt)
+                screenSharePlayback?.Observe(targetId, workerInstanceId, ownerEpoch, report.SourceGeneration, report.State, updatedAt);
             events.PublishLatest();
         }
 
@@ -96,7 +103,7 @@ public sealed class RuntimeProjectionPublisher(
         await ApplyPendingProjectionAsync(database, CommandTargetKind.Display, targetId, session, null, cancellationToken)
             .ConfigureAwait(false);
         session.LastUpdatedAt = NextTimestamp(session.LastUpdatedAt);
-        return new StateReportAcceptance(true, "accepted");
+        return new StateReportAcceptance(true, "accepted") { UpdatedAt = session.LastUpdatedAt };
     }
 
     private async Task<StateReportAcceptance> ApplyAudioAsync(

@@ -1,6 +1,6 @@
 # Contract: 屏幕共享
 
-最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player专用资源及网页原生采集面板已实现，动态HTTP/SSE身份与清理确认等仍待后续任务，不代表完整功能可使用。
+最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player专用资源、网页原生采集面板与动态HTTP/SSE身份已实现，清理确认等仍待后续任务，不代表完整功能可使用。
 
 ## 发布者（登录及CSRF）
 
@@ -23,7 +23,13 @@
 
 持久OPEN：source_type=screen_share、source_id=0、share_id；不含token。已认证且原instance/owner/group均匹配的Worker领取时内存注入receiver_uri；失效授权的已领取OPEN记为Failed，不能返回无授权OPEN或卡住Processing。SourceGeneration事务分配；真实视频帧前loading，激活后也需观测。CLOSE/换源/退出Dispose，不保温。未实现暂停/定位/页码/循环明确禁用；音量/静音桥只在实际接通时呈现。
 
-Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。HTTP/SSE动态身份接线留T009，不能把IPC字段当作已开放HTTP字段。当前默认静音且普通媒体控制明确拒绝，音量/静音桥留T013。
+Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。当前默认静音且普通媒体控制明确拒绝，音量/静音桥留T013。
+
+## 公共会话HTTP/SSE
+
+`SessionSnapshot`新增可空`share_id`（请求）与`actual_share_id`（实际），`actual_frames`为非负int64，`actual_audio`为可空boolean。普通源为null/null/0/null；共享不造永久媒体ID，source_uri保持空字符串。只有通过原Worker实例/owner/源代次门禁的已提交报告能更新实际身份，字段缺失或身份不匹配不能由adapter或playing补齐。两窗口内存投影有版本围栏、重启清空，不公开cap/SDP/receiver URI。
+
+意图切走后实际旧共享可暂留，不能把CLOSE入队当原生释放。网页确认共享须请求/实际GUID及源代次相同、正帧、online且playing；停止待确认不显示成功色。控制条仅DELETE原共享ID后GET刷新，明确临时、不支持普通媒体控制及自动重开；两逻辑窗口导航与墙面单/双/自定义布局解耦。
 
 ## UI
 

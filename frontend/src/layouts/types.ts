@@ -12,6 +12,4 @@ export interface NavItemDef {
   icon: FluentIconName | string;
   /** 选中时的图标（默认与 icon 相同）。 */
   iconSelected?: FluentIconName | string;
-  /** 是否仅在双屏模式下展示。 */
-  doubleScreenOnly?: boolean;
 }

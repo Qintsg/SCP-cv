@@ -6,6 +6,8 @@
 import { defineStore } from 'pinia';
 
 import { api, type SessionSnapshot } from '@/services/api';
+import { screenSharingApi } from '@/services/screenSharing';
+import { isRequestedScreenShare, isActualScreenShare, isConfirmedPlayback } from '@/features/display/playbackObservation';
 
 interface SessionState {
   /** 后端返回的两个大屏窗口会话；首次启动前为空数组。 */
@@ -47,7 +49,7 @@ export const useSessionStore = defineStore('sessions', {
       state.sessions.forEach((session) => cache.set(session.window_id, session));
       return (windowId: number) => cache.get(windowId);
     },
-    /** 用于 NavPane / 移动端 SegmentedControl 等场景的窗口选择列表。 */
+    /** 用于导航及移动端窗口单选组等场景的窗口选择列表。 */
     windowIds(state): number[] {
       return state.sessions.map((session) => session.window_id).sort((a, b) => a - b);
     },
@@ -60,7 +62,8 @@ export const useSessionStore = defineStore('sessions', {
           accepted,
           playerOnline: session.player_online,
           actualState: session.playback_state,
-          confirmed: session.player_online && !accepted,
+          confirmed: session.player_online && !accepted && (session.source_type === 'screen_share'
+            || session.actual_adapter_kind === 'screen_share' ? isConfirmedPlayback(session) : true),
         };
       };
     },
@@ -100,6 +103,14 @@ export const useSessionStore = defineStore('sessions', {
     async closeSource(windowId: number): Promise<void> {
       this.ensurePlayerOnline(windowId);
       this.beginCommandFeedbackScope(windowId);
+      const session = this.byWindowId(windowId)!;
+      if (isRequestedScreenShare(session)) {
+        // 只撤销本次共享身份；HTTP受理不确认Player已释放，也不关闭后来换入的源。
+        await screenSharingApi.stop(session.share_id!);
+        await this.refresh();
+        return;
+      }
+      if (!session.source_id && isActualScreenShare(session)) throw new Error('共享停止仍待确认，请查询共享状态。');
       const payload = await api.closeSource(windowId);
       this.applyRemoteSessions(payload.sessions);
     },
@@ -112,6 +123,7 @@ export const useSessionStore = defineStore('sessions', {
     async reopenCurrentSource(windowId: number): Promise<void> {
       this.ensurePlayerOnline(windowId);
       const session = this.sessions.find((item) => item.window_id === windowId)!;
+      if (isRequestedScreenShare(session) || isActualScreenShare(session)) throw new Error('屏幕共享不能自动重开，请重新点击共享并选择内容。');
       const legacy = session.actual_source_id === undefined;
       const sourceId = legacy ? session.source_id : session.actual_source_id;
       if (!sourceId) throw new Error('当前没有已确认的画面源，请从源列表明确选择。');

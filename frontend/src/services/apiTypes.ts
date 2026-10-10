@@ -80,6 +80,11 @@ export interface SessionSnapshot {
   duration_ms: number | null;
   actual_source_id?: number | null;
   actual_adapter_kind?: string;
+  /** 临时共享请求/实际身份；不是媒体库源，旧主机可能缺失。 */
+  share_id?: string | null;
+  actual_share_id?: string | null;
+  actual_frames?: number;
+  actual_audio?: boolean | null;
   /** Worker已发布文稿的实际文字布局；null/缺失表示未知或非文稿。 */
   actual_fit_text?: boolean | null;
   desired_generation?: number;

@@ -69,6 +69,15 @@ public sealed record PlaybackSessionDto
     public long? ActualSourceId { get; init; }
     [JsonPropertyName("actual_adapter_kind")]
     public string ActualAdapterKind { get; init; } = string.Empty;
+    // 非秘密临时身份：没有媒体库ID；请求意图和已匹配Worker的实际输出分别投影。
+    [JsonPropertyName("share_id")]
+    public Guid? ShareId { get; init; }
+    [JsonPropertyName("actual_share_id")]
+    public Guid? ActualShareId { get; init; }
+    [JsonPropertyName("actual_frames")]
+    public long ActualFrames { get; init; }
+    [JsonPropertyName("actual_audio")]
+    public bool? ActualAudio { get; init; }
     [JsonPropertyName("actual_fit_text")]
     public bool? ActualFitText { get; init; }
     [JsonPropertyName("desired_generation")]

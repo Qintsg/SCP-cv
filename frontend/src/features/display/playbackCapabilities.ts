@@ -50,5 +50,6 @@ export function supportsRequestedPlaybackControls(session: SessionSnapshot | und
  */
 export function playbackSliderScope(session: SessionSnapshot): string {
   return JSON.stringify([session.window_id, session.source_id, session.source_uri,
-    session.actual_source_id, session.actual_adapter_kind, session.desired_generation, session.observed_generation]);
+    session.actual_source_id, session.actual_adapter_kind, session.desired_generation, session.observed_generation,
+    session.share_id, session.actual_share_id]);
 }

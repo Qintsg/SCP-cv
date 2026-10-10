@@ -1,17 +1,15 @@
 <script setup lang="ts">
 /**
  * 显示控制视图：单窗口源切换 + 播放控制。
- * 路由参数 :target 决定当前窗口；移动端额外使用 SegmentedControl 替代左侧 Nav。
+ * 路由参数 :target 决定逻辑窗口；移动端使用原生单选组替代左侧导航，墙面布局不隐藏目标。
  */
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, type HTMLAttributes } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import {
   NCard,
   NEmpty,
   NAlert,
-  NRadio,
-  NRadioGroup,
   NTabs,
   NTabPane,
 } from 'naive-ui';
@@ -22,13 +20,12 @@ import SourcePicker from './SourcePicker.vue';
 import ScreenSharePanel from '../screen-share/ScreenSharePanel.vue';
 import { DISPLAY_TARGETS, resolveDisplayTarget } from './displayTargets';
 import { useBreakpoint } from '@/composables/useBreakpoint';
-import { useRuntimeStore } from '@/stores/runtime';
 import { useSessionStore } from '@/stores/sessions';
+import { isActualScreenShare, isRequestedScreenShare } from './playbackObservation';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
-const runtime = useRuntimeStore();
 const sessionStore = useSessionStore();
 const { isMobile } = useBreakpoint();
 
@@ -41,68 +38,61 @@ const currentSession = computed(() => {
 });
 
 const targetCaption = computed(() => {
-  if (runtime.runtime?.big_screen_mode === 'custom') return t('videoWall.logicalWindowHint');
-  if (targetMeta.value?.windowId === 1) {
-    return runtime.isDoubleScreen
-      ? t('display.bigLeftSubtitle')
-      : t('display.bigSubtitle');
-  }
-  if (!currentSession.value || !currentSession.value.source_id) {
-    return t('display.idle');
-  }
-  return t('display.currentSource', { name: currentSession.value.source_name || t('display.idle') });
+  const session = currentSession.value;
+  const name = isRequestedScreenShare(session) || isActualScreenShare(session) ? t('screenShare.title')
+    : session?.source_id ? session.source_name : '';
+  return [t('videoWall.logicalWindowHint'), name ? t('display.currentSource', { name }) : t('display.idle')].join(' · ');
 });
 
-const blocksForSingleMode = computed(
-  () => targetMeta.value?.doubleScreenOnly && !runtime.isDoubleScreen,
-);
-
-const availableTargets = computed(() =>
-  DISPLAY_TARGETS.filter((target) => !(target.doubleScreenOnly && !runtime.isDoubleScreen)).map((target) => ({
-    ...target,
-    title: runtime.runtime?.big_screen_mode === 'custom'
-      ? t(target.windowId === 1 ? 'videoWall.window1' : 'videoWall.window2') : target.title,
-  })),
-);
-const targetTitle = computed(() => availableTargets.value.find((target) => target.param === targetParam.value)?.title
+const availableTargets = DISPLAY_TARGETS;
+const targetTitle = computed(() => availableTargets.find((target) => target.param === targetParam.value)?.title
   ?? t('display.windowUnknown'));
 
 type TabId = 'source' | 'control';
 const mobileTab = ref<TabId>('source');
 
+/** :param id: 当前移动页签。:returns: 真实Naive页签的选择、面板关系及键盘语义，不模拟点击事件。 */
+function mobileTabProps(id: TabId): HTMLAttributes {
+  return {
+    id: `display-tab-${id}`, role: 'tab', tabindex: mobileTab.value === id ? 0 : -1,
+    'aria-selected': mobileTab.value === id, 'aria-controls': `display-panel-${id}`,
+    onKeydown: (event: KeyboardEvent) => {
+      const next = event.key === 'Home' ? 'source' : event.key === 'End' ? 'control'
+        : ['ArrowLeft', 'ArrowRight'].includes(event.key) ? id === 'source' ? 'control' : 'source'
+          : ['Enter', ' '].includes(event.key) ? id : null;
+      if (!next) return;
+      event.preventDefault();
+      mobileTab.value = next;
+      void nextTick(() => document.getElementById(`display-tab-${next}`)?.focus());
+    },
+  };
+}
+
 const commandObservation = computed(() => (
   targetMeta.value ? sessionStore.commandObservation(targetMeta.value.windowId) : null
 ));
 
+/** :param value: 明确逻辑目标路由。:returns: 仅切换控制视图，不下发墙面或播放命令。 */
 function changeTarget(value: string): void {
   void router.push(`/display/${value}`);
 }
 
+/** :returns: 窄屏受理普通切源后显示控制区，实际播出仍等待Worker报告。 */
 function handleSourceOpened(): void {
   if (isMobile.value) mobileTab.value = 'control';
 }
 
-async function switchToDouble(): Promise<void> {
-  await runtime.setBigScreenMode('double');
-}
-
-const segmentValue = computed({
-  get: () => targetParam.value,
-  set: (value: string) => changeTarget(value),
-});
 </script>
 
 <template>
   <div class="display-view">
-    <n-radio-group
-      v-if="isMobile"
-      v-model:value="segmentValue"
-      :aria-label="t('display.windowSelectAria')"
-    >
-      <n-radio v-for="target in availableTargets" :key="target.param" :value="target.param">
-        {{ target.title }}
-      </n-radio>
-    </n-radio-group>
+    <fieldset v-if="isMobile" class="display-view__targets" :aria-label="t('display.windowSelectAria')">
+      <label v-for="target in availableTargets" :key="target.param">
+        <input type="radio" name="display-target" :value="target.param" :checked="targetParam === target.param"
+          :aria-label="target.title" @change="changeTarget(target.param)">
+        <span>{{ target.title }}</span>
+      </label>
+    </fieldset>
 
     <header class="display-view__hero">
       <p class="display-view__eyebrow">{{ t('display.windowEyebrow', { id: targetMeta?.windowId ?? '?' }) }}</p>
@@ -131,18 +121,7 @@ const segmentValue = computed({
 
     <ScreenSharePanel v-if="targetMeta && currentSession" :key="targetMeta.windowId" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
 
-    <n-card v-if="blocksForSingleMode">
-      <n-empty :description="t('display.blockedDesc')">
-        <template #icon>
-          <FIcon name="tv_24_regular" />
-        </template>
-        <template #extra>
-          <button class="display-view__cta" @click="switchToDouble">{{ t('display.switchToDouble') }}</button>
-        </template>
-      </n-empty>
-    </n-card>
-
-    <template v-else-if="!currentSession">
+    <template v-if="!currentSession">
       <n-card>
         <n-empty :description="t('display.loadingDesc')">
           <template #icon>
@@ -153,11 +132,13 @@ const segmentValue = computed({
     </template>
 
     <template v-else-if="isMobile">
-      <n-tabs v-model:value="mobileTab" type="line" :aria-label="t('display.viewSwitchAria')">
-        <n-tab-pane name="source" :tab="t('display.tabSource')">
+      <n-tabs v-model:value="mobileTab" type="line" role="tablist" :aria-label="t('display.viewSwitchAria')">
+        <n-tab-pane name="source" :tab="t('display.tabSource')" :tab-props="mobileTabProps('source')"
+          id="display-panel-source" role="tabpanel" aria-labelledby="display-tab-source">
           <SourcePicker :window-id="currentSession.window_id" @opened="handleSourceOpened" />
         </n-tab-pane>
-        <n-tab-pane name="control" :tab="t('display.tabControl')">
+        <n-tab-pane name="control" :tab="t('display.tabControl')" :tab-props="mobileTabProps('control')"
+          id="display-panel-control" role="tabpanel" aria-labelledby="display-tab-control">
           <PlaybackControl :session="currentSession" />
         </n-tab-pane>
       </n-tabs>
@@ -180,6 +161,26 @@ const segmentValue = computed({
   flex-direction: column;
   gap: var(--spacingVerticalL);
   max-width: 1440px;
+}
+
+.display-view__targets {
+  display: flex;
+  gap: var(--spacingHorizontalM);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.display-view__targets label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacingHorizontalS);
+  min-height: var(--touch-target-min);
+  cursor: pointer;
+}
+
+.display-view__targets input {
+  accent-color: var(--colorBrandBackground);
 }
 
 .display-view__hero {
@@ -243,25 +244,6 @@ const segmentValue = computed({
   min-width: 0;
 }
 
-.display-view__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 var(--spacingHorizontalL);
-  height: 40px;
-  border: none;
-  border-radius: var(--borderRadiusMedium);
-  background: var(--colorBrandBackground);
-  color: #ffffff;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: var(--shadow2);
-}
-
-.display-view__cta:hover {
-  background: var(--colorBrandBackgroundHover);
-}
-
 @media (max-width: 1023px) {
   .display-view__columns {
     grid-template-columns: 1fr;
@@ -269,6 +251,16 @@ const segmentValue = computed({
 }
 
 @media (max-width: 767px) {
+  .display-view :deep(.n-tabs-tab[role='tab']) {
+    min-height: var(--touch-target-min);
+    align-items: center;
+  }
+
+  .display-view :deep(.n-tabs-tab[role='tab']:focus-visible) {
+    outline: var(--strokeWidthThick) solid var(--colorBrandStroke1);
+    outline-offset: 2px;
+  }
+
   .display-view__hero {
     padding: var(--spacingVerticalL) var(--spacingHorizontalL) var(--spacingVerticalXL);
   }

@@ -80,6 +80,13 @@ public sealed class LegacyHttpContractTests
             Assert.Equal([1, 2], sessions.Select(item => item.GetProperty("window_id").GetInt32()));
             AssertPlaybackSessionShape(sessions[0]);
             Assert.Equal("pdf", sessions[0].GetProperty("playback_mode").GetString());
+            foreach (var session in sessions)
+            {
+                Assert.Equal(JsonValueKind.Null, session.GetProperty("share_id").ValueKind);
+                Assert.Equal(JsonValueKind.Null, session.GetProperty("actual_share_id").ValueKind);
+                Assert.Equal(0, session.GetProperty("actual_frames").GetInt64());
+                Assert.Equal(JsonValueKind.Null, session.GetProperty("actual_audio").ValueKind);
+            }
         }
 
         using (var response = await client.GetAsync("/api/sessions/1/"))
@@ -269,7 +276,8 @@ public sealed class LegacyHttpContractTests
         "display_mode", "display_mode_label", "target_display_label", "current_slide", "total_slides",
         "position_ms", "duration_ms", "pending_command", "player_online", "player_last_seen_at",
         "last_updated_at", "volume", "is_muted", "loop_enabled", "actual_source_id", "actual_adapter_kind", "actual_fit_text",
-        "desired_generation", "observed_generation", "cleanup_pending");
+        "desired_generation", "observed_generation", "cleanup_pending",
+        "share_id", "actual_share_id", "actual_frames", "actual_audio");
 
     private static void AssertObjectHasExactly(JsonElement element, params string[] expectedNames)
     {

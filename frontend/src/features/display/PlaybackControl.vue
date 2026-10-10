@@ -38,8 +38,9 @@ import { buildBackendUrl, type SessionSnapshot } from '@/services/api';
 import { playbackSliderScope, supportsRequestedPlaybackControls, supportsWindowAudioControls } from './playbackCapabilities';
 import { isPresentationPreviewAdapter, usePresentationPreview } from './usePresentationPreview';
 import { usePlaybackErrorGate } from './usePlaybackErrorGate';
-import { isConfirmedPlayback } from './playbackObservation';
-import { resolveActualOutputSource } from './playbackOutput';
+import { isConfirmedPlayback, isRequestedScreenShare, playbackStateTagType } from './playbackObservation';
+import { resolveActualOutputSource, resolveActualScreenShare } from './playbackOutput';
+import ScreenShareOutputStatus from '../screen-share/ScreenShareOutputStatus.vue';
 import PresentationEffectControls from './PresentationEffectControls.vue';
 import { usePresentationCommandFeedback } from './usePresentationCommandFeedback';
 
@@ -61,6 +62,13 @@ const { context: previewContext, resources: pptResources, error: pptError,
 const usesPresentationPreview = computed(() => isPresentationPreviewAdapter(props.session.actual_adapter_kind)
   || category.value === 'ppt' && !['image', 'web', 'vlc'].includes(props.session.actual_adapter_kind ?? ''));
 const actualSource = computed(() => resolveActualOutputSource(props.session, sourceStore.findById));
+const actualShare = computed(() => resolveActualScreenShare(props.session));
+const requestedShare = computed(() => isRequestedScreenShare(props.session));
+const hasContent = computed(() => Boolean(props.session.source_id) || requestedShare.value || Boolean(actualShare.value));
+const shareStopPending = computed(() => !props.session.source_id && !requestedShare.value && Boolean(actualShare.value));
+const sharedStateLabel = computed(() => shareStopPending.value ? t('screenShare.output.stopPending')
+  : !props.session.player_online ? t('playback.playerOfflineTitle') : props.session.playback_state === 'error'
+    ? props.session.playback_state_label : isConfirmedPlayback(props.session) ? t('screenShare.phases.sharing') : t('screenShare.output.waiting'));
 const monitorSource = computed(() => usesPresentationPreview.value
   ? sourceStore.findById(previewContext.value?.sourceId ?? null) ?? null : actualSource.value);
 const outputMismatch = computed(() => typeof props.session.actual_source_id === 'number'
@@ -77,23 +85,7 @@ const canAdjustWindowAudio = computed(() => (
   && supportsWindowAudioControls(props.session.source_type)
 ));
 
-type NTagType = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
-
-const stateType = computed<NTagType>(() => {
-  if (!props.session.source_id) return 'default';
-  switch (props.session.playback_state) {
-    case 'playing':
-      return 'success';
-    case 'paused':
-    case 'loading':
-      return 'warning';
-    case 'error':
-      return 'error';
-    case 'idle':
-    default:
-      return 'default';
-  }
-});
+const stateType = computed(() => playbackStateTagType(props.session));
 
 const jumpInput = ref<string>('');
 
@@ -265,10 +257,10 @@ const errorBarDescription = computed(() => {
         <SourceThumbnail v-if="currentSource" :source="currentSource" size="comfortable" />
         <div>
           <n-tag :type="stateType" round size="small">
-            {{ session.source_id ? (session.playback_state_label || session.playback_state) : t('playback.idle') }}
+            {{ requestedShare || shareStopPending ? sharedStateLabel : session.source_id ? (session.playback_state_label || session.playback_state) : t('playback.idle') }}
           </n-tag>
           <h3 class="playback-control__source-name">
-            {{ session.source_name && session.source_id ? session.source_name : t('playback.notOpened') }}
+            {{ requestedShare || shareStopPending ? t('screenShare.title') : session.source_name && session.source_id ? session.source_name : t('playback.notOpened') }}
           </h3>
           <p v-if="outputMismatch" class="playback-control__caption">{{ t('playback.requestedSourceLabel') }}</p>
           <p v-if="session.source_id" class="playback-control__caption">
@@ -295,7 +287,8 @@ const errorBarDescription = computed(() => {
       </RouterLink>
     </header>
 
-    <section v-if="outputReferenceVisible" class="playback-control__monitor" aria-live="polite">
+    <ScreenShareOutputStatus v-if="actualShare" :frames="actualShare.frames" :audio="actualShare.audio" :online="session.player_online" />
+    <section v-else-if="outputReferenceVisible" class="playback-control__monitor" aria-live="polite">
       <SourceThumbnail v-if="monitorSource" :source="monitorSource" size="stage" :image-url="currentPagePreviewUrl"
         :allow-source-preview="!usesPresentationPreview" />
       <div class="playback-control__monitor-copy">
@@ -439,6 +432,9 @@ const errorBarDescription = computed(() => {
       </n-button>
     </section>
 
+    <section v-else-if="requestedShare || actualShare" class="playback-control__section">
+      <p class="playback-control__caption">{{ t('screenShare.output.temporary') }}</p>
+    </section>
     <section v-else class="playback-control__section">
       <p class="playback-control__caption">{{ t('playback.noSource') }}</p>
     </section>
@@ -466,12 +462,13 @@ const errorBarDescription = computed(() => {
             :value="session.is_muted"
             :aria-label="t('playback.windowMute')"
             :disabled="!canAdjustWindowAudio || playbackControlsDisabled"
+            :aria-disabled="!canAdjustWindowAudio || playbackControlsDisabled"
             @update:value="onMuteToggle"
           />
         </div>
-        <n-button v-if="session.source_id" type="error" :disabled="controlsDisabled" @click="onClose">
+        <n-button v-if="hasContent" type="error" :disabled="controlsDisabled || shareStopPending" @click="onClose">
           <template #icon><FIcon name="dismiss_24_regular" /></template>
-          {{ t('playback.closeDisplay') }}
+          {{ t(requestedShare || shareStopPending ? 'screenShare.stop' : 'playback.closeDisplay') }}
         </n-button>
       </div>
     </section>

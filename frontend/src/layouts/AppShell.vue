@@ -39,9 +39,7 @@ const navVariant = computed<'bottom' | 'rail' | 'drawer'>(() =>
 );
 
 const primaryItems = computed<NavItemDef[]>(() =>
-  DESKTOP_PRIMARY_NAV.filter(
-    (item) => !(item.doubleScreenOnly && !runtime.isDoubleScreen),
-  ).map((item) => ({
+  DESKTOP_PRIMARY_NAV.map((item) => ({
     ...item,
     label: item.path.startsWith('/display/')
       ? resolveDisplayLabel(item.path, runtime.isDoubleScreen, runtime.runtime?.big_screen_mode === 'custom')

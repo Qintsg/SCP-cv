@@ -24,7 +24,7 @@
 - [X] T006 [US1] 实现`ScreenShareService.cs`、`ScreenShareEndpoints.cs`及Program装配，接收页cap/schema/来源/阶段保护；Hardware与Simulation均测真实装配，后者不冒称出画。
 - [X] T007 [US1] 在`ScpCv.Windows.Tests/ScreenSharePlaybackTests.cs`及`PlayerRuntimeHostScreenShareTests.cs`写后帧/首帧失败/跨资源回调回归；先拆分较大的`PlayerRuntimeHost.cs`的Web资源方法，新增`PlayerRuntimeHost.ScreenShare.cs`和独立`ScreenSharing/`专用资源与实际采样，不使用普通web缓存；本机正式Host原生后帧/释放与HTTP拒绝通过，D4正式Worker仍留T016。
 - [X] T008 [US1] 在`frontend/scripts/screen-sharing.test.mjs`写原生许可先于API、拒绝零OPEN/释放轨道/两目标回归，实现`rtcPeer.ts`、`services/screenSharing.ts`、`useScreenShare.ts`、`ScreenSharePanel.vue`，接入`DisplayControlView.vue`；24项相关回归、全前端322及实际浏览器采集/释放通过，信令替身不算Player出画。
-- [ ] T009 [US1] 检查并修改`playbackObservation.ts`、`playbackCapabilities.ts`、`playbackOutput.ts`、`PlaybackControl.vue`、`DisplayControlView.vue`及`stores/sessions.ts`对共享null source_id的显示、关闭、能力与刷新；HTTP/SSE合同有明确共享身份，不造永久媒体源。
+- [X] T009 [US1] 检查并修改`playbackObservation.ts`、`playbackCapabilities.ts`、`playbackOutput.ts`、`PlaybackControl.vue`、`DisplayControlView.vue`及`stores/sessions.ts`对共享null source_id的显示、关闭、能力与刷新；HTTP/SSE合同有明确共享身份，不造永久媒体源。14项后端投影回归、最终全非Physical1317/全前端334及真实页面12场景通过；后台实际释放仍留T011。
 
 ## Phase 4: User Story 2（P1）
 

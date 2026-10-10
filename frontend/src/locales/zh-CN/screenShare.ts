@@ -6,6 +6,11 @@ export default {
     frames: '已接收 {count} 帧', noAudio: '仅共享画面：浏览器未提供内容音轨。',
     audioPresent: '检测到内容音轨；接收端音频控制仍在验证，当前静音。',
     stopPending: '本地采集已停止，正在等待播放器实际释放；不会自动重新共享。',
+    output: {
+      current: '播放器实际共享状态', last: '最后报告的共享状态（播放器离线）', waiting: '等待共享画面',
+      stopPending: '共享停止待确认', audioUnknown: '尚未确认接收端的内容音轨。',
+      temporary: '临时实时画面，不存入媒体库或预案；不能暂停、定位、循环或自动重开。',
+    },
     phases: {
       idle: '点击后在浏览器选择器中确认共享内容。', selecting: '请在浏览器选择器中确认；尚未切换播放器。',
       connecting: '正在连接播放器；尚未收到实际画面。', sharing: '已收到画面', stopping: '停止已受理，等待播放器确认。',

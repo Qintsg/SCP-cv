@@ -25,3 +25,7 @@
 ## 现有运行时
 
 动态OPEN/CLOSE仍走队列及源代次。actual source_id=null、adapter_kind=screen_share不能投影成“无输出”；共享身份字段需显式接入HTTP/SSE/前端观察，不赋予文件定位或循环能力。
+
+## ScreenSharePlaybackProjection（内存公共投影）
+
+只保存两个窗口各自的非秘密分享ID、OPEN代次、原Worker实例/owner及最新已提交报告版本、实际帧和音轨存在。请求`share_id`与实际`actual_share_id`分离；持久会话的desired/observed代次分别匹配才补字段。帧数不倒退，旧post-commit回调不恢复后来已清除的共享；缺失或畸形实际字段保守清空实际身份。重启不能凭数据库中的null源/adapter还原分享，不保存SDP、cap、媒体URI、画面或永久媒体库条目。

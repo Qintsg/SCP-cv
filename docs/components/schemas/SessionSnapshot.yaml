@@ -72,7 +72,7 @@ properties:
   position_ms:
     type: integer
     nullable: true
-    description: LibreOffice统一媒体时钟不可得时为null，不伪造零进度。
+    description: LibreOffice统一媒体时钟不可得或临时screen_share时为null，不伪造文件进度。
   duration_ms:
     type: integer
     nullable: true
@@ -82,6 +82,25 @@ properties:
     description: 最后确认的实际源，可能与请求中的source_id不同；未确认关闭前保留占用。若旧资源已确认关闭且失败候选也已释放，明确为空而非保留已关闭源；清理不确定不得据此猜空输出。
   actual_adapter_kind:
     type: string
+  share_id:
+    type: string
+    format: uuid
+    nullable: true
+    description: 当前临时共享请求身份；source_id为null、source_type为screen_share，不是媒体库条目。不含receiver能力或信令，服务重启清空。
+  actual_share_id:
+    type: string
+    format: uuid
+    nullable: true
+    description: 已由原Worker的instance/owner/源代次及实际资源字段匹配的临时输出身份，可在换源待确认时与share_id不同。身份或帧数缺失不由adapter或playing补齐。
+  actual_frames:
+    type: integer
+    format: int64
+    minimum: 0
+    description: 当前实际共享资源报告的视频后帧计数，不是HTTP请求、心跳或连接次数。零值不能宣称出画；非共享或未知时为0。
+  actual_audio:
+    type: boolean
+    nullable: true
+    description: 实际共享接收资源是否有内容音轨；未知或非共享为null，不代表声卡实际已播放。音量/静音能力另行验证。
   actual_fit_text:
     type: boolean
     nullable: true

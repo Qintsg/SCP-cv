@@ -54,6 +54,7 @@ public sealed partial class RuntimeStateService
             command.SourceRevision = 0;
             command.Deadline = _timeProvider.GetUtcNow().AddSeconds(20);
             bindBeforeCommit(generation);
+            _screenSharePlayback.Bind(target, shareId, generation);
         }, cancellationToken).ConfigureAwait(false);
         return new(sessions.Single(session => session.WindowId == target.WindowId).SubmittedCommandId!.Value, target.WindowId, generation);
     }

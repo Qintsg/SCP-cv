@@ -20,8 +20,9 @@ export async function createDomTestServer() {
     server: { middlewareMode: true, hmr: false, ws: false, watch: null },
     resolve: { alias: { '@': `${frontendRoot.replaceAll('\\', '/')}/src` } },
     optimizeDeps: { noDiscovery: true, include: [] },
-    // 这两个包的 CJS 重导出在 Node 24.13 无完整命名空间；让 Vite 解析其真实 ESM 入口。
-    ssr: { noExternal: ['naive-ui', 'vueuc'] },
+    // CJS 重导出在 Node 24.13 无完整命名空间；客户端组件测试由 Vite 加载真实 ESM。
+    // Fluent 的 node 条件优先指向 CJS，因此这里明确按浏览器条件选择客户端入口。
+    ssr: { noExternal: ['naive-ui', 'vueuc', '@fluentui/tokens'], resolve: { conditions: ['browser', 'module', 'development'] } },
     plugins: [{
       name: 'test-client-sfc',
       /**

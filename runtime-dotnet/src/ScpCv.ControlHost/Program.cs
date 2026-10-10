@@ -132,6 +132,7 @@ else
     builder.Services.AddSingleton<IVideoWallController, TcpVideoWallController>();
 }
 builder.Services.AddSingleton<RuntimeStateService>();
+builder.Services.AddSingleton<ScreenSharePlaybackProjection>();
 builder.Services.AddSingleton(ScreenShareOptions.FromConfiguration(builder.Configuration));
 builder.Services.AddSingleton<ScreenShareRegistry>();
 builder.Services.AddSingleton<ScreenShareService>();

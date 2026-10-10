@@ -95,7 +95,7 @@ public sealed partial class RuntimeStateService
             .Where(session => session.WindowId <= WindowId.Maximum)
             .OrderBy(session => session.WindowId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
-        return sessions.Select(session => ToSessionDto(session, _timeProvider.GetUtcNow())).ToArray();
+        return sessions.Select(session => ToSessionDto(session, _timeProvider.GetUtcNow(), _screenSharePlayback)).ToArray();
     }
 
     private DateTimeOffset NextTimestamp(DateTimeOffset previous)

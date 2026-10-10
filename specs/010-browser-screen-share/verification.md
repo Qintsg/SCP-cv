@@ -69,10 +69,24 @@
 - 每轮两个页面同时持有自己的真实video live轨道/peer；先停目标1，目标2仍live及have-local-offer；最终两轨道ended、两peer实际connection/signaling closed。替身DELETE各一次，返回stopping时禁止新共享，手动GET closed才重新允许；这证明前端资源释放/状态边界，不证明实际原生Player释放。主代理查看首轮浅/深/停止及最终浅深键盘原图。
 - 在线uv请求CERNET PyPI页面超时，实际进程终止后用已有uv离线缓存运行Playwright，不更改镜像/安装依赖。pnpm11.24对旧manage_package_manager_versions=false忽略并试图下载项目11.22；按当前本地CLI实现用仅本命令`--pm-on-fail=ignore`避免下载，不修改仓库或全局配置、不改依赖。新增代码均不足500行，文档/合同/坑81同步；本阶段没有部署010、操作墙面/电源或原媒体。
 
+## 2026-10-11 / T009临时HTTP/SSE输出与控制
+
+- 新增两窗口有界`ScreenSharePlaybackProjection`，仅内存记录非秘密分享ID/原Worker/代次/实际帧与音轨。OPEN事务绑定；状态报告通过持久身份/代次门禁并提交后才补观测，单调会话版本防异步倒序。DTO同时核持久请求/观测代次，不造MediaSource、不持久接收URI/cap、重启不恢复。HTTP与SSE共用明确`share_id/actual_share_id/actual_frames/actual_audio`，普通源空/空/0/空，共享文件时钟为null。
+- 正式认证HTTP/SSE最初七项全红，接线后七项通过；新增纯值乱序、帧单调、Worker替换、两窗隔离、重启及未提交代次七项，合计14/14、0失败/跳过，`t009-tests/t009-memory-projection.trx`和`t009-memory-projection.log`。纯值未提交代次用例不是实际提交失败实验；真实事务回滚仍由既有T005集成用例覆盖。
+- 控制条正确显示null媒体库ID共享，不借普通文件缩略图、不自动重开；同分享/代次、在线及正帧才显示已收到画面。停止仅DELETE原分享ID并GET刷新；意图清除但实际共享仍在时禁用重复窗口关闭、显示停止待确认，不沿用历史playing成功色。共享音量/静音仍明确禁用，实际音轨存在不宣称已听到音频，专用桥留T013。
+- 两逻辑窗口在single/double/custom都可达，选择路由零HTTP写操作。真实Naive页签通过tabProps补role/选择/面板关系、方向键/Home/End与焦点；窄屏使用可见原生单选组，真实方向键核对目标，标签及页签至少44px，焦点为主题令牌2px实线。停止标签、禁用ARIA、手机页签先红后修；截图自审发现重复限制说明，新增精确次数断言真实红2≠1后删去重复段落。
+- 最终全前端334/334、0失败/取消/跳过，实际退出0；`t009-final-caption-all-frontend.log`，94475ms。最后build:web包含vue-tsc并实际退出0，`t009-final-caption-build-web.log`，保留既有>500kB入口告警；此前331/334及原始红分别保留，不算最后代码的最终结果。新增外壳DOM测试加载真实Fluent客户端ESM，不改变生产依赖或模拟组件。
+- 真实Chromium渲染正式外壳/显示页/Pinia/Naive组件，以HTTP替身及实际store观察入口核公开状态，不采集或传输媒体。1440/390×浅深×single/double/custom共12场景，核零帧/离线/正帧/停止待确认、无缩略图、禁用能力、导航零写入、键盘原ID停止一次、无横溢及pageerror/console error为0。系统采集选择器、正式Player和D4均不在本轮浏览器证据范围。
+- 完整键盘验证连续五轮每轮12/12：`29cdcfb2ea384cde8e7b391f8a89ecf5`、`3504f7272601471e91f0e760f0f676fe`、`37cf071388c94ef791ff1be10b238701`、`76d615f99a2349ba86bf14017b8f21cd`、`1a7a52fe67f946c592f2f50f6cabcc6a`，均在`t009-browser-runs/`。去重文案后最后一轮`6e740b3920ab49458feb2f9ab6bf1672`再次12/12，主代理已查看最终手机浅色与桌面深色原图，以及此前手机深色停止/浅色键盘焦点和桌面浅深原图。早期Provider缺失、ARIA、页签及隐藏单选输入的失败原件全部保留；隐藏输入导致check拒绝不等同证明第三方全部键盘逻辑损坏。
+- 最初全量后端失败两项：旧正常会话合同字段集合未包含新增四字段，以及Contracts子进程清理超时。合同保持严格集合相等并补普通源默认值断言，不放宽校验；子进程用例单独重跑1/1及串行全量Contracts324通过，没有改生产或测试时限，不能宣称其根因已修。首次固定TRX覆盖也保留，不将单个被覆盖TRX当全套证明。
+- 最后重新构建、串行全非Physical.NET实际1317/1317、0失败/跳过，命令退出0，`t009-final-full-dotnet.log`和`t009-final-full-results/`六个独立TRX：Contracts324、ControlHost347、Domain41、Infrastructure171、Integration271、Windows163，逐项核total=executed=passed。此前T007的1303不是本轮计数。
+- Redocly通过、退出0，`t009-redocly-direct.log`，仍为四项既有PowerPoint退役/背景音频组合告警。第一次根目录pnpm exec触发依赖检查并因非TTY中止，没有成功验证；后直接运行既有缓存Redocly CLI，不安装依赖、不删除node_modules、不更改CERNET配置或生成Node锁。最终Spec Kit全目录通过，`t009-final-spec-kit.log`；diff校验通过，所有本轮代码不足500行，extensions.yml不存在。
+- 本机自有Vite5210已关闭（中断退出1不是测试失败），CIM核匹配本轮浏览器QA/该Vite进程0，TCP5210监听0；浏览器finally关闭独占上下文。没有推送/部署010、更换D4源或发送墙面/电源。最新D4旧稳定部署只读复核不计本功能验收。
+
 ## 仍未实现/未验证
 
 此前基础阶段全非Physical1231/1231的独立证据保留于`.validation/qa-screen-share-010/retained-full-test-results/`与`full-test-retained.log`；当时未改API/前端而未跑的验证现已在上述后端接入阶段执行。旧失败、覆盖TRX及调试输出不删除，最终T018仍待完整功能接线后重验。
 
-T009及之后未完成：HTTP/SSE/null源身份、后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
+T010及之后未完成：后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
 
 上述本机prototype不能勾选FR-001至FR-011或SC-001至SC-005全部完成，不把以前D4部署/媒体测试作为本功能证据。

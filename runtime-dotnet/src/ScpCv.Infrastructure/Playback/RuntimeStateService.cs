@@ -21,7 +21,8 @@ public sealed partial class RuntimeStateService(
     IVideoWallController? videoWall = null,
     BigScreenOutputOptions? bigScreenOutputs = null,
     VideoWallProtocolOptions? wallProtocol = null,
-    VideoWallOperationGate? wallGate = null)
+    VideoWallOperationGate? wallGate = null,
+    ScreenSharePlaybackProjection? screenSharePlayback = null)
 {
     private static readonly int[] Windows = [1, 2];
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
@@ -32,6 +33,7 @@ public sealed partial class RuntimeStateService(
     private readonly BigScreenOutputOptions _bigScreenOutputs = bigScreenOutputs ?? new BigScreenOutputOptions();
     private readonly VideoWallProtocolOptions _wallProtocol = wallProtocol ?? new();
     private readonly VideoWallOperationGate _wallGate = wallGate ?? new();
+    private readonly ScreenSharePlaybackProjection _screenSharePlayback = screenSharePlayback ?? new();
 
     public async Task<IReadOnlyList<PlaybackSessionDto>> GetSessionsAsync(CancellationToken cancellationToken = default)
     {
@@ -41,7 +43,7 @@ public sealed partial class RuntimeStateService(
             .Where(session => session.WindowId <= WindowId.Maximum)
             .OrderBy(session => session.WindowId)
             .ToListAsync(cancellationToken).ConfigureAwait(false);
-        return sessions.Select(session => ToSessionDto(session, _timeProvider.GetUtcNow())).ToArray();
+        return sessions.Select(session => ToSessionDto(session, _timeProvider.GetUtcNow(), _screenSharePlayback)).ToArray();
     }
 
     public async Task<PlaybackSessionDto> GetSessionAsync(int windowId, CancellationToken cancellationToken = default)
@@ -51,7 +53,7 @@ public sealed partial class RuntimeStateService(
         var session = await database.PlaybackSessions.AsNoTracking()
             .Include(item => item.MediaSource)
             .SingleAsync(item => item.WindowId == windowId, cancellationToken).ConfigureAwait(false);
-        return ToSessionDto(session, _timeProvider.GetUtcNow());
+        return ToSessionDto(session, _timeProvider.GetUtcNow(), _screenSharePlayback);
     }
 
     public async Task<RuntimeStateDto> GetRuntimeAsync(CancellationToken cancellationToken = default)
@@ -332,11 +334,12 @@ public sealed partial class RuntimeStateService(
             ? session with { SubmittedCommandId = submitted.CommandId } : session).ToArray();
     }
 
-    public static PlaybackSessionDto ToSessionDto(PlaybackSession session, DateTimeOffset now)
+    public static PlaybackSessionDto ToSessionDto(PlaybackSession session, DateTimeOffset now,
+        ScreenSharePlaybackProjection? screenSharePlayback = null)
     {
         var source = session.MediaSource;
         var sourceType = source is null ? string.Empty : MediaSourceService.SourceTypeName(source.SourceType);
-        return new PlaybackSessionDto
+        var snapshot = new PlaybackSessionDto
         {
             WindowId = session.WindowId,
             SessionId = session.Id,
@@ -354,8 +357,8 @@ public sealed partial class RuntimeStateService(
             TargetDisplayLabel = session.TargetDisplayLabel.Length == 0 ? "未选择" : session.TargetDisplayLabel,
             CurrentSlide = session.CurrentSlide,
             TotalSlides = session.TotalSlides,
-            PositionMs = session.ActualAdapterKind == "libreoffice" ? null : session.PositionMs,
-            DurationMs = session.ActualAdapterKind == "libreoffice" ? null : session.DurationMs,
+            PositionMs = session.ActualAdapterKind is "libreoffice" or "screen_share" ? null : session.PositionMs,
+            DurationMs = session.ActualAdapterKind is "libreoffice" or "screen_share" ? null : session.DurationMs,
             ActualSourceId = session.ActualSourceId,
             ActualAdapterKind = session.ActualAdapterKind,
             ActualFitText = session.ActualFitText,
@@ -370,6 +373,7 @@ public sealed partial class RuntimeStateService(
             IsMuted = session.IsMuted,
             LoopEnabled = session.LoopEnabled,
         };
+        return screenSharePlayback?.Project(snapshot) ?? snapshot;
     }
 
     private static RuntimeStateDto ToRuntimeDto(RuntimeState runtime) => new()

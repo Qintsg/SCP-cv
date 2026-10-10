@@ -18,7 +18,8 @@ public sealed partial class ScenarioService(
     TimeProvider? timeProvider = null,
     IVideoWallController? videoWall = null,
     ISystemAudioController? systemAudio = null,
-    VideoWallOperationGate? wallGate = null)
+    VideoWallOperationGate? wallGate = null,
+    ScreenSharePlaybackProjection? screenSharePlayback = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
@@ -329,7 +330,7 @@ public sealed partial class ScenarioService(
         var sessions = await database.PlaybackSessions.AsNoTracking().Include(session => session.MediaSource)
             .Where(session => session.WindowId <= WindowId.Maximum)
             .OrderBy(session => session.WindowId).ToListAsync(cancellationToken).ConfigureAwait(false);
-        return sessions.Select(item => RuntimeStateService.ToSessionDto(item, _timeProvider.GetUtcNow())).ToArray();
+        return sessions.Select(item => RuntimeStateService.ToSessionDto(item, _timeProvider.GetUtcNow(), screenSharePlayback)).ToArray();
     }
 
     private static string SourceTypeName(MediaSourceType type) => type switch
