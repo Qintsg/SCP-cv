@@ -38,5 +38,6 @@ export function useScreenShare(target: () => number, online: () => boolean) {
   watch(() => auth.user?.id, pageEnded);
   watch(online, (value) => { if (!value) void publisher.stop('share_player_offline'); });
   onBeforeUnmount(() => { window.removeEventListener('pagehide', pageEnded); pageEnded(); });
-  return { view, availability, active, start: (audio: boolean) => publisher.start(audio), stop, refreshStop: () => publisher.refreshStop() };
+  return { view, availability, active, start: (audio: boolean) => publisher.start(audio), stop, refreshStop: () => publisher.refreshStop(),
+    setAudio: (volume: number, muted: boolean) => publisher.setAudio(volume, muted) };
 }

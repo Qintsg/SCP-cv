@@ -2,15 +2,17 @@
 
 ## 当前实现状态
 
-010正在开发，尚未部署到D4，尚不能作为完整功能使用。已完成内存会话、发布者/接收者HTTP信令、已认证Worker租约授权、正式Player专用接收资源、网页原生采集面板、动态HTTP/SSE身份展示、后台异常回收及原生释放确认接线。本机两个正式Host十轮交错共30次真实采集、换源及释放通过；这不是正式双Worker或D4跨机验收。内容音频、可信HTTPS及两窗连续运行/实机验收仍在后续任务中。阶段受理和本机Host门禁不能作为完整功能交付。
+010正在开发，尚未部署到D4，尚不能作为完整功能使用。已完成内存会话、HTTP信令、Worker租约授权、正式Player接收资源、网页采集/音频控件、HTTP/SSE身份及后台释放确认。本机两个正式Host十轮共30次真实采集/换源/释放，以及两目标分别有声传输/音量/静音验证通过；不等于正式双Worker或D4验收。可信HTTPS、连续两会话及现场可听效果仍待验证，阶段门禁不当完整交付。
 
 目标是从桌面Chrome/Edge的原生屏幕/应用/标签页选择器直接共享到窗口1或2，不用额外推流程序。不请求麦克风，不保存屏幕媒体，不新增媒体库源，不改变墙面布局或电源。
 
-T013已完成原生专用音量/静音桥及无音轨双接收测试，随后接入本人认证API、领取复核及公共实际属性回读；网页仍未开放该控制，默认接收仍静音。真实内容音频、网页控件、HTTPS与D4验收仍待完成，详见[原生阶段记录](../specs/010-browser-screen-share/verification/t013-native-audio.md)及[HTTP阶段记录](../specs/010-browser-screen-share/verification/t013-audio-http.md)。
+T013原生桥、本人认证API/领取复核、实际回读及网页声音区已接线。默认接收静音，有实际音轨和后帧后可明确开启；本机有声链路和渲染信号已验，系统输出保持原静音，不声称扬声器可听。详见[原生](../specs/010-browser-screen-share/verification/t013-native-audio.md)、[HTTP](../specs/010-browser-screen-share/verification/t013-audio-http.md)及[网页/有声验证](../specs/010-browser-screen-share/verification/t013-audio-ui.md)。
 
 ## 网页操作区（开发阶段）
 
-显示控制页新增当前逻辑窗口的“屏幕共享”操作区。“选择共享内容”在点击时直接打开原生选择器，取得视频轨道后才预约和协商；取消许可不提交OPEN。内容音频选项默认关闭，是否有音轨以浏览器返回结果为准，不请求麦克风。当前接收端仍静音，音频控制留待T013接通验证。
+显示控制页新增当前逻辑窗口的“屏幕共享”操作区。“选择共享内容”在点击时直接打开原生选择器，取得视频轨道后才预约和协商；取消许可不提交OPEN。内容音频默认关闭，是否有音轨以浏览器实际返回为准，不请求麦克风；接收默认静音，须通过共享专用控件明确开启声音。
+
+“实际音量/静音”与设置草稿分开：编辑数字后显式应用，切换静音不顺带应用尚未提交的数字。无本地或接收音轨、未收到后帧时禁用；实际状态未知时只能先静音。202只表示提交，精确命令成功及实际属性匹配才确认。八秒内未确认明确提示，不自动重发；停止、离开或换账号/主机立即取消，音频失败不影响有效视频。
 
 面板分别显示选择中、连接中、实际接收、失败、停止待确认。只有本人状态为receiving、接收帧为正且已应用answer才显示“已收到画面”；心跳、offer受理或RTC连接不单独授予出画状态。目标标签代表窗口1/2，不代表墙面左/右布局。
 
@@ -26,7 +28,7 @@ T013已完成原生专用音量/静音桥及无音轨双接收测试，随后接
 
 共享没有媒体库ID。会话的`share_id`表示当前请求，`actual_share_id`表示匹配原Worker的最后实际共享资源，二者和代次相符、正视频帧、在线且playing才显示“已收到画面”。`actual_frames=0`不能当出画；离线时明确是最后报告，不显示采集缩略图、文件地址或伪进度。`actual_audio`只表示接收资源有无内容音轨，不代表声音已播出。
 
-播放控制条的“停止共享”按原`share_id`停止后刷新，不发送无条件窗口关闭；意图已清而实际共享尚在时显示“共享停止待确认”并禁用重复关闭。重开共享必须重新选择内容，不能从历史记录自动恢复采集。暂停、定位、循环、普通音量和静音当前均禁用，音频桥另行验证。
+播放控制条的“停止共享”按原`share_id`停止后刷新，不发送无条件窗口关闭；意图已清而实际共享尚在时显示“共享停止待确认”并禁用重复关闭。重开须重新选择内容，不从历史自动恢复。暂停、定位、循环及普通音量/静音仍禁用；声音仅由本人当前共享的专用控件控制。
 
 ## 会话与信令
 
@@ -36,7 +38,7 @@ T013已完成原生专用音量/静音桥及无音轨双接收测试，随后接
 - `POST .../{id}/offer/`只接受一次offer，再在SQLite事务中重核原Worker实例/owner/group并排动态OPEN；202不是已经出画。
 - `GET .../{id}/`只返回本人状态和answer；`POST .../{id}/heartbeat/`不增加视频帧；`DELETE .../{id}/`先撤销媒体授权，再按share_id/source_generation条件停止。
 - 已OPEN停止返回`stopping`，不把CLOSE入队或“不再是当前意图”当作资源已退出；实际确认后才能释放目标预约。未OPEN取消直接`closed`，不排CLOSE。
-- `PATCH .../{id}/audio/`严格仅volume整数0..100及muted布尔。只允许本人当前已接收的分享；事务核原Worker/组、当前OPEN及真实后帧，领取时再核授权。202仅提供submitted_command_id，使用`GET /api/playback/{window_id}/commands/{command_id}/`核精确终态，再读本人分享的actual_volume/actual_muted或会话/SSE的actual_share_volume/actual_share_muted；不以请求值冒充应用成功。失败/缺失/非当前或离线时实际值为null，不证明声音已停止；不会修改普通媒体音量或源代次，网页控件仍未开放。
+- `PATCH .../{id}/audio/`严格仅volume整数0..100及muted布尔。只允许本人当前已接收分享；事务核原Worker/组、当前OPEN及真实后帧，领取再核授权。202仅提供submitted_command_id；`GET /api/playback/{window_id}/commands/{command_id}/`核精确终态，再读本人actual_volume/actual_muted或HTTP/SSE实际属性，不用请求值冒充成功。失败/缺失/非当前或离线时null，不证明声音已停止；不改普通媒体音量或源代次。网页普通轮询与操作回读有序，旧在途结果不能覆盖较晚读取。
 
 SDP解码后UTF-8字节不超过64KiB，HTTP请求体另有有限上限（含JSON转义开销）。所有共享响应no-store；错误只返回稳定说明/代码，不输出SDP、候选地址或私有授权。完整[OpenAPI](openapi.yaml)已登记端点；开发期间不要用这些入口替代尚未完成的控制台流程。
 
@@ -50,7 +52,7 @@ SDP解码后UTF-8字节不超过64KiB，HTTP请求体另有有限上限（含JSO
 
 正式Player每次共享使用独占WebView控制器和InPrivate profile，不进普通网页保温池。禁止外链导航、新窗和采集权限；原生消息同时核文档来源、分享/窗口/代次及有限schema。协商完成和预备帧只允许切入准备，实际切入后还须新的`activated=true`视频帧才能完成OPEN；首帧失败释放候选并保留仍可用的旧画面。所有OPEN阶段共用有限预算，过期租约在原生创建前拒绝。
 
-Worker纯值观测包含`share_id/actual_frames/actual_audio`和null媒体ID，音轨字段只是实际存在轨道，不是可听见的声音证明。HTTP/SSE在持久报告通过原Worker实例/owner/源代次门禁并提交后，映射非秘密`actual_share_id/actual_frames/actual_audio`；独立内存投影有版本围栏，重启不从旧数据库还原授权。当前阶段默认静音且拒绝普通播放/暂停/定位/翻页/循环/音量控制，音频桥等待T013实测。
+Worker纯值观测包含`share_id/actual_frames/actual_audio`和null媒体ID，音轨存在不等于可听声音。HTTP/SSE仅在原Worker实例/owner/源代次门禁和提交后映射实际字段，内存版本围栏防旧报告复活，重启不恢复授权。默认静音且普通播放/暂停/定位/翻页/循环/音量拒绝；专用音频桥只确认实际属性，现场可听效果另验。
 
 接收脚本停止会关闭peer、停止远端轨道、清视频srcObject、取消帧回调/HTTP/轮询及ICE等待；Player随后Dispose控制器，停止/换源/退出不保温，旧实例消息不能改变新实例。页面的closed消息不等于原生WebView已Dispose。Player在完整原生Dispose完成后提供原分享/代次的私有IPC回执，后台按已提交原Worker身份采信；CLOSE入队、换源、离线或新Worker均不能冒充旧资源死亡。无法取证保持“停止待确认”，不会擅自杀其他应用。
 
@@ -66,4 +68,4 @@ Worker纯值观测包含`share_id/actual_frames/actual_audio`和null媒体ID，�
 
 浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。正常LAN可信证书部署步骤尚待T014实现，不能使用关闭安全策略/不安全来源flag作为正式方法。
 
-当前自动化覆盖登录/CSRF、离线、争抢、SDP大小、窗口/代次/原Worker围栏、失败撤销、接收来源及停止待确认；模拟接收帧、脚本VM与本机独立WebView原型不算D4两正式Worker出画。真实双窗5分钟、十轮停止/切换、选择器取消和内容音频仍须执行，见[010任务](../specs/010-browser-screen-share/tasks.md)与[验证记录](../specs/010-browser-screen-share/verification.md)。
+当前自动化覆盖登录/CSRF、争抢、有界信令、原身份围栏、失败撤销、接收来源、停止及专用音频。真实本机Host/有声链路不当D4两Worker；正式双窗5分钟、十轮/异常切换、正常选择器取消、可信LAN及现场可听效果仍须执行，见[010任务](../specs/010-browser-screen-share/tasks.md)与[验证记录](../specs/010-browser-screen-share/verification.md)。

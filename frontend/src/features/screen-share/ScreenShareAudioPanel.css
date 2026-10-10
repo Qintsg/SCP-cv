@@ -1,0 +1,12 @@
+/* 共享声音为当前资源的附属控制，不画假音量进度；继承浅/深Fluent主题。SCP-cv 2026-10-11。 */
+.share-audio { min-width: 0; margin-top: var(--spacingVerticalM); padding-top: var(--spacingVerticalM); border-top: var(--strokeWidthThin) solid var(--colorNeutralStroke2); }
+.share-audio__heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--spacingHorizontalM); }
+.share-audio__heading h4 { margin: 0; font-size: var(--fontSizeBase300); font-weight: var(--fontWeightSemibold); }
+.share-audio__actual { color: var(--colorNeutralForeground2); font-family: var(--fontFamilyMonospace); font-size: var(--fontSizeBase200); overflow-wrap: anywhere; }
+.share-audio__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacingHorizontalS); margin-top: var(--spacingVerticalS); }
+.share-audio__field { display: flex; align-items: center; gap: var(--spacingHorizontalS); font-size: var(--fontSizeBase300); }
+.share-audio__field input { box-sizing: border-box; width: 6rem; min-height: 44px; padding: var(--spacingVerticalS) var(--spacingHorizontalS); border: var(--strokeWidthThin) solid var(--colorNeutralStroke1); border-radius: var(--borderRadiusMedium); background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground1); font: inherit; }
+.share-audio__field input:disabled { background: var(--colorNeutralBackgroundDisabled); color: var(--colorNeutralForegroundDisabled); }
+.share-audio__actions :deep(.n-button) { min-height: 44px; }
+.share-audio__field input:focus-visible, .share-audio__actions :deep(.n-button:focus-visible) { outline: var(--strokeWidthThick) solid var(--colorBrandStroke1); outline-offset: var(--spacingHorizontalXXS); }
+.share-audio__hint, .share-audio__feedback { margin: var(--spacingVerticalS) 0 0; color: var(--colorNeutralForeground2); font-size: var(--fontSizeBase200); line-height: var(--lineHeightBase200); overflow-wrap: anywhere; }

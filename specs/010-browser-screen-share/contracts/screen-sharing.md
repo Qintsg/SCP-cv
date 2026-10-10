@@ -1,6 +1,6 @@
 # Contract: 屏幕共享
 
-最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player专用资源、网页原生采集面板、动态HTTP/SSE身份及后台释放确认已接线，音频/HTTPS/两窗稳定性及D4验收仍待后续任务，不代表完整功能可使用。
+最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player、网页原生采集/音频控件、动态HTTP/SSE及后台释放已接线。本机有声传输和渲染信号已验；HTTPS、正式两窗稳定性及D4仍待后续，不代表完整功能可使用。
 
 ## 发布者（登录及CSRF）
 
@@ -24,9 +24,9 @@
 
 持久OPEN：source_type=screen_share、source_id=0、share_id；不含token。已认证且原instance/owner/group均匹配的Worker领取时内存注入receiver_uri；失效授权的已领取OPEN记为Failed，不能返回无授权OPEN或卡住Processing。SourceGeneration事务分配；真实视频帧前loading，激活后也需观测。CLOSE/换源/退出Dispose，不保温。未实现暂停/定位/页码/循环明确禁用；音量/静音桥只在实际接通时呈现。
 
-Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。当前默认静音且普通媒体控制明确拒绝，音量/静音桥留T013。
+Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。默认静音、普通媒体控制拒绝，声音只通过本人共享专用桥明确控制。
 
-T013已实现原生专用`SCREEN_SHARE_AUDIO`，args严格仅`share_id`字符串GUID、`window_id`数值1/2、`volume`整数0..100、`muted`布尔；lease.source_generation须等于当前资源的原OPEN代次。错误身份/类型/范围/额外字段、过期或资源结束均拒绝，不能推进源代次或调用VLC。命令从CreatedAt起三秒截止，原生控制预算也不超过deadline；真实接收属性与请求一致才返回completed。领取时再次核内存授权及原Worker，撤销/更换/缺装配则终结已领取命令，不下发控制、不注入receiver_uri。实际快照可空`actual_share_volume/actual_share_muted`，外部动作开始即失效旧值，失败保持未知。无活跃音轨时实际muted固定true；轨道存在不代表声音已播出。发布者HTTP和公共投影已接线，网页控件与真实内容声音未验证，普通SET_VOLUME/SET_MUTE仍未开放。
+T013原生专用`SCREEN_SHARE_AUDIO`的args严格仅`share_id`字符串GUID、`window_id`数值1/2、`volume`整数0..100、`muted`布尔；lease.source_generation须等于原OPEN代次。错误身份/schema、过期或资源结束拒绝，不推进源代次或调用VLC。命令从CreatedAt起三秒截止，原生预算不超过deadline；真实接收属性与请求一致才completed。领取再次核内存授权及原Worker，失效/缺装配终结命令，不注入receiver_uri。实际快照可空`actual_share_volume/actual_share_muted`，动作开始失效旧值，失败未知；无音轨实际muted固定true。发布者HTTP、公共投影及网页专用控件已接线，本机有声链路/渲染信号已验，D4可听效果另验；普通SET_VOLUME/SET_MUTE仍拒绝。
 
 内部状态另有`released_screen_shares`，最多32项，每项严格仅非空GUID `share_id`和正int64 `source_generation`，不包含接收授权；只在原生控制器Dispose及Surface移除完成后产生，并随空闲/新源状态重复回报。原Worker身份检查及事务提交后才采信；当前源报告被围栏不妨碍采信其原资源释放，但不能更新新源公共状态。JS closed、CLOSE排队、offline、新Worker和取消不能代替释放证据。原Player已验证OS身份的确证退出可以释放原分享，取证失败保持stopping。
 
@@ -44,4 +44,6 @@ T013已实现原生专用`SCREEN_SHARE_AUDIO`，args严格仅`share_id`字符串
 
 紧凑目标选择/共享/停止，原生采集在点击调用，选择器期间不排播放；明确不支持、离线、正在连接、实际接收、停止待确认。共享临时，不存媒体库/场景，不重启恢复。
 
-每个当前目标面板独占一授权尝试/轨道/peer；取得视频后create，完成有界ICE再offer。实际视频帧为正、receiving且answer应用完成才呈现已收到画面。停止优先关闭本地资源，原账号/主机可达时只发一次DELETE；stopping/停止失败不宣称已关闭，查询只发GET，不自动重采。迟到分配只撤销原ID，取消选择器不预约；调用方取消与原cookie/CSRF、主机代次仍适用。当前音频只显示真实轨道存在、接收端静音，音频控制未开放。
+每个当前目标面板独占一授权尝试/轨道/peer；取得视频后create，完成有界ICE再offer。实际视频帧为正、receiving且answer应用完成才呈现已收到画面。停止优先关闭本地资源，原账号/主机可达时只发一次DELETE；stopping/失败不宣称已关闭，查询只发GET，不自动重采。迟到分配只撤销原ID，取消选择器不预约；原cookie/CSRF、主机代次及取消仍适用。
+
+音频设置草稿与实际值分开。无音轨/实际后帧禁用；未知静音仅允许先请求静音。专用操作一次一PATCH，202仅等待，原身份/代次的精确completed/ok及实际属性同时匹配才确认；八秒包含IO，不重发。停止/页面/账号/主机变化立即取消；音频失败不终止视频。共享GET序号防较早在途成功/失败覆盖较晚已接受读取，不替代服务端实际观测。

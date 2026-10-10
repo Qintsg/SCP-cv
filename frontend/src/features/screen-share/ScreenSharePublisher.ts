@@ -1,6 +1,7 @@
 /** 单个网页授权尝试的所有者：许可先于API、本地先停止、迟到结果不复活。SCP-cv 2026-10-11。 */
 import type { ScreenSharingApi, ScreenShareSnapshot } from '@/services/screenSharing';
 import type { ScreenSharePeer } from './rtcPeer';
+import { ScreenShareAudioController, type ScreenShareAudioView } from './ScreenShareAudioController';
 
 export interface ScreenShareView {
   phase: 'idle' | 'selecting' | 'connecting' | 'sharing' | 'stopping' | 'closed' | 'failed' | 'cancelled';
@@ -8,6 +9,7 @@ export interface ScreenShareView {
   snapshot: ScreenShareSnapshot | null;
   captureActive: boolean;
   localHasAudio: boolean;
+  audio: ScreenShareAudioView;
 }
 export interface PublisherDependencies {
   windowId(): number;
@@ -28,6 +30,8 @@ interface Attempt {
   ended?: () => void;
   deadline?: ReturnType<typeof setTimeout>;
   stopped?: Promise<void>;
+  issuedRead: number;
+  acceptedRead: number;
 }
 
 /** :param signal: 本次寿命。:returns: 一秒后继续，停止时立即清理监听和计时器。 */
@@ -56,12 +60,29 @@ function errorCode(error: unknown): string {
 }
 
 export class ScreenSharePublisher {
-  view: ScreenShareView = { phase: 'idle', errorCode: '', snapshot: null, captureActive: false, localHasAudio: false };
+  view: ScreenShareView = { phase: 'idle', errorCode: '', snapshot: null, captureActive: false, localHasAudio: false, audio: { phase: 'idle', errorCode: '' } };
   private attempt?: Attempt;
   private disposed = false;
   private readonly deps: PublisherDependencies;
+  private readonly audio: ScreenShareAudioController;
   /** :param dependencies: 仅外部IO与当前页面身份边界。:returns: 尚未采集或预约的新所有者。 */
-  constructor(dependencies: PublisherDependencies) { this.deps = dependencies; }
+  constructor(dependencies: PublisherDependencies) {
+    this.deps = dependencies;
+    this.audio = new ScreenShareAudioController({
+      api: this.deps.api, current: () => this.audioTarget(),
+      read: (signal) => this.attempt ? this.read(this.attempt, signal) : Promise.resolve(null),
+      changed: (audio) => this.update({ audio }),
+    });
+  }
+
+  /** :returns: 同尝试、实际后帧及两端音轨才允许音频操作；普通播放器音量与此无关。 */
+  private audioTarget(): ScreenShareSnapshot | null {
+    const attempt = this.attempt, snapshot = attempt?.snapshot;
+    return attempt && this.live(attempt) && this.view.phase === 'sharing' && this.view.localHasAudio && snapshot?.receiver_has_audio === true &&
+      snapshot.state === 'receiving' && snapshot.actual_frames > 0 && Number.isSafeInteger(snapshot.source_generation) && snapshot.source_generation! > 0 ? snapshot : null;
+  }
+  /** :param volume: 明确设置值。:param muted: 明确静音值。:returns: 仅控制当前共享，失败不停止有效视频。 */
+  setAudio(volume: number, muted: boolean): Promise<void> { return this.audio.set(volume, muted); }
 
   /** :param patch: 当前尝试的可见状态。:returns: 发布新纯值视图，不导出peer/轨道或SDP以外私有信息。 */
   private update(patch: Partial<ScreenShareView>): void {
@@ -72,6 +93,7 @@ export class ScreenSharePublisher {
   /** :param attempt: 本次授权尝试。:returns: 本地先停止，计时器、ended监听、peer和轨道全部解除。 */
   private release(attempt: Attempt): void {
     attempt.abort.abort(); clearTimeout(attempt.deadline);
+    this.audio.reset();
     if (attempt.ended) for (const track of attempt.stream?.getVideoTracks() ?? []) track.removeEventListener('ended', attempt.ended);
     attempt.peer?.close();
     for (const track of attempt.stream?.getTracks() ?? []) track.stop();
@@ -83,15 +105,32 @@ export class ScreenSharePublisher {
       (attempt.snapshot && (snapshot.id !== attempt.snapshot.id || (attempt.snapshot.source_generation !== null && snapshot.source_generation !== attempt.snapshot.source_generation))) ||
       !['allocated', 'negotiating', 'receiving', 'stopping', 'closed', 'failed'].includes(snapshot.state) ||
       !Number.isSafeInteger(snapshot.actual_frames) || snapshot.actual_frames < 0) throw new Error('share_identity_invalid');
+    const actual = Number.isInteger(snapshot.actual_volume) && snapshot.actual_volume! >= 0 && snapshot.actual_volume! <= 100 &&
+      typeof snapshot.actual_muted === 'boolean' && (snapshot.receiver_has_audio === true || snapshot.actual_muted === true);
+    snapshot = { ...snapshot, actual_volume: actual ? snapshot.actual_volume : null, actual_muted: actual ? snapshot.actual_muted : null };
     attempt.snapshot = snapshot;
     this.update({ snapshot });
+    this.audio.reconcile();
+  }
+  /** :param attempt: 原资源。:param signal: 查询寿命。:returns: 较早GET迟到（包括错误）不覆盖后来的实际属性。 */
+  private async read(attempt: Attempt, signal: AbortSignal): Promise<ScreenShareSnapshot | null> {
+    const sequence = ++attempt.issuedRead;
+    try {
+      const snapshot = await this.deps.api.get(attempt.snapshot!.id, signal);
+      if (!this.live(attempt) || signal.aborted || sequence < attempt.acceptedRead) return null;
+      this.accept(attempt, snapshot); attempt.acceptedRead = sequence;
+      return attempt.snapshot!;
+    } catch (error) {
+      if (!this.live(attempt) || signal.aborted || sequence < attempt.acceptedRead) return null;
+      throw error;
+    }
   }
   /** :param audio: 用户是否选取内容音频，不请求麦克风。:returns: 预约和offer受理；实际后帧由独立状态轮询授予。 */
   async start(audio: boolean): Promise<void> {
     if (this.disposed || this.attempt || this.view.phase === 'stopping') return;
     const unavailable = this.deps.availability();
     if (unavailable) { this.update({ phase: 'failed', errorCode: unavailable }); return; }
-    const attempt: Attempt = { window: this.deps.windowId(), abort: new AbortController(), answered: false };
+    const attempt: Attempt = { window: this.deps.windowId(), abort: new AbortController(), answered: false, issuedRead: 0, acceptedRead: 0 };
     this.attempt = attempt;
     this.update({ phase: 'selecting', errorCode: '', snapshot: null, captureActive: false, localHasAudio: false });
     try {
@@ -133,9 +172,9 @@ export class ScreenSharePublisher {
     let heartbeatAt = Date.now() + 8000;
     try {
       while (this.live(attempt)) {
-        const snapshot = await this.deps.api.get(attempt.snapshot!.id, attempt.abort.signal);
+        const snapshot = await this.read(attempt, attempt.abort.signal);
         if (!this.live(attempt)) break;
-        this.accept(attempt, snapshot);
+        if (!snapshot) { await nextPoll(attempt.abort.signal); continue; }
         if (snapshot.state === 'closed' || snapshot.state === 'failed') {
           this.release(attempt); this.attempt = undefined;
           this.update({ phase: snapshot.state, errorCode: snapshot.state === 'failed' ? 'share_ended' : '' }); return;

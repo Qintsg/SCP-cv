@@ -65,6 +65,35 @@ test('结构化409拒绝保留稳定错误码，既有公开message不变', asyn
     return true;
   });
 });
+test('音频PATCH沿用认证/CSRF和no-store，只发送两字段；202保持提交回执', async () => {
+  const receipt = { success: true, submitted_command_id: shareId, window_id: 1, share_id: shareId, source_generation: 8 };
+  respond(202, receipt); assert.deepEqual(await sharing.setAudio(shareId, 29, false), receipt);
+  const { url, init } = requests[0];
+  assert.equal(url, `https://qa.invalid/api/screen-shares/${shareId}/audio/`);
+  assert.equal(init.method, 'PATCH'); assert.equal(init.cache, 'no-store'); assert.equal(init.credentials, 'include');
+  assert.equal(init.headers['X-CSRFToken'], 'qa-cookie-token'); assert.deepEqual(JSON.parse(init.body), { volume: 29, muted: false });
+  assert.equal('actual_volume' in receipt, false);
+});
+test('音频命令查询只用固定精确目标和ID、no-store；非法目标不发HTTP', async () => {
+  const command = { command_id: shareId, status: 'pending' }; respond(200, { success: true, command });
+  assert.deepEqual(await sharing.getAudioCommand(2, shareId), command);
+  assert.equal(requests[0].url, `https://qa.invalid/api/playback/2/commands/${shareId}/`);
+  assert.equal(requests[0].init.cache, 'no-store'); assert.equal(requests[0].init.credentials, 'include');
+  await assert.rejects(sharing.getAudioCommand(3, shareId), /share_identity_invalid/);
+  await assert.rejects(sharing.getAudioCommand(1, 'https://outside.invalid/'), /share_identity_invalid/);
+  assert.equal(requests.length, 1);
+});
+test('音频PATCH和精确查询取消都传到真实fetch封装', async () => {
+  for (const method of ['setAudio', 'getAudioCommand']) {
+    const caller = new AbortController(); let signal;
+    globalThis.fetch = (_url, init) => {
+      signal = init.signal;
+      return new Promise((_resolve, reject) => init.signal.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')), { once: true }));
+    };
+    const pending = assert.rejects(method === 'setAudio' ? sharing.setAudio(shareId, 29, false, caller.signal) : sharing.getAudioCommand(1, shareId, caller.signal));
+    assert.ok(signal); caller.abort(); await pending; assert.equal(signal.aborted, true);
+  }
+});
 test('401仍触发一次原认证清理，不能混成共享争抢错误', async () => {
   respond(401, { detail: '需要登录', code: 'share_window_busy' });
   let invalidated = 0; api.registerUnauthorizedHandler(() => { invalidated++; });

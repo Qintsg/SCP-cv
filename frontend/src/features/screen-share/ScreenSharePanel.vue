@@ -5,11 +5,12 @@ import { useI18n } from 'vue-i18n';
 import { NButton, NCheckbox } from 'naive-ui';
 import FIcon from '@/design-system/FIcon.vue';
 import { useScreenShare } from './useScreenShare';
+import ScreenShareAudioPanel from './ScreenShareAudioPanel.vue';
 
 const props = defineProps<{ windowId: number; playerOnline: boolean }>();
 const { t } = useI18n();
 const audio = ref(false);
-const { view, availability, active, start, stop, refreshStop } = useScreenShare(() => props.windowId, () => props.playerOnline);
+const { view, availability, active, start, stop, refreshStop, setAudio } = useScreenShare(() => props.windowId, () => props.playerOnline);
 const reason = computed(() => view.value.errorCode || (!active.value ? availability.value : ''));
 const status = computed(() => reason.value ? t(`screenShare.errors.${reason.value}`) : t(`screenShare.phases.${view.value.phase}`));
 const canStop = computed(() => ['selecting', 'connecting', 'sharing'].includes(view.value.phase));
@@ -38,6 +39,8 @@ function startSharing(): void { void start(audio.value); }
       <n-button v-if="canStop" type="error" secondary @click="stop">{{ t('screenShare.stop') }}</n-button>
       <n-button v-if="view.phase === 'stopping'" secondary @click="refreshStop">{{ t('screenShare.refreshStop') }}</n-button>
     </div>
+    <ScreenShareAudioPanel v-if="view.captureActive" :snapshot="view.snapshot" :sharing="view.phase === 'sharing'"
+      :local-has-audio="view.localHasAudio" :audio="view.audio" @set-audio="setAudio" />
   </section>
 </template>
 

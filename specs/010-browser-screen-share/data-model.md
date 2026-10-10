@@ -40,4 +40,6 @@
 
 当前共享资源拥有可空`ScreenShareAudioReceipt(Volume, Muted, HasAudio)`，从实际接收页脚本结果严格解析。Worker及公共HTTP/SSE的`actual_share_volume/actual_share_muted`成对为合法实际属性或null，不从普通音量/静音意图推断。动作受理不更新它们，失败报告、音轨变化或畸形/缺失观测撤销旧值。本人GET分享另合并`actual_volume/actual_muted`，须当前请求/实际身份、代次、正帧、在线及receiving/playing均匹配，否则null。
 
-专用音频命令保留原OPEN代次与share_id/window_id/volume/muted四字段，不含cap/媒体URI，不新建媒体条目；三秒截止从CreatedAt计算。202提交回执和精确命令终态不代替实际属性回读。实际音轨仅核readyState=live，不意味着硬件实际出声；网页专用控件和真实内容音频仍须后续验证。
+专用音频命令保留原OPEN代次与share_id/window_id/volume/muted四字段，不含cap/媒体URI，不新建媒体条目；三秒截止从CreatedAt计算。202提交回执和精确命令终态不代替实际属性回读。实际音轨仅核readyState=live，不意味着硬件实际出声。
+
+网页音频操作归属当前Publisher，保留原分享/目标/代次及独立取消信号，最多一个在途操作。八秒包括PATCH、命令查询和实际回读，completed/ok及实际属性同时匹配才确认。停止、账号/主机或页面变化取消，不自动重发。设置草稿不修改实际值；共享GET递增issuedRead/acceptedRead，较早成功/失败不能覆盖较晚已接受读取。本机有声链路见[T013网页验证](verification/t013-audio-ui.md)，D4可听效果另验。
