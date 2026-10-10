@@ -1,6 +1,6 @@
 # Contract: 屏幕共享
 
-最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP已实现，正式Player及前端仍待后续任务，不代表完整功能可使用。
+最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP及正式Player专用资源已实现，前端/清理确认等仍待后续任务，不代表完整功能可使用。
 
 ## 发布者（登录及CSRF）
 
@@ -22,6 +22,8 @@
 ## Player
 
 持久OPEN：source_type=screen_share、source_id=0、share_id；不含token。已认证且原instance/owner/group均匹配的Worker领取时内存注入receiver_uri；失效授权的已领取OPEN记为Failed，不能返回无授权OPEN或卡住Processing。SourceGeneration事务分配；真实视频帧前loading，激活后也需观测。CLOSE/换源/退出Dispose，不保温。未实现暂停/定位/页码/循环明确禁用；音量/静音桥只在实际接通时呈现。
+
+Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音轨存在`actual_audio`；共享的source_id/position_ms/duration_ms为null。仅协商ready/预备帧不能完成OPEN；过期租约及后帧任务已经完成但资源已结束仍须失败。HTTP/SSE动态身份接线留T009，不能把IPC字段当作已开放HTTP字段。当前默认静音且普通媒体控制明确拒绝，音量/静音桥留T013。
 
 ## UI
 

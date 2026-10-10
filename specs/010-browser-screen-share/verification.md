@@ -45,10 +45,22 @@
 - 前端typecheck与build:web均退出0；Vite保留既有大块体积告警/插件耗时提示，未关闭阈值来掩盖。未改正式UI，因此本阶段没有新增真实页面视觉验收，T008/T015仍未完成。
 - API、使用/维护/CHANGELOG、共享配置与已知坑79同步。本阶段HTTP和脚本已有实现，但正式Player/前端入口仍未接线，不向D4发布这个阶段包。
 
+## 2026-10-11 / T007正式Player专用资源
+
+- 按T007补`ScreenSharePlaybackTests`和`PlayerRuntimeHostScreenShareTests`，先缺少实现构建红，再实现独占InPrivate接收资源。新增状态23项、Host13项，涵盖实际预备/激活后帧、严格来源/schema/身份、旧回调/旧条件CLOSE隔离、准备/切入失败保留旧图、过期租约、取消释放及不支持控制拒绝。Host替身只替换外部原生资源，不计作真实媒体证明。
+- `PlayerRuntimeHost.cs`原约450行，不是超过500行；任务文字已纠正。普通Web方法等价拆到独立partial，共享资源独立目录且不入普通网页保温池。共享快照source_id/position/duration为null，share_id/实际帧/实际音轨不含接收cap；HTTP/SSE接线仍留T009。
+- 两个边界实际红后修复：`CancelAfter(0)`异步触发使已过期租约可能启动；已完成首帧Task不能证明当前资源仍活着。改为过期同步取消，并在等待返回后核当前取消/存活状态；红TRX保留于`native-deadline-red/`与`native-ended-wait-red/`。
+- 最终Release全解决方案构建0警告0错误；全非Physical实际1303/1303、0失败/跳过。`t007-final-full-results/`六个独立TRX核total=executed=passed：Domain41、Infrastructure171、ControlHost333、Integration271、Contracts324、Windows163。前一轮1302及原始红/编译失败不删除，不重复计作本轮最终结果。
+- 独立QA调用正式`PlayerRuntimeHost`和实际专用WebView2，同时使用正式receiver HTML/JS/CSP；HTTP夹具仅替换本机信令服务，不是正式ControlHost/Worker。真实getDisplayMedia自动选择唯一自有动态标签页，无canvas.captureStream、麦克风或用户桌面。正常原生选择器仍留T015，D4跨机留T016。
+- 最新两轮证据分别在`host-runs/ffc6cbdf3ad943a186bd26c51b577c94/`（窗口1）及`3686da0ef9f9423293cbc9c43ebae5f1/`（窗口2）。授权到Host OPEN实际后帧2939/3054ms，原生帧2→62；profile实际InPrivate=true。主代理已查看最新两目标原生截图及此前各两张运动截图。本机依次创建Host，不冒称同时两Worker、非目标保持、五分钟或十轮通过。
+- 两轮停止均核发布轨道ended/peer closed、原生CLOSE idle/null、WebView数量0、进度采样null、Host进程正常退出0；Windows进程句柄确认浏览器PID16824/52284均实际退出。JS closed只是附加报告，不单独作为原生释放证据。
+- 真实错误cap首次文档返回404，正式Host候选失败并释放；旧图片source101/gen1及原Surface保留，0原生WebView，Host退出0。证据`host-runs/df4325eb90db4edbbb404f377276a8d4/failure-evidence.json`，不以导航成功冒充出画。
+- 本阶段未更改前端UI或HTTP API结构，不将前轮298项、typecheck/build或Redocly算作新运行；最终T018仍须功能完整后重跑。文档/合同/已知坑80同步，本机QA资源已退出；本阶段没有更新D4包、打开原始媒体、下发墙面或电源。
+
 ## 仍未实现/未验证
 
 此前基础阶段全非Physical1231/1231的独立证据保留于`.validation/qa-screen-share-010/retained-full-test-results/`与`full-test-retained.log`；当时未改API/前端而未跑的验证现已在上述后端接入阶段执行。旧失败、覆盖TRX及调试输出不删除，最终T018仍待完整功能接线后重验。
 
-T007及之后未完成：正式Player专用资源/消息围栏/激活后帧、前端原生采集与null源身份、后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
+T008及之后未完成：前端原生采集与HTTP/SSE/null源身份、后台异常清理及原生停止确认、内容音频、正常HTTPS、真实选择器取消、正式双窗5分钟/十轮、D4跨机及最终文档/全套回归。T017/T018虽然已有阶段工作，仍不提前勾选。
 
 上述本机prototype不能勾选FR-001至FR-011或SC-001至SC-005全部完成，不把以前D4部署/媒体测试作为本功能证据。

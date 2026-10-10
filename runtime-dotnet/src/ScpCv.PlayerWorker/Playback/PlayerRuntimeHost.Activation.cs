@@ -4,6 +4,7 @@ using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Runtime;
 using ScpCv.Contracts.Presentations;
 using ScpCv.PlayerWorker.Presentations;
+using ScpCv.PlayerWorker.ScreenSharing;
 
 namespace ScpCv.PlayerWorker.Playback;
 
@@ -11,13 +12,35 @@ public sealed partial class PlayerRuntimeHost
 {
     private readonly HashSet<SurfaceResource> _unconfirmedCandidates = [];
     /// <summary>:param lease: 当前OPEN。:param previous: 上一资源。:param candidate: 未发布的候选。:returns: 确认无输出的错误结果，或成功可继续发布；仍存活旧源不被冒替。</summary>
-    private async Task<WorkerExecutionResult?> ActivateCandidateAsync(CommandLeaseDto lease, SurfaceResource? previous, SurfaceResource candidate)
+    private async Task<WorkerExecutionResult?> ActivateCandidateAsync(CommandLeaseDto lease, SurfaceResource? previous, SurfaceResource candidate, CancellationToken token)
     {
+        if (candidate.Native is IScreenShareSurface share)
+        {
+            try
+            {
+                token.ThrowIfCancellationRequested();
+                _window.SetSurface(candidate.Surface);
+                // 内容音频桥T013完成前默认静音，不能拿候选音轨字段当实际声音验收。
+                await share.ActivateAsync(100, true, token);
+                await share.State.WaitActivatedAsync(token);
+                token.ThrowIfCancellationRequested();
+                return null;
+            }
+            catch (Exception activation)
+            {
+                var noPrevious = previous is null || previous.Kind is "libreoffice" or "screen_share";
+                if (noPrevious) ClearReleasedOutput(lease.SourceGeneration, "屏幕共享未获得激活后视频帧。");
+                else _window.SetSurface(previous!.Surface);
+                await DiscardCandidateAfterRetirementFailureAsync(candidate, activation);
+                if (!noPrevious) throw;
+                return new WorkerExecutionResult("failed", "share_activation_failed", Snapshot());
+            }
+        }
         if (candidate.Native is not IPresentationSurface native) return null;
         try { native.Activate(); }
         catch (Exception activation)
         {
-            var noPrevious = previous is null || previous.Kind == "libreoffice";
+            var noPrevious = previous is null || previous.Kind is "libreoffice" or "screen_share";
             if (noPrevious) ClearReleasedOutput(lease.SourceGeneration, activation.Message);
             try { await candidate.DisposeAsync(); }
             catch (Exception cleanup)

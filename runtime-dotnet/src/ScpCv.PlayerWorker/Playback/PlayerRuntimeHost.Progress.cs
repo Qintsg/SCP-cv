@@ -4,6 +4,7 @@ using System.IO;
 using LibVLCSharp.Shared;
 using ScpCv.Contracts.Runtime;
 using ScpCv.PlayerWorker.Presentations;
+using ScpCv.PlayerWorker.ScreenSharing;
 
 namespace ScpCv.PlayerWorker.Playback;
 
@@ -40,7 +41,7 @@ public sealed partial class PlayerRuntimeHost
                 }
                 return new WorkerStateSample(_generation, Snapshot());
             }
-            return _current?.Native is MediaPlayer ? new WorkerStateSample(_generation, Snapshot()) : null;
+            return _current?.Native is MediaPlayer or IScreenShareSurface ? new WorkerStateSample(_generation, Snapshot()) : null;
         }
         finally { _mediaGate.Release(); }
     }

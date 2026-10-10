@@ -6,8 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using LibVLCSharp.Shared;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.Wpf;
+using ScpCv.PlayerWorker.ScreenSharing;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Runtime;
 using ScpCv.PlayerWorker.Adapters;
@@ -65,6 +64,10 @@ public sealed partial class PlayerRuntimeHost(
                     new InvalidOperationException("unconfirmed_presentation_candidate"));
             if (_current?.Kind == "libreoffice" && command is "PLAY" or "PAUSE" or "STOP" or "SEEK" or "SET_VOLUME" or "SET_MUTE" or "SET_LOOP" or "PPT_MEDIA")
                 throw new InvalidOperationException("LibreOffice当前未支持统一媒体控制");
+            if (_current?.Kind == "screen_share" && command is not ("OPEN" or "CLOSE" or "RESET_PPT" or "SELECT_DISPLAY"))
+                throw new InvalidOperationException("屏幕共享仅支持独立停止；普通媒体控制未支持。");
+            if (command == "CLOSE" && IsObsoleteShareClose(lease))
+                return new WorkerExecutionResult("completed", "share_no_longer_current", Snapshot());
             switch (command)
             {
                 case "OPEN":
@@ -99,7 +102,10 @@ public sealed partial class PlayerRuntimeHost(
     private async Task<WorkerExecutionResult?> OpenAsync(CommandLeaseDto lease, CancellationToken cancellationToken)
     {
         var sourceId = Long(lease.Args, "source_id");
-        var uri = String(lease.Args, "uri");
+        var isShare = String(lease.Args, "source_type", "") == "screen_share";
+        using var shareLifetime = isShare ? ScreenShareOpenLifetime(lease, cancellationToken) : null;
+        if (shareLifetime is not null) cancellationToken = shareLifetime.Token;
+        var uri = isShare ? string.Empty : String(lease.Args, "uri");
         var sourceType = String(lease.Args, "source_type", InferType(uri));
         var autoplay = Bool(lease.Args, "autoplay", true);
         _loopEnabled = Bool(lease.Args, "loop", _loopEnabled);
@@ -117,6 +123,7 @@ public sealed partial class PlayerRuntimeHost(
         SurfaceResource next;
         switch (sourceType)
         {
+            case "screen_share": next = await OpenScreenShareAsync(lease, cancellationToken); break;
             case "image": next = await OpenImageAsync(uri, cancellationToken); break;
             case "web": next = await OpenWebAsync(sourceId, lease.SourceRevision, uri, cancellationToken); break;
             case "video":
@@ -141,7 +148,7 @@ public sealed partial class PlayerRuntimeHost(
         }
 
         var previous = _current;
-        if (previous?.Kind == "libreoffice")
+        if (previous?.Kind is "libreoffice" or "screen_share")
         {
             try { await previous.DisposeAsync(); }
             catch (Exception retirement)
@@ -150,7 +157,7 @@ public sealed partial class PlayerRuntimeHost(
                 throw;
             }
         }
-        if (await ActivateCandidateAsync(lease, previous, next) is { } activationFailure) return activationFailure;
+        if (await ActivateCandidateAsync(lease, previous, next, cancellationToken) is { } activationFailure) return activationFailure;
         // 布局属于成功发布的资源，不让失败OPEN的意图覆盖旧画面的实际布局。
         next.ActualFitText = sourceType == "ppt" ? Bool(lease.Args, "fit_text", false) : null;
         _current = next;
@@ -180,9 +187,9 @@ public sealed partial class PlayerRuntimeHost(
             _totalSlides = 0;
         }
         // 统一媒体暂停未支持：不可将已运行的LibreOffice虚报为paused。
-        _state = next.Kind == "libreoffice" ? "playing" : autoplay ? next.Kind == "vlc" ? "loading" : "playing" : "paused";
+        _state = next.Kind is "libreoffice" or "screen_share" ? "playing" : autoplay ? next.Kind == "vlc" ? "loading" : "playing" : "paused";
         _window.SetSurface(next.Surface);
-        if (previous is not null && !ReferenceEquals(previous, next) && previous.Kind is not ("web" or "libreoffice"))
+        if (previous is not null && !ReferenceEquals(previous, next) && previous.Kind is not ("web" or "libreoffice" or "screen_share"))
             await previous.DisposeAsync();
         return null;
     }
@@ -200,95 +207,6 @@ public sealed partial class PlayerRuntimeHost(
         }, adapter.DisposeAsync);
     }
 
-    private async Task<SurfaceResource> OpenWebAsync(
-        long sourceId,
-        long sourceRevision,
-        string uri,
-        CancellationToken cancellationToken)
-    {
-        var key = $"{sourceId}:{sourceRevision}:{uri}";
-        if (_warmWebResources.TryGetValue(key, out var existing))
-        {
-            if (existing.IsHealthy) return existing;
-            _warmWebResources.Remove(key);
-            await existing.DisposeAsync();
-        }
-        var control = new WebView2();
-        _window.PrepareSurface(control);
-        try
-        {
-            var userData = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "SCP-cv",
-                "WebView2",
-                $"player-{_windowId}");
-            Directory.CreateDirectory(userData);
-            var environment = await WaitForWebStageAsync(
-                CoreWebView2Environment.CreateAsync(userDataFolder: userData), "环境创建", cancellationToken);
-            await WaitForWebStageAsync(control.EnsureCoreWebView2Async(environment), "控件初始化", cancellationToken);
-            control.CoreWebView2.Settings.AreDevToolsEnabled = false;
-            control.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
-            control.CoreWebView2.PermissionRequested += (_, args) => args.State = CoreWebView2PermissionState.Deny;
-            var navigated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var healthy = true;
-            void Completed(object? _, CoreWebView2NavigationCompletedEventArgs args)
-            {
-                if (args.IsSuccess) navigated.TrySetResult();
-                else navigated.TrySetException(new InvalidOperationException($"WebView2 导航失败：{args.WebErrorStatus}"));
-            }
-            void Failed(object? _, CoreWebView2ProcessFailedEventArgs __) => healthy = false;
-            control.NavigationCompleted += Completed;
-            control.CoreWebView2.ProcessFailed += Failed;
-            control.Source = new Uri(uri, UriKind.Absolute);
-            await WaitForWebStageAsync(navigated.Task, "页面导航", cancellationToken);
-            control.NavigationCompleted -= Completed;
-            var resource = new SurfaceResource("web", control, async () =>
-            {
-                control.NavigationCompleted -= Completed;
-                control.CoreWebView2.ProcessFailed -= Failed;
-                control.Dispose();
-                await ValueTask.CompletedTask;
-            }, health: () => healthy);
-            _warmWebResources[key] = resource;
-            return resource;
-        }
-        catch
-        {
-            _window.RemovePendingSurface(control);
-            control.Dispose();
-            throw;
-        }
-    }
-
-    private static async Task<T> WaitForWebStageAsync<T>(
-        Task<T> operation,
-        string stage,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await operation.WaitAsync(WebViewStageTimeout, cancellationToken);
-        }
-        catch (TimeoutException exception)
-        {
-            throw new TimeoutException($"WebView2 {stage}超时。", exception);
-        }
-    }
-
-    private static async Task WaitForWebStageAsync(
-        Task operation,
-        string stage,
-        CancellationToken cancellationToken)
-    {
-        try
-        {
-            await operation.WaitAsync(WebViewStageTimeout, cancellationToken);
-        }
-        catch (TimeoutException exception)
-        {
-            throw new TimeoutException($"WebView2 {stage}超时。", exception);
-        }
-    }
 
     private static async Task<SurfaceResource> OpenPdfAsync(
         string uri,
@@ -364,10 +282,10 @@ public sealed partial class PlayerRuntimeHost(
         cancellationToken.ThrowIfCancellationRequested();
         await CloseUnconfirmedCandidatesAsync();
         var previous = _current;
-        if (previous?.Kind == "libreoffice") await previous.DisposeAsync();
+        if (previous?.Kind is "libreoffice" or "screen_share") await previous.DisposeAsync();
         _current = null;
         _window.SetSurface(new Grid { Background = WpfBrushes.Black });
-        if (previous is not null && previous.Kind is not ("web" or "libreoffice")) await previous.DisposeAsync();
+        if (previous is not null && previous.Kind is not ("web" or "libreoffice" or "screen_share")) await previous.DisposeAsync();
         _sourceId = 0;
         _sourceRevision = 0;
         _sourceUri = string.Empty;
