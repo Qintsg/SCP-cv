@@ -5,12 +5,14 @@ using ScpCv.Contracts.Ipc;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Infrastructure.Playback;
+using ScpCv.ControlHost.ScreenSharing;
 
 namespace ScpCv.ControlHost.Events;
 
 public sealed record StateReportAcceptance(bool Accepted, string Reason)
 {
     internal DateTimeOffset? UpdatedAt { get; init; }
+    internal bool WorkerVerified { get; init; }
 }
 
 /// <summary>只把通过 instance/epoch/generation fencing 的实际状态写入兼容 SSE 投影。</summary>
@@ -18,7 +20,8 @@ public sealed class RuntimeProjectionPublisher(
     WriteCoordinator writes,
     SseEventHub events,
     TimeProvider? timeProvider = null,
-    ScreenSharePlaybackProjection? screenSharePlayback = null)
+    ScreenSharePlaybackProjection? screenSharePlayback = null,
+    ScreenShareRegistry? screenShareRegistry = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
 
@@ -49,13 +52,18 @@ public sealed class RuntimeProjectionPublisher(
                     ownership.LastUiProgress = ownership.LastTransportHeartbeat;
                     if (targetKind == CommandTargetKind.Display)
                     {
-                        return await ApplyDisplayAsync(database, targetId, report, token).ConfigureAwait(false);
+                        var display = await ApplyDisplayAsync(database, targetId, report, token).ConfigureAwait(false);
+                        return display with { WorkerVerified = true };
                     }
 
                     return await ApplyAudioAsync(database, report, token).ConfigureAwait(false);
                 },
                 cancellationToken)
             .ConfigureAwait(false);
+
+        // 源状态可因后来意图被围栏；原Worker的原资源释放回执仍有效。必须在身份事务提交后处理。
+        if (targetKind == CommandTargetKind.Display && accepted.WorkerVerified)
+            screenShareRegistry?.ObserveNativeRelease(targetId, workerInstanceId, ownerEpoch, report.State);
 
         if (accepted.Accepted)
         {

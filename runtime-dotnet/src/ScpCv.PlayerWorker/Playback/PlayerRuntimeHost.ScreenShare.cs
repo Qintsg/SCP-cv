@@ -9,6 +9,15 @@ namespace ScpCv.PlayerWorker.Playback;
 public sealed partial class PlayerRuntimeHost
 {
     internal Func<ScreenShareReceiverIdentity, CancellationToken, Task<IScreenShareSurface>>? ScreenShareFactory { get; init; }
+    private readonly List<ScreenShareReleaseEvidenceDto> _releasedScreenShares = [];
+
+    /// <summary>:param id: 实际释放的资源。:param generation: 原OPEN代次。:returns: 有界非秘密回执，重复Dispose不增加条目。</summary>
+    private void RememberScreenShareRelease(Guid id, long generation)
+    {
+        if (_releasedScreenShares.Any(item => item.ShareId == id && item.SourceGeneration == generation)) return;
+        _releasedScreenShares.Add(new() { ShareId = id, SourceGeneration = generation });
+        if (_releasedScreenShares.Count > 32) _releasedScreenShares.RemoveAt(0);
+    }
 
     /// <summary>:param lease: 原Worker认证后的租约。:param token: OPEN寿命。:returns: 已协商且已有真实预备视频帧的专用资源。</summary>
     private async Task<SurfaceResource> OpenScreenShareAsync(CommandLeaseDto lease, CancellationToken token)
@@ -17,8 +26,17 @@ public sealed partial class PlayerRuntimeHost
         if (Long(lease.Args, "source_id") != 0 || !Guid.TryParse(String(lease.Args, "share_id"), out var shareId))
             throw new InvalidDataException("屏幕共享动态源身份无效。");
         var identity = ScreenShareReceiverIdentity.Parse(String(lease.Args, "receiver_uri"), shareId, _windowId, lease.SourceGeneration);
-        var native = await (ScreenShareFactory is { } factory ? factory(identity, token) : ScreenShareSurface.CreateAsync(_window, identity, token));
-        var resource = new SurfaceResource("screen_share", native.Surface, native.DisposeAsync, native);
+        var native = await (ScreenShareFactory is { } factory ? factory(identity, token) : ScreenShareSurface.CreateAsync(_window, identity, token,
+            () => RememberScreenShareRelease(shareId, lease.SourceGeneration)));
+        Task? disposal = null;
+        // 关闭失败保持同一失败Task，不重复原生副作用；只有完整Dispose成功才记录原身份。
+        /// <summary>:returns: 原对象的实际关闭完成；请求租约身份不冒替原生对象自身身份。</summary>
+        async Task DisposeAndRecordAsync()
+        {
+            await native.DisposeAsync();
+            RememberScreenShareRelease(native.State.Identity.ShareId, native.State.Identity.SourceGeneration);
+        }
+        var resource = new SurfaceResource("screen_share", native.Surface, () => new(disposal ??= DisposeAndRecordAsync()), native);
         try
         {
             if (!ReferenceEquals(native.State.Identity, identity)) throw new InvalidDataException("屏幕共享资源与本次租约身份不符。");

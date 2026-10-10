@@ -141,6 +141,7 @@ public sealed partial class ScenarioService(
                 var sessions = await database.PlaybackSessions
                     .Where(item => item.WindowId <= WindowId.Maximum)
                     .OrderBy(item => item.WindowId).ToListAsync(token).ConfigureAwait(false);
+                await RejectTransientCaptureAsync(database, sessions, token).ConfigureAwait(false);
                 var targets = sessions.Select(session => new ScenarioTargetDto
                 {
                     WindowId = session.WindowId,
@@ -403,6 +404,8 @@ public sealed partial class ScenarioService(
             var state = target.SourceState.Trim().ToLowerInvariant();
             if (state is not ("unset" or "empty" or "set")) throw new ScenarioServiceException($"无效的目标状态：{state}");
             long? sourceId = null;
+            if (state == "set" && target.SourceId is not > 0)
+                throw new ScenarioServiceException("预案只能保存媒体库中的固定源；请选择媒体源，或使用不改变/清空目标。屏幕共享不可保存。", code: "scenario_source_invalid");
             if (state == "set" && target.SourceId is > 0)
             {
                 if (!await database.MediaSources.AnyAsync(source => source.Id == target.SourceId.Value, cancellationToken).ConfigureAwait(false))

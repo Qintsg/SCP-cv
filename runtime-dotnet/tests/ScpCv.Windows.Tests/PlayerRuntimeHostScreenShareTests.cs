@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using ScpCv.Contracts.Ipc;
+using ScpCv.Contracts.Runtime;
 using ScpCv.PlayerWorker;
 using ScpCv.PlayerWorker.Playback;
 using ScpCv.PlayerWorker.ScreenSharing;
@@ -44,13 +45,14 @@ public sealed partial class PlayerRuntimeHostLifecycleTests
             using var cancel = new CancellationTokenSource();
             try
             {
-                var opening = host.ExecuteAsync(ShareLease(1, 1), cancel.Token);
+                var lease = ShareLease(1, 1);
+                var opening = host.ExecuteAsync(lease, cancel.Token);
                 await created.Task.WaitAsync(TimeSpan.FromSeconds(2));
                 Assert.False(opening.IsCompleted);
                 cancel.Cancel();
                 await Assert.ThrowsAnyAsync<OperationCanceledException>(() => opening);
                 Assert.Equal(1, resource!.CloseCalls);
-                Assert.Null(await host.SampleProgressAsync(CancellationToken.None));
+                AssertReleasedIdleSample(await host.SampleProgressAsync(CancellationToken.None), lease, 0);
             }
             finally { await host.DisposeAsync(); window.Close(); }
         });
@@ -106,7 +108,7 @@ public sealed partial class PlayerRuntimeHostLifecycleTests
                 Assert.Equal(1, observed.SourceGeneration);
                 await host.ExecuteAsync(lease with { Command = "CLOSE", SourceGeneration = 2 }, CancellationToken.None);
                 Assert.Equal(1, resource!.CloseCalls);
-                Assert.Null(await host.SampleProgressAsync(CancellationToken.None));
+                AssertReleasedIdleSample(await host.SampleProgressAsync(CancellationToken.None), lease, 2);
             }
             finally { await host.DisposeAsync(); window.Close(); }
         });
@@ -212,6 +214,23 @@ public sealed partial class PlayerRuntimeHostLifecycleTests
             }
             finally { await host.DisposeAsync(); window.Close(); }
         });
+    }
+
+    /// <summary>:param sample: 关闭后的真实采样。:param lease: 原OPEN身份。:param generation: 当前空闲代次。:returns: 原输出已清空，且释放凭据严格对应原资源。</summary>
+    private static void AssertReleasedIdleSample(WorkerStateSample? sample, CommandLeaseDto lease, long generation)
+    {
+        Assert.NotNull(sample);
+        Assert.Equal(generation, sample.SourceGeneration);
+        Assert.Equal("idle", sample.State.GetProperty("playback_state").GetString());
+        Assert.Equal("", sample.State.GetProperty("adapter_kind").GetString());
+        Assert.Equal(JsonValueKind.Null, sample.State.GetProperty("source_id").ValueKind);
+        Assert.Equal(JsonValueKind.Null, sample.State.GetProperty("share_id").ValueKind);
+        Assert.Equal(0, sample.State.GetProperty("actual_frames").GetInt64());
+        Assert.Equal(JsonValueKind.Null, sample.State.GetProperty("actual_audio").ValueKind);
+        var released = Assert.Single(sample.State.GetProperty("released_screen_shares").EnumerateArray());
+        Assert.Equal(2, released.EnumerateObject().Count());
+        Assert.Equal(lease.Args["share_id"].GetGuid(), released.GetProperty("share_id").GetGuid());
+        Assert.Equal(lease.SourceGeneration, released.GetProperty("source_generation").GetInt64());
     }
 
     /// <summary>:param window: 目标。:param generation: 独立代次。:returns: 仅lease携带cap、不带普通媒体uri的正式参数。</summary>

@@ -14,19 +14,20 @@ internal sealed class ScreenShareSurface : IScreenShareSurface
     private readonly WebView2 _view;
     private bool _navigated;
     private Task? _disposal;
+    private readonly Action? _released;
     public FrameworkElement Surface => _view;
     public ScreenSharePlaybackState State { get; }
 
-    private ScreenShareSurface(PlayerWindow window, ScreenShareReceiverIdentity identity)
+    private ScreenShareSurface(PlayerWindow window, ScreenShareReceiverIdentity identity, Action? released)
     {
-        _window = window; State = new(identity); _view = new WebView2();
+        _window = window; _released = released; State = new(identity); _view = new WebView2();
     }
 
     /// <summary>:param window: 所属Player窗口。:param identity: 已认证lease。:param token: 端到端OPEN寿命。:returns: 独立资源；首帧门禁仍由Host等待。</summary>
-    internal static async Task<IScreenShareSurface> CreateAsync(PlayerWindow window, ScreenShareReceiverIdentity identity, CancellationToken token)
+    internal static async Task<IScreenShareSurface> CreateAsync(PlayerWindow window, ScreenShareReceiverIdentity identity, CancellationToken token, Action? released = null)
     {
         token.ThrowIfCancellationRequested();
-        var resource = new ScreenShareSurface(window, identity);
+        var resource = new ScreenShareSurface(window, identity, released);
         window.PrepareSurface(resource.Surface);
         try
         {
@@ -129,5 +130,6 @@ internal sealed class ScreenShareSurface : IScreenShareSurface
         }
         _view.Dispose();
         _window.RemovePendingSurface(Surface);
+        _released?.Invoke();
     }
 }

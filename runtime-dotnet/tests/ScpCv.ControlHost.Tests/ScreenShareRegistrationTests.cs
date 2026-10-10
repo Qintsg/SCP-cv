@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using ScpCv.ControlHost.Ipc;
 using ScpCv.ControlHost.ScreenSharing;
 using ScpCv.Infrastructure.Commands;
@@ -20,10 +21,12 @@ public sealed class ScreenShareRegistrationTests
         using var root = new ControlHostApplicationFactory();
         using var host = root.WithWebHostBuilder(builder => builder.UseSetting("SafetyMode", mode));
         Assert.NotNull(host.Services.GetRequiredService<ScreenShareService>());
+        Assert.NotNull(host.Services.GetRequiredService<ScreenShareProcessTracker>());
         Assert.NotNull(host.Services.GetRequiredService<ScreenShareLeaseAuthority>());
         Assert.NotNull(host.Services.GetRequiredService<RuntimeMessageDispatcher>());
         Assert.Same(host.Services.GetRequiredService<ScreenShareRegistry>(), host.Services.GetRequiredService<ScreenShareRegistry>());
         Assert.True(host.Services.GetRequiredService<ScreenShareOptions>().ReceiverBaseUri.IsLoopback);
+        Assert.Single(host.Services.GetServices<IHostedService>().OfType<ScreenShareCleanupService>());
     }
 
     [Fact]

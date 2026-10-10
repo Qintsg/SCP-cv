@@ -161,16 +161,17 @@ public sealed class ScreenShareEndpointTests
         group.State = RuntimeGroupState.Armed;
         group.GroupEpoch = 19;
         var first = new ScreenShareTargetIdentity(1, Guid.NewGuid(), 7, group.GroupEpoch);
+        var now = factory.Services.GetRequiredService<TimeProvider>().GetUtcNow();
         foreach (var window in new[] { 1, 2 })
         {
             database.WorkerOwnerships.Add(new WorkerOwnership
             {
                 TargetKind = CommandTargetKind.Display, TargetId = window,
                 WorkerInstanceId = window == 1 ? first.WorkerInstanceId : Guid.NewGuid(), OwnerEpoch = 7,
-                Status = WorkerOwnershipState.Online, LastTransportHeartbeat = DateTimeOffset.UtcNow,
+                Status = WorkerOwnershipState.Online, LastTransportHeartbeat = now,
             });
             var session = await database.PlaybackSessions.SingleAsync(item => item.WindowId == window);
-            session.PlayerLastSeenAt = DateTimeOffset.UtcNow;
+            session.PlayerLastSeenAt = now;
             session.TargetDisplayLabel = $"模拟大屏{window}";
         }
         await database.SaveChangesAsync();

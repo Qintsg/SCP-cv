@@ -25,6 +25,7 @@ public sealed partial class PlayerRuntimeHost
             share_id = share?.State.Identity.ShareId,
             actual_frames = share?.State.Frames ?? 0,
             actual_audio = share?.State.HasAudio,
+            released_screen_shares = _releasedScreenShares.ToArray(),
             current_slide = _currentSlide,
             total_slides = _totalSlides,
             position_ms = position,

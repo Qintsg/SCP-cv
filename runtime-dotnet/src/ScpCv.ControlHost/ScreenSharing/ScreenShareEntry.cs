@@ -19,6 +19,7 @@ internal sealed class ScreenShareEntry
     internal long ActualFrames { get; set; }
     internal DateTimeOffset? LastFrameAt { get; set; }
     internal bool ReceiverHasAudio { get; set; }
+    internal bool NativeReleased { get; set; }
     internal string StopReason { get; set; } = "";
     internal DateTimeOffset? TerminalAt { get; set; }
     internal bool IsTerminal => State is ScreenShareState.Closed or ScreenShareState.Failed;

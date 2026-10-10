@@ -3,7 +3,7 @@ using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.ScreenSharing;
 
-public sealed class ScreenShareService(ScreenShareRegistry registry, RuntimeStateService runtime) : IDisposable
+public sealed partial class ScreenShareService(ScreenShareRegistry registry, RuntimeStateService runtime, ScreenShareProcessTracker? processTracker = null) : IDisposable
 {
     private readonly SemaphoreSlim[] _windowGates = [new(1, 1), new(1, 1)];
 
@@ -14,7 +14,14 @@ public sealed class ScreenShareService(ScreenShareRegistry registry, RuntimeStat
         try
         {
             var target = await runtime.GetScreenShareTargetAsync(windowId, cancellationToken).ConfigureAwait(false);
-            return registry.Create(ownerId, target, hasAudio);
+            processTracker?.Prune(id => registry.GetCleanupTarget(id) is not null);
+            var share = registry.Create(ownerId, target, hasAudio);
+            try
+            {
+                if (processTracker is not null) await processTracker.TrackAsync(share.Id, target, cancellationToken).ConfigureAwait(false);
+                return share;
+            }
+            catch { registry.BeginStop(ownerId, share.Id, "reservation_failed"); throw; }
         }
         finally { gate.Release(); }
     }

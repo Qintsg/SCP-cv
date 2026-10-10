@@ -26,7 +26,7 @@ public sealed partial class PlayerRuntimeHost
         if (!await _mediaGate.WaitAsync(0, token)) return null;
         try
         {
-            if (_generation <= 0 || Volatile.Read(ref _disposed) != 0 || _unconfirmedCandidates.Count > 0) return null;
+            if ((_generation <= 0 && _releasedScreenShares.Count == 0) || Volatile.Read(ref _disposed) != 0 || _unconfirmedCandidates.Count > 0) return null;
             if (_current?.Native is IPresentationSurface native)
             {
                 try
@@ -41,7 +41,9 @@ public sealed partial class PlayerRuntimeHost
                 }
                 return new WorkerStateSample(_generation, Snapshot());
             }
-            return _current?.Native is MediaPlayer or IScreenShareSurface ? new WorkerStateSample(_generation, Snapshot()) : null;
+            // 空闲/旧图片也重复携带有界释放回执，避免一次结果回报丢失后永久占用服务端槽。
+            return _current?.Native is MediaPlayer or IScreenShareSurface || _releasedScreenShares.Count > 0
+                ? new WorkerStateSample(_generation, Snapshot()) : null;
         }
         finally { _mediaGate.Release(); }
     }

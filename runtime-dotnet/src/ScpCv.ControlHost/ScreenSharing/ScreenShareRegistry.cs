@@ -5,7 +5,7 @@ using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.ScreenSharing;
 
-public sealed class ScreenShareRegistry(TimeProvider timeProvider)
+public sealed partial class ScreenShareRegistry(TimeProvider timeProvider)
 {
     private const int MaximumSdpBytes = 65536;
     private const int MaximumTerminalEntries = 32;
