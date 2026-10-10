@@ -1,0 +1,110 @@
+# 屏幕共享HTTP类型与有界信令；不包含接收凭据。SCP-cv 2026-10-10。
+ShareId:
+  name: share_id
+  in: path
+  required: true
+  schema:
+    type: string
+    format: uuid
+WindowId:
+  name: window_id
+  in: query
+  required: true
+  schema:
+    type: integer
+    enum: [1, 2]
+Generation:
+  name: source_generation
+  in: query
+  required: true
+  schema:
+    type: integer
+    format: int64
+    minimum: 1
+CreateRequest:
+  type: object
+  required: [window_id]
+  properties:
+    window_id:
+      type: integer
+      enum: [1, 2]
+    has_audio:
+      type: boolean
+      default: false
+      description: 原生采集实际返回内容音轨，不是希望获取麦克风。
+Sdp:
+  type: object
+  required: [type, sdp]
+  properties:
+    type:
+      type: string
+      enum: [offer, answer]
+    sdp:
+      type: string
+      maxLength: 65536
+      description: 以v=0和CRLF开头，解码后的UTF-8字节数不超过65536；Unicode可能更早达到字节上限。
+Share:
+  type: object
+  required: [id, window_id, state, has_audio, receiver_has_audio, source_generation, expires_at, actual_frames, last_frame_at, answer, stop_reason]
+  properties:
+    id:
+      type: string
+      format: uuid
+    window_id:
+      type: integer
+      enum: [1, 2]
+    state:
+      type: string
+      enum: [allocated, negotiating, receiving, stopping, closed, failed]
+      description: 接受指令不等于receiving；stopping不等于原生资源已退出。
+    has_audio:
+      type: boolean
+    receiver_has_audio:
+      type: boolean
+    source_generation:
+      type: integer
+      format: int64
+      minimum: 1
+      nullable: true
+    expires_at:
+      type: string
+      format: date-time
+    actual_frames:
+      type: integer
+      format: int64
+      minimum: 0
+      description: 授权资源激活后的真实视频帧计数；心跳不能增加。
+    last_frame_at:
+      type: string
+      format: date-time
+      nullable: true
+    answer:
+      type: object
+      nullable: true
+      allOf:
+        - $ref: '#/Sdp'
+    stop_reason:
+      type: string
+ShareResponse:
+  description: 本人内存分享状态，无接收token；仅受理或停止待确认不是实际出画或实际释放证明。
+  headers:
+    Cache-Control:
+      schema:
+        type: string
+        enum: [no-store]
+  content:
+    application/json:
+      schema:
+        allOf:
+          - $ref: ../components/schemas/SuccessResponse.yaml
+          - type: object
+            required: [share]
+            properties:
+              share:
+                $ref: '#/Share'
+SuccessResponse:
+  description: 该接收操作已受理，不能用作原生资源退出证明。
+  content:
+    application/json:
+      schema:
+        $ref: ../components/schemas/SuccessResponse.yaml

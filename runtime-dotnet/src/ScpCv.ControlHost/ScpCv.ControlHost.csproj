@@ -20,4 +20,9 @@
     <ProjectReference Include="..\ScpCv.Infrastructure\ScpCv.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="ScreenSharing\ReceiverPage.html" />
+    <EmbeddedResource Include="ScreenSharing\receiver.js" />
+  </ItemGroup>
+
 </Project>

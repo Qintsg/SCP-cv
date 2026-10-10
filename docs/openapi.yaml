@@ -13,6 +13,7 @@ info:
 
     所有业务路径默认挂载在 `/api` 前缀下；成功响应通常包含 `success: true`，错误响应统一为 `detail + code`。
     业务接口与 `/media/` 文件由 ControlHost 会话 Cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/`、`/auth/me/` 和 `/auth/status/` 为公开端点。
+    屏幕共享发布者沿用会话/CSRF；原生接收端点仅loopback与私有Authorization Bearer能力，不允许用户Cookie或查询串token代替。
 
 servers:
   - url: /api
@@ -31,6 +32,8 @@ tags:
     description: 播放会话查询
   - name: playback
     description: 窗口播放、切换、重置和物理冒烟测试
+  - name: screen-sharing
+    description: 临时网页屏幕共享的发布和原生私有信令；受理不等于出画
   - name: background-audio
     description: 背景音乐播放列表、播放控制与状态查询
   - name: runtime
@@ -94,6 +97,26 @@ paths:
     $ref: './paths/sources_{source_id}_.yaml'
   /sessions/:
     $ref: './paths/sessions_.yaml'
+  /screen-shares/:
+    $ref: './screen-sharing/publisher-paths.yaml#/Create'
+  /screen-shares/{share_id}/:
+    $ref: './screen-sharing/publisher-paths.yaml#/Share'
+  /screen-shares/{share_id}/offer/:
+    $ref: './screen-sharing/publisher-paths.yaml#/Offer'
+  /screen-shares/{share_id}/heartbeat/:
+    $ref: './screen-sharing/publisher-paths.yaml#/Heartbeat'
+  /screen-share/receiver/{share_id}/:
+    $ref: './screen-sharing/receiver-paths.yaml#/Page'
+  /screen-share/receiver/{share_id}/offer/:
+    $ref: './screen-sharing/receiver-paths.yaml#/Offer'
+  /screen-share/receiver/{share_id}/status/:
+    $ref: './screen-sharing/receiver-paths.yaml#/Status'
+  /screen-share/receiver/{share_id}/answer/:
+    $ref: './screen-sharing/receiver-paths.yaml#/Answer'
+  /screen-share/receiver/{share_id}/frames/:
+    $ref: './screen-sharing/receiver-paths.yaml#/Frames'
+  /screen-share/receiver/{share_id}/end/:
+    $ref: './screen-sharing/receiver-paths.yaml#/End'
   /sessions/{window_id}/:
     $ref: './paths/sessions_{window_id}_.yaml'
   /runtime/:
@@ -185,3 +208,9 @@ components:
   securitySchemes:
     sessionAuth:
       $ref: './components/securitySchemes.yaml#/sessionAuth'
+    csrfToken:
+      $ref: './components/securitySchemes.yaml#/csrfToken'
+    screenShareReceiver:
+      type: http
+      scheme: bearer
+      description: 内存256位随机cap，仅原Worker能领取，绑定share/window/generation/instance/owner/group；不持久、不写查询串或日志。

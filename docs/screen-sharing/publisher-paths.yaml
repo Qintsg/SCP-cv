@@ -1,0 +1,119 @@
+# 已登录发布者端点；写操作沿用Cookie与CSRF。SCP-cv 2026-10-10。
+Create:
+  post:
+    tags: [screen-sharing]
+    summary: 预约窗口1或2的临时共享，不排OPEN
+    operationId: createScreenShare
+    security:
+      - sessionAuth: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: ./schemas.yaml#/CreateRequest
+    responses:
+      '201':
+        $ref: ./schemas.yaml#/ShareResponse
+      '400':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '401':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '409':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '413':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '503':
+        $ref: ../components/responses/ErrorResponse.yaml
+Share:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+  get:
+    tags: [screen-sharing]
+    summary: 读取本人的共享状态和一次性应答
+    operationId: getScreenShare
+    responses:
+      '200':
+        $ref: ./schemas.yaml#/ShareResponse
+      '401':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+  delete:
+    tags: [screen-sharing]
+    summary: 立即撤销共享授权并条件停止原目标
+    operationId: stopScreenShare
+    description: 重复停止幂等。未OPEN直接closed；已OPEN保持stopping直到独立原生释放证明，不能关闭后来内容。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+    responses:
+      '200':
+        $ref: ./schemas.yaml#/ShareResponse
+      '400':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '401':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+Offer:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+  post:
+    tags: [screen-sharing]
+    summary: 提交单次有界offer并排动态OPEN
+    operationId: offerScreenShare
+    description: 原生许可和ICE应先完成；OPEN事务重新核预约时的Worker身份。202只证明受理，真实后帧前保持negotiating。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ./schemas.yaml#/Sdp
+              - type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [offer]
+    responses:
+      '202':
+        $ref: ./schemas.yaml#/ShareResponse
+      '400':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '401':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '409':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '413':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '503':
+        $ref: ../components/responses/ErrorResponse.yaml
+Heartbeat:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+  post:
+    tags: [screen-sharing]
+    summary: 续本人共享寿命，不授予实际帧
+    operationId: heartbeatScreenShare
+    description: 预约/协商硬上限20秒不能延长；已接收状态的发布者期限30秒。接收端活动不能代替发布者续租。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+    responses:
+      '200':
+        $ref: ./schemas.yaml#/ShareResponse
+      '400':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '401':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '409':
+        $ref: ../components/responses/ErrorResponse.yaml

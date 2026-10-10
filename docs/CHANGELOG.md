@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2026-10-10 — 屏幕共享后端接入（开发中，未部署）
+
+- 接入仅窗口1/2的登录/CSRF预约、一次offer、状态/续租与条件停止；有界内存SDP/cap，不新增永久源，受理不当出画。
+- OPEN租约按原Worker实例/owner/group及源代次注入授权，失效领取记Failed；cap只放私有fragment/Authorization header，不进入命令数据库、公开响应或HTTP查询串。
+- 静态接收页CSP哈希、loopback/来源/schema/阶段保护，预备帧不授予实际状态；停止释放脚本媒体、轮询和ICE等待。补齐OpenAPI与安全/生命周期回归。
+- 正式Player、网页入口、异常回收、内容音频、可信HTTPS与D4双窗验收仍未完成，不能将后端专项测试或本机原型称为功能已交付；见[010验证](../specs/010-browser-screen-share/verification.md)。
+
 ## 2026-10-09 — D4紧凑界面与63/64配置部署
 
 - 三个签名提交经内网secondary推送、D4仅快进拉取；完整Release包上传核摘要后切换，新运行任务和前端恢复，两个播放器在线且仅绑定DISPLAY2/3。

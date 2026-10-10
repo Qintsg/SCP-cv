@@ -68,6 +68,9 @@
     <None Include="..\..\..\docs\paths\*.yaml"
           Link="OpenApi\paths\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\..\docs\screen-sharing\**\*.yaml"
+          Link="OpenApi\screen-sharing\%(RecursiveDir)%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

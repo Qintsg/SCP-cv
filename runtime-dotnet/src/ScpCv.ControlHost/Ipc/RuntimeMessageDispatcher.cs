@@ -4,6 +4,8 @@ using ScpCv.Contracts.Ipc;
 using ScpCv.ControlHost.Events;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Commands;
+using ScpCv.ControlHost.ScreenSharing;
+using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.Ipc;
 
@@ -12,7 +14,8 @@ public sealed class RuntimeMessageDispatcher(
     CommandResultService results,
     RuntimeProjectionPublisher projections,
     AudioFinishedEventProcessor? audioFinished = null,
-    TimeSpan? leaseDuration = null)
+    TimeSpan? leaseDuration = null,
+    ScreenShareLeaseAuthority? screenShares = null)
 {
     private readonly TimeSpan _leaseDuration = leaseDuration ?? TimeSpan.FromSeconds(30);
     private readonly AudioFinishedEventProcessor? _audioFinished = audioFinished;
@@ -94,6 +97,23 @@ public sealed class RuntimeMessageDispatcher(
             }
 
             var args = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(command.ArgsJson) ?? [];
+            if (ScreenShareLeaseAuthority.IsScreenShareOpen(command.Command, args))
+            {
+                try
+                {
+                    if (screenShares is null)
+                        throw new ScreenShareException("分享接收授权未装配。", "share_receiver_denied", 404);
+                    screenShares.Enrich(command, new ScreenShareTargetIdentity(targetId, frame.InstanceId, frame.OwnerEpoch, request.GroupEpoch), args);
+                }
+                catch (ScreenShareException error)
+                {
+                    // 已领取但不能接收的OPEN必须终结，不能阻塞后续命令或把旧共享交给新Worker重放。
+                    await results.AcceptAsync(new CompleteCommand(command.CommandId, command.ClaimToken!.Value,
+                        command.OwnerEpoch, CommandStatus.Failed, error.Code, string.Empty, "{}"), cancellationToken).ConfigureAwait(false);
+                    projections.PublishCommandResult();
+                    return Response(frame, "no_work", new NoWorkDto { Reason = "share_ended", RetryAfterMs = 1000 });
+                }
+            }
             return Response(frame, "command_lease", new CommandLeaseDto
             {
                 CommandId = command.CommandId,

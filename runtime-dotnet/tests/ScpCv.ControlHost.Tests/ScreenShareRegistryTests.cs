@@ -1,6 +1,7 @@
 // 屏幕共享内存授权、窗口占用和代次安全回归；不启动实体播放器。SCP-cv 2026-10-10。
 using System.Text.Json;
 using ScpCv.ControlHost.ScreenSharing;
+using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.Tests;
 
@@ -10,12 +11,12 @@ public sealed class ScreenShareRegistryTests
     public void EachWindowHasOneReservationAndTwoWindowsAreIndependent()
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var first = registry.Create("alice", 1, false);
-        var second = registry.Create("bob", 2, true);
+        var first = registry.Create("alice", Target(1), false);
+        var second = registry.Create("bob", Target(2), true);
         Assert.NotEqual(first.Id, second.Id);
         Assert.Equal(2, registry.ActiveCount);
         Assert.Equal("share_window_busy", Assert.Throws<ScreenShareException>(
-            () => registry.Create("bob", 1, false)).Code);
+            () => registry.Create("bob", Target(1), false)).Code);
     }
 
     [Theory]
@@ -25,7 +26,7 @@ public sealed class ScreenShareRegistryTests
     public void InvalidTargetFailsBeforeReservation(int window)
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        Assert.Equal(400, Assert.Throws<ScreenShareException>(() => registry.Create("alice", window, false)).StatusCode);
+        Assert.Equal(400, Assert.Throws<ScreenShareException>(() => registry.Create("alice", Target(window), false)).StatusCode);
         Assert.Equal(0, registry.ActiveCount);
     }
 
@@ -33,7 +34,7 @@ public sealed class ScreenShareRegistryTests
     public void OtherOwnerCannotReadNegotiateRenewOrStop()
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         Assert.Equal(404, Assert.Throws<ScreenShareException>(() => registry.GetOwned("bob", share.Id)).StatusCode);
         Assert.Throws<ScreenShareException>(() => registry.SetOffer("bob", share.Id, "offer", "v=0\r\n"));
         Assert.Throws<ScreenShareException>(() => registry.Heartbeat("bob", share.Id));
@@ -45,9 +46,9 @@ public sealed class ScreenShareRegistryTests
     public void CaptureReservationHasNoReceiverAuthorityAndDtoNeverContainsToken()
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         Assert.Null(share.SourceGeneration);
-        Assert.Throws<ScreenShareException>(() => registry.GetReceiverGrant(share.Id, 1, 7));
+        Assert.Throws<ScreenShareException>(() => registry.GetReceiverGrant(share.Id, Target(1), 7));
         var grant = Negotiate(registry, share.Id, 7);
         Assert.Equal(64, grant.Token.Length);
         Assert.DoesNotContain(grant.Token, JsonSerializer.Serialize(registry.GetOwned("alice", share.Id)), StringComparison.Ordinal);
@@ -58,7 +59,7 @@ public sealed class ScreenShareRegistryTests
     public void ReceiverChecksTokenWindowAndGeneration()
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         var grant = Negotiate(registry, share.Id, 7);
         Assert.Equal("v=0\r\n", registry.ReadOffer(share.Id, 1, 7, grant.Token).Sdp);
         Assert.Throws<ScreenShareException>(() => registry.ReadOffer(share.Id, 1, 7, new string('0', 64)));
@@ -75,7 +76,7 @@ public sealed class ScreenShareRegistryTests
     public void InvalidOfferIsRejectedBeforeChangingState(string type, string sdp, string code)
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         Assert.Equal(code, Assert.Throws<ScreenShareException>(() => registry.SetOffer("alice", share.Id, type, sdp)).Code);
         Assert.Equal(ScreenShareState.Allocated, registry.GetOwned("alice", share.Id).State);
     }
@@ -84,7 +85,7 @@ public sealed class ScreenShareRegistryTests
     public void Utf8SdpLimitAndSingleNegotiationAreEnforced()
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         Assert.Equal(413, Assert.Throws<ScreenShareException>(() => registry.SetOffer("alice", share.Id, "offer", "v=0\r\n" + new string('中', 22000))).StatusCode);
         var grant = Negotiate(registry, share.Id, 7);
         Assert.Throws<ScreenShareException>(() => registry.SetOffer("alice", share.Id, "offer", "v=0\r\n"));
@@ -98,7 +99,7 @@ public sealed class ScreenShareRegistryTests
     public void ConnectionAndPublisherHeartbeatAreNotFrameEvidence()
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         var grant = Negotiate(registry, share.Id, 7);
         registry.SetAnswer(share.Id, 1, 7, grant.Token, "answer", "v=0\r\n");
         registry.Heartbeat("alice", share.Id);
@@ -117,7 +118,7 @@ public sealed class ScreenShareRegistryTests
     {
         var clock = new TestClock();
         var registry = new ScreenShareRegistry(clock);
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         var grant = Negotiate(registry, share.Id, 7);
         clock.Advance(TimeSpan.FromSeconds(19));
         registry.Heartbeat("alice", share.Id);
@@ -126,7 +127,7 @@ public sealed class ScreenShareRegistryTests
         var pending = Assert.Single(registry.GetPendingStops());
         Assert.Equal(share.Id, pending.Id);
         Assert.Equal(ScreenShareState.Stopping, pending.State);
-        Assert.Throws<ScreenShareException>(() => registry.Create("bob", 1, false));
+        Assert.Throws<ScreenShareException>(() => registry.Create("bob", Target(1), false));
     }
 
     [Fact]
@@ -134,7 +135,7 @@ public sealed class ScreenShareRegistryTests
     {
         var clock = new TestClock();
         var registry = new ScreenShareRegistry(clock);
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         var grant = Negotiate(registry, share.Id, 7);
         registry.SetAnswer(share.Id, 1, 7, grant.Token, "answer", "v=0\r\n");
         registry.ReportFrame(share.Id, 1, 7, grant.Token, 1, false);
@@ -149,15 +150,15 @@ public sealed class ScreenShareRegistryTests
     public void StopRevokesImmediatelyButKeepsSlotUntilActualConfirmation()
     {
         var registry = new ScreenShareRegistry(new TestClock());
-        var share = registry.Create("alice", 1, false);
+        var share = registry.Create("alice", Target(1), false);
         var grant = Negotiate(registry, share.Id, 7);
         Assert.Equal(ScreenShareState.Stopping, registry.BeginStop("alice", share.Id, "publisher_stop").State);
         Assert.Throws<ScreenShareException>(() => registry.ReadOffer(share.Id, 1, 7, grant.Token));
         Assert.Equal(ScreenShareState.Stopping, registry.BeginStop("alice", share.Id, "publisher_stop").State);
         Assert.False(registry.ConfirmClosed(share.Id, 1, 8));
-        Assert.Throws<ScreenShareException>(() => registry.Create("bob", 1, false));
+        Assert.Throws<ScreenShareException>(() => registry.Create("bob", Target(1), false));
         Assert.True(registry.ConfirmClosed(share.Id, 1, 7));
-        var next = registry.Create("bob", 1, false);
+        var next = registry.Create("bob", Target(1), false);
         Assert.True(registry.ConfirmClosed(share.Id, 1, 7));
         Assert.Equal(ScreenShareState.Allocated, registry.GetOwned("bob", next.Id).State);
     }
@@ -167,9 +168,9 @@ public sealed class ScreenShareRegistryTests
     {
         var clock = new TestClock();
         var registry = new ScreenShareRegistry(clock);
-        var first = registry.Create("alice", 1, false);
+        var first = registry.Create("alice", Target(1), false);
         Assert.Equal(ScreenShareState.Closed, registry.BeginStop("alice", first.Id, "cancelled").State);
-        registry.Create("bob", 1, false);
+        registry.Create("bob", Target(1), false);
         clock.Advance(TimeSpan.FromSeconds(20));
         Assert.Empty(registry.GetPendingStops());
         Assert.Equal(0, registry.ActiveCount);
@@ -181,7 +182,7 @@ public sealed class ScreenShareRegistryTests
         var registry = new ScreenShareRegistry(new TestClock());
         for (var index = 0; index < 100; index++)
         {
-            var share = registry.Create("alice", 1, false);
+            var share = registry.Create("alice", Target(1), false);
             registry.BeginStop("alice", share.Id, "cancelled");
         }
         Assert.InRange(registry.RetainedCount, 1, 32);
@@ -192,7 +193,22 @@ public sealed class ScreenShareRegistryTests
     {
         registry.SetOffer("alice", id, "offer", "v=0\r\n");
         registry.BindReceiver("alice", id, generation);
-        return registry.GetReceiverGrant(id, 1, generation);
+        return registry.GetReceiverGrant(id, Target(1), generation);
+    }
+
+    /// <summary>固定原Worker身份，使重启围栏可以与窗口/源代次分别验证。</summary>
+    private static ScreenShareTargetIdentity Target(int window) => new(window, new Guid("01000000-0000-0000-0000-000000000001"), 7, 19);
+
+    [Fact]
+    public void NewCurrentWorkerCannotRetrieveOriginalWorkersCapability()
+    {
+        var registry = new ScreenShareRegistry(new TestClock());
+        var share = registry.Create("alice", Target(1), false);
+        var grant = Negotiate(registry, share.Id, 7);
+        Assert.Throws<ScreenShareException>(() => registry.GetReceiverGrant(share.Id, Target(1) with { WorkerInstanceId = Guid.NewGuid() }, 7));
+        Assert.Throws<ScreenShareException>(() => registry.GetReceiverGrant(share.Id, Target(1) with { OwnerEpoch = 8 }, 7));
+        Assert.Throws<ScreenShareException>(() => registry.GetReceiverGrant(share.Id, Target(1) with { GroupEpoch = 20 }, 7));
+        Assert.Equal(grant.Token, registry.GetReceiverGrant(share.Id, Target(1), 7).Token);
     }
 
     private sealed class TestClock : TimeProvider

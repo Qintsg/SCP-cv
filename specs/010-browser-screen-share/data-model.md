@@ -5,7 +5,8 @@
 - Id随机GUID，不代替账号认证；OwnerId绑定发布者。
 - WindowId严格1/2，每目标一个活动预约。
 - SourceGeneration由OPEN事务分配，null表示尚未打开。
-- ReceiverToken随机256位，常量时间核验、绑定share/window/generation；不公开DTO/日志/数据库。
+- 原Target身份包含WorkerInstanceId/OwnerEpoch/GroupEpoch；OPEN事务与租约注入均须匹配，不允许重启后的新Worker接收旧共享。
+- ReceiverToken随机256位，常量时间核验、绑定share/window/generation及原Target；不公开DTO/日志/数据库，URI仅fragment携带、HTTP用Authorization Bearer。
 - Offer/Answer各64KiB，严格type、不可替换已经使用的协商；不缓存无限ICE列表。
 - State：allocated→negotiating→receiving→stopping→closed/failed；终态不回退，重试新身份。
 - CreatedAt/LastPublisherSeen/ExpiresAt使用TimeProvider；预约20秒、活跃30秒心跳期限。

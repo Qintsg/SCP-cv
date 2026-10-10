@@ -14,6 +14,7 @@ using ScpCv.ControlHost.Logging;
 using ScpCv.ControlHost.Media;
 using ScpCv.ControlHost.Runtime;
 using ScpCv.ControlHost.Commands;
+using ScpCv.ControlHost.ScreenSharing;
 using ScpCv.Contracts.Presentations.Dependencies;
 using ScpCv.Infrastructure.Auth;
 using ScpCv.Infrastructure.Audio;
@@ -131,6 +132,10 @@ else
     builder.Services.AddSingleton<IVideoWallController, TcpVideoWallController>();
 }
 builder.Services.AddSingleton<RuntimeStateService>();
+builder.Services.AddSingleton(ScreenShareOptions.FromConfiguration(builder.Configuration));
+builder.Services.AddSingleton<ScreenShareRegistry>();
+builder.Services.AddSingleton<ScreenShareService>();
+builder.Services.AddSingleton<ScreenShareLeaseAuthority>();
 builder.Services.AddSingleton<PowerPointSettingsService>();
 builder.Services.AddSingleton<VideoWallLayoutService>();
 builder.Services.AddSingleton<PresentationCoordinator>();
@@ -203,6 +208,8 @@ app.MapGet(
 app.MapAuthEndpoints();
 app.MapMediaEndpoints();
 app.MapPlaybackEndpoints();
+app.MapScreenShareEndpoints();
+app.MapScreenShareReceiverEndpoints();
 app.MapVideoWallLayoutEndpoints();
 app.MapPresentationSettingsEndpoints();
 app.MapPresentationEndpoints();

@@ -1,6 +1,7 @@
 // 有界内存共享登记：所有权、窗口预约、短期cap与源代次围栏。SCP-cv 2026-10-10。
 using System.Security.Cryptography;
 using System.Text;
+using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.ScreenSharing;
 
@@ -25,9 +26,11 @@ public sealed class ScreenShareRegistry(TimeProvider timeProvider)
     }
 
     /// <summary>预约在线检查后的目标；此步没有任何播放器副作用。</summary>
-    public ScreenShareSnapshot Create(string ownerId, int windowId, bool hasAudio)
+    public ScreenShareSnapshot Create(string ownerId, ScreenShareTargetIdentity target, bool hasAudio)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(ownerId);
+        ArgumentNullException.ThrowIfNull(target);
+        var windowId = target.WindowId;
         if (windowId is not (1 or 2)) throw Error("分享目标只能是窗口1或窗口2。", "share_window_invalid");
         lock (_sync)
         {
@@ -37,7 +40,7 @@ public sealed class ScreenShareRegistry(TimeProvider timeProvider)
             var now = timeProvider.GetUtcNow();
             var entry = new ScreenShareEntry
             {
-                Id = Guid.NewGuid(), OwnerId = ownerId, WindowId = windowId, HasAudio = hasAudio,
+                Id = Guid.NewGuid(), OwnerId = ownerId, Target = target, HasAudio = hasAudio,
                 CreatedAt = now, LastPublisherSeen = now, ExpiresAt = now + ReservationLifetime,
             };
             _entries.Add(entry.Id, entry);
@@ -49,6 +52,12 @@ public sealed class ScreenShareRegistry(TimeProvider timeProvider)
     public ScreenShareSnapshot GetOwned(string ownerId, Guid id)
     {
         lock (_sync) { return OwnedLocked(ownerId, id).Snapshot(); }
+    }
+
+    /// <summary>仅供服务事务重核原预约身份；该身份不进入发布者DTO。</summary>
+    public ScreenShareTargetIdentity GetTargetOwned(string ownerId, Guid id)
+    {
+        lock (_sync) { return OwnedLocked(ownerId, id).Target; }
     }
 
     /// <summary>只接受一次有界offer，等待OPEN事务分配代次。</summary>
@@ -82,12 +91,26 @@ public sealed class ScreenShareRegistry(TimeProvider timeProvider)
     }
 
     /// <summary>调用方必须先核对Worker管道身份；本方法再次核对分享/窗口/代次。</summary>
-    public ScreenShareReceiverGrant GetReceiverGrant(Guid id, int windowId, long sourceGeneration)
+    public ScreenShareReceiverGrant GetReceiverGrant(Guid id, ScreenShareTargetIdentity target, long sourceGeneration)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        lock (_sync)
+        {
+            var entry = ReceiverLocked(id, target.WindowId, sourceGeneration);
+            if (entry.Target != target)
+                throw Error("分享接收授权已失效。", "share_receiver_denied", 404);
+            return new(id, target.WindowId, sourceGeneration, entry.ReceiverToken!);
+        }
+    }
+
+    /// <summary>接收者故障只能终止自己的资源，不能指定任意分享或窗口。</summary>
+    public ScreenShareSnapshot StopReceiver(Guid id, int windowId, long generation, string token)
     {
         lock (_sync)
         {
-            var entry = ReceiverLocked(id, windowId, sourceGeneration);
-            return new(id, windowId, sourceGeneration, entry.ReceiverToken!);
+            var entry = AuthorizedReceiverLocked(id, windowId, generation, token);
+            StopLocked(entry, "receiver_ended");
+            return entry.Snapshot();
         }
     }
 

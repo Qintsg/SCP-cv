@@ -5,7 +5,8 @@ internal sealed class ScreenShareEntry
 {
     internal required Guid Id { get; init; }
     internal required string OwnerId { get; init; }
-    internal required int WindowId { get; init; }
+    internal required ScpCv.Infrastructure.Playback.ScreenShareTargetIdentity Target { get; init; }
+    internal int WindowId => Target.WindowId;
     internal required bool HasAudio { get; init; }
     internal required DateTimeOffset CreatedAt { get; init; }
     internal required DateTimeOffset LastPublisherSeen { get; set; }

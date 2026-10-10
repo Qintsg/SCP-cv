@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
@@ -46,7 +47,15 @@ public sealed partial class OpenApiCoverageTests
             }
 
             using var response = await client.SendAsync(request);
-            Assert.NotEqual(HttpStatusCode.NotFound, response.StatusCode);
+            if (operation.Path.StartsWith("/screen-share/receiver/", StringComparison.Ordinal))
+            {
+                // 路由目录已独立核对；匿名cap入口故意404，不能用一般缺路由判据把保护误报成失败。
+                Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+                using var denial = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+                Assert.Equal("share_receiver_denied", denial.RootElement.GetProperty("code").GetString());
+                Assert.Contains("no-store", response.Headers.CacheControl!.ToString(), StringComparison.Ordinal);
+            }
+            else Assert.NotEqual(HttpStatusCode.NotFound, response.StatusCode);
             Assert.NotEqual(HttpStatusCode.MethodNotAllowed, response.StatusCode);
             Assert.True(
                 response.StatusCode == HttpStatusCode.Unauthorized || operation.StatusCodes.Contains((int)response.StatusCode),
@@ -68,12 +77,11 @@ public sealed partial class OpenApiCoverageTests
             }
 
             var referenceMatch = ReferenceLine().Match(rootLines[index + 1]);
-            Assert.True(referenceMatch.Success, $"OpenAPI 路径 {pathMatch.Groups["path"].Value} 未使用可解析的 paths 引用。");
+            Assert.True(referenceMatch.Success, $"OpenAPI 路径 {pathMatch.Groups["path"].Value} 未使用可解析的本地引用。");
             var path = pathMatch.Groups["path"].Value;
-            var pathDocument = Path.Combine(openApiRoot, "paths", Path.GetFileName(referenceMatch.Groups["file"].Value));
             var method = string.Empty;
             var statuses = new List<int>();
-            foreach (var line in File.ReadLines(pathDocument))
+            foreach (var line in ReadPathItemLines(openApiRoot, referenceMatch.Groups["file"].Value, referenceMatch.Groups["key"].Value))
             {
                 var methodMatch = MethodLine().Match(line);
                 if (methodMatch.Success)
@@ -112,17 +120,52 @@ public sealed partial class OpenApiCoverageTests
         return operations;
     }
 
+    /// <summary>当前文档使用独立Path Item或单层JSON Pointer模块；不容许越出拷贝的文档根。</summary>
+    private static string[] ReadPathItemLines(string root, string relativeFile, string key)
+    {
+        var resolved = Path.GetFullPath(Path.Combine(root, relativeFile));
+        Assert.StartsWith(Path.GetFullPath(root) + Path.DirectorySeparatorChar, resolved, StringComparison.OrdinalIgnoreCase);
+        var lines = File.ReadAllLines(resolved);
+        if (key.Length == 0) return lines;
+        Assert.DoesNotContain('/', key);
+        var decoded = key.Replace("~1", "/", StringComparison.Ordinal).Replace("~0", "~", StringComparison.Ordinal);
+        var start = Array.FindIndex(lines, line => line == decoded + ":");
+        Assert.True(start >= 0, $"OpenAPI模块缺少片段 {key}。");
+        var end = start + 1;
+        while (end < lines.Length && (lines[end].Length == 0 || char.IsWhiteSpace(lines[end][0]) || lines[end][0] == '#')) end++;
+        return lines[(start + 1)..end].Select(line => line.StartsWith("  ", StringComparison.Ordinal) ? line[2..] : line).ToArray();
+    }
+
+    [Fact]
+    public void ModuleReferenceSelectsExactlyOnePathItemNotAdjacentOperations()
+    {
+        var root = Path.Combine(AppContext.BaseDirectory, "OpenApi");
+        var lines = ReadPathItemLines(root, "screen-sharing/publisher-paths.yaml", "Share");
+        Assert.Contains("get:", lines);
+        Assert.Contains("delete:", lines);
+        Assert.DoesNotContain("post:", lines);
+        Assert.Contains("    '404':", lines);
+    }
+
+    [Fact]
+    public void MissingFragmentAndEscapingReferenceCannotSilentlyLoseCoverage()
+    {
+        var root = Path.Combine(AppContext.BaseDirectory, "OpenApi");
+        Assert.Throws<Xunit.Sdk.TrueException>(() => ReadPathItemLines(root, "screen-sharing/publisher-paths.yaml", "Missing"));
+        Assert.Throws<Xunit.Sdk.StartsWithException>(() => ReadPathItemLines(root, "../outside.yaml", ""));
+    }
+
     private static string NormalizePath(string endpointPath) =>
         Parameter().Replace(endpointPath.StartsWith("/api/", StringComparison.Ordinal) ? endpointPath[4..] : endpointPath, "{}");
 
     private static string MaterializePath(string path) => Parameter().Replace(path, parameter =>
-        parameter.Value == "{command_id}" ? "bf71fb1b-c3ea-44ea-a479-25478c0b59b3" : "1");
+        parameter.Value is "{command_id}" or "{share_id}" ? "bf71fb1b-c3ea-44ea-a479-25478c0b59b3" : "1");
     private static string KeyText(OperationKey key) => $"{key.Method} {key.Path}";
 
     [GeneratedRegex("^  (?<path>/[^:]+):$")]
     private static partial Regex RootPathLine();
 
-    [GeneratedRegex("^    \\$ref: './paths/(?<file>[^']+)'$")]
+    [GeneratedRegex("^    \\$ref: './(?<file>[^'#]+)(?:#/(?<key>[^']+))?'$")]
     private static partial Regex ReferenceLine();
 
     [GeneratedRegex("^(?<method>get|post|put|patch|delete):$", RegexOptions.IgnoreCase)]

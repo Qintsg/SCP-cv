@@ -26,7 +26,7 @@
 
 **Constraints**: 仅1/2、一窗口一会话；信令64KiB；ICE单侧12秒预算、端到端20秒截止；预约20秒、活跃发布者心跳30秒期限，从分配后算。无默认外部STUN/TURN、自动重采集/重播。SDP网络信息不写日志。
 
-**Scale/Scope**: 最多两活动会话；账号所有权；256位随机receiver cap仅loopback且绑定share/window/generation，不公开DTO/日志/DB。普通用户不能发送接收证据。代理使RemoteIP可变为loopback，所以cap及来源验证不可省略。
+**Scale/Scope**: 最多两活动会话；账号所有权；256位随机receiver cap仅loopback且绑定share/window/generation及原Worker instance/owner/group，不公开DTO/日志/DB。普通用户不能发送接收证据。代理使RemoteIP可变为loopback，所以cap及来源验证不可省略。
 
 ## Constitution Check
 
@@ -71,3 +71,4 @@ docs/screen-sharing.md
 6. 内容音轨按实际支持呈现；专用音量/静音桥实测后接线，不沿用VLC假成功。窗口级音量命令的现有generation0语义不当作既有bug；若定义share专属操作则须身份围栏。
 7. HTTPS显式证书/密钥配置，不降低Cookie/CSRF、不用不安全浏览器flag。现场访问证书信任与开发localhost分别记录。
 8. cleanup周期1秒，过期先撤销授权，再原子条件CLOSE；终止受理和实际确认分开。普通换源终止旧分享但不关闭新源，不自动恢复分享。
+9. receiver_uri中的cap使用fragment而非HTTP查询串；WPF首次导航通过NavigateWithWebResourceRequest设置Authorization Bearer，静态接收脚本在内存读取fragment后立即从历史地址移除，后续fetch仍用该header。HTML无私有插值，以嵌入脚本/样式哈希限定CSP；发布者cookie不能授予接收权限。

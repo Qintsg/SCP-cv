@@ -19,9 +19,9 @@
 
 **Independent Test**: 分别两正式Worker的运动画面与另一窗保持，不把首连接当播出。
 
-- [ ] T004 [US1] 在`runtime-dotnet/tests/ScpCv.ControlHost.Tests/ScreenShareEndpointTests.cs`写认证/CSRF/离线/争抢/取消/offer回归，在Integration补动态OPEN事务与lease围栏测试。
-- [ ] T005 [US1] 实现`RuntimeStateService.ScreenShare.cs`独立动态OPEN与身份；`RuntimeMessageDispatcher`仅在已认证匹配Worker的lease注入内存receiver授权，不持久cap。
-- [ ] T006 [US1] 实现`ScreenShareService.cs`、`ScreenShareEndpoints.cs`及Program装配，接收页cap/schema/来源/阶段保护；Hardware与Simulation均测真实装配，后者不冒称出画。
+- [X] T004 [US1] 在`runtime-dotnet/tests/ScpCv.ControlHost.Tests/ScreenShareEndpointTests.cs`写认证/CSRF/离线/争抢/取消/offer回归，在Integration补动态OPEN事务与lease围栏测试。
+- [X] T005 [US1] 实现`RuntimeStateService.ScreenShare.cs`独立动态OPEN与身份；`RuntimeMessageDispatcher`仅在已认证匹配Worker的lease注入内存receiver授权，不持久cap。
+- [X] T006 [US1] 实现`ScreenShareService.cs`、`ScreenShareEndpoints.cs`及Program装配，接收页cap/schema/来源/阶段保护；Hardware与Simulation均测真实装配，后者不冒称出画。
 - [ ] T007 [US1] 在`ScpCv.Windows.Tests/ScreenSharePlaybackTests.cs`写后帧/首帧失败/跨资源回调回归；将超500行`PlayerRuntimeHost.cs`先拆分Web资源方法，新增`PlayerRuntimeHost.ScreenShare.cs`专用资源与实际采样，不使用普通web缓存。
 - [ ] T008 [US1] 在`frontend/scripts/screen-sharing.test.mjs`写原生许可先于API、拒绝零OPEN/释放轨道/两目标回归，实现`rtcPeer.ts`、`services/screenSharing.ts`、`useScreenShare.ts`、`ScreenSharePanel.vue`，接入`DisplayControlView.vue`。
 - [ ] T009 [US1] 检查并修改`playbackObservation.ts`、`playbackCapabilities.ts`、`playbackOutput.ts`、`PlaybackControl.vue`、`DisplayControlView.vue`及`stores/sessions.ts`对共享null source_id的显示、关闭、能力与刷新；HTTP/SSE合同有明确共享身份，不造永久媒体源。

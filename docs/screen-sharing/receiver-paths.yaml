@@ -1,0 +1,148 @@
+# 原生专用端点：loopback及Authorization Bearer能力，不接受发布者cookie代替。SCP-cv 2026-10-10。
+Page:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+    - $ref: ./schemas.yaml#/WindowId
+    - $ref: ./schemas.yaml#/Generation
+  get:
+    tags: [screen-sharing]
+    summary: 原Worker读取静态只读接收页
+    operationId: getScreenShareReceiverPage
+    description: 仅loopback与有效cap；外部Origin、查询串token或错误身份均404。WPF首次导航设置Authorization header，cap只在私有URI的fragment传递，页面立即移除fragment。HTML no-store/no-referrer且固定脚本哈希CSP。
+    security:
+      - screenShareReceiver: []
+    responses:
+      '200':
+        description: 只读HTML，不含SDP/token，不证明实际出画
+        content:
+          text/html:
+            schema:
+              type: string
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+Offer:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+    - $ref: ./schemas.yaml#/WindowId
+    - $ref: ./schemas.yaml#/Generation
+  get:
+    tags: [screen-sharing]
+    summary: 授权接收者读取原发布offer
+    operationId: getScreenShareReceiverOffer
+    security:
+      - screenShareReceiver: []
+    responses:
+      '200':
+        description: 本次有界offer，不保存到HTTP缓存或日志
+        content:
+          application/json:
+            schema:
+              $ref: ./schemas.yaml#/Sdp
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+Status:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+    - $ref: ./schemas.yaml#/WindowId
+    - $ref: ./schemas.yaml#/Generation
+  get:
+    tags: [screen-sharing]
+    summary: 核接收授权仍有效，不增加帧或延长发布者期限
+    operationId: getScreenShareReceiverStatus
+    security:
+      - screenShareReceiver: []
+    responses:
+      '200':
+        $ref: ./schemas.yaml#/SuccessResponse
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+Answer:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+    - $ref: ./schemas.yaml#/WindowId
+    - $ref: ./schemas.yaml#/Generation
+  post:
+    tags: [screen-sharing]
+    summary: 授权接收者提交唯一answer
+    operationId: answerScreenShareReceiver
+    security:
+      - screenShareReceiver: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ./schemas.yaml#/Sdp
+              - type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [answer]
+    responses:
+      '200':
+        $ref: ./schemas.yaml#/SuccessResponse
+      '400':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '409':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '413':
+        $ref: ../components/responses/ErrorResponse.yaml
+Frames:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+    - $ref: ./schemas.yaml#/WindowId
+    - $ref: ./schemas.yaml#/Generation
+  post:
+    tags: [screen-sharing]
+    summary: 授权资源报告激活后的真实视频帧
+    operationId: reportScreenShareReceiverFrame
+    security:
+      - screenShareReceiver: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [frames, activated]
+            properties:
+              frames:
+                type: integer
+                format: int64
+                minimum: 1
+                description: 严格递增，不使用心跳或连接状态构造。
+              activated:
+                type: boolean
+                enum: [true]
+              has_audio:
+                type: boolean
+                default: false
+                description: 实际接收内容音轨，不能超出发布者has_audio。
+    responses:
+      '200':
+        $ref: ./schemas.yaml#/SuccessResponse
+      '400':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml
+      '413':
+        $ref: ../components/responses/ErrorResponse.yaml
+End:
+  parameters:
+    - $ref: ./schemas.yaml#/ShareId
+    - $ref: ./schemas.yaml#/WindowId
+    - $ref: ./schemas.yaml#/Generation
+  post:
+    tags: [screen-sharing]
+    summary: 接收资源故障或结束后撤销授权并条件停止
+    operationId: endScreenShareReceiver
+    security:
+      - screenShareReceiver: []
+    responses:
+      '200':
+        $ref: ./schemas.yaml#/SuccessResponse
+      '404':
+        $ref: ../components/responses/ErrorResponse.yaml

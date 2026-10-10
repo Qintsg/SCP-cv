@@ -1,6 +1,6 @@
 # Contract: 屏幕共享
 
-最终合同同步docs/openapi.yaml（OpenAPI3.0）；本文件为设计，不代表端点已存在。
+最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP已实现，正式Player及前端仍待后续任务，不代表完整功能可使用。
 
 ## 发布者（登录及CSRF）
 
@@ -14,13 +14,14 @@
 
 ## 本机接收者
 
-- GET `/api/screen-share/receiver/{id}/?token=...`：loopback且有效cap，no-store/no-referrer。
+- GET `/api/screen-share/receiver/{id}/?window_id=...&source_generation=...`：loopback且Authorization Bearer有效cap，no-store/no-referrer；cap禁止放查询串。私有receiver_uri仅通过fragment给原Worker，WPF首次导航设置header；页面脚本内存读取后立即移除fragment。
+- 同路径`offer/`、`status/`用GET；`answer/`、`frames/`、`end/`用POST。frames要求正递增frames、实际has_audio及activated=true，预备帧不能授予实际播出。结束受理仍需原生释放证明。
 - 读取offer、提交answer和结束只限同cap、身份、正确阶段；拒绝外部Origin，有界body。localhost代理不代替cap；普通用户cookie不授予接收者权利。
 - HTML/JS为本仓库资源，无用户脚本拼接或外链；WPF禁止其他导航、新窗和采集权限，WebMessage核来源/schema/资源身份。
 
 ## Player
 
-持久OPEN：source_type=screen_share、source_id=0、share_id；不含token。已认证匹配Worker领取时内存注入receiver_uri。SourceGeneration事务分配；真实视频帧前loading，激活后也需观测。CLOSE/换源/退出Dispose，不保温。未实现暂停/定位/页码/循环明确禁用；音量/静音桥只在实际接通时呈现。
+持久OPEN：source_type=screen_share、source_id=0、share_id；不含token。已认证且原instance/owner/group均匹配的Worker领取时内存注入receiver_uri；失效授权的已领取OPEN记为Failed，不能返回无授权OPEN或卡住Processing。SourceGeneration事务分配；真实视频帧前loading，激活后也需观测。CLOSE/换源/退出Dispose，不保温。未实现暂停/定位/页码/循环明确禁用；音量/静音桥只在实际接通时呈现。
 
 ## UI
 
