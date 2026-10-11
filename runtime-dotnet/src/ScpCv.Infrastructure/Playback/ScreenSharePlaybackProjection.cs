@@ -22,6 +22,16 @@ public sealed class ScreenSharePlaybackProjection
         lock (_sync) { _windows[target.WindowId] = new(target, id, generation, DateTimeOffset.MinValue, null); }
     }
 
+    /// <summary>:param target: 确证释放的原Worker完整归属。:param id: 原分享。:param generation: 原OPEN代次。:returns: 仅移除原条目，迟到报告不能复活它或清除后来内容。</summary>
+    public void Release(ScreenShareTargetIdentity target, Guid id, long generation)
+    {
+        lock (_sync)
+        {
+            if (_windows.TryGetValue(target.WindowId, out var entry) && entry.Target == target &&
+                entry.Id == id && entry.Generation == generation) _windows.Remove(target.WindowId);
+        }
+    }
+
     /// <summary>
     /// :param state: 已经通过持久Worker身份/源代次检查并提交的纯值报告。
     /// :param updatedAt: 同一持久会话单调递增的版本；异步回调倒序不能恢复旧资源。

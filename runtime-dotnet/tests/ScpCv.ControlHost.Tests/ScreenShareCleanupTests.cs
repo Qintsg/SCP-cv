@@ -17,6 +17,37 @@ namespace ScpCv.ControlHost.Tests;
 public sealed class ScreenShareCleanupTests
 {
     [Fact]
+    public async Task ConfirmedOriginalReleaseClearsActualIdentityEvenWhenSourceReportIsFenced()
+    {
+        using var root = new ControlHostApplicationFactory();
+        using var host = Host(root, new CleanupClock());
+        var target = await ScreenShareEndpointTests.SeedOnlineAsync(host);
+        var service = host.Services.GetRequiredService<ScreenShareService>();
+        var runtime = host.Services.GetRequiredService<RuntimeStateService>();
+        var registry = host.Services.GetRequiredService<ScreenShareRegistry>();
+        var share = await service.CreateAsync("owner", 1, false);
+        share = await service.OfferAsync("owner", share.Id, "offer", "v=0\r\n");
+        var generation = share.SourceGeneration!.Value;
+        Assert.True((await ReportAsync(host, target, generation, new
+        {
+            source_id = (long?)null, adapter_kind = "screen_share", playback_state = "playing",
+            share_id = share.Id, actual_frames = 30, actual_audio = false,
+        })).Accepted);
+        Assert.Equal(share.Id, (await runtime.GetSessionAsync(1)).ActualShareId);
+        await service.StopAsync("owner", share.Id);
+        await service.CleanupOnceAsync();
+        Assert.Equal(share.Id, (await runtime.GetSessionAsync(1)).ActualShareId);
+        // 原资源Dispose回执可采信，旧源状态必须仍被围栏拒绝。
+        Assert.False((await ReportAsync(host, target, generation, Proof(share.Id, generation))).Accepted);
+        await service.CleanupOnceAsync();
+        Assert.Equal(ScreenShareState.Closed, registry.GetOwned("owner", share.Id).State);
+        var released = await runtime.GetSessionAsync(1);
+        Assert.Null(released.ActualShareId);
+        Assert.Equal(0, released.ActualFrames);
+        Assert.Null(released.ActualAudio);
+    }
+
+    [Fact]
     public async Task RegisteredBackgroundTimerExpiresShareWithoutAnyPublisherGetOrManualCycle()
     {
         var clock = new CleanupClock();

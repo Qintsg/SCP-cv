@@ -48,6 +48,7 @@
 
 ## Phase 6: Polish & Cross-Cutting
 
+- [ ] T019 D4原Player异常退出复现旧actual_share_id残留；先补真实Program/SQLite释放回归，再清除确证释放的原内存投影并核迟到回调/后来共享/两窗隔离，部署后复测异常及明确恢复。
 - [ ] T016 在`.validation/qa-screen-share-010/`验证本机→D4跨机ICE及真实两Worker后帧、两会话5分钟、十轮停止/换源与非目标保持；不发墙面/电源；若直连失败先解决媒体路由，禁止把本机结果当D4完成。
 - [ ] T017 更新`docs/openapi.yaml`及相关schema/path、使用/维护、`docs/CHANGELOG.md`、`docs/known-pitfalls.md`物理路径及新坑；更新本目录`verification.md`需求映射和原始证据。
 - [ ] T018 执行相关与全非Physical.NET、全前端、typecheck/build:web、Redocly、Spec Kit、diff/文件长度；证据按实际执行计数，逐项完成审计，不因部分绿灯标完成。

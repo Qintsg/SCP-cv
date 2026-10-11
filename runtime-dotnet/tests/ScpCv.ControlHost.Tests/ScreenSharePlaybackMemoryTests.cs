@@ -10,6 +10,63 @@ public sealed class ScreenSharePlaybackMemoryTests
     private static readonly DateTimeOffset Now = new(2026, 10, 11, 0, 0, 0, TimeSpan.Zero);
 
     [Fact]
+    public void ConfirmedReleaseCannotBeRevivedByLateOriginalReportOrClearLaterShare()
+    {
+        var (projection, target, id) = Bind();
+        Observe(projection, target, id, 30, 1);
+        projection.Release(target, id, 3);
+        Observe(projection, target, id, 900, 2);
+        Assert.Null(projection.Project(Session()).ActualShareId);
+        Assert.Equal(0, projection.Project(Session()).ActualFrames);
+        var replacement = Guid.NewGuid();
+        projection.Bind(target, replacement, 3);
+        Observe(projection, target, replacement, 60, 3);
+        projection.Release(target, id, 3);
+        Assert.Equal(replacement, projection.Project(Session()).ActualShareId);
+        Assert.Equal(60, projection.Project(Session()).ActualFrames);
+    }
+
+    [Theory]
+    [InlineData("window")]
+    [InlineData("instance")]
+    [InlineData("owner")]
+    [InlineData("group")]
+    [InlineData("share")]
+    [InlineData("generation")]
+    public void MismatchedReleaseDoesNotClearCurrentActualIdentity(string mismatch)
+    {
+        var (projection, target, id) = Bind();
+        Observe(projection, target, id, 30, 1);
+        var wrong = mismatch switch
+        {
+            "window" => target with { WindowId = 2 },
+            "instance" => target with { WorkerInstanceId = Guid.NewGuid() },
+            "owner" => target with { OwnerEpoch = 8 },
+            "group" => target with { GroupEpoch = 12 },
+            _ => target,
+        };
+        projection.Release(wrong, mismatch == "share" ? Guid.NewGuid() : id, mismatch == "generation" ? 4 : 3);
+        Assert.Equal(id, projection.Project(Session()).ActualShareId);
+        Assert.Equal(30, projection.Project(Session()).ActualFrames);
+    }
+
+    [Fact]
+    public void ConfirmedReleaseIsIdempotentAndDoesNotChangeOtherTarget()
+    {
+        var (projection, left, leftId) = Bind();
+        var right = left with { WindowId = 2, WorkerInstanceId = Guid.NewGuid() };
+        var rightId = Guid.NewGuid();
+        projection.Bind(right, rightId, 3);
+        Observe(projection, left, leftId, 30, 1);
+        Observe(projection, right, rightId, 50, 1);
+        var rightActual = projection.Project(Session() with { WindowId = 2 });
+        projection.Release(left, leftId, 3);
+        projection.Release(left, leftId, 3);
+        Assert.Null(projection.Project(Session()).ActualShareId);
+        Assert.Equal(rightActual, projection.Project(Session() with { WindowId = 2 }));
+    }
+
+    [Fact]
     public void CommittedNewerCloseCannotBeReversedByOlderPostCommitCallback()
     {
         var (projection, target, id) = Bind();

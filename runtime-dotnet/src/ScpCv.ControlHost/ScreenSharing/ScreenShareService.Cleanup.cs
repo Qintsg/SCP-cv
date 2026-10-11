@@ -39,13 +39,20 @@ public sealed partial class ScreenShareService
                 // 同Service gate内且无提交OPEN，Worker不可能领取原接收授权；不能在OPEN事务仍在途时作此判断。
                 if (!observation.OpenCommitted)
                 {
-                    registry.ConfirmClosed(current.Share.Id, current.Share.WindowId, generation);
+                    ConfirmReleased(current, generation);
                     continue;
                 }
                 await QueueStopAsync(current.Share, cancellationToken).ConfigureAwait(false);
-                if (current.NativeReleased) registry.ConfirmClosed(current.Share.Id, current.Share.WindowId, generation);
+                if (current.NativeReleased) ConfirmReleased(current, generation);
             }
             finally { gate.Release(); }
         }
+    }
+
+    /// <summary>:param current: 同窗口门禁下已确证无接收可能或原资源实际释放的条目。:returns: 终态与内存投影一起撤销，不把离线/新Worker当释放。</summary>
+    private void ConfirmReleased(ScreenShareCleanupTarget current, long generation)
+    {
+        if (registry.ConfirmClosed(current.Share.Id, current.Share.WindowId, generation))
+            runtime.ReleaseScreenShareProjection(current.Target, current.Share.Id, generation);
     }
 }

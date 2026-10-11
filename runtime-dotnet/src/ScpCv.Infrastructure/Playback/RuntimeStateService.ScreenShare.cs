@@ -8,6 +8,10 @@ namespace ScpCv.Infrastructure.Playback;
 
 public sealed partial class RuntimeStateService
 {
+    /// <summary>:param target: 已确证释放的原Worker。:param shareId: 原分享身份。:param generation: 原OPEN代次。:returns: 只撤销内存共享投影，不写持久历史、不排播放命令。</summary>
+    public void ReleaseScreenShareProjection(ScreenShareTargetIdentity target, Guid shareId, long generation) =>
+        _screenSharePlayback.Release(target, shareId, generation);
+
     /// <summary>预约前读取当前在线Worker身份；OPEN还会在事务中重新核对。</summary>
     public async Task<ScreenShareTargetIdentity> GetScreenShareTargetAsync(int windowId, CancellationToken cancellationToken = default)
     {
