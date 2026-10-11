@@ -2,7 +2,7 @@
 
 ## 当前实现状态
 
-010正在开发，尚未部署到D4，尚不能作为完整功能使用。已完成内存会话、HTTP信令、Worker租约授权、正式Player接收资源、网页采集/音频控件、HTTP/SSE身份及后台释放确认。本机两个正式Host十轮共30次真实采集/换源/释放，以及两目标分别有声传输/音量/静音验证通过；不等于正式双Worker或D4验收。显式HTTPS配置及真实TLS/API已验，普通浏览器的CA信任确认、连续两会话及现场可听效果仍待，阶段门禁不当完整交付。
+010正在开发，尚未部署到D4，尚不能作为完整功能使用。已完成内存会话、HTTP信令、Worker租约授权、正式Player接收资源、网页采集/音频控件、HTTP/SSE身份及后台释放确认。本机两个正式Host十轮共30次真实采集/换源/释放，以及两目标分别有声传输/音量/静音验证通过；不等于正式双Worker或D4验收。显式HTTPS、真实TLS/API和普通浏览器可信LAN采集已验，完整页面、连续两会话及现场可听效果仍待，阶段门禁不当完整交付。
 
 目标是从桌面Chrome/Edge的原生屏幕/应用/标签页选择器直接共享到窗口1或2，不用额外推流程序。不请求麦克风，不保存屏幕媒体，不新增媒体库源，不改变墙面布局或电源。
 
@@ -66,7 +66,7 @@ Worker纯值观测包含`share_id/actual_frames/actual_audio`和null媒体ID，�
 
 接收地址从ControlHost的`urls`首个监听地址派生，0.0.0.0/IPv6通配绑定转换为本机地址；沿用正式启动脚本的默认`https://localhost:18443`。可通过`ScreenSharing__ReceiverBaseUrl`显式选择**已监听**的loopback HTTP(S)纯地址；拒绝远程主机、用户信息、路径、query或fragment，且不自动新增监听或绕过证书验证。非通配LAN绑定需另行提供本机监听与明确接收地址。
 
-浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。配置步骤见下节，不能使用关闭安全策略/不安全来源flag作为正式方法。T014尚欠普通浏览器可信LAN实测，不因服务器TLS/API通过而当整项完成。
+浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。配置步骤见下节，不能使用关闭安全策略/不安全来源flag作为正式方法。T014普通浏览器可信LAN采集已通过；它不等于D4出画或整个010验收。
 
 当前自动化覆盖登录/CSRF、争抢、有界信令、原身份围栏、失败撤销、接收来源、停止及专用音频。真实本机Host/有声链路不当D4两Worker；正式双窗5分钟、十轮/异常切换、正常选择器取消、可信LAN及现场可听效果仍须执行，见[010任务](../specs/010-browser-screen-share/tasks.md)与[验证记录](../specs/010-browser-screen-share/verification.md)。
 
@@ -121,4 +121,4 @@ SCP_CV_HTTPS_HOSTS=192.168.5.194,localhost,127.0.0.1
 
 ### 4. 分层检查
 
-先访问`https://192.168.5.194:5173/`，确认浏览器无证书警告；验证登录、Secure/HttpOnly会话Cookie和原CSRF，再在显示控制页主动选择自有测试标签页。只有浏览器安全上下文、原生采集返回、指定Player激活后真实帧及停止实际释放分别成立，才算功能可用。禁止把HTTPS200、本机localhost采集或API受理当作D4出画证明。本轮服务器TLS、安全API及私钥访问/上游拒绝证据见[T014阶段记录](../specs/010-browser-screen-share/verification/t014-https.md)，普通浏览器CA确认仍待。
+先访问`https://192.168.5.194:5173/`，确认浏览器无证书警告；验证登录、Secure/HttpOnly会话Cookie和原CSRF，再在显示控制页主动选择自有测试标签页。只有浏览器安全上下文、原生采集返回、指定Player激活后真实帧及停止实际释放分别成立，才算功能可用。禁止把HTTPS200、本机localhost采集或API受理当作D4出画证明。本轮服务器TLS、安全API、私钥访问/上游拒绝与普通浏览器可信LAN采集证据见[T014记录](../specs/010-browser-screen-share/verification/t014-https.md)，D4未据此宣称已部署。

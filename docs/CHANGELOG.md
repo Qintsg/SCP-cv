@@ -3,7 +3,7 @@
 ## 2026-10-11 — 共享显式HTTPS与密钥保护（开发中，未部署）
 
 - Vite dev/preview接入服务器专用TLS配置及证书/私钥/SAN/期限门禁，错误配置拒绝降级；敏感文件必须在frontend目录外，目录链接不能绕过。HTTPS代理验证后端证书，正常CA/Node/Kestrel配置步骤已记录。
-- 新31项专项、全前端425/425及真实TLS登录/CSRF/私钥403/上游拒绝通过。Windows临时CA仍待系统确认，普通浏览器可信LAN采集及D4未验，不将服务器通过当完整功能，见[阶段记录](../specs/010-browser-screen-share/verification/t014-https.md)。
+- 新31项专项、全前端425/425及真实TLS登录/CSRF/私钥403/上游拒绝通过。Windows正常确认后，普通Chromium在可信LAN HTTPS上真实采集/释放也通过；T014完成、D4双Worker和最终门禁仍待，不将阶段通过当完整功能，见[记录](../specs/010-browser-screen-share/verification/t014-https.md)。
 
 ## 2026-10-11 — 共享网页声音区与有声链路（开发中，未部署）
 

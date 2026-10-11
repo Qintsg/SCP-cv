@@ -1,8 +1,8 @@
-# T014 显式HTTPS与证书门禁（部分，2026-10-11）
+# T014 显式HTTPS与证书门禁（完成，2026-10-11）
 
 ## 状态与范围
 
-从签名保存点`7a13a11`继续。requirements只读16/16，extensions.yml不存在。配置、文档和服务器TLS/API已验；普通浏览器信任未通过，T014仍未勾选，010目标不完成。没有部署010到D4、启动新现场组、改变墙面/电源、请求麦克风或采集用户桌面。
+从签名保存点`7a13a11`继续，代码保存点`a6d35a2`。requirements只读16/16，extensions.yml不存在。用户完成Windows正常信任确认后，普通浏览器可信LAN采集也通过，T014已勾；010目标仍不完成。没有部署010到D4、启动新现场组、改变墙面/电源、请求麦克风或采集用户桌面。下文保留信任未完成时的失败历史，最新结果见末节。
 
 ## 实现
 
@@ -30,7 +30,7 @@ ignored QA直接拥有Node和正式ControlHost进程。Host为Simulation、独�
 
 证据位于`.validation/qa-screen-share-010/t014-https-runs/<上述ID>/`。服务器在finally终结并等待原进程退出（主动终结返回1，不作测试失败），独立TCP5212/5213监听0。正常TLS不证明采集、媒体传输或D4出画。
 
-## Windows信任仍待确认
+## Windows信任等待历史（已由正常确认解除）
 
 - CA/私钥仅在ignored `t014-trusted-20261011-b/`；不运行全局mkcert install，不分发根私钥，只尝试添加精确公开CA到CurrentUser/Root，不改LocalMachine、保护注册表、浏览器策略或安全flag。
 - 同一`certutil -user -f -addstore Root` exec句柄`93274`仍活着，实际certutil PID53176/session1；Windows等待系统确认。独立查询精确CurrentUser根为false。观察超时不是退出，不因此重启导入；签名匹配也不是信任完成。
@@ -43,4 +43,13 @@ ignored QA直接拥有Node和正式ControlHost进程。Host为Simulation、独�
 - API就绪前Vite502被当JSON，保留`86e774913dc241cd9f038135e16a92a6`；只修夹具有界就绪/非JSON处理，不给生产添加副作用重试。
 - 首次负向夹具期待500/原始Node错误码，实际Vite8.2.0为502/证书错误文字。保留`9de401fc73814fe2a218f178db04eed1`，按已定位合同修QA，负向绿不称生产缺陷已修。
 - 带管道字符的pnpm测试过滤在Windows cmd解析失败，未运行测试；随后完整专项实际红绿，不计作业务失败/通过。
-- T014普通浏览器可信LAN采集、T015完整页面/真实选择器取消、T016正式两Worker/D4跨机/连续5分钟/十轮异常清理及T017/18最终门禁保持原范围。不把两Host、TLS代理、425前端或D4稳定009健康复核当完整目标实现。
+- T015完整页面/真实选择器取消、T016正式两Worker/D4跨机/连续5分钟/十轮异常清理及T017/18最终门禁保持原范围。不把两Host、TLS代理、425前端或D4稳定009健康复核当完整目标实现。
+
+## 正常信任及可信LAN浏览器门禁（2026-10-11续验）
+
+- 用户回复“已完成”后，核原exec93274终态退出0、原certutil进程不存在及精确CurrentUser/Root `9C71B09C2EF04F3FC66815AB0A667F4C2B3C49A6`存在。没有第二次导入、绕过系统提示或改变保护策略。
+- dev完整`de874144377a46f48e8f6ca1772ec0f7`实际退出0：普通完整Chromium `ignore_https_errors=False`正常访问`https://192.168.1.99:5212`，TLS1.3、安全上下文成立，真实getDisplayMedia返回live视频/内容音轨，显式停止后全部ended、页面错误0。登录/me/注销、Secure/HttpOnly、CSRF400、离线503及私钥403保持真实API边界。只自动选择唯一自有测试标签页，不计人工选择器或Player出画。
+- preview完整`44934c44b92b42e4a711422b674df99d`实际退出0：先独立导航正式SPA根页面、核真实TLS1.3，再通过仅本轮浏览器路由提供两份自有原样HTML，真实原生采集及释放通过。正式dist没有ignored `.qa-pack`，因此明确记录`preview_fixture_boundary`；不是生产夹具部署或完整页面验收。API/TLS与私钥URI只返回SPA且无密钥也通过。
+- preview第一次`9254037008b34e27b21ab01b117e9087`因为夹具不在dist而找不到按钮；第二次`03366a83f19243b1b1c43fa89ab194ed`路由回调默认参数被Playwright的Request实参覆盖。原失败保留，只修ignored测试夹具，未修改生产Vite、添加测试路由或放宽TLS/帧断言。
+- 两完整运行均`completed=true`、`browser_trusted=true`、`errors=[]`；自有Node/ControlHost在finally等待终结，独立端口另核。源代码未变，不重跑或新增计数425前端/.NET/Redocly。
+- 为T015正常可信HTTPS及T016跨机复测暂留同一自有CA；仅公开根受信任，根私钥不分发。后续本轮QA结束按helper精确移除并核不存在，不无限期保留，不删除其他用户证书。010未部署、T015–T018未勾。
