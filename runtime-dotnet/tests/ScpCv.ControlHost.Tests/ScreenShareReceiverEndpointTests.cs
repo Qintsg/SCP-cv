@@ -2,17 +2,37 @@
 using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using ScpCv.ControlHost.ScreenSharing;
 
 namespace ScpCv.ControlHost.Tests;
 
 public sealed class ScreenShareReceiverEndpointTests
 {
+    private readonly ReceiverClock _clock = new();
+
+    [Fact]
+    public async Task ReceiverContractFixtureKeepsSeededWorkerOnlineUntilTestClockAdvances()
+    {
+        using var root = new ControlHostApplicationFactory();
+        using var factory = ReceiverHost(root);
+        var (grant, _) = await ArrangeAsync(factory);
+        // 合同测试没有真实Worker发心跳，调度延迟不应自行改变被测授权前提。
+        await Task.Delay(TimeSpan.FromSeconds(6));
+        Assert.Equal(200, (await ExchangeAsync(factory, grant, "offer/", "GET")).Status);
+        _clock.Advance(TimeSpan.FromSeconds(6));
+        await factory.Services.GetRequiredService<ScreenShareService>().CleanupOnceAsync();
+        Assert.Equal(404, (await ExchangeAsync(factory, grant, "offer/", "GET")).Status);
+    }
+
     [Fact]
     public async Task ReceiverPageIsStaticNoStoreAndRequiresHeaderCapabilityEvenOnLoopback()
     {
-        using var factory = new ControlHostApplicationFactory();
+        using var root = new ControlHostApplicationFactory();
+        using var factory = ReceiverHost(root);
         var (grant, _) = await ArrangeAsync(factory);
         var accepted = await ExchangeAsync(factory, grant, "", "GET");
         Assert.Equal(200, accepted.Status);
@@ -31,7 +51,8 @@ public sealed class ScreenShareReceiverEndpointTests
     [InlineData("127.0.0.1", "null")]
     public async Task ValidCapabilityStillCannotBypassPeerOrOriginGate(string remote, string origin)
     {
-        using var factory = new ControlHostApplicationFactory();
+        using var root = new ControlHostApplicationFactory();
+        using var factory = ReceiverHost(root);
         var (grant, _) = await ArrangeAsync(factory);
         Assert.Equal(404, (await ExchangeAsync(factory, grant, "offer/", "GET", remote: remote, origin: origin)).Status);
     }
@@ -39,11 +60,12 @@ public sealed class ScreenShareReceiverEndpointTests
     [Fact]
     public async Task TokenCannotReadOtherWindowOrGenerationAndUserCookieIsNotReceiverAuthority()
     {
-        using var factory = new ControlHostApplicationFactory();
+        using var root = new ControlHostApplicationFactory();
+        using var factory = ReceiverHost(root);
         var (grant, _) = await ArrangeAsync(factory);
         Assert.Equal(404, (await ExchangeAsync(factory, grant, "offer/", "GET", window: 2)).Status);
         Assert.Equal(404, (await ExchangeAsync(factory, grant, "offer/", "GET", generation: grant.SourceGeneration + 1)).Status);
-        using var client = factory.CreateHttpsClient();
+        using var client = CreateHttpsClient(factory);
         await ScreenShareEndpointTests.LoginAsync(client);
         using var cookieOnly = await client.GetAsync($"/api/screen-share/receiver/{grant.Id}/offer/?window_id=1&source_generation={grant.SourceGeneration}");
         Assert.Equal(HttpStatusCode.NotFound, cookieOnly.StatusCode);
@@ -52,7 +74,8 @@ public sealed class ScreenShareReceiverEndpointTests
     [Fact]
     public async Task AnswerIsBoundedAndSingleUseAndOnlyActivatedVideoFramesGrantReceivingState()
     {
-        using var factory = new ControlHostApplicationFactory();
+        using var root = new ControlHostApplicationFactory();
+        using var factory = ReceiverHost(root);
         var (grant, registry) = await ArrangeAsync(factory);
         var offer = await ExchangeAsync(factory, grant, "offer/", "GET");
         Assert.Equal(200, offer.Status);
@@ -70,7 +93,8 @@ public sealed class ScreenShareReceiverEndpointTests
     [Fact]
     public async Task ReceiverEndRevokesGrantButDoesNotFalselyConfirmNativeRelease()
     {
-        using var factory = new ControlHostApplicationFactory();
+        using var root = new ControlHostApplicationFactory();
+        using var factory = ReceiverHost(root);
         var (grant, registry) = await ArrangeAsync(factory);
         Assert.Equal(200, (await ExchangeAsync(factory, grant, "end/", "POST")).Status);
         Assert.Equal(ScreenShareState.Stopping, registry.GetOwned("test-owner", grant.Id).State);
@@ -81,16 +105,27 @@ public sealed class ScreenShareReceiverEndpointTests
     [Fact]
     public async Task ChunkedHugeBodyIsRejectedAndInvalidNumericSchemaHasNoFrameSideEffect()
     {
-        using var factory = new ControlHostApplicationFactory();
+        using var root = new ControlHostApplicationFactory();
+        using var factory = ReceiverHost(root);
         var (grant, registry) = await ArrangeAsync(factory);
         Assert.Equal(413, (await ExchangeAsync(factory, grant, "answer/", "POST", new { type = "answer", sdp = new string('a', 400000) }, omitContentLength: true)).Status);
         Assert.Equal(400, (await ExchangeAsync(factory, grant, "frames/", "POST", new { frames = "1", activated = true })).Status);
         Assert.Equal(0, registry.GetOwned("test-owner", grant.Id).ActualFrames);
     }
 
-    private static async Task<(ScreenShareReceiverGrant Grant, ScreenShareRegistry Registry)> ArrangeAsync(ControlHostApplicationFactory factory)
+    /// <summary>:param root: 原Simulation主机。:returns: 仅替换时间seam；认证、SQLite、接收路由及真实后台清理都保持。</summary>
+    private WebApplicationFactory<Program> ReceiverHost(ControlHostApplicationFactory root) =>
+        root.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        { services.RemoveAll<TimeProvider>(); services.AddSingleton<TimeProvider>(_clock); }));
+
+    /// <summary>:param factory: 当前有序时钟主机。:returns: 原认证Cookie和正常HTTPS路由的测试客户端。</summary>
+    private static HttpClient CreateHttpsClient(WebApplicationFactory<Program> factory) =>
+        factory.CreateClient(new WebApplicationFactoryClientOptions
+        { AllowAutoRedirect = false, BaseAddress = new Uri("https://localhost"), HandleCookies = true });
+
+    private static async Task<(ScreenShareReceiverGrant Grant, ScreenShareRegistry Registry)> ArrangeAsync(WebApplicationFactory<Program> factory)
     {
-        using var client = factory.CreateHttpsClient();
+        using var client = CreateHttpsClient(factory);
         var target = await ScreenShareEndpointTests.SeedOnlineAsync(factory);
         var registry = factory.Services.GetRequiredService<ScreenShareRegistry>();
         var share = registry.Create("test-owner", target, false);
@@ -101,7 +136,7 @@ public sealed class ScreenShareReceiverEndpointTests
     }
 
     /// <summary>显式构造传输地址，TestServer的默认null远端不能假装为loopback。</summary>
-    private static async Task<ReceiverResponse> ExchangeAsync(ControlHostApplicationFactory factory, ScreenShareReceiverGrant grant,
+    private static async Task<ReceiverResponse> ExchangeAsync(WebApplicationFactory<Program> factory, ScreenShareReceiverGrant grant,
         string suffix, string method, object? body = null, string? token = null, string remote = "127.0.0.1", string origin = "",
         int? window = null, long? generation = null, string extraQuery = "", bool omitContentLength = false)
     {
@@ -126,4 +161,13 @@ public sealed class ScreenShareReceiverEndpointTests
     }
 
     private sealed record ReceiverResponse(int Status, Dictionary<string, string> Headers, string Body);
+
+    private sealed class ReceiverClock : TimeProvider
+    {
+        private DateTimeOffset _now = new(2026, 10, 11, 0, 0, 0, TimeSpan.Zero);
+        /// <summary>:returns: 仅由测试推进的业务时钟，不放宽生产超时。</summary>
+        public override DateTimeOffset GetUtcNow() => _now;
+        /// <summary>:param duration: 明确过期量。:returns: 不禁用真实后台清理。</summary>
+        internal void Advance(TimeSpan duration) => _now += duration;
+    }
 }
