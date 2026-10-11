@@ -107,6 +107,8 @@ certutil -user -addstore Root D:/SCP-cv-private/tls/ca/rootCA.pem
 
 Windows可能要求系统确认；核对身份后由操作者确认，等待命令退出并检查该精确指纹确已在CurrentUser/Root中，再用新浏览器会话访问。命令仍活着、超时或出现“签名与公钥匹配”不代表导入成功，不能因此重复导入或禁用保护。临时QA结束时只移除本轮精确CA指纹，不能批量删除其他根证书。Player所在D4交互用户也须信任对应CA，否则私有接收页同样会拒绝TLS。
 
+若用户已正常安装，但自动化命令仍查询不到，先在实际登录用户的普通会话核对精确根和浏览器导航。2026-10-11复验发现同一账号/SID下两种执行上下文的存储结果不同；不要据此要求反复安装、改机器策略或忽略证书错误。测试可在已正常信任的登录会话运行，仍保持严格HTTPS校验；这不表示其它访问账号或设备已获信任。
+
 ### 3. 配置ControlHost和同源前端
 
 ControlHost使用[官方Kestrel证书配置](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel/endpoints?view=aspnetcore-10.0)：本机监听的HTTPS端点、`Kestrel__Certificates__Default__Path`及`Kestrel__Certificates__Default__KeyPath`指向上面的叶证书/私钥。保留原认证、CSRF及明确AllowedHosts/AllowedOrigins，不关闭Secure Cookie或扩大来源名单；接收loopback地址必须是已监听且证书有效的地址。修改启动环境前先停止原项目运行组并确认退出，不能让两组同时占用显示器/端口；数据库和媒体沿用原DataRoot。
