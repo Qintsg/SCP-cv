@@ -19,7 +19,7 @@
 | 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`；3/4 请求拒绝、旧命令不重放 |
-| 网页屏幕共享（010开发中） | 网页原生许可后`/api/screen-shares/`预约/offer/停止；本人PATCH音频；私有receiver信令 | 独占Publisher轨道/peer→Service→原子OPEN/条件CLOSE及身份音频→原Worker领取复核/cap注入→独占InPrivate Player WebView→已提交报告的内存HTTP/SSE身份/实际属性；完整Dispose私有回执/原PID退出→一秒后台确认；重启清孤立意图，不保温 | 同会话/cap保护与周期清理，仅队列/HTTP，不启动Player、不造OS退出、出画或可听声音 | `ScreenShare*Tests`身份/事务/后帧/属性/释放/后台/预案；网页/本机两目标有声、显式TLS及普通浏览器可信LAN采集已分层验证，D4双窗/异常实机及可听效果未验，见010验证 |
+| 网页屏幕共享 | 网页原生许可后`/api/screen-shares/`预约/offer/停止；本人PATCH音频；私有receiver信令 | 独占Publisher轨道/peer→Service→原子OPEN/条件CLOSE及身份音频→原Worker领取复核/cap注入→独占InPrivate Player WebView→已提交HTTP/SSE观测；完整Dispose/原PID退出→一秒后台确证关闭及原身份投影清除；重启清孤立意图，不保温 | 同会话/cap保护与周期清理，仅队列/HTTP，不启动Player、不造OS退出、出画或可听声音 | `ScreenShare*Tests`；D4正式双Worker跨机UDP、双路5分钟、十轮/换源/发布者退出、原生运动像素与专用音频属性已验；D4独立音频峰值/扬声器可听未验，异常修复与复测见010记录 |
 | PPT 上传转换 / LibreOffice 动态放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 明确准备；两窗 `open/` 选择动态或静态模式；`GET /api/settings/presentation/` 只读能力 | `PptConversionHostedService` → 独占 Framework converter 导出 PNG/图片PDF；Player → 每窗独占 LibreOffice 侧车；动态默认，静态须修订/摘要匹配 | Simulation 不启动 Office；准备状态不证明真实转换或播出 | `PptConversionHostedServiceTests`、`PresentationPlaybackSelectorTests`、`PowerPointSettingsEndpointTests`（410退役）；008 本机原生/视觉/退出门禁，D4 未部署 |
 | 背景音频（独立列表） | `POST\|PATCH\|DELETE /api/background-audio/*` | `BackgroundAudioService` → 命令队列（`CommandTargetKind.Audio`）→ Named Pipe → `AudioWorker` | `QueuedCommandWakeNotifier`（仅排队） | `docs/实机测试结论.md` 背景音乐段 |
 | 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 2026-09-27 已在用户授权后发送拼接屏 ON→OFF→ON 与电视各两次 toggle；API 只确认写出，物理电源状态未独立读回，见 `docs/qa/003-full-regression-20260927.md`；`appsettings.json` §Devices |
@@ -408,9 +408,9 @@
 - **检出方式**：对照原文件摘要、显式UTF8及原数组/CIM进程身份；原生netstat核8890与精确MediaMTX PID；先捕获git标准流，再由PowerShell输出并检查退出码，不删历史失败或放松业务断言。
 - **现状**：修正仅限自有QA脚本，最终只读核验退出0；完整新包及运行组正常，未重启D4或修改机器策略。TCP/UDP监听和在线不等于真实出画；记录见[本轮部署](deployments/20261009-d4-compact.md)。
 
-### 网页屏幕共享QA与授权记录（坑78–90）
+### 网页屏幕共享QA与授权记录（坑78–93）
 
-真实采集门禁中的异步等待真值、Windows遗留信令及TRX覆盖问题见[网页屏幕共享记录](known-pitfalls/screen-share.md)。本机prototype通过不代表正式双窗或D4出画验收。
+真实采集门禁、心跳实际属性误判、合同夹具时钟和确证释放后的旧投影残留见[网页屏幕共享记录](known-pitfalls/screen-share.md)。本机prototype不代替正式双Worker；本轮D4证据独立见010验证。
 同记录新增JSON类型异常、ICE残留和OpenAPI私有404/模块引用判据，不能降低安全门禁来让一般测试通过。
 坑80记录已完成Task绕过取消/后来终态的真实红绿；共享必须同时核当前资源存活与端到端预算，不能只核历史首帧Task。
 坑81记录迟到预约的条件撤销及固定错误码；本地停止、请求受理、播放器实际释放和焦点可见均须独立核验。

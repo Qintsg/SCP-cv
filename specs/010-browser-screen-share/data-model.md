@@ -32,6 +32,8 @@
 
 只保存两个窗口各自的非秘密分享ID、OPEN代次、原Worker实例/owner及最新已提交报告版本、实际帧和音轨存在。请求`share_id`与实际`actual_share_id`分离；持久会话的desired/observed代次分别匹配才补字段。帧数不倒退，旧post-commit回调不恢复后来已清除的共享；缺失或畸形实际字段保守清空实际身份。重启不能凭数据库中的null源/adapter还原分享，不保存SDP、cap、媒体URI、画面或永久媒体库条目。
 
+原生Dispose回执或确证原OS对象退出使Registry关闭后，同窗口门禁按原完整Target/分享ID/OPEN代次移除对应内存条目，不等待旧源状态再次成功提交。条目移除后迟到报告没有可复活的绑定；后来Bind的新条目不被旧释放清除。离线、新Worker和取消仍不是移除证明。
+
 ## 原生释放回执（仅内部IPC）
 
 `released_screen_shares`最多32条，每条仅`share_id`非空GUID和`source_generation`正int64。Player保留有界去重历史并重复采样；只有完整原生Dispose完成才追加，不因JS closed/轨道ended或取消追加。ControlHost在原Worker身份事务提交后核窗口/instance/owner/原分享/原代次；整个数组schema不合法即不采信。不是公共HTTP/SSE字段，不存数据库、cap或receiver URI。原Player观察最多两条且绑定原身份，取消只结束观察、不确认死亡。

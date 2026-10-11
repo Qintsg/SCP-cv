@@ -53,3 +53,9 @@ ignored QA直接拥有Node和正式ControlHost进程。Host为Simulation、独�
 - preview第一次`9254037008b34e27b21ab01b117e9087`因为夹具不在dist而找不到按钮；第二次`03366a83f19243b1b1c43fa89ab194ed`路由回调默认参数被Playwright的Request实参覆盖。原失败保留，只修ignored测试夹具，未修改生产Vite、添加测试路由或放宽TLS/帧断言。
 - 两完整运行均`completed=true`、`browser_trusted=true`、`errors=[]`；自有Node/ControlHost在finally等待终结，独立端口另核。源代码未变，不重跑或新增计数425前端/.NET/Redocly。
 - 为T015正常可信HTTPS及T016跨机复测暂留同一自有CA；仅公开根受信任，根私钥不分发。后续本轮QA结束按helper精确移除并核不存在，不无限期保留，不删除其他用户证书。010未部署、T015–T018未勾。
+
+## 本轮最终信任清理（2026-10-11）
+
+T015/T016及T019异常恢复测试全部结束后，精确撤销CurrentUser/Root `9C71B09C2EF04F3FC66815AB0A667F4C2B3C49A6`。PowerShell证书provider因“user root store and UI is not allowed”拒绝；保留失败，随后正常运行`certutil -user -delstore Root`同指纹并等待Windows安全确认，原命令退出0、明确completed successfully。不禁用保护、不使用强制全局清理；独立Cert provider确认该精确根已不存在，其它根未操作。
+
+D4正式服务仍使用已验证的叶证书及Node公开根文件，没有把CA私钥传到D4；删除的是本机临时信任，不是远端TLS配置。新的浏览器访问该QA地址将需要重新配置正式有效证书并正常信任，不能声称所有设备无需配置即可使用。

@@ -1,13 +1,13 @@
 # Contract: 屏幕共享
 
-最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player、网页原生采集/音频控件、动态HTTP/SSE及后台释放已接线。本机有声传输和渲染信号已验；HTTPS、正式两窗稳定性及D4仍待后续，不代表完整功能可使用。
+最终合同同步docs/openapi.yaml（OpenAPI3.0）；发布者/接收HTTP、正式Player、网页原生采集/音频控件、动态HTTP/SSE及后台释放已接线。可信HTTPS及本机→D4两正式Worker的真实UDP、双路五分钟、十轮及换源/发布者关闭已验；结果与声音/权限边界见verification.md。
 
 ## 发布者（登录及CSRF）
 
 - POST `/api/screen-shares/`：window_id=1/2、has_audio实际轨道；返回id/状态/目标，无receiver token；仅预约不OPEN。
 - POST `/api/screen-shares/{id}/offer/`：type=offer、有界SDP，提交动态OPEN；受理不是出画。
 - GET `/api/screen-shares/{id}/`：本人状态、answer/未准备及实际接收信息；no-store。
-- POST `/api/screen-shares/{id}/heartbeat/`：续本人寿命，不授予实际帧。
+- POST `/api/screen-shares/{id}/heartbeat/`：续本人寿命，不授予实际帧；actual_volume/actual_muted为null，实际音频属性使用本人GET或会话HTTP/SSE，不把心跳回执当作实际属性。
 - DELETE `/api/screen-shares/{id}/`：撤销及条件CLOSE，重复幂等；受理/实际释放分别表示。
 - PATCH `/api/screen-shares/{id}/audio/`：严格仅volume整数0..100及muted布尔，登录/CSRF和本人receiving分享；事务重核原Worker/组、当前OPEN代次及已提交后帧。202返回submitted_command_id/window_id/share_id/source_generation，源代次不变；精确命令查询与实际属性回读分开，受理不代表应用成功。
 
@@ -29,6 +29,8 @@ Player实际状态新增非秘密`share_id`、递增`actual_frames`及实际音�
 T013原生专用`SCREEN_SHARE_AUDIO`的args严格仅`share_id`字符串GUID、`window_id`数值1/2、`volume`整数0..100、`muted`布尔；lease.source_generation须等于原OPEN代次。错误身份/schema、过期或资源结束拒绝，不推进源代次或调用VLC。命令从CreatedAt起三秒截止，原生预算不超过deadline；真实接收属性与请求一致才completed。领取再次核内存授权及原Worker，失效/缺装配终结命令，不注入receiver_uri。实际快照可空`actual_share_volume/actual_share_muted`，动作开始失效旧值，失败未知；无音轨实际muted固定true。发布者HTTP、公共投影及网页专用控件已接线，本机有声链路/渲染信号已验，D4可听效果另验；普通SET_VOLUME/SET_MUTE仍拒绝。
 
 内部状态另有`released_screen_shares`，最多32项，每项严格仅非空GUID `share_id`和正int64 `source_generation`，不包含接收授权；只在原生控制器Dispose及Surface移除完成后产生，并随空闲/新源状态重复回报。原Worker身份检查及事务提交后才采信；当前源报告被围栏不妨碍采信其原资源释放，但不能更新新源公共状态。JS closed、CLOSE排队、offline、新Worker和取消不能代替释放证据。原Player已验证OS身份的确证退出可以释放原分享，取证失败保持stopping。
+
+确证原资源释放后，同窗口门禁下按原Worker完整归属、share_id及OPEN代次清除其临时投影。即使旧源状态报告被围栏拒绝，也不能在重启后保留已死亡的actual_share_id/帧/音频；迟到旧释放和旧报告不得清除或复活后来共享。持久普通源历史及播放命令不因此改写。
 
 后台每秒撤销过期/换源/组失效共享并条件停止，不自动重采集或重播。重启仅通过当前OPEN审计清除孤立意图、不还原cap/SDP。预案捕获当前请求或实际共享返回400 `scenario_screen_share_not_persistable`，不新增/覆盖预案；创建/编辑预案的set目标必须是正媒体库ID，否则400 `scenario_source_invalid`。unset保持当前共享，empty或有效固定源是明确替换，不恢复共享。
 

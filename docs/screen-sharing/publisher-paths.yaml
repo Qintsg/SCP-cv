@@ -102,7 +102,7 @@ Heartbeat:
     tags: [screen-sharing]
     summary: 续本人共享寿命，不授予实际帧
     operationId: heartbeatScreenShare
-    description: 预约/协商硬上限20秒不能延长；已接收状态的发布者期限30秒。接收端活动不能代替发布者续租。
+    description: 预约/协商硬上限20秒不能延长；已接收状态的发布者期限30秒。接收端活动不能代替发布者续租。该回执只续内存寿命，actual_volume/actual_muted为null；实际音频属性需GET本人分享或读取会话HTTP/SSE，不能由心跳null推断应用失败或已静音。
     security:
       - sessionAuth: []
         csrfToken: []

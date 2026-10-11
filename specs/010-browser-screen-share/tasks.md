@@ -48,10 +48,10 @@
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T019 D4原Player异常退出复现旧actual_share_id残留；先补真实Program/SQLite释放回归，再清除确证释放的原内存投影并核迟到回调/后来共享/两窗隔离，部署后复测异常及明确恢复。
-- [ ] T016 在`.validation/qa-screen-share-010/`验证本机→D4跨机ICE及真实两Worker后帧、两会话5分钟、十轮停止/换源与非目标保持；不发墙面/电源；若直连失败先解决媒体路由，禁止把本机结果当D4完成。
-- [ ] T017 更新`docs/openapi.yaml`及相关schema/path、使用/维护、`docs/CHANGELOG.md`、`docs/known-pitfalls.md`物理路径及新坑；更新本目录`verification.md`需求映射和原始证据。
-- [ ] T018 执行相关与全非Physical.NET、全前端、typecheck/build:web、Redocly、Spec Kit、diff/文件长度；证据按实际执行计数，逐项完成审计，不因部分绿灯标完成。
+- [X] T019 D4原Player异常退出复现旧actual_share_id残留；真实Program/SQLite先红后绿，确证关闭后按完整身份清原内存投影，29项相关回归核晚到回调/后来共享/两窗隔离。新包严格原OS退出、首次终态保守5.332秒；独立明确重启后两新授权/实际后帧及正常释放通过，原协调器超时失败保留，见`verification/t016-d4.md`。
+- [X] T016 本机→D4正式REST/SSE/SQLite/IPC/两独立Worker跨机host→host UDP，双共享312秒、十轮32次共享、有声双路360秒/12组声音控制、两目标普通换源/迟到DELETE及非目标保持通过。独立DISPLAY2/3运动原图、原WebView OS退出、发布浏览器退出6.025秒及T019故障/主动恢复通过；不发墙面/电源/系统音量，D4 meter及现场可听未冒称验证，见`verification/t016-d4.md`。
+- [X] T017 OpenAPI模块/使用/维护/CHANGELOG/README与坑91–93已更新，需求映射、正常HTTPS/临时CA撤销及未验听音边界写入`verification.md`、`verification/t016-d4.md`和`verification/t018-final.md`。历史失败和阶段范围保留，不提交密钥/原始媒体/构建包。
+- [X] T018 最终全非Physical.NET1437/1437、前端430/430、typecheck/Web、Redocly及Spec Kit通过，六独立TRX核实际计数；diff/UTF8/LF/改动长度与敏感内容范围通过，16/16只读清单、无扩展hook。D4两窗在线idle及正式任务运行，精确解除两自有已结束QA任务；本机测试CA正常撤销并核不存在，见`verification/t018-final.md`。
 
 ## Dependencies & Execution Order
 
