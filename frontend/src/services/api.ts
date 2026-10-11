@@ -6,6 +6,7 @@ import {
   type ServerProfile,
 } from '@/platform/connection';
 import { resolveCsrfToken } from '@/platform/csrf';
+import { getClientBuildTarget } from '@/platform';
 
 import type {
   ApiStatePayload, BackgroundAudioPayload, DeviceItem, DisplayTargetItem, MediaFolderItem, PlaybackCommandSnapshot,
@@ -57,6 +58,9 @@ function resolveBackendBase(): string {
     return configuredTarget.replace(/\/+$/, '');
   }
 
+  // 正式网页默认也走同源代理；8000回退只属于未配置的封装端。
+  if (getClientBuildTarget() === 'web') return '';
+
   const currentProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
   const currentHost = window.location.hostname || '127.0.0.1';
   return `${currentProtocol}//${currentHost}:${DEFAULT_BACKEND_PORT}`;
@@ -76,6 +80,9 @@ export function getConnectionPorts(): { backendPort: string; frontendPort: strin
   const configuredTarget = clientConnection.profile?.origin
     || String(import.meta.env.VITE_BACKEND_TARGET || '').trim();
   let backendPort = DEFAULT_BACKEND_PORT;
+  if (!configuredTarget && getClientBuildTarget() === 'web') {
+    backendPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+  }
   if (configuredTarget) {
     try {
       const configuredUrl = new URL(configuredTarget);

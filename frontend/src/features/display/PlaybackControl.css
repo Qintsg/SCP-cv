@@ -223,6 +223,11 @@
 }
 
 @media (max-width: 767px) {
+  /* 关闭/停止等主要动作也要保留完整触控高度，不只扩大错误恢复按钮。 */
+  .playback-control :deep(.n-button) {
+    min-height: 44px;
+  }
+
   .playback-control__alert-body {
     flex-direction: column;
     align-items: stretch;
