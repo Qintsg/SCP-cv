@@ -11,6 +11,17 @@ namespace ScpCv.Infrastructure.Tests;
 public sealed class VenueDeviceTests
 {
     [Fact]
+    public void FixedCameraUsesConfirmed76AndAcceptsExplicitDisableOrOverride()
+    {
+        Assert.Equal("rtsp://192.168.5.76:554/live/chn0", new VenueOptions().FixedCameraRtsp);
+        Assert.Empty(new VenueOptions { FixedCameraRtsp = string.Empty }.FixedCameraRtsp);
+        Assert.Equal("rtsp://127.0.0.1:554/test", new VenueOptions
+        {
+            FixedCameraRtsp = "rtsp://127.0.0.1:554/test",
+        }.FixedCameraRtsp);
+    }
+
+    [Fact]
     public void VolumeFramesAreExactAndRepliesValidated()
     {
         Assert.Equal("FBFC619000000001640000FDFE", Convert.ToHexString(VenueProtocol.ScreenVolume(100)));
@@ -29,7 +40,18 @@ public sealed class VenueDeviceTests
             var factory = new ControlDbContextFactory(new DataRootOptions { RootPath = root }, root);
             await new DatabaseInitializer(factory).InitializeAsync();
             using var writes = new WriteCoordinator(factory);
-            var catalog = new CameraCatalog(factory, writes, new VenueOptions());
+            var options = new VenueOptions { FixedCameraRtsp = string.Empty };
+            var catalog = new CameraCatalog(factory, writes, options);
+            await catalog.SynchronizeAsync();
+            long originalFixedId;
+            await using (var before = factory.CreateDbContext())
+            {
+                var disabled = await before.MediaSources.SingleAsync(source => source.SystemKey == "camera:fixed");
+                originalFixedId = disabled.Id;
+                Assert.Empty(disabled.Uri);
+                Assert.False(disabled.IsAvailable);
+            }
+            options.FixedCameraRtsp = new VenueOptions().FixedCameraRtsp;
             await catalog.SynchronizeAsync();
             await catalog.SynchronizeAsync();
             var media = new MediaSourceService(factory, writes, factory, new MediaStorageOptions());
@@ -45,7 +67,10 @@ public sealed class VenueDeviceTests
             var sources = await db.MediaSources.ToListAsync();
             Assert.Equal(6, sources.Count);
             Assert.Equal(5, sources.Count(source => source.Uri.StartsWith("rtsp://192.168.5.8", StringComparison.Ordinal)));
-            Assert.False(sources.Single(source => source.SystemKey == "camera:fixed").IsAvailable);
+            var fixedSource = sources.Single(source => source.SystemKey == "camera:fixed");
+            Assert.Equal(originalFixedId, fixedSource.Id); // 升级补地址保留系统项ID，不新建重复源。
+            Assert.Equal("rtsp://192.168.5.76:554/live/chn0", fixedSource.Uri);
+            Assert.True(fixedSource.IsAvailable); // 已知地址不是当前在线/实际出画证据。
             foreach (var source in sources)
             {
                 await Assert.ThrowsAsync<MediaServiceException>(() => media.MoveSourceAsync(source.Id, null));

@@ -7,7 +7,7 @@ public sealed class VenueOptions
     public string ScreenAudioHost { get; set; } = "192.168.5.155";
     public int ScreenAudioPort { get; set; } = 4830;
     public int TimeoutMilliseconds { get; set; } = 3000;
-    public string FixedCameraRtsp { get; set; } = string.Empty;
+    public string FixedCameraRtsp { get; set; } = "rtsp://192.168.5.76:554/live/chn0";
 }
 
 public sealed class VenueDeviceException(string message) : Exception(message);

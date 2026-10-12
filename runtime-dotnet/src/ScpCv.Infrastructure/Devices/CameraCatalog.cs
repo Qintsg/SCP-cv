@@ -1,4 +1,4 @@
-// 六路内置摄像机是受信目录；不接管同名用户目录，不根据8X猜测固定摄像机。
+// 六路内置摄像机是受信目录；固定监控76已核实，不接管同名用户目录或猜测云台端点。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
