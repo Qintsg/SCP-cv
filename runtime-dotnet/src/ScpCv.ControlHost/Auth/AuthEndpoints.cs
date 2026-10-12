@@ -1,3 +1,4 @@
+// 正式认证HTTP入口；注销只清理当前协议的会话及防伪Cookie。
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
@@ -81,7 +82,7 @@ public static class AuthEndpoints
         }
 
         await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme).ConfigureAwait(false);
-        context.Response.Cookies.Delete(CsrfTokenService.CookieName);
+        context.Response.Cookies.Delete(CsrfTokenService.GetCookieName(context));
         return Results.Ok(new { detail = "ok" });
     }
 

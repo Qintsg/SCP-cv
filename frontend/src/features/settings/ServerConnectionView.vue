@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** 主机地址协议选择；网页默认HTTP，封装端保留原HTTPS认证限制。SCP-cv 2026-10-12。 */
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -14,6 +15,8 @@ import {
 } from 'naive-ui';
 
 import FIcon from '@/design-system/FIcon.vue';
+import { getClientBuildTarget } from '@/platform';
+import { normalizeServerProfile } from '@/platform/connection';
 import { useAuthStore } from '@/stores/auth';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useSessionStore } from '@/stores/sessions';
@@ -26,6 +29,7 @@ const router = useRouter();
 const auth = useAuthStore();
 const runtime = useRuntimeStore();
 const sessions = useSessionStore();
+const isWeb = getClientBuildTarget() === 'web';
 
 const origin = ref(runtime.serverProfile?.origin ?? '');
 const displayName = ref(runtime.serverProfile?.displayName ?? '');
@@ -60,13 +64,16 @@ const playerLabel = computed(() => layerSummary.value.player === 'online'
   ? t('serverConnection.playerOnline', { count: layerSummary.value.onlinePlayerCount })
   : t('serverConnection.playerOffline'));
 
+/** :returns: 规范化用户地址并检查实际控制连接；不改变明确协议或静默降级。 */
 async function connect(): Promise<void> {
   if (probeState.value === 'checking') return;
   errorMessage.value = '';
   probeState.value = 'checking';
   try {
+    const profile = normalizeServerProfile({ origin: origin.value, displayName: displayName.value, allowInsecureDevelopment: allowInsecureDevelopment.value });
+    if (!isWeb && profile.origin.startsWith('http:') && !profile.allowInsecureDevelopment) throw new Error(t('serverConnection.packagedHttpsRequired'));
     await runtime.switchServer({
-      origin: origin.value,
+      origin: profile.origin,
       displayName: displayName.value,
       allowInsecureDevelopment: allowInsecureDevelopment.value,
     });
@@ -84,6 +91,7 @@ async function connect(): Promise<void> {
   }
 }
 
+/** :returns: 明确前往当前主机登录，不携带账号秘密。 */
 function openLogin(): void {
   void router.push('/login');
 }
@@ -135,7 +143,8 @@ function openLogin(): void {
               :placeholder="t('serverConnection.displayNamePlaceholder')"
             />
           </n-form-item>
-          <div class="mb-4 flex min-h-11 items-center justify-between gap-4 rounded-lg border border-stroke px-3 py-2">
+          <p class="mb-4 text-sm text-foreground-muted">{{ t(isWeb ? 'serverConnection.protocolHint' : 'serverConnection.packagedHttpsRequired') }}</p>
+          <div v-if="!isWeb" class="mb-4 flex min-h-11 items-center justify-between gap-4 rounded-lg border border-stroke px-3 py-2">
             <div>
               <p class="m-0 font-medium">{{ t('serverConnection.insecureDevelopment') }}</p>
               <p class="m-0 text-sm text-foreground-muted">{{ t('serverConnection.insecureDevelopmentHint') }}</p>

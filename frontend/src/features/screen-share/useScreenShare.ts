@@ -14,14 +14,17 @@ export function useScreenShare(target: () => number, online: () => boolean) {
   const generation = clientConnection.captureGeneration();
   const ownerId = auth.user?.id;
   const expired = shallowRef(false);
+  const isCurrent = (): boolean => !expired.value && generation === clientConnection.captureGeneration() && auth.user?.id === ownerId;
+  const upgradeAvailable = computed(() => isCurrent() && getClientBuildTarget() === 'web'
+    && window.location.protocol === 'http:' && auth.isAuthenticated && online());
   const availability = computed(() => expired.value ? 'share_context_changed' : screenShareAvailability({
-    secure: window.isSecureContext, web: getClientBuildTarget() === 'web',
+    secure: window.isSecureContext && window.location.protocol === 'https:', web: getClientBuildTarget() === 'web',
     capture: typeof navigator.mediaDevices?.getDisplayMedia === 'function',
     peer: typeof RTCPeerConnection === 'function', authenticated: auth.isAuthenticated, online: online(),
   }));
   const publisher = new ScreenSharePublisher({
     windowId: target, availability: () => availability.value,
-    isCurrent: () => generation === clientConnection.captureGeneration() && auth.user?.id === ownerId,
+    isCurrent,
     capture: (options) => navigator.mediaDevices.getDisplayMedia(options), peer: createScreenSharePeer,
     api: screenSharingApi, changed: (next) => { view.value = next; },
   });
@@ -36,8 +39,9 @@ export function useScreenShare(target: () => number, online: () => boolean) {
   const removeGenerationWatch = clientConnection.onGenerationChanged(pageEnded);
   window.addEventListener('pagehide', pageEnded);
   watch(() => auth.user?.id, pageEnded);
+  watch(target, pageEnded);
   watch(online, (value) => { if (!value) void publisher.stop('share_player_offline'); });
   onBeforeUnmount(() => { window.removeEventListener('pagehide', pageEnded); pageEnded(); });
-  return { view, availability, active, start: (audio: boolean) => publisher.start(audio), stop, refreshStop: () => publisher.refreshStop(),
+  return { view, availability, active, upgradeAvailable, isCurrent, start: (audio: boolean) => publisher.start(audio), stop, refreshStop: () => publisher.refreshStop(),
     setAudio: (volume: number, muted: boolean) => publisher.setAudio(volume, muted) };
 }

@@ -24,12 +24,13 @@ function readPem(filename: string, directory: string, label: string): Buffer {
     // public不受Vite的fs.deny保护；同时核配置路径和实体路径，拒绝从frontend链接出去。
     for (const [base, candidate] of [[resolve(directory), requested], [realpathSync(directory), path]]) {
       const location = relative(base!, candidate!);
-      if (!(location.startsWith(`..${sep}`) || isAbsolute(location)) || extname(candidate!).toLowerCase() !== '.pem') throw new Error('invalid');
+      const extensions = label === '证书' ? ['.pem', '.crt'] : ['.pem', '.key'];
+      if (!(location.startsWith(`..${sep}`) || isAbsolute(location)) || !extensions.includes(extname(candidate!).toLowerCase())) throw new Error('invalid');
     }
     const info = statSync(path);
     if (!info.isFile() || info.size === 0 || info.size > 256 * 1024) throw new Error('invalid');
     return readFileSync(path);
-  } catch { throw new Error(`HTTPS无法读取${label}文件：须为frontend目录外可读且不超过256KiB的普通.pem文件，不能存入public或使用其中的链接。`); }
+  } catch { throw new Error(`HTTPS无法读取${label}文件：须为frontend目录外可读且不超过256KiB的普通.pem${label === '证书' ? '/.crt' : '/.key'}文件，不能存入public或使用其中的链接。`); }
 }
 /** :param env: 只在服务器加载的环境，不用VITE_前缀暴露配置。:param directory: frontend目录。:param now: 日期校验时刻。:returns: 明确TLS配置或完全无配置的undefined；部分/错误配置必须终止启动。 */
 export function loadFrontendHttps(env: Record<string, string | undefined>, directory: string, now = Date.now()): ServerOptions | undefined {

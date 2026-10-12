@@ -5,7 +5,7 @@ import {
   StaleConnectionResponseError,
   type ServerProfile,
 } from '@/platform/connection';
-import { resolveCsrfToken } from '@/platform/csrf';
+import { csrfCookieName, resolveCsrfToken } from '@/platform/csrf';
 import { getClientBuildTarget } from '@/platform';
 
 import type {
@@ -52,14 +52,13 @@ function resolveBackendBase(): string {
   // csrftoken cookie 也能正常携带，避免登录失败。
   if (import.meta.env.DEV) return '';
 
+  // 网页两入口一律通过同源代理；VITE_BACKEND_TARGET在网页只配置服务端上游。
+  if (getClientBuildTarget() === 'web') return '';
   const configuredTarget = String(import.meta.env.VITE_BACKEND_TARGET || '').trim();
   if (configuredTarget) {
     // 显式配置优先，避免运行时偷偷改写导致 .env 中的地址失效。
     return configuredTarget.replace(/\/+$/, '');
   }
-
-  // 正式网页默认也走同源代理；8000回退只属于未配置的封装端。
-  if (getClientBuildTarget() === 'web') return '';
 
   const currentProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
   const currentHost = window.location.hostname || '127.0.0.1';
@@ -78,7 +77,7 @@ export function buildBackendUrl(path: string): string {
  */
 export function getConnectionPorts(): { backendPort: string; frontendPort: string } {
   const configuredTarget = clientConnection.profile?.origin
-    || String(import.meta.env.VITE_BACKEND_TARGET || '').trim();
+    || (getClientBuildTarget() === 'web' ? '' : String(import.meta.env.VITE_BACKEND_TARGET || '').trim());
   let backendPort = DEFAULT_BACKEND_PORT;
   if (!configuredTarget && getClientBuildTarget() === 'web') {
     backendPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
@@ -181,7 +180,7 @@ export async function requestJson<T>(url: string, init: RequestInit = {}, timeou
   const method = (init.method || 'GET').toUpperCase();
   const csrfHeader: Record<string, string> = {};
   if (UNSAFE_METHODS.has(method)) {
-    const token = resolveCsrfToken(csrfRequestToken, readCookie('csrftoken'));
+    const token = resolveCsrfToken(csrfRequestToken, readCookie(csrfCookieName(absoluteUrl, window.location.href)));
     if (token) csrfHeader['X-CSRFToken'] = token;
   }
   const response = await fetchWithTimeout(absoluteUrl, {
@@ -216,7 +215,7 @@ function uploadFormData<T>(url: string, formData: FormData, options: UploadOptio
     request.open('POST', buildBackendUrl(url));
     // 文件上传走 multipart：必须同样携带会话 Cookie + CSRF token，否则被拦截。
     request.withCredentials = true;
-    const csrfToken = resolveCsrfToken(csrfRequestToken, readCookie('csrftoken'));
+    const csrfToken = resolveCsrfToken(csrfRequestToken, readCookie(csrfCookieName(buildBackendUrl(url), window.location.href)));
     if (csrfToken) request.setRequestHeader('X-CSRFToken', csrfToken);
     request.upload.onprogress = (event: ProgressEvent) => {
       if (!event.lengthComputable) return;

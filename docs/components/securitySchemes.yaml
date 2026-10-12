@@ -2,9 +2,14 @@ sessionAuth:
   type: apiKey
   in: cookie
   name: sessionid
-  description: ControlHost 会话 Cookie。除 auth 白名单外，业务接口需要已登录会话。
+  description: HTTPS入口的Secure/HttpOnly会话Cookie，票据绑定https，不接受HTTP入口票据改名。
+sessionAuthHttp:
+  type: apiKey
+  in: cookie
+  name: sessionid_http
+  description: HTTP入口的独立HttpOnly/SameSite=Lax会话Cookie，票据绑定http；明文不保护传输内容。
 csrfToken:
   type: apiKey
   in: header
   name: X-CSRFToken
-  description: ControlHost CSRF token。POST/PATCH/PUT/DELETE 请求由前端从 `csrftoken` Cookie 读取后写入该请求头。
+  description: POST/PATCH/PUT/DELETE须使用当前入口防伪令牌；HTTPS读取csrftoken，HTTP读取csrftoken_http，不能跨协议替用。

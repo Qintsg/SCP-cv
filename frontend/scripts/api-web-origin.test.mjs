@@ -1,4 +1,4 @@
-/** 正式网页无显式后端配置时走同源代理；保留显式主机与封装端配置。SCP-cv 2026-10-11。 */
+/** 网页构建目标只用于协议对应代理；显式所选主机与封装端优先级保持。SCP-cv 2026-10-12。 */
 import assert from 'node:assert/strict';
 import test, { afterEach } from 'node:test';
 import { Window } from 'happy-dom';
@@ -45,10 +45,10 @@ test('正式网页无显式后端地址时登录和REST使用同源路径而非�
   assert.deepEqual(requested, { url: '/api/runtime/', credentials: 'include' });
 });
 
-test('网页显式构建后端地址仍优先，HTTPS默认端口摘要正确', async () => {
+test('网页显式构建目标由同源代理使用，浏览器不绕过入口请求其上游', async () => {
   const module = await loadApi('web', 'https://configured.example.test');
-  assert.equal(module.buildBackendUrl('/api/runtime/'), 'https://configured.example.test/api/runtime/');
-  assert.deepEqual(module.getConnectionPorts(), { backendPort: '443', frontendPort: '5212' });
+  assert.equal(module.buildBackendUrl('/api/runtime/'), '/api/runtime/');
+  assert.deepEqual(module.getConnectionPorts(), { backendPort: '5212', frontendPort: '5212' });
 });
 
 test('已选择的播放主机仍覆盖网页构建地址，不被同源默认回退覆盖', async () => {

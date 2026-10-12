@@ -2,7 +2,7 @@ post:
   tags:
     - auth
   summary: 登出并清除当前 session
-  description: '该接口幂等；无论是否已有登录态都会返回 `detail: ok`。'
+  description: 未登录可幂等注销；已登录须当前协议CSRF及合法Origin。成功只清当前协议会话/防伪Cookie，保留另一入口会话，返回成功说明。
   operationId: logout
   security: []
   responses:

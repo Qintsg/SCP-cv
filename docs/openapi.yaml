@@ -12,14 +12,17 @@ info:
     SCP-cv 控制台 REST API 文档。
 
     所有业务路径默认挂载在 `/api` 前缀下；成功响应通常包含 `success: true`，错误响应统一为 `detail + code`。
-    业务接口与 `/media/` 文件由 ControlHost 会话 Cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/`、`/auth/me/` 和 `/auth/status/` 为公开端点。
+    业务接口与 `/media/` 文件由 ControlHost 会话 Cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/` 和 `/auth/status/` 为公开入口，`/auth/me/` 要求登录。
+    HTTPS使用Secure的sessionid/csrftoken，HTTP使用sessionid_http/csrftoken_http；票据绑定协议，注销只清当前入口。写操作要求当前协议防伪令牌及合法Origin。
     屏幕共享发布者沿用会话/CSRF；原生接收端点仅loopback与私有Authorization Bearer能力，不允许用户Cookie或查询串token代替。
 
 servers:
   - url: /api
     description: 本机 ControlHost REST API 前缀
-  - url: http://127.0.0.1:8000/api
-    description: 默认本机后端地址
+  - url: http://127.0.0.1:18444/api
+    description: 普通本机后端入口（明文）
+  - url: https://127.0.0.1:18443/api
+    description: 加密本机后端入口，须正常信任证书
 
 tags:
   - name: auth
@@ -53,6 +56,7 @@ tags:
 
 security:
   - sessionAuth: []
+  - sessionAuthHttp: []
 
 paths:
   /auth/csrf/:
@@ -210,6 +214,8 @@ components:
   securitySchemes:
     sessionAuth:
       $ref: './components/securitySchemes.yaml#/sessionAuth'
+    sessionAuthHttp:
+      $ref: './components/securitySchemes.yaml#/sessionAuthHttp'
     csrfToken:
       $ref: './components/securitySchemes.yaml#/csrfToken'
     screenShareReceiver:

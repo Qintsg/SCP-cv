@@ -59,13 +59,15 @@ export class StaleConnectionResponseError extends Error {
   }
 }
 
+/** :param profile: 用户地址，网页裸主机默认HTTP。:returns: 无凭据/路径的HTTP或HTTPS origin；不自动降级明确HTTPS。 */
 export function normalizeServerProfile(profile: ServerProfile): ServerProfile {
   const rawOrigin = profile.origin.trim();
-  const url = new URL(rawOrigin);
+  if (!rawOrigin || rawOrigin.startsWith('//')) throw new Error('请输入明确的播放主机地址。');
+  const url = new URL(/^[a-z][\w+.-]*:\/\//i.test(rawOrigin) ? rawOrigin : `http://${rawOrigin}`);
   const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
   const allowHttp = Boolean(profile.allowInsecureDevelopment && isLoopback);
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && allowHttp)) {
-    throw new Error('播放主机必须使用受信 HTTPS；仅显式开发模式允许本机 HTTP。');
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error('播放主机地址只支持HTTP或HTTPS。');
   }
   if (url.username || url.password) {
     throw new Error('播放主机地址不得包含用户名或密码。');

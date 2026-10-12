@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import vue from '@vitejs/plugin-vue';
 import { defineConfig, loadEnv } from 'vite';
 import { loadFrontendHttps } from './config/https';
+import { accessPort, backendTargets, dualProtocolPlugin, protocolProxy } from './config/dualProtocol';
 
 /**
  * Vite 构建配置。
@@ -23,36 +24,31 @@ export default defineConfig(({ mode, command }) => {
   const envDir = fileURLToPath(new URL('.', import.meta.url));
   const env = loadEnv(mode, envDir, '');
   const https = command === 'serve' && !isPackagedApp ? loadFrontendHttps(env, envDir) : undefined;
-  const fallbackPort = 5173;
-  const parsedPort = Number.parseInt(env.VITE_FRONTEND_PORT || '', 10);
-  const frontendPort = Number.isFinite(parsedPort) && parsedPort > 0 ? parsedPort : fallbackPort;
-  const backendTarget = (env.VITE_BACKEND_TARGET || 'https://localhost:18443').replace(/\/+$/, '');
+  const frontendPort = accessPort(env.VITE_FRONTEND_PORT, 5173);
+  const httpsPort = accessPort(env.SCP_CV_HTTPS_PORT, 5174);
 
   // 共用代理规则。
   //   - changeOrigin=false：保留浏览器原始 Host 头，让 ControlHost 的 CSRF Origin 校验
   //     拿到与 Origin 头一致的 host（同 origin 验证天然通过），否则 Host 被改为
   //     backend host 后 ControlHost 计算的可信 origin 与浏览器 Origin 不匹配 → 403。
-  //   - 明确HTTPS前端启用时，也校验HTTPS后端证书；既有无TLS开发流程保持原行为。
-  const proxyRule = {
-    target: backendTarget,
-    changeOrigin: false,
-    secure: Boolean(https),
-  } as const;
+  //   - 每请求选择同协议上游，HTTPS始终正常校验证书，不降级或剥离Secure Cookie。
+  const proxyRule = protocolProxy(backendTargets(env));
 
   return {
     // Electron 与 Capacitor 都消费相对路径的本地资源构建；网页继续部署在站点根路径。
     base: isPackagedApp ? './' : '/',
     envDir,
-    plugins: [vue(), tailwindcss()],
+    plugins: [vue(), tailwindcss(), ...(!isPackagedApp && command === 'serve' ? [dualProtocolPlugin(https, httpsPort)] : [])],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
     server: {
-      https,
       host: '0.0.0.0',
       port: frontendPort,
+      strictPort: true,
+      fs: { deny: ['.env', '.env.*', '*.{crt,pem,key}', '**/.git/**'] },
       proxy: {
         '/api': proxyRule,
         // events 是历史 dashboard SSE 路径，与 /api/events/ 共存；统一代理。
@@ -63,9 +59,9 @@ export default defineConfig(({ mode, command }) => {
       },
     },
     preview: {
-      https,
       host: '0.0.0.0',
       port: frontendPort,
+      strictPort: true,
       proxy: {
         '/api': proxyRule,
         '/events': proxyRule,

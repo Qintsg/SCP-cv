@@ -8,15 +8,18 @@ import {
   loadStoredServerProfile,
   normalizeServerProfile,
 } from '../src/platform/connection.ts';
-import { resolveCsrfToken } from '../src/platform/csrf.ts';
+import { csrfCookieName, resolveCsrfToken } from '../src/platform/csrf.ts';
 
 test('multipart 上传优先使用登录流程缓存的 CSRF token', () => {
   assert.equal(resolveCsrfToken('cached-token', 'cookie-token'), 'cached-token');
   assert.equal(resolveCsrfToken('', 'cookie-token'), 'cookie-token');
   assert.equal(resolveCsrfToken('', ''), '');
+  assert.equal(csrfCookieName('/api/auth/logout/', 'http://host.test:5173'), 'csrftoken_http');
+  assert.equal(csrfCookieName('/api/auth/logout/', 'https://host.test:5174'), 'csrftoken');
+  assert.equal(csrfCookieName('https://api.test', 'http://host.test'), 'csrftoken');
 });
 
-test('服务器配置只接受 HTTPS origin 或显式本机 HTTP 开发地址', () => {
+test('网页服务器地址默认HTTP并保留显式HTTP/HTTPS，拒绝凭据与路径', () => {
   assert.equal(normalizeServerProfile({ origin: 'https://host.test/', displayName: '' }).origin, 'https://host.test');
   assert.equal(
     normalizeServerProfile({
@@ -26,7 +29,13 @@ test('服务器配置只接受 HTTPS origin 或显式本机 HTTP 开发地址', 
     }).origin,
     'http://127.0.0.1:18000',
   );
-  assert.throws(() => normalizeServerProfile({ origin: 'http://host.test', displayName: '不安全' }));
+  for (const [input, expected] of [
+    ['host.test:5173', 'http://host.test:5173'], ['192.168.5.194', 'http://192.168.5.194'],
+    ['[::1]:5173', 'http://[::1]:5173'], ['http://host.test', 'http://host.test'],
+    ['https://host.test:5174', 'https://host.test:5174'],
+  ]) assert.equal(normalizeServerProfile({ origin: input, displayName: '' }).origin, expected);
+  for (const input of ['', '//evil.test', 'ftp://host.test', 'javascript:alert(1)', 'host.test?token=x', 'host.test#cap=x'])
+    assert.throws(() => normalizeServerProfile({ origin: input, displayName: '' }));
   assert.throws(() => normalizeServerProfile({ origin: 'https://user:pass@host.test', displayName: '凭据' }));
   assert.throws(() => normalizeServerProfile({ origin: 'https://host.test/api', displayName: '路径' }));
   assert.equal(loadStoredServerProfile({ getItem: () => '{invalid' }), null);

@@ -4,7 +4,9 @@ get:
   summary: 获取当前登录用户
   description: 前端首屏用该接口判断当前浏览器会话是否已登录。
   operationId: getCurrentUser
-  security: []
+  security:
+    - sessionAuth: []
+    - sessionAuthHttp: []
   responses:
     '200':
       description: 已登录用户

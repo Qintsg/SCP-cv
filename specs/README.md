@@ -1,5 +1,7 @@
 # 功能规范
 
+当前新增功能：[011 网页HTTP/HTTPS入口与共享安全跳转](011-http-https-access/spec.md)，接续[010网页共享](010-browser-screen-share/spec.md)。011本机验证记录见[本轮证据](011-http-https-access/verification/local.md)，不表示D4已部署。
+
 每个功能使用一个目录保存 Spec Kit 产物：
 
 ```text

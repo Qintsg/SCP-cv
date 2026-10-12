@@ -174,7 +174,9 @@ export default {
     currentProfile: '当前配置：{profile}',
     notConfigured: '未配置',
     origin: 'ControlHost 地址',
-    originPlaceholder: 'https://playback-host.example:8443',
+    originPlaceholder: '192.168.5.194:5173 或 https://192.168.5.194:5174',
+    protocolHint: '地址未写协议时默认 HTTP；明确填写 http:// 或 https:// 会保持原样。',
+    packagedHttpsRequired: 'Windows/Android 封装客户端的认证仍使用受信 HTTPS；HTTP 双入口适用于网页。',
     displayName: '显示名称',
     displayNamePlaceholder: '例如：报告厅播放主机',
     insecureDevelopment: '允许本机 HTTP 开发连接',
@@ -186,6 +188,6 @@ export default {
     openLogin: '登录此主机',
     backToConsole: '返回控制台',
     securityTitle: '安全说明',
-    securityHint: '主机地址只保存非敏感 origin 和显示名称；密码、Cookie 与 CSRF 令牌不会写入该配置。远程主机必须使用受信 HTTPS。',
+    securityHint: '主机配置不保存密码或令牌。网页普通控制可用 HTTP，但账号和控制数据不加密，请仅在可信内网使用；屏幕共享会提示前往 HTTPS。HTTPS 仍需正确证书与信任，不会自动降级。',
   },
 } as const;

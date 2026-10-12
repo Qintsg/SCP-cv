@@ -72,7 +72,7 @@ async function flushUi() {
 
 /**
  * 经公开 API 配置切换当前主机，不直接更改连接协调器内部状态。
- * :param origin: 测试主机地址，HTTP 只允许显式回环开发地址。
+ * :param origin: 测试网页主机地址，HTTP/HTTPS均允许。
  * :returns: 当前公开连接配置已恢复。
  */
 function configureServer(origin) {
@@ -104,8 +104,9 @@ async function mountSettings(component) {
   await flushUi();
 }
 
-test('未设置当前主机时保留构建目标的端口摘要', () => {
-  assert.deepEqual(apiModule.getConnectionPorts(), { backendPort: '18443', frontendPort: '20880' });
+test('网页未选显式主机时使用同源入口，构建目标只作为代理上游', () => {
+  assert.equal(apiModule.buildBackendUrl('/api/runtime/'), '/api/runtime/');
+  assert.deepEqual(apiModule.getConnectionPorts(), { backendPort: '20880', frontendPort: '20880' });
 });
 
 test('保存的主机端口优先于构建目标，且与实际 REST 地址一致', () => {

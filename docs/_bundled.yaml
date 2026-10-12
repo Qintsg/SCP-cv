@@ -11,14 +11,19 @@ info:
     SCP-cv 控制台 REST API 文档。
 
     所有业务路径默认挂载在 `/api` 前缀下；成功响应通常包含 `success: true`，错误响应统一为 `detail + code`。
-    业务接口与 `/media/` 文件由 ControlHost 会话 Cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/`、`/auth/me/` 和 `/auth/status/` 为公开端点。
+    业务接口与 `/media/` 文件由 ControlHost 会话 Cookie 鉴权保护；`/auth/csrf/`、`/auth/login/`、`/auth/logout/` 和 `/auth/status/` 为公开入口，`/auth/me/` 要求登录。
+    HTTPS使用Secure的sessionid/csrftoken，HTTP使用sessionid_http/csrftoken_http；票据绑定协议，注销只清当前入口。写操作要求当前协议防伪令牌及合法Origin。
+    屏幕共享发布者沿用会话/CSRF；原生接收端点仅loopback与私有Authorization Bearer能力，不允许用户Cookie或查询串token代替。
 servers:
   - url: /api
     description: 本机 ControlHost REST API 前缀
-  - url: http://127.0.0.1:8000/api
-    description: 默认本机后端地址
+  - url: http://127.0.0.1:18444/api
+    description: 普通本机后端入口（明文）
+  - url: https://127.0.0.1:18443/api
+    description: 加密本机后端入口，须正常信任证书
 security:
   - sessionAuth: []
+  - sessionAuthHttp: []
 tags:
   - name: auth
     description: 登录、登出、CSRF 与当前用户查询
@@ -30,10 +35,16 @@ tags:
     description: 播放会话查询
   - name: playback
     description: 窗口播放、切换、重置和物理冒烟测试
+  - name: screen-sharing
+    description: 临时网页屏幕共享的发布和原生私有信令；受理不等于出画
   - name: background-audio
     description: 背景音乐播放列表、播放控制与状态查询
   - name: runtime
     description: 全局运行态、系统音量与系统关闭请求
+  - name: video-wall
+    description: 大屏固定预设与手动映射草稿；未知控制帧仅可保存预览，不可实体应用
+  - name: settings
+    description: 跨控制端共享的实验性功能设置
   - name: displays
     description: 显示器枚举与窗口显示目标选择
   - name: devices
@@ -49,7 +60,7 @@ paths:
         - auth
       summary: 获取 CSRF token
       description: |
-        显式触发 ControlHost `csrftoken` Cookie 下发。前端首次加载时调用一次，之后在不安全方法中把 Cookie 值写入 `X-CSRFToken` 请求头。
+        显式触发当前入口的防伪Cookie下发：HTTPS为csrftoken，HTTP为csrftoken_http。前端首次加载时调用，之后在不安全方法中把对应值写入X-CSRFToken，不跨协议替用。
       operationId: getCsrfToken
       security: []
       responses:
@@ -57,7 +68,7 @@ paths:
           description: CSRF token 已下发
           headers:
             Set-Cookie:
-              description: '`csrftoken` cookie'
+              description: 当前协议的csrftoken或csrftoken_http，不修改另一协议Cookie。
               schema:
                 type: string
           content:
@@ -102,7 +113,7 @@ paths:
       tags:
         - auth
       summary: 登出并清除当前 session
-      description: '该接口幂等；无论是否已有登录态都会返回 `detail: ok`。'
+      description: 未登录可幂等注销；已登录须当前协议CSRF及合法Origin。成功只清当前协议会话/防伪Cookie，保留另一入口会话，返回成功说明。
       operationId: logout
       security: []
       responses:
@@ -121,7 +132,9 @@ paths:
       summary: 获取当前登录用户
       description: 前端首屏用该接口判断当前浏览器会话是否已登录。
       operationId: getCurrentUser
-      security: []
+      security:
+        - sessionAuth: []
+        - sessionAuthHttp: []
       responses:
         '200':
           description: 已登录用户
@@ -157,7 +170,7 @@ paths:
       tags:
         - auth
       summary: 修改当前用户密码
-      description: 校验当前密码并应用 ControlHost 密码强度规则；成功后保持当前浏览器会话登录。
+      description: 要求当前协议登录/CSRF及合法Origin，校验当前密码并应用强度规则；成功重发当前协议票据和防伪Cookie，另一入口Cookie不覆盖。
       operationId: changePassword
       requestBody:
         required: true
@@ -223,7 +236,7 @@ paths:
     patch:
       tags:
         - folders
-      summary: 更新媒体文件夹
+      summary: 重命名或移动实体媒体文件夹
       operationId: updateFolder
       requestBody:
         required: true
@@ -243,7 +256,7 @@ paths:
     delete:
       tags:
         - folders
-      summary: 删除媒体文件夹
+      summary: 删除实体媒体文件夹；默认保留原件
       operationId: deleteFolder
       requestBody:
         required: false
@@ -293,8 +306,9 @@ paths:
       tags:
         - sources
       summary: 上传文件并创建媒体源
-      description: 支持 PDF、PPT/PPS/POT/ODP、视频、音频和图片等文件。静态演示文稿会尝试转换为 PDF，动态演示文稿使用 PowerPoint。
+      description: 支持 PDF、PPT/PPS/POT/ODP、视频、音频和图片等文件。文稿原件按用户目录保留，LibreOffice 独立作业准备页图及图片 PDF；准备失败不等于原件丢失。动态文稿默认使用 LibreOffice，静态回退须明确选择。OOXML 声明扩展或可解析 ZIP 中的演示包内容采用相同外链预检，不能靠改扩展名绕过；已知危险包准备失败并保留原件。禁止宏执行与自动更新，不承诺所有旧格式、宏或加密文稿都已在预检阶段识别。
       operationId: uploadSource
+      x-upload-request-limit-bytes: 1073741824
       requestBody:
         required: true
         content:
@@ -329,6 +343,12 @@ paths:
                 $ref: '#/components/schemas/SourceResponse'
         '400':
           $ref: '#/components/responses/ErrorResponse'
+        '413':
+          description: 完整上传请求超过1GiB有限上限，返回upload_too_large；文件、表单字段及multipart开销均计入总请求，不登记媒体源。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /sources/local/:
     post:
       tags:
@@ -372,6 +392,32 @@ paths:
                 $ref: '#/components/schemas/SourceResponse'
         '400':
           $ref: '#/components/responses/ErrorResponse'
+  /sources/streams/:
+    post:
+      tags:
+        - sources
+      summary: 登记直播媒体流
+      description: 保存可尝试打开的流地址；返回的 is_available 不表示已经连通，metadata.stream_status 为 unverified，实际结果以播放会话与画面为准。
+      operationId: addStreamSource
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamSourceCreateRequest'
+      responses:
+        '201':
+          description: 登记成功，尚未验证播出
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
   /sources/{source_id}/move/:
     parameters:
       - $ref: '#/components/parameters/SourceId'
@@ -394,7 +440,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/SourceResponse'
         '400':
-          $ref: '#/components/responses/ErrorResponse'
+          description: 原件正在播放、转换、被占用或缺少移动权限；拒绝移动且保留原路径及内容
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: media_error
+                detail: 媒体原件被占用或没有移动权限，移动未生效。
         '404':
           $ref: '#/components/responses/ErrorResponse'
   /sources/{source_id}/download/:
@@ -433,6 +486,72 @@ paths:
                 format: binary
         '404':
           $ref: '#/components/responses/ErrorResponse'
+  /sources/{source_id}/slides/{page}/:
+    parameters:
+      - $ref: '#/components/parameters/SourceId'
+      - in: path
+        name: page
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+    get:
+      tags:
+        - sources
+      summary: 读取已准备的 PPT 指定页 PNG，需当前会话
+      operationId: getPptSlideImage
+      description: 按对应布局的同源摘要、修订、页数和受管理制品读取PNG，不借其它布局或历史页资源地址。 缺所选制品、过期或不完整时明确不可用，不表示原件不能动态打开。
+      parameters:
+        - in: query
+          name: fit_text
+          required: false
+          description: 仅接受单值 true/false，缺省 false；重复或其它值返回400。
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 逐页 PNG 文件流
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+  /sources/{source_id}/prepare/:
+    parameters:
+      - $ref: '#/components/parameters/SourceId'
+    post:
+      tags:
+        - sources
+      summary: 对失败或旧 PPT 源显式重新排队逐页图片转换
+      operationId: retryPptSlideImagePreparation
+      description: 结果不确定的LibreOffice操作不会盲目重试；原件始终保留。 缺少摘要的旧 PPT 仅在显式请求时从原件只读流补摘要，不在列表或启动时批量扫描。 文件读取在数据库写门禁外，提交前核对路径、版本及未决作业；变化时明确拒绝。 正常 queued/running 及可用的成功页图保持幂等，损坏/过期成功清单可显式重新排队。
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fit_text:
+                  type: boolean
+                  default: false
+                  description: 明确准备独立文字适配版，不覆盖默认原排版制品。
+      responses:
+        '200':
+          description: 返回默认与适配版各自准备状态；动态原件能力独立，受理不代表转换完成。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
   /sources/{source_id}/ppt-resources/:
     parameters:
       - $ref: '#/components/parameters/SourceId'
@@ -441,6 +560,15 @@ paths:
         - sources
       summary: 获取 PPT 页资源
       operationId: listPptResources
+      description: 按明确选择的原排版或文字适配制品生成当前页/下一页图片地址，不借另一布局。 制品摘要、修订、页数及受管理文件门禁通过后才提供图片；未准备时可保留已有备注和媒体信息，图片地址为空。 控制端应沿实际播放源和 actual_fit_text 选择；受理的期望源不是预览依据。
+      parameters:
+        - in: query
+          name: fit_text
+          required: false
+          description: 仅接受单值 true/false，缺省为原排版 false；重复或其它值返回400。
+          schema:
+            type: boolean
+            default: false
       responses:
         '200':
           description: 成功
@@ -449,6 +577,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/PptResourcesResponse'
         '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
           $ref: '#/components/responses/ErrorResponse'
     put:
       tags:
@@ -476,7 +606,7 @@ paths:
     patch:
       tags:
         - sources
-      summary: 更新媒体源名称、网页 URL、预热开关或 PPT 后端
+      summary: 更新媒体源名称、网页或直播地址及预热开关
       operationId: updateSource
       requestBody:
         required: true
@@ -505,8 +635,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 原件被占用、只读、正在播放或转换；删除未生效且保留源记录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '404':
           $ref: '#/components/responses/ErrorResponse'
+        '503':
+          description: 删除事务结果不明或隔离区清理未完成，须按 detail 检查清单；不能当作完全删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: media_cleanup_pending
+                detail: 源记录已删除，但隔离原件清理未完成；清单保留在 media/.staging，请维护人员检查。
   /sessions/:
     get:
       tags:
@@ -522,9 +667,333 @@ paths:
                 $ref: '#/components/schemas/SessionsResponse'
         '401':
           $ref: '#/components/responses/ErrorResponse'
+  /screen-shares/:
+    post:
+      tags:
+        - screen-sharing
+      summary: 预约窗口1或2的临时共享，不排OPEN
+      operationId: createScreenShare
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/ShareResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '413':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-shares/{share_id}/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+    get:
+      tags:
+        - screen-sharing
+      summary: 读取本人的共享状态和一次性应答
+      operationId: getScreenShare
+      responses:
+        '200':
+          $ref: '#/components/responses/ShareResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - screen-sharing
+      summary: 立即撤销共享授权并条件停止原目标
+      operationId: stopScreenShare
+      description: 重复停止幂等。未OPEN直接closed；已OPEN保持stopping直到独立原生释放证明，不能关闭后来内容。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ShareResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-shares/{share_id}/offer/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+    post:
+      tags:
+        - screen-sharing
+      summary: 提交单次有界offer并排动态OPEN
+      operationId: offerScreenShare
+      description: 原生许可和ICE应先完成；OPEN事务重新核预约时的Worker身份。202只证明受理，真实后帧前保持negotiating。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/Sdp'
+                - type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - offer
+      responses:
+        '202':
+          $ref: '#/components/responses/ShareResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '413':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-shares/{share_id}/heartbeat/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+    post:
+      tags:
+        - screen-sharing
+      summary: 续本人共享寿命，不授予实际帧
+      operationId: heartbeatScreenShare
+      description: 预约/协商硬上限20秒不能延长；已接收状态的发布者期限30秒。接收端活动不能代替发布者续租。该回执只续内存寿命，actual_volume/actual_muted为null；实际音频属性需GET本人分享或读取会话HTTP/SSE，不能由心跳null推断应用失败或已静音。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      responses:
+        '200':
+          $ref: '#/components/responses/ShareResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-shares/{share_id}/audio/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+    patch:
+      tags:
+        - screen-sharing
+      summary: 受理本人当前共享的音量与静音，不控制普通VLC媒体
+      operationId: setScreenShareAudio
+      description: 原预约Worker、组、当前OPEN和已提交实际帧在同一事务重核。源代次不变，命令从创建时刻起三秒截止；领取时再次核原共享授权。202仅受理，使用submitted_command_id查询精确命令终态并GET本人分享或会话实际属性，不能将请求值当已生效。无音轨时接收页仍强制静音，不证明声卡出声。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AudioRequest'
+      responses:
+        '202':
+          $ref: '#/components/responses/AudioAcceptedResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '413':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-share/receiver/{share_id}/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/Generation'
+    get:
+      tags:
+        - screen-sharing
+      summary: 原Worker读取静态只读接收页
+      operationId: getScreenShareReceiverPage
+      description: 仅loopback与有效cap；外部Origin、查询串token或错误身份均404。WPF首次导航设置Authorization header，cap只在私有URI的fragment传递，页面立即移除fragment。HTML no-store/no-referrer且固定脚本哈希CSP。
+      security:
+        - screenShareReceiver: []
+      responses:
+        '200':
+          description: 只读HTML，不含SDP/token，不证明实际出画
+          content:
+            text/html:
+              schema:
+                type: string
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-share/receiver/{share_id}/offer/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/Generation'
+    get:
+      tags:
+        - screen-sharing
+      summary: 授权接收者读取原发布offer
+      operationId: getScreenShareReceiverOffer
+      security:
+        - screenShareReceiver: []
+      responses:
+        '200':
+          description: 本次有界offer，不保存到HTTP缓存或日志
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sdp'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-share/receiver/{share_id}/status/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/Generation'
+    get:
+      tags:
+        - screen-sharing
+      summary: 核接收授权仍有效，不增加帧或延长发布者期限
+      operationId: getScreenShareReceiverStatus
+      security:
+        - screenShareReceiver: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-share/receiver/{share_id}/answer/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/Generation'
+    post:
+      tags:
+        - screen-sharing
+      summary: 授权接收者提交唯一answer
+      operationId: answerScreenShareReceiver
+      security:
+        - screenShareReceiver: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/Sdp'
+                - type: object
+                  properties:
+                    type:
+                      type: string
+                      enum:
+                        - answer
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '413':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-share/receiver/{share_id}/frames/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/Generation'
+    post:
+      tags:
+        - screen-sharing
+      summary: 授权资源报告激活后的真实视频帧
+      operationId: reportScreenShareReceiverFrame
+      security:
+        - screenShareReceiver: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - frames
+                - activated
+              properties:
+                frames:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  description: 严格递增，不使用心跳或连接状态构造。
+                activated:
+                  type: boolean
+                  enum:
+                    - true
+                has_audio:
+                  type: boolean
+                  default: false
+                  description: 实际接收内容音轨，不能超出发布者has_audio。
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '413':
+          $ref: '#/components/responses/ErrorResponse'
+  /screen-share/receiver/{share_id}/end/:
+    parameters:
+      - $ref: '#/components/parameters/ShareId'
+      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/Generation'
+    post:
+      tags:
+        - screen-sharing
+      summary: 接收资源故障或结束后撤销授权并条件停止
+      operationId: endScreenShareReceiver
+      security:
+        - screenShareReceiver: []
+      responses:
+        '200':
+          $ref: '#/components/responses/SuccessResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
   /sessions/{window_id}/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     get:
       tags:
         - sessions
@@ -557,7 +1026,7 @@ paths:
     patch:
       tags:
         - runtime
-      summary: 设置大屏模式
+      summary: 设置大屏固定预设（兼容旧客户端）
       operationId: updateRuntimeState
       requestBody:
         required: true
@@ -573,6 +1042,225 @@ paths:
               schema:
                 $ref: '#/components/schemas/RuntimeWithSessionsResponse'
         '400':
+          $ref: '#/components/responses/ErrorResponse'
+  /video-wall/layout/:
+    get:
+      tags:
+        - video-wall
+      summary: 获取草稿、上次发送布局及明确发送状态
+      operationId: getVideoWallLayout
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoWallLayoutResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+    put:
+      tags:
+        - video-wall
+      summary: 保存并预览大屏布局草稿，不向墙面发包
+      operationId: saveVideoWallLayout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VideoWallLayoutSaveRequest'
+      responses:
+        '200':
+          description: 保存成功，墙面保持原样
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoWallLayoutResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+  /video-wall/layout/apply/:
+    post:
+      tags:
+        - video-wall
+      summary: 应用保存的布局快照，返回模拟或发送未确认状态
+      operationId: applyVideoWallLayoutDraft
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                expected_revision:
+                  type: integer
+                  format: int64
+                  minimum: 1
+                  description: 保存响应中的草稿版本；不匹配时零发包拒绝
+      responses:
+        '200':
+          description: 请求完成；实体画面确认边界见dispatch_status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoWallLayoutApplyResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          description: 输入或协议未支持(protocol_unavailable)或草稿过期(layout_revision_conflict)，零发包
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /video-wall/presets/{preset}/apply/:
+    parameters:
+      - in: path
+        name: preset
+        required: true
+        schema:
+          type: string
+          enum:
+            - window_1_fullscreen
+            - window_1_left_window_2_right
+    post:
+      tags:
+        - video-wall
+      summary: 应用兼容大屏预设，返回模拟或已发送未确认状态
+      operationId: applyVideoWallPreset
+      responses:
+        '200':
+          description: 预设请求完成，不证明实体画面；以dispatch_status说明发送边界
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoWallLayoutApplyResponse'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+  /settings/powerpoint/:
+    get:
+      tags:
+        - settings
+      summary: 已退役PowerPoint设置入口
+      operationId: getPowerPointSettings
+      responses:
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '410':
+          $ref: '#/components/responses/ErrorResponse'
+    patch:
+      tags:
+        - settings
+      summary: 已退役，拒绝启动PowerPoint
+      operationId: updatePowerPointSettings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PowerPointSettingsUpdateRequest'
+      responses:
+        '410':
+          $ref: '#/components/responses/ErrorResponse'
+  /settings/presentation/:
+    get:
+      tags:
+        - settings
+      summary: 获取LibreOffice依赖和已验证控制能力
+      operationId: getPresentationSettings
+      responses:
+        '200':
+          description: 只读静态运行依赖诊断；不启动引擎，available不代表文稿或实际出画成功
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - settings
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  settings:
+                    type: object
+                    required:
+                      - default_engine
+                      - available
+                      - dependency_status
+                      - detail
+                      - capabilities
+                      - components
+                    properties:
+                      default_engine:
+                        type: string
+                        enum:
+                          - libreoffice
+                      available:
+                        type: boolean
+                        description: 当前静态依赖检查是否全部通过；不证明UNO连接、原生启动、文稿兼容或实际播放
+                      dependency_status:
+                        type: string
+                        enum:
+                          - installed
+                          - unavailable
+                      detail:
+                        type: string
+                        description: 当前检查摘要，不包含安装路径或配置值
+                      components:
+                        type: array
+                        minItems: 1
+                        description: 每项静态运行检查的结果与处理建议，不执行任何原生进程
+                        items:
+                          type: object
+                          required:
+                            - id
+                            - status
+                            - detail
+                            - reason_code
+                          properties:
+                            id:
+                              type: string
+                              description: 稳定组件标识或必需文件/CLI名称，不包含磁盘路径
+                            status:
+                              type: string
+                              enum:
+                                - installed
+                                - unavailable
+                            detail:
+                              type: string
+                              description: 可读原因及处理建议，不泄漏配置值
+                            reason_code:
+                              type: string
+                              description: 诊断原因码；通过时可为空，不等同原生播放错误
+                      capabilities:
+                        type: object
+                        required:
+                          - slide_navigation
+                          - effect_navigation
+                          - media_pause
+                          - media_resume
+                          - media_seek
+                          - media_volume
+                          - media_mute
+                        description: 引擎控制能力声明，与依赖静态可用和实际文稿完成分开，不据此推断已播放
+                        properties:
+                          slide_navigation:
+                            type: boolean
+                          effect_navigation:
+                            type: boolean
+                          media_pause:
+                            type: boolean
+                          media_resume:
+                            type: boolean
+                          media_seek:
+                            type: boolean
+                          media_volume:
+                            type: boolean
+                          media_mute:
+                            type: boolean
+                        additionalProperties:
+                          type: boolean
+        '401':
           $ref: '#/components/responses/ErrorResponse'
   /volume/:
     get:
@@ -739,7 +1427,7 @@ paths:
               $ref: '#/components/schemas/BackgroundAudioControlRequest'
       responses:
         '200':
-          description: 控制指令已写入后台播放器状态
+          description: 指令已持久入队；seek保持当前源/代次，position_ms仍为最后实际观测，不把目标当完成结果。实际定位由后续GET/SSE报告。
           content:
             application/json:
               schema:
@@ -793,6 +1481,7 @@ paths:
       tags:
         - background-audio
       summary: 设置背景音乐列表循环
+      description: 循环策略由ControlHost决定；AudioWorker每曲结束均发送带源和代次的结束通知。关闭循环只改变自动末尾行为，手动上一首/下一首保持既有回环。
       operationId: setBackgroundAudioLoop
       requestBody:
         required: true
@@ -811,7 +1500,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/open/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     post:
       tags:
         - playback
@@ -834,7 +1523,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/control/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     post:
       tags:
         - playback
@@ -848,16 +1537,53 @@ paths:
               $ref: '#/components/schemas/PlaybackControlRequest'
       responses:
         '200':
-          description: 操作成功
+          description: 意图已入队；目标会话携带submitted_command_id。实际终态须查询该命令，不能据200或页码宣称动作完成。
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PlaybackStateResponse'
         '400':
           $ref: '#/components/responses/ErrorResponse'
+  /playback/{window_id}/commands/{command_id}/:
+    parameters:
+      - $ref: '#/components/parameters/WindowId-2'
+      - in: path
+        name: command_id
+        required: true
+        description: 本次入队响应的 submitted_command_id，不使用全局最新命令
+        schema:
+          type: string
+          format: uuid
+    get:
+      tags:
+        - playback
+      summary: 查询指定窗口的一条持久命令
+      operationId: getPlaybackCommand
+      description: 仅只读，不下发或重放。pending/processing不是动作完成；completed的presentation_at_last_slide为宿主确认的末页无操作，不是动画结束的通用证明。不泄露args、claim_token或本机路径。
+      responses:
+        '200':
+          description: 精确命令的当前持久状态
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - command
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  command:
+                    $ref: '#/components/schemas/PlaybackCommandSnapshot'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/navigate/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     post:
       tags:
         - playback
@@ -871,7 +1597,7 @@ paths:
               $ref: '#/components/schemas/NavigateContentRequest'
       responses:
         '200':
-          description: 操作成功
+          description: 导航意图已受理；目标会话携带submitted_command_id。非播放器实际动作、过渡或动画完成证明，实际终态须查询该命令。
           content:
             application/json:
               schema:
@@ -880,7 +1606,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/ppt-media/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     post:
       tags:
         - playback
@@ -903,7 +1629,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/close/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     post:
       tags:
         - playback
@@ -920,7 +1646,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/loop/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     patch:
       tags:
         - playback
@@ -943,7 +1669,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/volume/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     patch:
       tags:
         - playback
@@ -966,7 +1692,7 @@ paths:
           $ref: '#/components/responses/ErrorResponse'
   /playback/{window_id}/mute/:
     parameters:
-      - $ref: '#/components/parameters/WindowId'
+      - $ref: '#/components/parameters/WindowId-2'
     patch:
       tags:
         - playback
@@ -1022,70 +1748,80 @@ paths:
     post:
       tags:
         - playback
-      summary: 重置当前 PowerPoint 放映并恢复页码
-      description: 关闭全局单槽位中当前活跃的 PowerPoint 放映窗口与文档，再回到重置前页码；PDF 演示文稿不受影响。
+      summary: 已退役PowerPoint应急入口
+      description: 返回明确退役结果，不执行任何Office操作。
       operationId: resetPptPlayback
       responses:
-        '200':
-          description: 操作成功
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PlaybackStateResponse'
         '401':
           $ref: '#/components/responses/ErrorResponse'
-  /playback/physical-smoke/:
-    post:
-      tags:
-        - playback
-      summary: 运行本机四屏物理冒烟测试
-      description: 真实下发 1-4 号窗口播放、关闭与 reset-all 指令，逐个验证图片、视频、网页、PPT、SRT、RTSP 和自定义流；audio 源通过背景音乐通道单独验证。该接口会占用现场输出窗口并可能播放音频。
-      operationId: runPhysicalSmoke
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhysicalSmokeRequest'
-      responses:
-        '200':
-          description: 测试执行完成
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PhysicalSmokeResponse'
-        '400':
+        '410':
           $ref: '#/components/responses/ErrorResponse'
   /system/shutdown/:
     post:
       tags:
         - runtime
-      summary: 请求主控进程关闭系统
+      summary: 停止播放运行组
+      description: 先进入排空并发送重置意图；已配置Supervisor时等待自有运行组停止成功， 再原子退役未完成命令并清理当前两窗和音频pending投影。 不关闭操作系统或ControlHost，不改写最后实际观测。 重复停止也清理新排入的停止意图；停止失败返回503且不确认Stopped。 同ControlHost已有启停操作时409拒绝，不排队、不重置意图或发送停止动作。
       operationId: shutdownSystem
       responses:
         '200':
-          description: 请求已发送
+          description: 运行组停止及意图清理完成；未配置Supervisor时仅完成仿真状态清理
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ShutdownResponse'
         '401':
           $ref: '#/components/responses/ErrorResponse'
+        '409':
+          description: 启停操作进行中（runtime_operation_in_progress），先核对已有操作结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
   /system/restart/:
     post:
       tags:
         - runtime
-      summary: 请求重启全部服务
-      description: 通知 runall 关闭其管理的运行时进程，清理可确认属于本项目的残留进程，并以相同参数重新启动。
+      summary: 停止并重新启动播放运行组
+      description: 已配置Supervisor时先进入排空，等待stop成功后才确认停止、退役未完成意图， 分配新组代次并start；新组就绪后授予所有权并恢复显示目标，返回202。 stop失败返回503并保持Draining，不启动新组。 未配置Supervisor时仅执行仿真停止/意图清理，返回200，不启动真实进程。 不重启ControlHost或操作系统。旧命令不转投新组。 同ControlHost已有启停操作时409拒绝，不把请求排队到新代次后执行。
       operationId: restartAllServices
       responses:
         '200':
-          description: 重启请求已发送
+          description: 未配置Supervisor，仅完成仿真停止与意图清理
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/RestartResponse'
+        '202':
+          description: 新运行组已就绪并授予所有权
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    required:
+                      - group_epoch
+                      - detail
+                    properties:
+                      group_epoch:
+                        type: integer
+                        format: int64
+                        description: 本次已就绪运行组代次
+                      detail:
+                        type: string
+                        description: 实际启动/就绪结果
         '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          description: 启停操作进行中（runtime_operation_in_progress），先核对已有操作结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
           $ref: '#/components/responses/ErrorResponse'
   /displays/:
     get:
@@ -1194,6 +1930,7 @@ paths:
       tags:
         - scenarios
       summary: 创建预案
+      description: 目标source_state为set时必须提供正媒体库source_id；零、负值或空值返回400及 code scenario_source_invalid。临时屏幕共享不能保存；unset保持当前内容，empty明确清空。
       operationId: createScenario
       requestBody:
         required: true
@@ -1238,6 +1975,7 @@ paths:
       tags:
         - scenarios
       summary: 从当前状态捕获预案
+      description: 当前请求或实际输出包含临时屏幕共享时，返回400及code scenario_screen_share_not_persistable，不创建或覆盖已有预案。 请先停止共享或切换固定媒体源；共享授权和媒体内容不能持久化到预案。
       operationId: captureScenario
       requestBody:
         required: true
@@ -1275,6 +2013,7 @@ paths:
       tags:
         - scenarios
       summary: 更新预案
+      description: 目标source_state为set时必须提供正媒体库source_id；零、负值或空值返回400及 code scenario_source_invalid，不覆盖已有预案。临时屏幕共享不能保存或恢复。
       operationId: updateScenario
       requestBody:
         required: true
@@ -1329,6 +2068,7 @@ paths:
       tags:
         - scenarios
       summary: 激活预案
+      description: 先验证媒体与两窗目标；指定固定预设时先下发墙面，再设置指定系统音量， 保存真实读回的音量及现有静音，运行态提交完成后才派发媒体命令。 unset/empty 音量保持不变。硬件不可用返回 system_audio_unavailable； 状态提交回执异常返回 scenario_state_persistence_failed 并报告已经发生的动作， 不自动补偿或继续派发媒体。失败后应先核对实际硬件和持久状态，避免盲目重复激活。
       operationId: activateScenario
       responses:
         '200':
@@ -1372,7 +2112,21 @@ components:
       type: apiKey
       in: cookie
       name: sessionid
-      description: ControlHost 会话 Cookie。除 auth 白名单外，业务接口需要已登录会话。
+      description: HTTPS入口的Secure/HttpOnly会话Cookie，票据绑定https，不接受HTTP入口票据改名。
+    sessionAuthHttp:
+      type: apiKey
+      in: cookie
+      name: sessionid_http
+      description: HTTP入口的独立HttpOnly/SameSite=Lax会话Cookie，票据绑定http；明文不保护传输内容。
+    csrfToken:
+      type: apiKey
+      in: header
+      name: X-CSRFToken
+      description: POST/PATCH/PUT/DELETE须使用当前入口防伪令牌；HTTPS读取csrftoken，HTTP读取csrftoken_http，不能跨协议替用。
+    screenShareReceiver:
+      type: http
+      scheme: bearer
+      description: 内存256位随机cap，仅原Worker能领取，绑定share/window/generation/instance/owner/group；不持久、不写查询串或日志。
   schemas:
     CsrfTokenResponse:
       type: object
@@ -1487,6 +2241,9 @@ components:
           type: integer
         name:
           type: string
+        relative_path:
+          type: string
+          description: media 根目录下的真实相对目录路径，使用正斜杠分隔
         parent_id:
           type: integer
           nullable: true
@@ -1534,7 +2291,7 @@ components:
         delete_contents:
           type: boolean
           default: false
-          description: true 时永久删除文件夹子树内的媒体源及其上传文件；false 时把媒体源移到根目录。
+          description: true 时永久删除文件夹子树内的媒体源及其上传文件；false 时把受管理原件搬到媒体根目录，遇到未登记文件会拒绝删除。
     FolderUpdateRequest:
       type: object
       properties:
@@ -1567,6 +2324,8 @@ components:
         - keep_alive
         - preheat_enabled
         - playback_mode
+        - preparation_state
+        - page_count
         - preview_url
         - thumbnail_url
         - preview_kind
@@ -1583,6 +2342,7 @@ components:
           type: string
         is_available:
           type: boolean
+          description: 表示当前配置可尝试打开，不保证依赖就绪、文稿解析成功或实际出画。 PPT/PPTX 默认动态模式独立检查原件存在及登记摘要非空，不受静态制品排队、缺失或失败阻断； 不在列表投影时重新计算原件摘要。显式静态模式须另行通过所选布局的制品门禁。 列表和编辑/移动/上传/重试响应使用相同门禁。直播源仅表示配置可尝试连接， 实际连通、画面和错误以目标播放会话为准。
         stream_identifier:
           type: string
           nullable: true
@@ -1605,23 +2365,39 @@ components:
           type: object
           additionalProperties: true
           description: |
-            媒体源扩展元数据。PPT 源可能包含 `ppt_playback` 字段，记录播放专用 `.ppsx`/`.pps`
-            缓存的生成状态、原始扩展名、缓存路径和错误信息；播放时仅在 `status=ready`
-            且缓存文件存在时使用该缓存 URI，否则回退原始 `uri`。
+            媒体源扩展元数据。PPT/PPTX 原件保留在 `uri`，不由制品覆盖。
+            原排版制品使用 `slide_images` / `static_pdf`；文字适配制品使用独立的
+            `fitted_slide_images` / `fitted_static_pdf`，不覆盖或代替原排版制品。
+            页图记录准备状态、原件摘要/修订、制品目录、页数与 `text_layout`（original/fit）；
+            PDF 记录同源摘要/修订、路径、页数、SHA256 与 `render_semantics=raster_pages`。
+            未准备的对应键可不存在；queued/running/failed/uncertain 不等于静态可播，
+            ready 仍须通过当前摘要、修订、页数及文件门禁。不确定作业需核查，不能盲重放。
+            顶层 `preparation_state` / `page_count` 描述原排版页图，不代表适配版已准备。
+            预览按显式布局读取；提供 `text_layout` 时须与所选原/fit键一致，否则不可用，历史缺声明保留所选键契约。
+            直播源的 `stream_status=unverified` 表示登记时未探测连通性。
         keep_alive:
           type: boolean
           deprecated: true
           description: 旧版保持活跃字段，当前与 preheat_enabled 同步
         preheat_enabled:
           type: boolean
-          description: 媒体源预热开关；播放器启动时按源类型提前准备后台资源，PowerPoint 预热当前停用
+          description: 媒体源预热偏好；实际预热取决于源类型及运行时能力，不表示已准备或已播放，不会启动已退役的 PowerPoint
         playback_mode:
           type: string
           enum:
             - ''
             - pdf
+            - slide_images
+            - libreoffice
             - powerpoint
-          description: 演示文稿播放模式；非演示文稿源为空字符串
+          description: 当前媒体源投影的默认模式：PPT/PPTX 为 libreoffice，PDF 原源为 pdf，非文稿为空字符串； 不是播放器已确认的实际模式。slide_images / pdf 也用于显式静态模式，需在 OPEN 中选择； powerpoint 仅保留为历史只读兼容值，当前投影不会返回且新 OPEN 不接受，旧入口已退役， 不会因历史实验开关恢复播放。
+        preparation_state:
+          type: string
+          description: 原排版 PPT 页图准备状态（queued/running/ready/failed/uncertain）；缺失、摘要过期或残缺的 ready 清单显示为空并可显式重试，其它媒体源为空；适配版状态见 metadata.fitted_slide_images
+        page_count:
+          type: integer
+          minimum: 0
+          description: 原排版 PPT 页图已通过当前投影门禁的页数，未就绪时为 0；不表示动态原件总页数或适配版已准备
         preview_url:
           type: string
           description: 可嵌入前端缩略位的预览 URL；无真实预览时为空字符串
@@ -1706,6 +2482,35 @@ components:
           type: boolean
           deprecated: true
           description: 旧字段兼容别名；建议改用 preheat_enabled
+    StreamSourceCreateRequest:
+      type: object
+      required:
+        - source_type
+        - url
+      properties:
+        source_type:
+          type: string
+          enum:
+            - rtsp_stream
+            - srt_stream
+            - custom_stream
+          description: RTSP、SRT 或 VLC 支持的自定义 IP 媒体流；不能将网页 URL 静默当作视频流
+        url:
+          type: string
+          format: uri
+          description: |
+            RTSP 源使用 rtsp://，SRT 源使用 srt://；自定义流当前支持
+            http(s)://、udp://、rtp:// 或 rtmp:// 主机地址。内嵌用户名和密码会被拒绝。
+        name:
+          type: string
+          description: 操作员可识别的名称；省略时以地址作为名称
+        folder_id:
+          type: integer
+          nullable: true
+        preheat_enabled:
+          type: boolean
+          default: false
+          description: 是否在播放器启动时尝试预热；登记本身不探测流，也不代表已出画
     MoveSourceRequest:
       type: object
       properties:
@@ -1745,14 +2550,17 @@ components:
       properties:
         id:
           type: integer
+          description: 持久页资源标识；由有效制品生成但未登记页行的只读资源为0，不创建数据库记录。
         source_id:
           type: integer
         page_index:
           type: integer
         slide_image:
           type: string
+          description: 已通过门禁的所选布局PNG地址；适配版包含fit_text=true。未准备或不可用时为空，不借另一版。
         next_slide_image:
           type: string
+          description: 同一布局的下一页PNG地址；末页或对应制品不可用时为空。
         speaker_notes:
           type: string
         has_media:
@@ -1807,7 +2615,7 @@ components:
           type: string
         uri:
           type: string
-          description: 仅网页源允许通过本接口修改 URL
+          description: 网页或直播源可修改 URL，流地址变更仅影响后续打开；文件原件路径不能在此修改
         preheat_enabled:
           type: boolean
           description: 是否在播放器启动时预热该媒体源
@@ -1856,6 +2664,10 @@ components:
         - player_online
         - player_last_seen_at
       properties:
+        submitted_command_id:
+          type: string
+          format: uuid
+          description: 仅此次显示命令入队响应的目标窗口携带；普通GET和SSE不保留。受理不等于实际完成。
         window_id:
           type: integer
         session_id:
@@ -1876,6 +2688,8 @@ components:
           enum:
             - ''
             - pdf
+            - slide_images
+            - libreoffice
             - powerpoint
           description: 播放器上报的当前演示文稿实际放映模式；尚未确认或其它源为空字符串
         playback_state:
@@ -1896,11 +2710,60 @@ components:
           type: integer
         position_ms:
           type: integer
+          nullable: true
+          description: LibreOffice统一媒体时钟不可得或临时screen_share时为null，不伪造文件进度。
         duration_ms:
           type: integer
+          nullable: true
+        actual_source_id:
+          type: integer
+          nullable: true
+          description: 最后确认的实际源，可能与请求中的source_id不同；未确认关闭前保留占用。若旧资源已确认关闭且失败候选也已释放，明确为空而非保留已关闭源；清理不确定不得据此猜空输出。
+        actual_adapter_kind:
+          type: string
+        share_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: 当前临时共享请求身份；source_id为null、source_type为screen_share，不是媒体库条目。不含receiver能力或信令，服务重启清空。
+        actual_share_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: 已由原Worker的instance/owner/源代次及实际资源字段匹配的临时输出身份，可在换源待确认时与share_id不同。身份或帧数缺失不由adapter或playing补齐。
+        actual_frames:
+          type: integer
+          format: int64
+          minimum: 0
+          description: 当前实际共享资源报告的视频后帧计数，不是HTTP请求、心跳或连接次数。零值不能宣称出画；非共享或未知时为0。
+        actual_audio:
+          type: boolean
+          nullable: true
+          description: 实际共享接收资源是否有内容音轨；未知或非共享为null，不代表声卡实际已播放。音量/静音能力另行验证。
+        actual_fit_text:
+          type: boolean
+          nullable: true
+          description: Worker成功发布的当前文稿文字布局；true为适配，false为原排版，null表示未观测、非文稿或确认无实际输出。失败换源仍有旧资源时保留旧实际布局；旧资源与候选均确认释放时清空，不从desired或OPEN受理推断。
+        actual_share_volume:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: 原Worker已提交共享接收页属性回执，动作失败、缺失或非共享为null，不沿用普通volume或请求值。
+        actual_share_muted:
+          type: boolean
+          nullable: true
+          description: 与actual_share_volume成对的实际静音属性；无音轨只能true，未知为null。不是声卡可听声音或静音证明。
+        desired_generation:
+          type: integer
+        observed_generation:
+          type: integer
+        cleanup_pending:
+          type: boolean
         pending_command:
           type: string
           nullable: true
+          description: 目标队列按序最早未终结的指令，包含待领取Pending和执行中Processing；空值不证明动画或媒体效果结束。
         last_updated_at:
           type: string
           format: date-time
@@ -1931,6 +2794,121 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/SessionSnapshot'
+    CreateRequest:
+      type: object
+      required:
+        - window_id
+      properties:
+        window_id:
+          type: integer
+          enum:
+            - 1
+            - 2
+        has_audio:
+          type: boolean
+          default: false
+          description: 原生采集实际返回内容音轨，不是希望获取麦克风。
+    Sdp:
+      type: object
+      required:
+        - type
+        - sdp
+      properties:
+        type:
+          type: string
+          enum:
+            - offer
+            - answer
+        sdp:
+          type: string
+          maxLength: 65536
+          description: 以v=0和CRLF开头，解码后的UTF-8字节数不超过65536；Unicode可能更早达到字节上限。
+    Share:
+      type: object
+      required:
+        - id
+        - window_id
+        - state
+        - has_audio
+        - receiver_has_audio
+        - source_generation
+        - expires_at
+        - actual_frames
+        - last_frame_at
+        - answer
+        - stop_reason
+        - actual_volume
+        - actual_muted
+      properties:
+        id:
+          type: string
+          format: uuid
+        window_id:
+          type: integer
+          enum:
+            - 1
+            - 2
+        state:
+          type: string
+          enum:
+            - allocated
+            - negotiating
+            - receiving
+            - stopping
+            - closed
+            - failed
+          description: 接受指令不等于receiving；stopping不等于原生资源已退出。
+        has_audio:
+          type: boolean
+        receiver_has_audio:
+          type: boolean
+        source_generation:
+          type: integer
+          format: int64
+          minimum: 1
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+        actual_frames:
+          type: integer
+          format: int64
+          minimum: 0
+          description: 授权资源激活后的真实视频帧计数；心跳不能增加。
+        last_frame_at:
+          type: string
+          format: date-time
+          nullable: true
+        answer:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/Sdp'
+        stop_reason:
+          type: string
+        actual_volume:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+          description: GET本人当前接收分享时，来自原Worker已提交严格属性回执；未知、离线、停止或缺失为null，不是请求值或可听声音证明。
+        actual_muted:
+          type: boolean
+          nullable: true
+          description: 与actual_volume成对的接收页实际属性。无音轨不能报告非静音；未知为null，不能推断声音已停止。
+    AudioRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - volume
+        - muted
+      properties:
+        volume:
+          type: integer
+          minimum: 0
+          maximum: 100
+        muted:
+          type: boolean
     SessionResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessResponse'
@@ -1940,11 +2918,6 @@ components:
           properties:
             session:
               $ref: '#/components/schemas/SessionSnapshot'
-    BigScreenMode:
-      type: string
-      enum:
-        - single
-        - double
     RuntimeSnapshot:
       type: object
       required:
@@ -1953,7 +2926,11 @@ components:
         - muted_windows
       properties:
         big_screen_mode:
-          $ref: '#/components/schemas/BigScreenMode'
+          type: string
+          enum:
+            - single
+            - double
+            - custom
         volume_level:
           type: integer
           minimum: 0
@@ -1971,6 +2948,11 @@ components:
           properties:
             runtime:
               $ref: '#/components/schemas/RuntimeSnapshot'
+    BigScreenMode:
+      type: string
+      enum:
+        - single
+        - double
     RuntimeUpdateRequest:
       type: object
       required:
@@ -2037,23 +3019,24 @@ components:
           type: boolean
         loop_enabled:
           type: boolean
-          description: 是否在自然播放到列表末尾后回到首项
+          description: 是否在自然播放到列表末尾后回到首项；false时末曲自然结束后保留末曲并停止，中间曲仍推进下一首。不是单曲循环。
         pending_command:
           type: string
-          description: 播放器进程尚未消费的后台指令；空字符串表示无指令
+          description: 音频队列按序最早未终结的指令，包含Pending和Processing；空字符串表示无未终结命令，不证明音频实际播放完成。
           enum:
             - ''
-            - open
-            - play
-            - pause
-            - stop
-            - seek
-            - set_loop
-            - set_volume
-            - set_mute
+            - OPEN
+            - PLAY
+            - PAUSE
+            - STOP
+            - SEEK
+            - SET_LOOP
+            - SET_VOLUME
+            - SET_MUTE
         updated_at:
           type: string
           format: date-time
+          description: 音频状态、设置和播放列表操作的观测更新时间；实际加入推进、重复加入不变。客户端用于隔离较旧响应，不是媒体库元信息修订号、主机身份或实体播放完成证明。
     BackgroundAudioPlaylistItem:
       type: object
       required:
@@ -2106,6 +3089,158 @@ components:
                 $ref: '#/components/schemas/SessionSnapshot'
             background_audio:
               $ref: '#/components/schemas/BackgroundAudioSnapshot'
+    VideoWallInput:
+      type: object
+      required:
+        - kind
+      properties:
+        kind:
+          type: string
+          enum:
+            - window_1
+            - window_2
+            - laptop
+            - ip_stream
+        ip_address:
+          type: string
+          format: ipv4
+          description: 仅kind=ip_stream使用；须匹配服务器已登记的设备流描述，未登记时只可保存预览
+    VideoWallMapping:
+      type: object
+      required:
+        - region
+        - input
+      properties:
+        region:
+          type: string
+          enum:
+            - fullscreen
+            - left
+            - right
+        input:
+          $ref: '#/components/schemas/VideoWallInput'
+    VideoWallLayout:
+      type: object
+      required:
+        - name
+        - preset
+        - mappings
+        - can_apply
+        - unavailable_reason
+      properties:
+        name:
+          type: string
+        preset:
+          type: string
+          enum:
+            - ''
+            - window_1_fullscreen
+            - window_1_left_window_2_right
+        mappings:
+          type: array
+          minItems: 1
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/VideoWallMapping'
+        can_apply:
+          type: boolean
+          description: 服务端对输入描述、受限布局及协议配置预检通过时为true，不证明实体出画
+        unavailable_reason:
+          type: string
+    VideoWallLayoutState:
+      type: object
+      required:
+        - draft
+        - draft_revision
+        - active_preset
+        - applied
+        - applied_revision
+        - dispatch_status
+        - dispatch_detail
+      properties:
+        draft:
+          type: object
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/VideoWallLayout'
+        draft_revision:
+          type: integer
+          format: int64
+          minimum: 0
+        active_preset:
+          type: string
+          enum:
+            - single
+            - double
+            - custom
+        applied:
+          type: object
+          nullable: true
+          description: 上次完整发送的布局意图，不是实体确认；失败时可能仍显示历史意图
+          allOf:
+            - $ref: '#/components/schemas/VideoWallLayout'
+        applied_revision:
+          type: integer
+          format: int64
+          minimum: 0
+        dispatch_status:
+          type: string
+          enum:
+            - none
+            - dispatching
+            - simulated
+            - sent_unconfirmed
+            - uncertain
+        dispatch_detail:
+          type: string
+    VideoWallLayoutResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          required:
+            - layout
+          properties:
+            layout:
+              $ref: '#/components/schemas/VideoWallLayoutState'
+    VideoWallLayoutSaveRequest:
+      type: object
+      required:
+        - name
+        - mappings
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 64
+        mappings:
+          type: array
+          minItems: 1
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/VideoWallMapping'
+    VideoWallLayoutApplyResponse:
+      allOf:
+        - $ref: '#/components/schemas/VideoWallLayoutResponse'
+        - type: object
+          required:
+            - runtime
+            - sessions
+          properties:
+            runtime:
+              $ref: '#/components/schemas/RuntimeSnapshot'
+            sessions:
+              type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                $ref: '#/components/schemas/SessionSnapshot'
+    PowerPointSettingsUpdateRequest:
+      type: object
+      required:
+        - experimental_enabled
+      properties:
+        experimental_enabled:
+          type: boolean
     SystemVolumeStatus:
       type: object
       required:
@@ -2177,8 +3312,24 @@ components:
             - seek
         position_ms:
           type: integer
+          format: int64
           minimum: 0
-          description: action=seek 时使用的目标位置毫秒
+          description: action=seek时必填的非负int64毫秒目标；不能传字符串、小数或null。请求仅入队，不表示媒体已定位。
+      oneOf:
+        - properties:
+            action:
+              enum:
+                - play
+                - pause
+                - stop
+                - next
+                - prev
+        - properties:
+            action:
+              enum:
+                - seek
+          required:
+            - position_ms
     BackgroundAudioVolumeRequest:
       type: object
       properties:
@@ -2199,6 +3350,7 @@ components:
         enabled:
           type: boolean
           default: true
+          description: 列表循环。为true时末曲自然结束后回到首曲；为false时停在末曲。中间曲自然结束仍推进下一首，不是单曲原地循环。
     OpenSourceRequest:
       type: object
       required:
@@ -2219,6 +3371,17 @@ components:
           type: integer
           minimum: 1
           description: PPT 打开后自动跳转的页码；非 PPT 源忽略
+        presentation_mode:
+          type: string
+          enum:
+            - libreoffice
+            - slide_images
+            - pdf
+          description: PPT/PPTX默认LibreOffice；页图与只含图片的同源PDF须显式选择且准备完成。PDF原源仍为PDF。
+        fit_text:
+          type: boolean
+          default: false
+          description: 明确开启时只在内存中缩放文字适应原框；静态模式使用独立适配版制品，不修改原件。
     PlaybackStateResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessResponse'
@@ -2239,6 +3402,8 @@ components:
         - play
         - pause
         - stop
+        - next_effect
+        - previous_effect
     PlaybackControlRequest:
       type: object
       required:
@@ -2246,15 +3411,59 @@ components:
       properties:
         action:
           $ref: '#/components/schemas/PlaybackAction'
+    PlaybackCommandSnapshot:
+      type: object
+      required:
+        - command_id
+        - window_id
+        - command
+        - source_generation
+        - status
+        - result_code
+        - completed_at
+      properties:
+        command_id:
+          type: string
+          format: uuid
+        window_id:
+          type: integer
+          minimum: 1
+          maximum: 2
+        command:
+          type: string
+          description: 持久命令名称，例如NEXT_EFFECT或NEXT
+        source_generation:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+            - pending
+            - processing
+            - completed
+            - failed
+            - superseded
+            - uncertain
+        result_code:
+          type: string
+          description: completed/presentation_at_last_slide仅表示确认末页无操作；失败或uncertain不显示末页成功提示
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
     NavigateAction:
       type: string
       enum:
         - next
         - prev
+        - previous
+        - first
+        - last
         - goto
         - seek
     NavigateContentRequest:
       type: object
+      description: goto必须提供正整数target_index；缺失、null、非整数或越出int32的值在入队前400拒绝。first/last按已知页数派生，不要求target_index。HTTP成功仅表示意图已受理，非原生动作或动画完成。
       required:
         - action
       properties:
@@ -2262,10 +3471,37 @@ components:
           $ref: '#/components/schemas/NavigateAction'
         target_index:
           type: integer
-          description: 当 action=goto 时使用
+          format: int32
+          description: 当action=goto时必填且大于0；不将缺失值默认为第一页。其它导航沿既有派生/钳制语义，超总页数不代表目标已显示。
         position_ms:
           type: integer
           description: 当 action=seek 时使用
+      oneOf:
+        - required:
+            - action
+            - target_index
+          properties:
+            action:
+              type: string
+              enum:
+                - goto
+            target_index:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 2147483647
+        - required:
+            - action
+          properties:
+            action:
+              type: string
+              enum:
+                - next
+                - prev
+                - previous
+                - first
+                - last
+                - seek
     PptMediaControlRequest:
       type: object
       required:
@@ -2297,169 +3533,6 @@ components:
         muted:
           type: boolean
           default: false
-    PhysicalSmokeRequest:
-      type: object
-      properties:
-        windows:
-          type: array
-          description: 要测试的窗口编号，默认 1-4 全部窗口
-          items:
-            type: integer
-            minimum: 1
-            maximum: 4
-        source_ids:
-          type: object
-          description: '按媒体源类型显式指定测试源 ID，例如 `{ "audio": 15, "ppt": 16 }`；audio 通过背景音乐通道测试，不打开到窗口'
-          additionalProperties:
-            type: integer
-        settle_seconds:
-          type: number
-          format: float
-          default: 2
-          description: 每个源进入播放态后保持播放的秒数
-        timeout_seconds:
-          type: number
-          format: float
-          default: 30
-          description: 图片、视频、网页和背景音乐等待播放超时
-        ppt_timeout_seconds:
-          type: number
-          format: float
-          default: 120
-          description: PPT 等待播放超时
-        stream_timeout_seconds:
-          type: number
-          format: float
-          default: 45
-          description: SRT、RTSP 和自定义流等待播放超时
-        total_timeout_seconds:
-          type: number
-          format: float
-          default: 540
-          description: 播放阶段全局总超时，后端会限制在 1-540 秒内，超时后不再打开后续源
-        reset_after:
-          type: boolean
-          default: true
-          description: 测试结束后是否执行 reset-all
-    PhysicalSmokeSummary:
-      type: object
-      required:
-        - total
-        - passed
-        - failed
-      properties:
-        total:
-          type: integer
-        passed:
-          type: integer
-        failed:
-          type: integer
-    PhysicalSmokeStepResult:
-      type: object
-      required:
-        - window_id
-        - source_type
-        - source_id
-        - source_name
-        - status
-        - open_elapsed
-        - close_elapsed
-        - error_message
-        - open_error
-        - close_error
-      properties:
-        window_id:
-          type: integer
-          description: 1-4 表示物理播放窗口；0 表示背景音乐通道
-        source_type:
-          $ref: '#/components/schemas/SourceType'
-        source_id:
-          type: integer
-        source_name:
-          type: string
-        status:
-          type: string
-          enum:
-            - ok
-            - failed
-        open_elapsed:
-          type: number
-          format: float
-        close_elapsed:
-          type: number
-          format: float
-        error_message:
-          type: string
-        open_error:
-          type: string
-        close_error:
-          type: string
-    PhysicalSmokeResetResult:
-      type: object
-      required:
-        - status
-        - elapsed
-        - error_message
-      properties:
-        status:
-          type: string
-          enum:
-            - ok
-            - failed
-            - skipped
-        elapsed:
-          type: number
-          format: float
-        error_message:
-          type: string
-    PhysicalSmokeResponse:
-      allOf:
-        - $ref: '#/components/schemas/SuccessResponse'
-        - type: object
-          required:
-            - started_at
-            - finished_at
-            - elapsed_seconds
-            - total_timeout_seconds
-            - windows
-            - source_ids
-            - summary
-            - results
-            - reset
-            - sessions
-          properties:
-            started_at:
-              type: string
-              format: date-time
-            finished_at:
-              type: string
-              format: date-time
-            elapsed_seconds:
-              type: number
-              format: float
-            total_timeout_seconds:
-              type: number
-              format: float
-            windows:
-              type: array
-              items:
-                type: integer
-            source_ids:
-              type: object
-              additionalProperties:
-                type: integer
-            summary:
-              $ref: '#/components/schemas/PhysicalSmokeSummary'
-            results:
-              type: array
-              items:
-                $ref: '#/components/schemas/PhysicalSmokeStepResult'
-            reset:
-              $ref: '#/components/schemas/PhysicalSmokeResetResult'
-            sessions:
-              type: array
-              items:
-                $ref: '#/components/schemas/SessionSnapshot'
     ShutdownResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessResponse'
@@ -2470,6 +3543,7 @@ components:
           properties:
             sessions:
               type: array
+              description: 停止确认及意图清理后的两窗快照；pending为空不等于最后实际源已观测为空
               items:
                 $ref: '#/components/schemas/SessionSnapshot'
             detail:
@@ -2485,11 +3559,12 @@ components:
           properties:
             sessions:
               type: array
+              description: 未配置Supervisor时仿真停止及意图清理后的两窗快照
               items:
                 $ref: '#/components/schemas/SessionSnapshot'
             detail:
               type: string
-              example: 全部服务重启请求已发送
+              example: 系统重启请求已发送
     DisplayTarget:
       type: object
       required:
@@ -2500,6 +3575,8 @@ components:
         - x
         - 'y'
         - is_primary
+        - playback_role
+        - is_playback_target
       properties:
         index:
           type: integer
@@ -2515,6 +3592,16 @@ components:
           type: integer
         is_primary:
           type: boolean
+        playback_role:
+          type: string
+          enum:
+            - ''
+            - big_left
+            - big_right
+          description: 仅大屏输出有对应角色，其余显示器只用于诊断
+        is_playback_target:
+          type: boolean
+          description: 当前安全模式下是否允许作为播放窗口目标；Hardware 仅允许两块绑定的大屏
     DisplaysResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessResponse'
@@ -2532,7 +3619,7 @@ components:
         window_id:
           type: integer
           minimum: 1
-          maximum: 4
+          maximum: 2
           default: 1
         display_mode:
           $ref: '#/components/schemas/DisplayMode'
@@ -2606,6 +3693,7 @@ components:
           type: integer
           minimum: 1
           maximum: 4
+          description: 新预案仅使用 1-2；旧预案可只读返回历史 3-4 目标，但有效目标激活前会被拒绝
         source_state:
           $ref: '#/components/schemas/SourceState'
         source_id:
@@ -2700,7 +3788,7 @@ components:
         window_id:
           type: integer
           minimum: 1
-          maximum: 4
+          maximum: 2
         source_state:
           $ref: '#/components/schemas/SourceState'
         source_id:
@@ -2786,6 +3874,66 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    ShareResponse:
+      description: 本人内存分享状态，无接收token；仅受理或停止待确认不是实际出画或实际释放证明。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            enum:
+              - no-store
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                required:
+                  - share
+                properties:
+                  share:
+                    $ref: '#/components/schemas/Share'
+    AudioAcceptedResponse:
+      description: 共享专用音频命令已入队；不更新实际音量或源代次，不表示已经出声。
+      headers:
+        Cache-Control:
+          schema:
+            type: string
+            enum:
+              - no-store
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/SuccessResponse'
+              - type: object
+                required:
+                  - submitted_command_id
+                  - window_id
+                  - share_id
+                  - source_generation
+                properties:
+                  submitted_command_id:
+                    type: string
+                    format: uuid
+                  window_id:
+                    type: integer
+                    enum:
+                      - 1
+                      - 2
+                  share_id:
+                    type: string
+                    format: uuid
+                  source_generation:
+                    type: integer
+                    format: int64
+                    minimum: 1
+    SuccessResponse:
+      description: 该接收操作已受理，不能用作原生资源退出证明。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SuccessResponse'
   parameters:
     FolderId:
       in: path
@@ -2799,15 +3947,39 @@ components:
       required: true
       schema:
         type: integer
+    ShareId:
+      name: share_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     WindowId:
+      name: window_id
+      in: query
+      required: true
+      schema:
+        type: integer
+        enum:
+          - 1
+          - 2
+    Generation:
+      name: source_generation
+      in: query
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    WindowId-2:
       in: path
       name: window_id
       required: true
-      description: 窗口编号，当前有效范围为 1-4
+      description: 大屏播放窗口编号，当前有效范围为 1-2；旧窗口 3/4 请求会被拒绝
       schema:
         type: integer
         minimum: 1
-        maximum: 4
+        maximum: 2
     DeviceType:
       in: path
       name: device_type

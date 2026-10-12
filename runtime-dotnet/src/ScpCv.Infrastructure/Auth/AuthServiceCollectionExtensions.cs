@@ -1,3 +1,4 @@
+// 认证、精确Origin及协议独立会话/CSRF；明文入口不降低HTTPS保护。
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Authentication;
@@ -53,6 +54,7 @@ public static class AuthServiceCollectionExtensions
             .AddCookie(cookie =>
             {
                 cookie.Cookie.Name = "sessionid";
+                cookie.CookieManager = new ProtocolCookieManager();
                 cookie.Cookie.HttpOnly = true;
                 cookie.Cookie.IsEssential = true;
                 cookie.Cookie.SameSite = options.CrossSiteCookies ? SameSiteMode.None : SameSiteMode.Lax;
@@ -70,6 +72,11 @@ public static class AuthServiceCollectionExtensions
                     "权限不足",
                     "forbidden");
                 cookie.Events.OnValidatePrincipal = ValidatePrincipalAsync;
+                cookie.Events.OnSigningIn = context =>
+                {
+                    context.Properties.Items[ProtocolCookieManager.TicketProtocolKey] = context.Request.IsHttps ? "https" : "http";
+                    return Task.CompletedTask;
+                };
             });
         services.AddAuthorization();
         return services;
@@ -92,6 +99,13 @@ public static class AuthServiceCollectionExtensions
 
     private static async Task ValidatePrincipalAsync(CookieValidatePrincipalContext context)
     {
+        var protocol = context.Request.IsHttps ? "https" : "http";
+        if (!context.Properties.Items.TryGetValue(ProtocolCookieManager.TicketProtocolKey, out var issuedProtocol) || issuedProtocol != protocol)
+        {
+            context.RejectPrincipal();
+            await context.HttpContext.SignOutAsync().ConfigureAwait(false);
+            return;
+        }
         var rawUserId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
         if (!long.TryParse(rawUserId, out var userId))
         {
@@ -144,9 +158,12 @@ public sealed class CsrfTokenService(ScpCvAuthenticationOptions options)
     public const string CookieName = "csrftoken";
     public const string HeaderName = "X-CSRFToken";
 
+    /// <summary>读写注销均使用当前入口协议的防伪Cookie。</summary>
+    public static string GetCookieName(HttpContext context) => ProtocolCookieManager.Name(context, CookieName);
+
     public string EnsureToken(HttpContext context)
     {
-        if (context.Request.Cookies.TryGetValue(CookieName, out var existing) && IsValidShape(existing))
+        if (context.Request.Cookies.TryGetValue(GetCookieName(context), out var existing) && IsValidShape(existing))
         {
             return existing;
         }
@@ -161,15 +178,15 @@ public sealed class CsrfTokenService(ScpCvAuthenticationOptions options)
             .Replace('+', '-')
             .Replace('/', '_');
         context.Response.Cookies.Append(
-            CookieName,
+            GetCookieName(context),
             token,
             new CookieOptions
             {
                 HttpOnly = false,
                 IsEssential = true,
                 Path = "/",
-                SameSite = options.CrossSiteCookies ? SameSiteMode.None : SameSiteMode.Lax,
-                Secure = options.CrossSiteCookies || context.Request.IsHttps,
+                SameSite = context.Request.IsHttps && options.CrossSiteCookies ? SameSiteMode.None : SameSiteMode.Lax,
+                Secure = context.Request.IsHttps,
             });
         return token;
     }
@@ -181,7 +198,7 @@ public sealed class CsrfTokenService(ScpCvAuthenticationOptions options)
             return new CsrfValidationResult(false, "请求 Origin 不在允许列表中");
         }
 
-        if (!context.Request.Cookies.TryGetValue(CookieName, out var cookieToken) ||
+        if (!context.Request.Cookies.TryGetValue(GetCookieName(context), out var cookieToken) ||
             !context.Request.Headers.TryGetValue(HeaderName, out var headerValues))
         {
             return new CsrfValidationResult(false, "缺少 CSRF token");

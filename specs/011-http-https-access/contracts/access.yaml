@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: SCP-cv 网页入口发现
+  version: 1.0.0
+  description: Vite网页服务只读入口，不属于ControlHost信令。
+  license:
+    name: Artistic-2.0
+    url: https://opensource.org/license/artistic-2-0
+servers:
+  - url: http://127.0.0.1:5173
+tags:
+  - name: web-access
+    description: 网页服务的无秘密入口发现，不属于ControlHost认证API
+paths:
+  /.well-known/scp-cv-access:
+    get:
+      tags: [web-access]
+      operationId: discoverWebAccess
+      summary: 获取同网页HTTPS端口
+      description: 无证书返回null，不猜测、不重定向。
+      security: []
+      responses:
+        '200':
+          description: 无秘密入口信息
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+                enum: [no-store]
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [version, httpsPort]
+                properties:
+                  version:
+                    type: integer
+                    enum: [1]
+                  httpsPort:
+                    type: integer
+                    minimum: 1
+                    maximum: 65535
+                    nullable: true
+        '405':
+          description: 不允许写请求

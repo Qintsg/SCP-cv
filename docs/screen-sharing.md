@@ -2,6 +2,8 @@
 
 ## 当前实现状态
 
+2026-10-12新增普通网页双协议，已在本机实现和验证，**尚未部署D4**。新配置默认HTTP5173、HTTPS5174，普通功能不强制重定向；HTTP共享先确认跳转同主机HTTPS，再登录和主动点击，不自动采集。D4仍保留下述010部署的HTTPS5173入口；历史出画证据不代替011部署验收。详见[011本机记录](../specs/011-http-https-access/verification/local.md)。
+
 已接入网页显示控制页并部署到D4。正常可信HTTPS、真实登录/队列/两正式Worker完成两路连续312秒、十轮32次共享、普通换源及发布浏览器退出；原生DISPLAY2/3运动画面独立核对通过。有声双路360秒及12组网页音量/静音控制通过。详细版本、故障修复、原始证据和清理见[D4记录](../specs/010-browser-screen-share/verification/t016-d4.md)。
 
 原Player异常退出后的旧共享实际状态残留已修复，D4明确重启后两新授权/持续后帧及停止通过；当前两窗在线空闲。本轮临时测试CA已从本机精确撤销，正式访问仍须配置设备正常信任的有效HTTPS证书，不能把测试证书视为永久组织证书。
@@ -12,9 +14,11 @@ T013原生桥、本人认证API/领取复核、实际回读及网页声音区已
 
 ## 网页操作区
 
-在可信HTTPS控制台登录，打开“显示控制”，选择窗口1或窗口2，点击“选择共享内容”，在浏览器原生选择器中确认要分享的屏幕、应用或标签页。另一目标可由第二个独立网页同时共享。默认只分享画面；需要声音时先勾选内容音频，并在取得实际音轨/后帧后明确开启声音。结束时点“停止共享”，或使用浏览器自己的停止分享。
+普通控制台可通过HTTP或HTTPS登录，连接页裸地址默认HTTP，明确协议保持。HTTP不加密密码和控制内容，页面提供风险提示。HTTP点击“选择共享内容”会先说明HTTPS、证书警告和可能重新登录；“继续使用HTTP”不导航、不采集，“前往HTTPS”读取实际安全端口并跳转同主机的对应窗口页，不传会话/密码令牌。未配置入口或查询失败明确提示，不能猜端口；显式连接另一主机时应先直接打开该主机的控制台，不能悄悄更换共享目标。
 
-显示控制页新增当前逻辑窗口的“屏幕共享”操作区。“选择共享内容”在点击时直接打开原生选择器，取得视频轨道后才预约和协商；取消许可不提交OPEN。内容音频默认关闭，是否有音轨以浏览器实际返回为准，不请求麦克风；接收默认静音，须通过共享专用控件明确开启声音。
+在可信HTTPS控制台登录后，打开“显示控制”，选择窗口1或窗口2，再主动点击“选择共享内容”，在浏览器原生选择器中确认要分享的屏幕、应用或标签页。另一目标可由第二个独立网页同时共享。默认只分享画面；需要声音时先勾选内容音频，并在取得实际音轨/后帧后明确开启声音。结束时点“停止共享”，或使用浏览器自己的停止分享。
+
+显示控制页的“屏幕共享”操作区在HTTPS主动点击栈直接打开原生选择器，取得视频轨道后才预约和协商；取消许可不提交OPEN。HTTP仅确认/导航，包括localhost也不自动采集。内容音频默认关闭，是否有音轨以浏览器实际返回为准，不请求麦克风；接收默认静音，须通过共享专用控件明确开启声音。
 
 “实际音量/静音”与设置草稿分开：编辑数字后显式应用，切换静音不顺带应用尚未提交的数字。无本地或接收音轨、未收到后帧时禁用；实际状态未知时只能先静音。202只表示提交，精确命令成功及实际属性匹配才确认。八秒内未确认明确提示，不自动重发；停止、离开或换账号/主机立即取消，音频失败不影响有效视频。
 
@@ -95,7 +99,9 @@ try {
 } finally { $env:CAROOT = $scpPreviousCaRoot }
 ```
 
-先创建并限制上述目录只允许服务账号读取，生成后恢复本次进程原CAROOT设置。`d4-key.pem`和`rootCA-key.pem`都是秘密，不能分发、提交、打包或放入frontend/public；访问设备只需要公开的`rootCA.pem`。配置的证书/私钥必须是frontend目录外、不超过256KiB的普通`.pem`文件（推荐整个仓库外）；配置路径和实体路径均检查，不接受从frontend通过目录链接指向外部密钥。保管好私有目录，不能把它链接进public。
+先创建并限制上述目录只允许服务账号读取，生成后恢复本次进程原CAROOT设置。`d4-key.pem`和`rootCA-key.pem`都是秘密，不能分发、提交、打包或放入frontend/public；访问设备只需要公开的`rootCA.pem`。配置的PEM编码叶证书支持`.pem/.crt`、未加密私钥支持`.pem/.key`，须为frontend目录外、不超过256KiB的普通文件（推荐整个仓库外）；配置路径和实体路径均检查，不接受从frontend通过目录链接指向外部密钥。保管好私有目录，不能把它链接进public。
+
+本轮用户叶证书CN为`192.168.5.194`，SAN包括`192.168.5.194`、`127.0.0.1`、`10.88.50.194`，没有`localhost`；内部TLS上游应使用`127.0.0.1`，不要填写未覆盖的名称。Node与本机Chromium已正常校验通过，但OpenSSL3.5严格模式报告缺少AKI；重新签发时应完善AKI/SKI等链扩展，不以关闭验证解决。项目不会读取或分发根私钥，也不会自动安装公开根。CN/SAN不含协议、路径或端口；更换访问地址必须在SAN中覆盖。
 
 ### 2. 在访问设备正常建立CA信任
 
@@ -111,22 +117,26 @@ Windows可能要求系统确认；核对身份后由操作者确认，等待命�
 
 ### 3. 配置ControlHost和同源前端
 
-ControlHost使用[官方Kestrel证书配置](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel/endpoints?view=aspnetcore-10.0)：本机监听的HTTPS端点、`Kestrel__Certificates__Default__Path`及`Kestrel__Certificates__Default__KeyPath`指向上面的叶证书/私钥。保留原认证、CSRF及明确AllowedHosts/AllowedOrigins，不关闭Secure Cookie或扩大来源名单；接收loopback地址必须是已监听且证书有效的地址。修改启动环境前先停止原项目运行组并确认退出，不能让两组同时占用显示器/端口；数据库和媒体沿用原DataRoot。
+ControlHost使用[官方Kestrel证书配置](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/servers/kestrel/endpoints?view=aspnetcore-10.0)：同时监听`http://127.0.0.1:18444;https://0.0.0.0:18443`，`Kestrel__Certificates__Default__Path`及`Kestrel__Certificates__Default__KeyPath`指向叶证书/私钥。AllowedHosts及AllowedOrigins明确覆盖实际两网页Origin，禁止扩大为任意来源。私有接收地址继续使用**已监听**loopback18444，不公开接收cap。修改启动环境前先停止原项目运行组并确认退出，不能让两组同时占用显示器/端口；数据库和媒体沿用原DataRoot。
+
+HTTP使用`sessionid_http/csrftoken_http`，HTTPS保留`sessionid/csrftoken`和Secure；票据绑定签发协议，改Cookie名也不能跨协议认证，注销仅清当前入口。旧无协议标记票据会被拒绝，升级后需重新登录。网页同源代理推荐`Authentication__CrossSiteCookies=false`；即使沿用默认true，HTTP也仅使用非Secure/SameSite=Lax的独立Cookie，HTTPS仍保留Secure及跨站配置，封装端安全策略不变。
 
 `frontend/.env`中的配置示例（该文件忽略，不提交）：
 
 ```dotenv
 VITE_FRONTEND_PORT=5173
-VITE_BACKEND_TARGET=https://localhost:18443
+SCP_CV_HTTPS_PORT=5174
+VITE_BACKEND_HTTP_TARGET=http://127.0.0.1:18444
+VITE_BACKEND_HTTPS_TARGET=https://127.0.0.1:18443
 SCP_CV_HTTPS_CERT_FILE=D:/SCP-cv-private/tls/d4.pem
 SCP_CV_HTTPS_KEY_FILE=D:/SCP-cv-private/tls/d4-key.pem
-SCP_CV_HTTPS_HOSTS=192.168.5.194,localhost,127.0.0.1
+SCP_CV_HTTPS_HOSTS=192.168.5.194,127.0.0.1
 ```
 
 启动Node进程前另外配置`NODE_EXTRA_CA_CERTS=D:/SCP-cv-private/tls/ca/rootCA.pem`，让HTTPS代理正常验证本地CA的后端；它不是前端VITE变量。前端三个SCP项必须同时提供，完全没配保持既有HTTP，部分/错误配置拒绝启动，不降级。SCP项只在服务器读取，不进入客户端；build:web/封装构建不读取密钥。
 
-使用pnpm启动既有`dev:web`或Web构建后的`preview --mode web`。正式网页没有显式构建后端地址时，REST/SSE默认走同源代理，不猜8000端口；显式构建地址或已选择的主机仍优先，封装端的未配置回退不变。两入口复用[Vite HTTPS配置](https://vite.dev/config/server-options#server-https)和同源代理；显式HTTPS开启后，未信任的上游证书会被拒绝，不设置secure=false或NODE_TLS_REJECT_UNAUTHORIZED=0。Vite dev/preview用于本项目开发/联调，不把它宣称为生产静态服务器。替换证书/私钥后重启其自有服务并复核，不能仅凭原页面缓存认为新证书生效。
+使用`pnpm --dir frontend run dev:web`，或Web构建后`pnpm --dir frontend exec vite preview --mode web --port 5173 --strictPort`。两固定端口不可相同或占用，失败不随机换端口、不得留下半运行服务。网页REST/SSE默认走同源代理，VITE_BACKEND_TARGET只覆盖对应协议上游，不让浏览器绕过入口；已选择的播放主机仍优先，封装端的明确后端配置及回退不变。每请求按实际TLS socket分流，HTTPS正常验证上游，不设置secure=false或NODE_TLS_REJECT_UNAUTHORIZED=0。dev/preview用于本项目开发/联调，不宣称生产静态服务器；替换证书后重启自有服务并复核。
 
 ### 4. 分层检查
 
-先访问`https://192.168.5.194:5173/`，确认浏览器无证书警告；验证登录、Secure/HttpOnly会话Cookie和原CSRF，再在显示控制页主动选择自有测试标签页。只有浏览器安全上下文、原生采集返回、指定Player激活后真实帧及停止实际释放分别成立，才算功能可用。禁止把HTTPS200、本机localhost采集或API受理当作D4出画证明。TLS配置证据见[T014记录](../specs/010-browser-screen-share/verification/t014-https.md)，实际两Worker证据见[T016记录](../specs/010-browser-screen-share/verification/t016-d4.md)。
+新部署先分别访问`http://192.168.5.194:5173/`和`https://192.168.5.194:5174/`，验证各自登录/CSRF/普通操作、三轮往返与独立注销；HTTP确认应导航到实际HTTPS端口，取消无影响。发现接口`GET /.well-known/scp-cv-access`仅返回版本和HTTPS端口，未配置证书时端口null，不提供外部主机或秘密。确认浏览器正常信任证书后，在HTTPS再次主动选择自有内容。浏览器安全上下文、原生许可、指定Player实际后帧及停止释放分别成立才算共享可用，不把HTTPS200或本机页面测试当D4出画。011本轮未部署；历史D4 HTTPS5173及双Worker证据见[T016记录](../specs/010-browser-screen-share/verification/t016-d4.md)。

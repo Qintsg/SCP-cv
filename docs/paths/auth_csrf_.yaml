@@ -3,7 +3,7 @@ get:
     - auth
   summary: 获取 CSRF token
   description: |
-    显式触发 ControlHost `csrftoken` Cookie 下发。前端首次加载时调用一次，之后在不安全方法中把 Cookie 值写入 `X-CSRFToken` 请求头。
+    显式触发当前入口的防伪Cookie下发：HTTPS为csrftoken，HTTP为csrftoken_http。前端首次加载时调用，之后在不安全方法中把对应值写入X-CSRFToken，不跨协议替用。
   operationId: getCsrfToken
   security: []
   responses:
@@ -11,7 +11,7 @@ get:
       description: CSRF token 已下发
       headers:
         Set-Cookie:
-          description: '`csrftoken` cookie'
+          description: 当前协议的csrftoken或csrftoken_http，不修改另一协议Cookie。
           schema:
             type: string
       content:

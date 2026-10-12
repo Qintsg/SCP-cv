@@ -17,6 +17,11 @@ export default {
       },
     },
     stopPending: '本地采集已停止，正在等待播放器实际释放；不会自动重新共享。',
+    upgrade: {
+      title: '屏幕共享需要 HTTPS',
+      description: '普通播放控制可继续使用 HTTP，但浏览器屏幕共享需要 HTTPS 安全连接。确认后将跳转到当前页面的 HTTPS 入口，可能需要重新登录；请再次点击共享并选择内容。自签证书未被信任时，浏览器仍会显示证书警告，跳转不会自动建立信任或开始采集。',
+      confirm: '前往 HTTPS', cancel: '继续使用 HTTP',
+    },
     output: {
       current: '播放器实际共享状态', last: '最后报告的共享状态（播放器离线）', waiting: '等待共享画面',
       stopPending: '共享停止待确认', audioUnknown: '尚未确认接收端的内容音轨。',
@@ -28,7 +33,9 @@ export default {
       closed: '共享已关闭。', failed: '共享未完成，请检查播放器或网络后重新选择。', cancelled: '已取消共享，本地采集已停止。',
     },
     errors: {
-      share_https_required: '请通过受信任的 HTTPS 访问控制台；局域网 HTTP 不支持屏幕共享。',
+      share_https_required: '当前使用 HTTP；点击共享可确认前往 HTTPS，普通控制不受影响。',
+      share_https_unavailable: 'HTTPS 入口未配置或暂时不可用，请联系管理员检查证书和端口；未开始共享。',
+      share_https_same_origin_required: '当前连接了另一个主机入口。请直接打开该主机的网页控制台后再切换 HTTPS，避免改变共享目标。',
       share_browser_unsupported: '请在支持屏幕共享的桌面 Chrome 或 Edge 网页中操作，当前浏览器或封装端不支持。',
       share_login_required: '登录后才能共享。', share_player_offline: '目标播放器当前离线，恢复在线后再共享。',
       share_permission_denied: '已取消或拒绝共享许可，未切换播放器。', share_cancelled: '已取消共享。',
