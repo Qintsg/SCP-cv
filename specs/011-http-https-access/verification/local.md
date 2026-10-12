@@ -61,7 +61,8 @@ Python3.14/OpenSSL3.5.7默认严格模式独立报`Missing Authority Key Identif
 
 原证书备份：`E:/Projects/SSPU/SCP-cv/.validation/qa-aki-20261012/SSPU108.before-aki.crt`。候选证书通过验证后替换原路径；保留原公私钥配对、subject/issuer、全部原扩展和有效期，仅新增 AKI/SKI、更新随机序列号及签名。OpenSSL 本轮为这张叶证书使用现有根私钥签名，未输出或复制私钥内容；根证书、根私钥、叶私钥的文件哈希前后相同。
 
-新叶 AKI 与根 SKI 相同：`84:91:B5:51:F1:03:0F:2D:3D:E8:9A:C4:9F:56:32:F2:AD:49:3F:B2`。新叶 SHA256 指纹：`52:BC:48:62:B3:20:35:BA:29:60:19:64:E1:7D:87:AC:E7:12:2F:86:C8:70:7E:5A:89:97:1F:F0:B5:8C:4A:2E`。
+新叶 AKI 与根 SKI 相同：`84:91:B5:51:F1:03:0F:2D:3D:E8:9A:C4:9F:56:32:F2:AD:49:3F:B2`。新叶 SHA256（DER）指纹：`1D:9E:72:8E:DC:2D:B1:1B:43:0E:45:0F:20:58:0C:B4:0F:8C:37:04:FD:C0:5E:B3:00:65:17:58:50:31:43:83`。
+部署时复核本机原路径、保留的with-aki候选以及D4实际TLS握手均为上述指纹，序列号480B216B0EC362823D98CDDEE56581E832B82F；原文52:BC…是错误记录，不作为信任或部署判据。PEM文件摘要另为74F62C7F776862B348A7FEC96DE74EB6F5B0E44A97BC9C6FB6AE23C36424BA2F，本机与D4一致；此次纠正没有重新签发或改变证书。
 
 验证：OpenSSL 4.0.3 `verify -x509_strict -purpose sslserver` 对三个原 IP 均通过；替换后的正式文件再次严格验证通过。Python3.14/OpenSSL3.5.7 默认严格客户端先复现原证书错误85（Missing Authority Key Identifier），再以新证书完成16次真实 HTTPS 请求（TLS1.3）。主机名 localhost 仍错误62，无可信根仍错误20，未放宽任何证书/名称验证。两次临时监听仅绑定127.0.0.1，结束后自有进程与端口全部释放。
 

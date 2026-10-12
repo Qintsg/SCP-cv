@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-12
 
-**Status**: Implemented — 本机验证完成；2026-10-12用户授权D4部署，部署验收进行中
+**Status**: Complete — 本机实现及2026-10-12授权D4部署验收完成；入口/认证/只读页面范围见 verification/d4-deployment.md，不宣称本轮新媒体出画
 
 **Input**: 用户要求允许 HTTP/HTTPS，地址无协议时默认 HTTP；HTTP 页面共享前确认跳转 HTTPS。证书由用户提供，不自动导入根证书。
 

@@ -2,7 +2,7 @@
 
 SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。普通网页支持HTTP/HTTPS，裸地址默认HTTP；共享屏幕/应用/标签页到窗口1或2仍需要可信HTTPS，HTTP点击共享会确认跳转，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
-2026-10-12双协议改动已在本机验证，尚未部署D4；默认网页HTTP5173、可选HTTPS5174，证书由现场提供，不自动导入根信任。D4原运行服务与端口不变，验证边界见[011记录](specs/011-http-https-access/verification/local.md)。
+2026-10-12双协议改动已部署并启动D4：[普通控制HTTP](http://192.168.5.194:5173/)、[共享入口HTTPS](https://192.168.5.194:5174/)。已使用用户补齐AKI/SKI的证书，不自动导入根信任；升级后请重新登录。原数据库、媒体及两块大屏绑定保留，入口和只读页面验收见[011部署记录](specs/011-http-https-access/verification/d4-deployment.md)，不把它当新一轮媒体出画测试。
 
 ## 项目信息
 

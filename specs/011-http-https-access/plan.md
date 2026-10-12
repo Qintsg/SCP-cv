@@ -39,7 +39,7 @@ HTTP主监听，配置TLS时增加独立HTTPS监听，共用Vite middleware。�
 ```text
 specs/011-http-https-access/
   spec.md, plan.md, research.md, data-model.md, quickstart.md, tasks.md
-  contracts/access.yaml, checklists/requirements.md, verification/local.md
+  contracts/access.yaml, checklists/requirements.md, verification/{local,d4-deployment}.md
 ```
 
 ### Source Code (repository root)

@@ -35,3 +35,5 @@
 - Rationale: 用户叶为bbt Root CA签发的EC P-384服务器证书，SAN含192.168.5.194/127.0.0.1/10.88.50.194，无localhost；使用127.0.0.1本机TLS上游。根信任由用户管理。
 - Alternatives considered: 自动导入系统根、读或复制根私钥、忽略校验均不采用。
 - Compatibility: 用户证书在Node正常校验与本机普通Chromium通过；Python3.14/OpenSSL3.5严格模式拒绝，原因Missing Authority Key Identifier。保留失败证据，不关闭严格模式；正式代理/网络验证采用生产Node正常校验，不能声称所有TLS栈兼容。
+
+后续用户授权补齐AKI/SKI，默认严格OpenSSL验证通过，见[本机补签记录](verification/local.md#后续补齐服务器证书-akiski2026-10-12)；同证书已部署D4并以真实握手指纹/两端文件摘要核验，见[部署验收](verification/d4-deployment.md)。上述失败仅为原证书的历史记录。

@@ -65,6 +65,6 @@ T001→T002→US1(T003–005)→US2(T006–007)→US3(T008–010)→T011–013�
 
 ## Phase 7: 用户授权D4部署
 
-- [ ] T014 核对D4源码、进程/计划任务、原DataRoot和两块输出，完整发布运行包及网页；记录 verification/d4-deployment.md
-- [ ] T015 提交并推送011源码到secondary，D4快进、安装独立包/私有叶证书和公开根；协作停旧组、冷备份数据库、启动双入口及原两窗
-- [ ] T016 验收D4实际HTTP/HTTPS证书、认证隔离/状态、两窗在线及浏览器确认取消/跳转且零共享写；更新 verification/d4-deployment.md 和运维入口，提交推送最终证据并同步D4源码
+- [x] T014 核对D4源码、进程/计划任务、原DataRoot和两块输出，完整发布运行包及网页；记录 verification/d4-deployment.md
+- [x] T015 提交并推送011源码到secondary，D4快进、安装独立包/私有叶证书和公开根；协作停旧组、冷备份数据库、启动双入口及原两窗
+- [x] T016 验收D4实际HTTP/HTTPS证书、认证隔离/状态、两窗在线及浏览器确认取消/跳转且零共享写；更新 verification/d4-deployment.md 和运维入口，提交推送最终证据并同步D4源码
