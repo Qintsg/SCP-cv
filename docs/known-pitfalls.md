@@ -19,9 +19,9 @@
 | 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
 | 现场屏幕音量 / 切墙重发 / 高级预设 | `POST /api/venue/audio/read/`、`PUT /api/venue/audio/`；两种布局应用及预案激活 | `VenueDeviceService`→串行门禁→`TcpVenueAudioTransport`→155:4830，6190配置/6191读回；首个未记忆值先读，不默认100；未知话筒/来源/云台在副作用前拒绝 | 相同预检和明确simulated，模拟计数不证明实际收包 | `VenueDeviceTests`、`VenueAudioWallTests`、`ScenarioDirectoryEndpointTests`；D4读100/同值写后读100，实际可听及未绑定设备未验 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
-| 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`；3/4 请求拒绝、旧命令不重放 |
-| 网页屏幕共享 | 网页原生许可后`/api/screen-shares/`预约/offer/停止；本人PATCH音频；私有receiver信令 | 独占Publisher轨道/peer→Service→原子OPEN/条件CLOSE及身份音频→原Worker领取复核/cap注入→独占InPrivate Player WebView→已提交HTTP/SSE观测；完整Dispose/原PID退出→一秒后台确证关闭及原身份投影清除；重启清孤立意图，不保温 | 同会话/cap保护与周期清理，仅队列/HTTP，不启动Player、不造OS退出、出画或可听声音 | `ScreenShare*Tests`；D4正式双Worker跨机UDP、双路5分钟、十轮/换源/发布者退出、原生运动像素与专用音频属性已验；D4独立音频峰值/扬声器可听未验，异常修复与复测见010记录 |
-| PPT 上传转换 / LibreOffice 动态放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 明确准备；两窗 `open/` 选择动态或静态模式；`GET /api/settings/presentation/` 只读能力 | `PptConversionHostedService` → 独占 Framework converter 导出 PNG/图片PDF；Player → 每窗独占 LibreOffice 侧车；动态默认，静态须修订/摘要匹配 | Simulation 不启动 Office；准备状态不证明真实转换或播出 | `PptConversionHostedServiceTests`、`PresentationPlaybackSelectorTests`、`PowerPointSettingsEndpointTests`（410退役）；008 本机原生/视觉/退出门禁，D4 未部署 |
+| 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面；长命令仍通过原认证管道传输心跳，不把续租当在线/UI进度 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`、`RuntimeWorkerBusyHeartbeatTests`；3/4 请求拒绝、旧命令不重放 |
+| 网页屏幕共享 | 网页原生许可后`/api/screen-shares/`预约/offer/停止；本人PATCH音频；私有receiver信令 | 独占Publisher轨道/peer→Service→原子OPEN/条件CLOSE及身份音频→原Worker领取复核/cap注入→独占InPrivate Player WebView→已提交HTTP/SSE观测；统计不阻塞实际后帧；完整Dispose/原PID退出→一秒后台确证关闭及原身份投影清除；重启清孤立意图，不保温 | 同会话/cap保护与周期清理，仅队列/HTTP，不启动Player、不造OS退出、出画或可听声音 | `ScreenShare*Tests`；010历史双路/十轮/像素证据保留，012新尺寸/码率及间歇失败、修复复测以012记录为准；独立音频峰值/扬声器可听未验 |
+| PPT 上传转换 / LibreOffice 动态放映 | `POST /api/sources/upload/` 登记作业；`POST /api/sources/{id}/prepare/` 明确准备；两窗 `open/` 选择动态或静态模式；`GET /api/settings/presentation/` 只读能力 | `PptConversionHostedService` → 独占 Framework converter 导出 PNG/图片PDF；Player → 每窗独占 LibreOffice 侧车；动态默认，静态须修订/摘要匹配 | Simulation 不启动 Office；准备状态不证明真实转换或播出 | `PptConversionHostedServiceTests`、`PresentationPlaybackSelectorTests`、`PowerPointSettingsEndpointTests`（410退役）；008原生/视觉/退出证据保留，D4当前012完整包已包含LibreOffice宿主，不把新包存在当本轮PPT视觉通过 |
 | 背景音频（独立列表） | `POST\|PATCH\|DELETE /api/background-audio/*` | `BackgroundAudioService` → 命令队列（`CommandTargetKind.Audio`）→ Named Pipe → `AudioWorker` | `QueuedCommandWakeNotifier`（仅排队） | `docs/实机测试结论.md` 背景音乐段 |
 | 设备电源 | `POST /api/devices/{type}/power/{action}/`、`.../toggle/` | `DeviceService` → `IDeviceCommandTransport` → `TcpDeviceCommandTransport`：拼接屏 `192.168.5.10:8889`、电视左 `.161`、电视右 `.162`（只写不读，不保存状态） | `SimulationDeviceCommandTransport` | 2026-09-27 已在用户授权后发送拼接屏 ON→OFF→ON 与电视各两次 toggle；API 只确认写出，物理电源状态未独立读回，见 `docs/qa/003-full-regression-20260927.md`；`appsettings.json` §Devices |
 | MediaMTX 推拉流 / 直播 | `POST /api/sources/streams/` 登记、`PATCH /api/sources/{id}/` 更新、`POST /api/playback/{windowId}/open/` 打开；在线探测不代表出画 | MediaMTX 进程（`8890`/`9997`/`8554`）→ VLC PlayerWorker×2；写队列影响 RTSP 完整性 | 无进程，探测失败即离线 | `specs/006-d4-live-convergence/verification.md`；D4 独立解码与交互桌面截图 |
@@ -431,9 +431,9 @@
 坑98记录D4 Public网络的Node显式Block优先于端口Allow：先核实际socket/loopback/规则，再经授权只开限定内网端口，不关闭防火墙或换程序路径绕过。
 坑99记录Cookie属性大小写、SSE首行id、空闲部署代次与错误指纹误判：以真实合同/DER和远端握手核验，不改生产或冒称新播放。
 
-### 目录与现场控制台接续（坑100–103）
+### 目录与现场控制台接续（坑100–106）
 
-1080P源尺寸沿用4K导致错裁剪、可信系统目录不能靠页面隐藏保护、切墙和现场声音的分阶段结果、真实浏览器标签/夹具端口误复用见[目录与现场记录](known-pitfalls/directory-venue.md)。实体绑定未知时先拒绝，不能用合成帧或电脑总音量冒充已完成。
+1080P源尺寸沿用4K导致错裁剪、可信系统目录不能靠页面隐藏保护、切墙和现场声音的分阶段结果、真实浏览器标签/夹具端口误复用、可选统计阻塞真实帧、长命令漏发在线心跳及发布中版本变化见[目录与现场记录](known-pitfalls/directory-venue.md)。实体绑定未知时先拒绝，不能用合成帧或电脑总音量冒充已完成。
 
 ## 3. 相关沉淀点（不在这里重复）
 

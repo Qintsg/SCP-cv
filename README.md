@@ -130,7 +130,7 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 
 本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、两块大屏/Office/VLC/MediaMTX/音频长稳测试和性能基准需要专用工作站，不能用 Simulation 结果替代。大屏现支持窗口1/2/输入IP81的12种全屏和左右组合及单侧映射，保留两个旧预设；已发送不等于出画，未登记IP仍禁止下发。配置、协议及现场边界见[大屏映射指南](docs/video-wall-mapping.md)。
 
-当前D4紧凑界面及63/64配置已部署并启动，运行/备份见 [2026-10-09部署记录](docs/deployments/20261009-d4-compact.md)。历史两窗实测、修复前后对照及未完成门禁见 [006 验证记录](specs/006-d4-live-convergence/verification.md)。部署烟雾不证明新映射出画，短时出画或1000普通命令通过也不等于60分钟混合长稳完成。
+历史D4紧凑界面及63/64配置部署、运行/备份见 [2026-10-09部署记录](docs/deployments/20261009-d4-compact.md)，当前版本以 [012部署记录](specs/012-directory-camera-console/verification/d4-deployment.md)为准。历史两窗实测、修复前后对照及未完成门禁见 [006 验证记录](specs/006-d4-live-convergence/verification.md)。部署烟雾不证明新映射出画，短时出画或1000普通命令通过也不等于60分钟混合长稳完成。
 
 控制台区分选中源与实际播出；离线选源/Seek 禁用，断线恢复或换源不补发旧缓冲进度。PPT 页图 missing/failed 可显式重试，queued/running/uncertain 不盲重放，通知以返回的真实准备状态为准。
 
