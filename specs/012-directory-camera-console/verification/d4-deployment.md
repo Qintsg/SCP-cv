@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-实际运行包仍为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261012-012e`，网页入口HTTP80/HTTPS443，内部ControlHost仍18444/18443。运行任务`ScpCvRuntime-012e-20261012`及网页任务`ScpCvFrontend-012-20261012`运行中；011、012b和012c旧运行任务停止并禁用，不删除历史包。固定监控修正`d7c0487`与可选声音绑定/接线记录`b04f65b`已签名提交、推送GitHub与现场GitLab，并由D4快进拉取。012f新包文件已上传校验，但启动入口被执行策略拒绝，未切换运行版本；不能将源代码同步称为新服务生效。
+实际运行包已切换为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261012-012f-b04f65b`，网页入口HTTP80/HTTPS443，内部ControlHost仍18444/18443。运行任务`ScpCvRuntime-012f-20261012`及网页任务`ScpCvFrontend-012-20261012`运行中；旧012e及此前旧运行任务停止并禁用，不删除历史包。固定监控修正`d7c0487`与可选声音绑定/接线记录`b04f65b`已签名提交、推送GitHub与现场GitLab，并由D4快进拉取；包基于固定`b04f65b`，后续文档同步不触发再次构建或重启。
 
-运行包ControlHost摘要`BEA3F98AB8043F041D91CC584CB6846C7D9211535D18C22079825B88933C9854`，Contracts摘要`DED7A5C24070FA7A8F3FE44AFCD0601681FE6A1ADCA311E88B4322281BA14FAC`；网页index摘要`4A22023DF43085E57133F6E13C7B4D7110B1602ED839BE0F5BBCC661B1AE08D2`。完整012e包SHA256为`57EFE45645DF84EA914294C49A114C5689D2FD9BEFC26B3570CF81EBFA4AFB9A`，本机与远端一致。012d为被合并检查拒绝的本机部分产物，未部署。
+运行包ControlHost摘要`BE2A9278E1F3B390A71B60EEE30E793F0DF4F20F73528D62BD5E4384B5477A6D`，Contracts摘要`B4DA8987A31EA2B8A49D2446B4E1E40AFEC471227ECB35F5E93A3E9976BBAE60`；网页index摘要`4A22023DF43085E57133F6E13C7B4D7110B1602ED839BE0F5BBCC661B1AE08D2`。完整012f包SHA256为`2571DD06176416D6A23C512B9B2C302A2EA4CF308B38C6697BE3E1D6EBCFA49B`，本机与远端一致。012d为被合并检查拒绝的本机部分产物，未部署；012e为保留的历史运行包。
 
 ## 已核对
 
@@ -24,7 +24,7 @@
 
 回退前先协作停止并确证新组退出，再切旧网页/任务和精确规则。数据库备份含WAL，不可只覆盖单个control.db；新版本期间产生的数据应先单独备份，禁止直接丢弃后倒退数据库。回退不是本轮实际执行项目。
 
-## 012f文件部署（尚未激活）
+## 012f文件同步（切换前的历史记录）
 
 - 固定`b04f65bdcbb8b5cde194395fdee9bc9e0e8f9377`完成锁定还原、Release构建及完整五组件发布；未在构建途中改变Git HEAD。后端常规1477、前端458全部通过，详见[发布前门禁](test-results.md)。
 - 新包已解压到独立目录`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261012-012f-b04f65b`。ZIP摘要`2571DD06176416D6A23C512B9B2C302A2EA4CF308B38C6697BE3E1D6EBCFA49B`，ControlHost摘要`BE2A9278E1F3B390A71B60EEE30E793F0DF4F20F73528D62BD5E4384B5477A6D`，Contracts摘要`B4DA8987A31EA2B8A49D2446B4E1E40AFEC471227ECB35F5E93A3E9976BBAE60`，本机与D4一致；四个顶层EXE、独立`libreoffice/ScpCv.LibreOfficeHost.exe`、323个VLC插件及索引齐全。
@@ -32,8 +32,21 @@
 - D4正常执行准备脚本返回`UnauthorizedAccess`。只读查询显示各执行策略作用域均Undefined，有效策略为Restricted；未修改策略、未使用Bypass、未改为读取脚本文本执行。新运行任务尚未注册，旧组未协作停机、未杀进程，也未对运行中的数据库做所谓冷备份。
 - 阻挡发生后再次核对：原ControlHost3776、Supervisor23140、Player3204/18968、Audio18388、MediaMTX24280及Node23616仍运行于桌面会话1；健康Healthy。两窗仍DISPLAY2/3、online idle、代次一致、无源/共享身份和清理残留；本机严格TLS访问HTTP80/HTTPS443均200。
 - 原九源保留，固定监控仍为ID88、受保护`/Camera/固定监控`、URI为空且不可用，说明76默认尚未被新服务同步。User/Machine软件输出绑定均未设置，实际音频绑定没有启用。
-- 后续须由管理员通过正常流程允许项目启动脚本，之后才能执行旧组协作停止/退出核验、原数据库冷备份、新组启动及76源同步验收。T033/T034维持未完成，不能把本次文件部署标为运行切换成功。
+- 该阶段在正常启动限制前停止，没有通过源代码或文件到位假报运行切换成功。后续用户明确授权当前用户RemoteSigned，实际切换见下节。
+
+## 012f正式切换与验证
+
+- 用户明确允许后，仅将`D4\admin`的CurrentUser执行策略由Undefined调整为RemoteSigned；有效策略为RemoteSigned，LocalMachine、MachinePolicy、UserPolicy及Process作用域保持Undefined。新任务正常`-File`启动，不携带执行策略覆盖或Bypass。
+- 激活前重新核对签名源码、包摘要、原九源、两窗空闲及原六进程身份。辅助脚本初次因只规范化比较的一侧路径而误拒绝；修正两侧分隔符并回归通过，仅改自有部署检查，不改生产代码、不放宽PID/会话/路径/启动时刻门禁。
+- 通过认证API协作停止旧Workers，独立确认Supervisor23140、Player3204/18968、Audio18388、MediaMTX24280均退出且旧运行组状态文件已删除；再按原包路径、DataRoot、PID及启动时刻仅停止ControlHost3776。旧012e任务停止禁用，Node23616未重启。
+- 所有旧写入者退出后，原数据库及仍存在的WAL/SHM冷备份至`D:/SCP-cv/.validation/deploy-012f/backup-before-012f/`，逐文件SHA256一致。原媒体、制品缓存及证书不删除、不重排；旧任务导出及停机/备份结果保存在同一忽略目录。
+- 新ControlHost14488、Supervisor19832、Player22700/17540、Audio24016及MediaMTX12712均位于交互会话1；五个.NET进程属于012f新包，MediaMTX仍使用原独立工具路径。状态文件四个受管成员的PID、会话及真实启动时刻与OS一致，旧六PID无残留。
+- 原生启动参数及API拓扑都确认窗口1→DISPLAY2、窗口2→DISPLAY3，各1920×1080；另外三块输出不是播放目标。只对原已空闲的两窗发送一次CLOSE验证，新指令均completed/ok；最终两窗online idle、代次899/899与620/620，无源/共享身份、待执行指令、错误或清理残留。不把重启前已退休CLOSE的旧观察代次冒充新回执。
+- 原九源的ID、路径、保护标志保持；原三文件存在，五路8X URI不变。固定监控ID88已同步为`rtsp://192.168.5.76:554/live/chn0`，仍受保护，is_available为true只证明地址已配置，不代表此次摄像机实际出画。
+- 本机严格TLS访问HTTP80/HTTPS443网页及两入口CSRF API均200；D4通过HTTP80真实登录并查询到新76源，随后注销。80/443仍由原Node23616监听，网页摘要不变，新Host健康Healthy。
+- 现场音量保存值100保持。可信启动器保持新软件声音环境绑定未设置；云台、话筒、音频来源能力仍禁用，未下发墙面、电源、选源或话筒控制帧。背景音频无源/空列表，但持久状态仍保留2026-10-11的Supervisor退出错误；本轮未播放声音、未伪造清除错误，不据进程存活声称背景音频完整验收。
+- 完整证据保存在`.validation/deploy-012f/{activation-preflight,stop-backup-result,activation-result}.json`；历史18770传输服务已经关闭，本次辅助脚本经SCP传输，没有启动新临时网页服务。T033的部署/双输出/入口部分完成，完整受管声音及T034原生绑定仍未验收，任务勾选保持未完成。
 
 ## 未完成实体项
 
-固定监控76地址、音频处理器/中控及话筒接线已经确认；固定源新默认尚未激活，云台控制端点/停止/位置、话筒控制协议、IP81/SCP-cv音频路由和完整软件输出绑定未闭环，未知控制仍禁用且API拒绝。12种组合的新包现场视觉、摄像机真实播放、实际可听声音与人工共享选择仍不能据自动化或旧010结果声称完成。
+固定监控76默认已在D4激活，音频处理器/中控及话筒接线已经确认；云台控制端点/停止/位置、话筒控制协议、IP81/SCP-cv音频路由和完整软件输出绑定未闭环，未知控制仍禁用且API拒绝。背景音频空列表的历史错误状态尚未清理。12种组合的新包现场视觉、摄像机真实播放、实际可听声音与人工共享选择仍不能据自动化或旧010结果声称完成。
