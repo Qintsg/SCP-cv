@@ -17,6 +17,7 @@
 |---|---|---|---|---|
 | 拼接屏画面映射（视频墙） | 草稿PUT、应用POST、快捷预设及预案兼容入口 | Service→操作门禁/组合Planner→控制器→50节点4830；D4的63/64/81组合，未知输入/几何拒绝；被动回读仅诊断 | 相同预检与Planner，明确simulated | Planner/Protocol/Dispatch、SQLite/HTTP/DOM；现场抓包/出画另验，不把回环称实体通过 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
+| 现场屏幕音量 / 切墙重发 / 高级预设 | `POST /api/venue/audio/read/`、`PUT /api/venue/audio/`；两种布局应用及预案激活 | `VenueDeviceService`→串行门禁→`TcpVenueAudioTransport`→155:4830，6190配置/6191读回；首个未记忆值先读，不默认100；未知话筒/来源/云台在副作用前拒绝 | 相同预检和明确simulated，模拟计数不证明实际收包 | `VenueDeviceTests`、`VenueAudioWallTests`、`ScenarioDirectoryEndpointTests`；D4读100/同值写后读100，实际可听及未绑定设备未验 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`；3/4 请求拒绝、旧命令不重放 |
 | 网页屏幕共享 | 网页原生许可后`/api/screen-shares/`预约/offer/停止；本人PATCH音频；私有receiver信令 | 独占Publisher轨道/peer→Service→原子OPEN/条件CLOSE及身份音频→原Worker领取复核/cap注入→独占InPrivate Player WebView→已提交HTTP/SSE观测；完整Dispose/原PID退出→一秒后台确证关闭及原身份投影清除；重启清孤立意图，不保温 | 同会话/cap保护与周期清理，仅队列/HTTP，不启动Player、不造OS退出、出画或可听声音 | `ScreenShare*Tests`；D4正式双Worker跨机UDP、双路5分钟、十轮/换源/发布者退出、原生运动像素与专用音频属性已验；D4独立音频峰值/扬声器可听未验，异常修复与复测见010记录 |
@@ -429,6 +430,10 @@
 同主机Cookie不按端口隔离、默认CrossSiteCookies导致HTTP假可用、合同夹具绕过正式Service门禁、preview绑定范围漏迁等见[网页记录](known-pitfalls/screen-share.md#坑-95---双协议入口不能共用secure会话2026-10-12本机修复)。必须用真实入口/同Cookie罐/并发清理与实际socket查验，不关闭安全校验或生产清理来让测试通过。
 坑98记录D4 Public网络的Node显式Block优先于端口Allow：先核实际socket/loopback/规则，再经授权只开限定内网端口，不关闭防火墙或换程序路径绕过。
 坑99记录Cookie属性大小写、SSE首行id、空闲部署代次与错误指纹误判：以真实合同/DER和远端握手核验，不改生产或冒称新播放。
+
+### 目录与现场控制台接续（坑100–103）
+
+1080P源尺寸沿用4K导致错裁剪、可信系统目录不能靠页面隐藏保护、切墙和现场声音的分阶段结果、真实浏览器标签/夹具端口误复用见[目录与现场记录](known-pitfalls/directory-venue.md)。实体绑定未知时先拒绝，不能用合成帧或电脑总音量冒充已完成。
 
 ## 3. 相关沉淀点（不在这里重复）
 

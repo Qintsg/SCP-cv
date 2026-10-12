@@ -2,7 +2,7 @@
 
 ## 当前实现状态
 
-2026-10-12新增普通网页双协议，已在本机实现和验证，**尚未部署D4**。新配置默认HTTP5173、HTTPS5174，普通功能不强制重定向；HTTP共享先确认跳转同主机HTTPS，再登录和主动点击，不自动采集。D4仍保留下述010部署的HTTPS5173入口；历史出画证据不代替011部署验收。详见[011本机记录](../specs/011-http-https-access/verification/local.md)。
+2026-10-12普通网页双协议与目录控制台已部署D4，当前入口HTTP80/HTTPS443，旧5173/5174停止；本地开发默认仍5173/5174。普通功能不强制重定向；HTTP共享先确认跳转同主机HTTPS，再登录和主动点击，不自动采集。原用户证书不变，历史010出画证据不代替新参数验收，当前配置与结果见[012入口记录](../specs/012-directory-camera-console/verification/d4-deployment.md)。
 
 已接入网页显示控制页并部署到D4。正常可信HTTPS、真实登录/队列/两正式Worker完成两路连续312秒、十轮32次共享、普通换源及发布浏览器退出；原生DISPLAY2/3运动画面独立核对通过。有声双路360秒及12组网页音量/静音控制通过。详细版本、故障修复、原始证据和清理见[D4记录](../specs/010-browser-screen-share/verification/t016-d4.md)。
 
@@ -76,7 +76,9 @@ Worker纯值观测包含`share_id/actual_frames/actual_audio`和null媒体ID，�
 
 接收地址从ControlHost的`urls`首个监听地址派生，0.0.0.0/IPv6通配绑定转换为本机地址；沿用正式启动脚本的默认`https://localhost:18443`。可通过`ScreenSharing__ReceiverBaseUrl`显式选择**已监听**的loopback HTTP(S)纯地址；拒绝远程主机、用户信息、路径、query或fragment，且不自动新增监听或绕过证书验证。非通配LAN绑定需另行提供本机监听与明确接收地址。
 
-浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。配置步骤见下节，不能使用关闭安全策略/不安全来源flag作为正式方法。D4当前普通入口为`http://192.168.5.194:5173/`，共享入口为`https://192.168.5.194:5174/`；任何采集设备都须正常信任用户证书，HTTP确认只负责导航，不自动建立信任。
+浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。配置步骤见下节，不能使用关闭安全策略/不安全来源flag作为正式方法。D4当前普通入口为`http://192.168.5.194/`，共享入口为`https://192.168.5.194/`；任何采集设备都须正常信任用户证书，HTTP确认只负责导航，不自动建立信任。
+
+012捕获不人为限尺寸，优先文字细节和30fps；发送建议上限1080P为8Mbps、1440P为12Mbps、更高20Mbps。面板分别报告真实捕获、发送和接收尺寸/帧率/码率；参数上限不是保证值，缺失统计保持未知。新参数实测见[共享清晰度记录](../specs/012-directory-camera-console/verification/share-quality.md)。
 
 自动化覆盖登录/CSRF、争抢、有界信令、原身份围栏、失败撤销、接收来源、停止及专用音频，D4双Worker长稳/十轮/换源已有独立证据。边界：人工普通系统选择器未代操作；跨VLAN/AP隔离或外网未验，默认没有外部STUN/TURN。D4独立音频meter未取得有效采样，未验现场扬声器可听；实际属性/RTP与本机渲染信号不混为硬件听音。见[验证记录](../specs/010-browser-screen-share/verification.md)。
 
@@ -124,8 +126,8 @@ HTTP使用`sessionid_http/csrftoken_http`，HTTPS保留`sessionid/csrftoken`和S
 `frontend/.env`中的配置示例（该文件忽略，不提交）：
 
 ```dotenv
-VITE_FRONTEND_PORT=5173
-SCP_CV_HTTPS_PORT=5174
+VITE_FRONTEND_PORT=80
+SCP_CV_HTTPS_PORT=443
 VITE_BACKEND_HTTP_TARGET=http://127.0.0.1:18444
 VITE_BACKEND_HTTPS_TARGET=https://127.0.0.1:18443
 SCP_CV_HTTPS_CERT_FILE=D:/SCP-cv-private/tls/d4.pem
@@ -135,8 +137,8 @@ SCP_CV_HTTPS_HOSTS=192.168.5.194,127.0.0.1
 
 启动Node进程前另外配置`NODE_EXTRA_CA_CERTS=D:/SCP-cv-private/tls/ca/rootCA.pem`，让HTTPS代理正常验证本地CA的后端；它不是前端VITE变量。前端三个SCP项必须同时提供，完全没配保持既有HTTP，部分/错误配置拒绝启动，不降级。SCP项只在服务器读取，不进入客户端；build:web/封装构建不读取密钥。
 
-使用`pnpm --dir frontend run dev:web`，或Web构建后`pnpm --dir frontend exec vite preview --mode web --port 5173 --strictPort`。两固定端口不可相同或占用，失败不随机换端口、不得留下半运行服务。网页REST/SSE默认走同源代理，VITE_BACKEND_TARGET只覆盖对应协议上游，不让浏览器绕过入口；已选择的播放主机仍优先，封装端的明确后端配置及回退不变。每请求按实际TLS socket分流，HTTPS正常验证上游，不设置secure=false或NODE_TLS_REJECT_UNAUTHORIZED=0。dev/preview用于本项目开发/联调，不宣称生产静态服务器；替换证书后重启自有服务并复核。
+使用`pnpm --dir frontend run dev:web`，或Web构建后`pnpm --dir frontend exec vite preview --mode web --port 80 --strictPort`；本地开发可将两端口改为5173/5174。两固定端口不可相同或占用，失败不随机换端口、不得留下半运行服务。网页REST/SSE默认走同源代理，VITE_BACKEND_TARGET只覆盖对应协议上游，不让浏览器绕过入口；已选择的播放主机仍优先，封装端的明确后端配置及回退不变。每请求按实际TLS socket分流，HTTPS正常验证上游，不设置secure=false或NODE_TLS_REJECT_UNAUTHORIZED=0。dev/preview用于本项目开发/联调，不宣称生产静态服务器；替换证书后重启自有服务并复核。
 
 ### 4. 分层检查
 
-新部署先分别访问`http://192.168.5.194:5173/`和`https://192.168.5.194:5174/`，验证各自登录/CSRF/普通操作、三轮往返与独立注销；HTTP确认应导航到实际HTTPS端口，取消无影响。发现接口`GET /.well-known/scp-cv-access`仅返回版本和HTTPS端口，未配置证书时端口null，不提供外部主机或秘密。确认浏览器正常信任证书后，在HTTPS再次主动选择自有内容。浏览器安全上下文、原生许可、指定Player实际后帧及停止释放分别成立才算共享可用，不把HTTPS200或页面测试当D4出画。011已部署并验双入口/认证/两窗实际在线及8组页面，未重复共享出画，见[部署记录](../specs/011-http-https-access/verification/d4-deployment.md)。旧HTTPS5173及双Worker出画证据仅为010历史，见[T016记录](../specs/010-browser-screen-share/verification/t016-d4.md)。
+新部署先分别访问`http://192.168.5.194/`和`https://192.168.5.194/`，验证各自登录/CSRF/普通操作、三轮往返与独立注销；HTTP确认应导航到实际HTTPS端口，取消无影响。发现接口`GET /.well-known/scp-cv-access`仅返回版本和HTTPS端口，未配置证书时端口null，不提供外部主机或秘密。确认浏览器正常信任证书后，在HTTPS再次主动选择自有内容。浏览器安全上下文、原生许可、指定Player实际后帧及停止释放分别成立才算共享可用，不把HTTPS200或页面测试当D4出画。011历史双入口验收见[旧部署记录](../specs/011-http-https-access/verification/d4-deployment.md)，旧010双Worker出画见[T016记录](../specs/010-browser-screen-share/verification/t016-d4.md)；当前012结果见[本轮部署记录](../specs/012-directory-camera-console/verification/d4-deployment.md)。
