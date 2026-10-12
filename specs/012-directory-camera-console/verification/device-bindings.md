@@ -48,4 +48,4 @@
 
 第二轮实际捕获63为34.752秒、64为39.996秒，均覆盖四次信号；仅第一轮20秒捕获不足以覆盖全部，不把第一轮单独当结论。证据位于忽略的`.validation/venue-bindings-012/input63-b.wav`、`input64-b.wav`及`analyse-tone.py`。未改变系统默认设备、端点总音量、现场处理器或选源状态。
 
-D4原生LibVLC的mmdevice模块枚举包含上述四个确切ID。候选LibVLC接线使用`SCP_CV_AUDIO_OUTPUT_DEVICE_ID`，预期统一输出到63；纯策略12项与两个Worker编译通过，但新生产绑定尚未在D4播放/重播验收，未部署。WebView2和LibreOffice必须独立接线与验证，T024/T033/T034不勾完成。
+D4原生LibVLC的mmdevice模块枚举包含上述四个确切ID。候选LibVLC接线使用`SCP_CV_AUDIO_OUTPUT_DEVICE_ID`，预期统一输出到63；纯策略12项与两个Worker编译通过，但新生产绑定尚未在D4播放/重播验收。代码已在`b04f65b`提交推送，新包文件已同步D4；执行策略阻止正常启动，实际仍运行012e，绑定未启用。WebView2和LibreOffice必须独立接线与验证，T024/T033/T034不勾完成。
