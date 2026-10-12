@@ -1,6 +1,7 @@
 // VLC 回调按独立尝试捕获不可变 token；只写该 token，当前画面和重播由 UI/媒体门禁管理。
 using LibVLCSharp.Shared;
 using VlcMediaPlayer = LibVLCSharp.Shared.MediaPlayer;
+using ScpCv.Runtime.Audio;
 
 namespace ScpCv.PlayerWorker.Playback;
 
@@ -52,6 +53,7 @@ public sealed partial class PlayerRuntimeHost
     /// <summary>健康同源打开保留进度/暂停恢复，只有真实失败、结束或停止才重新启动输入。</summary>
     private async Task<bool> ReopenVlcAttemptAsync(VlcMediaPlayer player, Media media, long generation, bool autoplay)
     {
+        VlcAudioOutputBinding.Validate(player, audioOutputDeviceId);
         _vlcBindings.TryGetValue(player, out var previous);
         if (previous?.Attempt.HasError == true || player.State is VLCState.Error or VLCState.Ended or VLCState.Stopped)
             return await RestartVlcAttemptAsync(player, media, generation, autoplay);
@@ -75,6 +77,7 @@ public sealed partial class PlayerRuntimeHost
         var liveInput = _vlcBindings.TryGetValue(player, out var previous) && previous.Attempt.IsLiveInput;
         UnbindVlcAttempt(player);
         await VlcResourceLifecycle.StopAsync(player.Stop);
+        VlcAudioOutputBinding.Apply(player, audioOutputDeviceId);
         player.Time = 0;
         BindVlcAttempt(player, media, generation, liveInput);
         _state = autoplay ? "loading" : "paused";
@@ -106,6 +109,13 @@ public sealed partial class PlayerRuntimeHost
     {
         if (_current?.Native is not VlcMediaPlayer player || !_vlcBindings.TryGetValue(player, out var binding) ||
             binding.Attempt.SourceGeneration != _generation) return (_state, _errorMessage);
+        if (VlcAudioOutputBinding.HasMismatch(player, audioOutputDeviceId))
+        {
+            player.Mute = true;
+            player.SetAudioTrack(-1);
+            binding.Attempt.RecordError();
+            return ("error", "软件音频输出与绑定不一致；已静音当前播放器，未修改系统输出。");
+        }
         if (binding.Attempt.IsLiveInput)
         {
             var counters = OwnedVlcMedia(player).Statistics;

@@ -54,6 +54,7 @@
 - [X] T023 [US4] 设备HTTP合同/权限/缺绑定拒绝：`runtime-dotnet/src/ScpCv.ControlHost/Endpoints/VenueDeviceEndpoints.cs`、`ScpCv.Contracts/Http/VenueDeviceDtos.cs`。
 - [ ] T024 [US4] 摄像机与音量页面/来源小卡片及软件输出绑定：`frontend/src/features/devices/DevicesView.vue`、`frontend/src/layouts/AppNavigation.vue`及既有音频设置。
 - [ ] T025 [US4] 摄像机/声音有界实测，未知项不勾完成：`specs/012-directory-camera-console/verification/devices.md`。
+- [ ] T034 [US4] D4端点63/64独立窄带辨识，LibVLC两播放器/背景音频的显式绑定、缺失拒绝与重播观测：`ScpCv.Contracts/Runtime/AudioOutputBinding.cs`、`runtime-dotnet/shared/VlcAudioOutputBinding.cs`及Windows/Contracts回归；WebView2/LibreOffice仍属于T024，不能用VLC结果代替。
 
 ## Phase 7: US5 目录预设与高级项（P2）
 
@@ -86,4 +87,4 @@ T001–T002已完成。T003–T004先于目录/设备/预设；US1与US2不依�
 
 ## 当前未完成边界
 
-T019目录主流程及D4屏控根上传/实际图片播出/关闭已通过，占用/失败浏览器矩阵未完整实测。T020/T022/T024/T025缺固定监控、云台、话筒及音频来源/软件输出绑定，仅屏幕音量与只读保护闭环。T033标准入口/双输出已通过，但受管软件声音绑定未完成；这些任务不勾完成。T010新参数双路312.15秒及三轮交错关闭/重开/迟到旧ID停止通过，现场文字可读性、人工共享选择及更长混合稳定性仍未验，历史间歇失败保留，不勾完成。共33项，26项完成、7项未完成。
+T019目录主流程及D4屏控根上传/实际图片播出/关闭已通过，占用/失败浏览器矩阵未完整实测。T020固定监控76及话筒接线已确认；T020/T022/T024/T025仍缺云台、话筒的控制设备族/协议及音频来源路由，仅屏幕音量与只读保护闭环。T034已完成D4端点63/64物理辨识、纯策略12项及两Worker编译；新LibVLC绑定实机播放/重播、缺失与退出尚未验收，不勾完成。T033标准入口/双输出已通过，但完整受管软件声音绑定未完成；这些任务不勾完成。T010新参数双路312.15秒及三轮交错关闭/重开/迟到旧ID停止通过，现场文字可读性、人工共享选择及更长混合稳定性仍未验，历史间歇失败保留，不勾完成。共34项，26项完成、8项未完成。

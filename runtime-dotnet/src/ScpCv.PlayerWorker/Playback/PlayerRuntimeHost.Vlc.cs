@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using LibVLCSharp.Shared;
 using LibVLCSharp.WPF;
+using ScpCv.Runtime.Audio;
 using ScpCv.Contracts.Ipc;
 using VlcMediaPlayer = LibVLCSharp.Shared.MediaPlayer;
 
@@ -36,7 +37,7 @@ public sealed partial class PlayerRuntimeHost
         // 一个 PlayerWorker 生命周期只创建一个 LibVLC 实例，切源时只替换 MediaPlayer。
         var libVlc = GetOrCreateLibVlc();
         var player = new VlcMediaPlayer(libVlc);
-        try { configureVlcPlayer?.Invoke(player); }
+        try { VlcAudioOutputBinding.Apply(player, audioOutputDeviceId); configureVlcPlayer?.Invoke(player); }
         catch { player.Dispose(); throw; }
         var localPath = LocalPath(uri);
         var media = File.Exists(localPath)

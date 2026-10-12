@@ -52,7 +52,8 @@ public partial class App : System.Windows.Application, IAsyncDisposable
             instanceId,
             new IpcTargetDto { Kind = "display", Id = windowId },
             ["wpf", "libvlc", "webview2", "windows.data.pdf", "image"]));
-        _runtime = new PlayerRuntimeHost(window, windowId, _session);
+        _runtime = new PlayerRuntimeHost(window, windowId, _session,
+            audioOutputDeviceId: Environment.GetEnvironmentVariable(AudioOutputBinding.EnvironmentVariable));
         _ = RunRuntimeAsync(_session, _runtime, startGate, _stop.Token);
     }
 

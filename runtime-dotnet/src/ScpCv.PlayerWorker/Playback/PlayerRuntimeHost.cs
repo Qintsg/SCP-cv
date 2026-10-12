@@ -22,7 +22,8 @@ public sealed partial class PlayerRuntimeHost(
     int windowId,
     RuntimeWorkerSession? officeSession = null,
     Func<LibVLC>? libVlcFactory = null,
-    Action<VlcMediaPlayer>? configureVlcPlayer = null) : IAsyncDisposable
+    Action<VlcMediaPlayer>? configureVlcPlayer = null,
+    string? audioOutputDeviceId = null) : IAsyncDisposable
 {
     private readonly PlayerWindow _window = window;
     private readonly int _windowId = windowId;

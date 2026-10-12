@@ -1,5 +1,6 @@
 // AudioWorker 的单实例 LibVLC 播放与自然结束事件。
 using LibVLCSharp.Shared;
+using ScpCv.Runtime.Audio;
 
 namespace ScpCv.AudioWorker.Audio;
 
@@ -12,9 +13,11 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
     private Media? _media;
     private long _generation;
     private int _disposed;
+    private readonly string? _audioOutputDeviceId;
 
-    public VlcAudioAdapter()
+    public VlcAudioAdapter(string? audioOutputDeviceId = null)
     {
+        _audioOutputDeviceId = audioOutputDeviceId;
         Core.Initialize();
         _player = new MediaPlayer(_libVlc);
         _player.EndReached += OnEndReached;
@@ -27,14 +30,27 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
     public bool IsMuted { get => _player.Mute; set => _player.Mute = value; }
     public long PositionMs => Math.Max(0, _player.Time);
     public long DurationMs => Math.Max(0, _player.Length);
-    public string PlaybackState => _player.State switch
+    public string? ActualOutputDeviceId => _player.OutputDevice;
+    public string PlaybackState
     {
-        VLCState.Playing => "playing",
-        VLCState.Paused => "paused",
-        VLCState.Stopped or VLCState.Ended => "stopped",
-        VLCState.Error => "error",
-        _ => "loading",
-    };
+        get
+        {
+            if (VlcAudioOutputBinding.HasMismatch(_player, _audioOutputDeviceId))
+            {
+                _player.Mute = true;
+                _player.SetAudioTrack(-1);
+                return "error";
+            }
+            return _player.State switch
+            {
+                VLCState.Playing => "playing",
+                VLCState.Paused => "paused",
+                VLCState.Stopped or VLCState.Ended => "stopped",
+                VLCState.Error => "error",
+                _ => "loading",
+            };
+        }
+    }
     public event EventHandler<AudioFinishedEventArgs>? Finished;
 
     public Task OpenAsync(long sourceId, string uri, long generation, CancellationToken cancellationToken = default)
@@ -42,6 +58,7 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         // Media释放只归还托管引用，不会停止播放器仍持有的旧输入；先退役旧播放再发布新身份。
         _player.Stop();
+        VlcAudioOutputBinding.Apply(_player, _audioOutputDeviceId);
         _media?.Dispose();
         var localPath = uri.StartsWith("file://", StringComparison.OrdinalIgnoreCase) ? new Uri(uri).LocalPath : uri;
         _media = File.Exists(localPath)
@@ -55,6 +72,9 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
 
     public Task PlayAsync(CancellationToken cancellationToken = default)
     {
+        if (_player.State is VLCState.Playing or VLCState.Paused)
+            VlcAudioOutputBinding.Validate(_player, _audioOutputDeviceId);
+        else VlcAudioOutputBinding.Apply(_player, _audioOutputDeviceId);
         if (_player.State == VLCState.Paused) _player.SetPause(false);
         else if (_media is not null) _ = _player.Play(_media);
         return Task.CompletedTask;

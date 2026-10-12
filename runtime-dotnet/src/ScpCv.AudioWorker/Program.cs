@@ -35,7 +35,7 @@ var instanceId = Guid.TryParse(Option(args, "instance-id"), out var parsedInstan
     : Guid.NewGuid();
 using var stop = new CancellationTokenSource();
 Console.CancelKeyPress += (_, eventArgs) => { eventArgs.Cancel = true; stop.Cancel(); };
-await using var audio = new VlcAudioAdapter();
+await using var audio = new VlcAudioAdapter(Environment.GetEnvironmentVariable(AudioOutputBinding.EnvironmentVariable));
 var executor = new AudioCommandExecutor(audio);
 
 if (string.IsNullOrWhiteSpace(pipeName))
