@@ -54,3 +54,15 @@ Python3.14/OpenSSL3.5.7默认严格模式独立报`Missing Authority Key Identif
 ## 未执行边界
 
 本轮没有D4新版本部署、实体双Player接收、长稳、现场扬声器或人工系统选择器；010历史证据保留，但不用于宣称011已验这些项。无全局强制HTTPS重定向/HSTS，不新增封装端明文认证能力。公开根信任仍由用户管理，HTTP明文风险不能被提示框或独立Cookie消除。
+
+## 后续：补齐服务器证书 AKI/SKI（2026-10-12）
+
+用户要求修复 AKI 兼容问题后，仅重签外部目录的 `SSPU108.crt`。OpenSSL 已安装，AKI 是证书扩展而非插件；签发配置加入 `subjectKeyIdentifier = hash` 和 `authorityKeyIdentifier = keyid:always`。参考：[OpenSSL 扩展文档](https://docs.openssl.org/master/man5/x509v3_config/#authority-key-identifier)。不修改签发 TUI、其它证书、系统/浏览器信任或 D4 服务。
+
+原证书备份：`E:/Projects/SSPU/SCP-cv/.validation/qa-aki-20261012/SSPU108.before-aki.crt`。候选证书通过验证后替换原路径；保留原公私钥配对、subject/issuer、全部原扩展和有效期，仅新增 AKI/SKI、更新随机序列号及签名。OpenSSL 本轮为这张叶证书使用现有根私钥签名，未输出或复制私钥内容；根证书、根私钥、叶私钥的文件哈希前后相同。
+
+新叶 AKI 与根 SKI 相同：`84:91:B5:51:F1:03:0F:2D:3D:E8:9A:C4:9F:56:32:F2:AD:49:3F:B2`。新叶 SHA256 指纹：`52:BC:48:62:B3:20:35:BA:29:60:19:64:E1:7D:87:AC:E7:12:2F:86:C8:70:7E:5A:89:97:1F:F0:B5:8C:4A:2E`。
+
+验证：OpenSSL 4.0.3 `verify -x509_strict -purpose sslserver` 对三个原 IP 均通过；替换后的正式文件再次严格验证通过。Python3.14/OpenSSL3.5.7 默认严格客户端先复现原证书错误85（Missing Authority Key Identifier），再以新证书完成16次真实 HTTPS 请求（TLS1.3）。主机名 localhost 仍错误62，无可信根仍错误20，未放宽任何证书/名称验证。两次临时监听仅绑定127.0.0.1，结束后自有进程与端口全部释放。
+
+上文的 AKI 失败是替换前的历史证据；新证书已消除该问题，但不会自动让未信任根的浏览器信任它。原叶到期日仍为2036-10-09，而现有根在2036-03-09到期，因此整条链的可用期限受根证书限制。本轮没有更新根或延长其期限。

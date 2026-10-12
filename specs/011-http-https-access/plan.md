@@ -58,3 +58,7 @@ docs/{screen-sharing.md,使用文档.md,维护文档.md,known-pitfalls.md,CHANGE
 ```
 
 **Structure Decision**: 扩展三个既有边界的小模块，不向大型api.ts堆新逻辑；封装端保留HTTPS策略并由设置页明确提醒。
+
+## 后续D4部署
+
+2026-10-12用户授权：通过现有secondary（本机gitlab远端）推送已验证源码，D4在D:/SCP-cv快进；完整运行包安装到新的artifacts目录，不覆盖010包。协作停止精确原进程组后冷备份现有数据库，沿用原DataRoot和DISPLAY2/3，更新专属计划任务启动配置。新私有TLS目录使用补齐AKI/SKI的用户叶证书/叶私钥和公开根，HTTP5173、HTTPS5174，HTTP上游仅loopback18444、HTTPS上游127.0.0.1:18443，receiver仍loopback18444。验收只做正常认证、只读状态和HTTP共享确认/导航，零采集/预约/播放器换源；出错保留旧包、配置和冷备份供原配置恢复，不重置数据库或导入根。
