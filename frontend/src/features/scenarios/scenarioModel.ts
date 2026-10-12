@@ -17,6 +17,8 @@ export interface ScenarioWindowDraft {
 }
 
 export interface ScenarioDraft {
+  folderId: number | null;
+  advanced: import('@/services/apiTypes').ScenarioAdvanced;
   /** 编辑时 id 不为 null。 */
   id: number | null;
   name: string;
@@ -45,6 +47,8 @@ const DEFAULT_WINDOWS: ScenarioWindowDraft[] = [1, 2].map((windowId) => ({
 export function createEmptyDraft(): ScenarioDraft {
   return {
     id: null,
+    folderId: null,
+    advanced: {},
     name: '',
     description: '',
     bigScreenModeState: 'unset',
@@ -75,6 +79,8 @@ export function fromScenarioItem(item: ScenarioItem): ScenarioDraft {
   }
   return {
     id: item.id,
+    folderId: item.folder_id ?? null,
+    advanced: structuredClone(item.advanced ?? {}),
     name: item.name,
     description: item.description ?? '',
     bigScreenModeState: item.big_screen_mode_state,
@@ -101,6 +107,8 @@ export function fromScenarioItem(item: ScenarioItem): ScenarioDraft {
 export function toScenarioPayload(draft: ScenarioDraft): ScenarioPayload {
   return {
     name: draft.name.trim(),
+    folder_id: draft.folderId,
+    advanced: draft.advanced,
     description: draft.description.trim() || undefined,
     big_screen_mode_state: draft.bigScreenModeState,
     big_screen_mode: draft.bigScreenMode,

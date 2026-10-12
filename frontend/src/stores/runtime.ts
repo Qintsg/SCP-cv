@@ -38,6 +38,7 @@ interface SystemVolumeState {
 }
 
 interface RuntimeState {
+  venueAudioResult: import('@/services/venueApi').VenueAudioResult | null;
   /** 后端运行态：单/双屏 + 静音窗口列表。 */
   runtime: RuntimeSnapshot | null;
   /** 系统音量。 */
@@ -59,6 +60,7 @@ if (restoredServerProfile) clientConnection.restoreProfile(restoredServerProfile
 
 export const useRuntimeStore = defineStore('runtime', {
   state: (): RuntimeState => ({
+    venueAudioResult: null,
     runtime: null,
     systemVolume: {
       level: 100,
@@ -103,12 +105,14 @@ export const useRuntimeStore = defineStore('runtime', {
     async setBigScreenMode(mode: 'single' | 'double'): Promise<void> {
       const preset = mode === 'single' ? 'window_1_fullscreen' : 'window_1_left_window_2_right';
       const payload = await api.applyVideoWallPreset(preset);
+      this.venueAudioResult = payload.audio ?? null;
       this.runtime = payload.runtime;
       useSessionStore().applyRemoteSessions(payload.sessions);
     },
     /** 应用已经保存且具备控制帧的布局；未知帧会由后端明确拒绝。 */
     async applySavedVideoWallLayout(expectedRevision?: number) {
       const payload = await api.applyVideoWallDraft(expectedRevision);
+      this.venueAudioResult = payload.audio ?? null;
       this.runtime = payload.runtime;
       useSessionStore().applyRemoteSessions(payload.sessions);
       return payload.layout;
@@ -144,6 +148,7 @@ export const useRuntimeStore = defineStore('runtime', {
           useDeviceStore().$reset();
           useDisplayStore().$reset();
           this.runtime = null;
+          this.venueAudioResult = null;
           this.sseLastUpdate = 0;
         },
         saveProfile: async (nextProfile) => {

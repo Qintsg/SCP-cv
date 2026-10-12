@@ -112,7 +112,9 @@ test('应用入口保存已解析的原生适配器供共享媒体页面使用',
   const sourcePicker = await readFile(new URL('../src/features/display/SourcePicker.vue', import.meta.url), 'utf8');
 
   assert.match(main, /setNativePlatformAdapter\(adapter\)/);
-  assert.match(sources, /useSourceDownload/);
+  const sourceActions = await readFile(new URL('../src/features/sources/useSourceActions.ts', import.meta.url), 'utf8');
+  assert.match(sources, /useSourceActions/);
+  assert.match(sourceActions, /useSourceDownload/);
   assert.match(sourceDownload, /saveResponseFile/);
   assert.doesNotMatch(sources, /window\.open\(/);
   assert.match(addSource, /pickUploadFile/);

@@ -22,6 +22,7 @@ import PptFocusView from '@/features/pptFocus/PptFocusView.vue';
 import ScenariosView from '@/features/scenarios/ScenariosView.vue';
 import SettingsView from '@/features/settings/SettingsView.vue';
 import SourcesView from '@/features/sources/SourcesView.vue';
+import DevicesView from '@/features/devices/DevicesView.vue';
 import { useAuthStore } from '@/stores/auth';
 import { createClientHistory, getClientBuildTarget, resolveInitialRoute } from '@/platform';
 import { loadStoredServerProfile } from '@/platform/connection';
@@ -57,6 +58,7 @@ const routes: RouteRecordRaw[] = [
     meta: { focus: true, titleKey: 'pptFocus.routeTitle' },
   },
   { path: '/sources', component: SourcesView, meta: { titleKey: 'nav.sources' } },
+  { path: '/devices', component: DevicesView, meta: { titleKey: 'nav.devices' } },
   { path: '/background-audio', component: BackgroundAudioView, meta: { titleKey: 'backgroundAudio.routeTitle' } },
   { path: '/scenarios', component: ScenariosView, meta: { titleKey: 'nav.scenarios' } },
   { path: '/settings', component: SettingsView, meta: { titleKey: 'nav.settings' } },

@@ -302,10 +302,10 @@ export const api = {
     requestJson<{ success: boolean; layout: VideoWallLayoutState }>('/api/video-wall/layout/', {
       method: 'PUT', body: JSON.stringify(payload),
     }),
-  applyVideoWallDraft: (expectedRevision?: number) => requestJson<ApiStatePayload & { layout: VideoWallLayoutState; runtime: RuntimeSnapshot }>(
+  applyVideoWallDraft: (expectedRevision?: number) => requestJson<ApiStatePayload & { layout: VideoWallLayoutState; runtime: RuntimeSnapshot; audio?: import('./venueApi').VenueAudioResult }>(
     '/api/video-wall/layout/apply/', { method: 'POST', body: JSON.stringify({ expected_revision: expectedRevision }) }, RUNTIME_MODE_TIMEOUT_MS),
   applyVideoWallPreset: (preset: 'window_1_fullscreen' | 'window_1_left_window_2_right') =>
-    requestJson<ApiStatePayload & { layout: VideoWallLayoutState; runtime: RuntimeSnapshot }>(
+    requestJson<ApiStatePayload & { layout: VideoWallLayoutState; runtime: RuntimeSnapshot; audio?: import('./venueApi').VenueAudioResult }>(
       `/api/video-wall/presets/${preset}/apply/`, { method: 'POST' }, RUNTIME_MODE_TIMEOUT_MS),
   setRuntimeMode: (bigScreenMode: 'single' | 'double') =>
     requestJson<ApiStatePayload & { runtime: RuntimeSnapshot }>('/api/runtime/', {

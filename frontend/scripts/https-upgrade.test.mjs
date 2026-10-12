@@ -4,6 +4,7 @@ import test from 'node:test';
 import { buildHttpsPage, discoverHttpsPage } from '../src/features/screen-share/httpsUpgrade.ts';
 
 test('HTTPS跳转使用配置端口与原主机，保留目标/合法位置而不传秘密', () => {
+  assert.equal(buildHttpsPage('http://192.168.5.194/display/big-left', { version: 1, httpsPort: 443 }), 'https://192.168.5.194/display/big-left');
   const next = buildHttpsPage('http://192.168.5.194:5173/display/big-right?tab=media&token=secret&password=x#overview', { version: 1, httpsPort: 5174 });
   assert.equal(next, 'https://192.168.5.194:5174/display/big-right?tab=media#overview');
   assert.equal(buildHttpsPage('http://[::1]:5210/display/big-left', { version: 1, httpsPort: 443 }), 'https://[::1]/display/big-left');

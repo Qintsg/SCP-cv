@@ -37,6 +37,8 @@ import SourceThumbnail from '../sources/SourceThumbnail.vue';
 import { sourceAvailabilityLabel, sourceCategoryLabel } from '../sources/sourcePresentation';
 import { isConfirmedPlayback } from './playbackObservation';
 import { resolveActualOutputSource } from './playbackOutput';
+import DirectoryNavigator from '../directories/DirectoryNavigator.vue';
+import { inDirectory, sourcePath } from '../directories/directoryPath';
 
 const props = defineProps<{ windowId: number }>();
 const emit = defineEmits<{ (event: 'opened'): void }>();
@@ -59,6 +61,7 @@ const requestedSourceStatus = computed(() => {
 });
 
 const filterValue = ref<SourceCategory>('all');
+const currentFolderId = ref<number | null>(null);
 const presentationMode = ref<'libreoffice' | 'slide_images' | 'pdf'>('libreoffice');
 const fitText = ref(false);
 const presentationOptions = [
@@ -88,12 +91,13 @@ const acceptedFileTypes = [
 const filteredSources = computed<MediaSourceItem[]>(() => {
   const keyword = searchKeyword.value.trim().toLowerCase();
   return sourceStore.sources.filter((source) => {
+    if (!inDirectory(source.folder_id, currentFolderId.value, sourceStore.folders, !!keyword)) return false;
     if (source.source_type === 'audio') return false;
     if (filterValue.value !== 'all' && sourceStore.resolveCategory(source.source_type) !== filterValue.value) {
       return false;
     }
     if (!keyword) return true;
-    const hay = `${source.name} ${source.uri ?? ''} ${source.original_filename ?? ''}`.toLowerCase();
+    const hay = `${source.name} ${sourcePath(source, sourceStore.folders)}`.toLowerCase();
     return hay.includes(keyword);
   });
 });
@@ -124,7 +128,7 @@ async function selectSource(source: MediaSourceItem): Promise<void> {
   switchingSourceId.value = source.id;
   try {
     await openWindowSource(source);
-    toast.success(t('sourcePicker.openedOk', { name: source.name }));
+    toast.success(t('sourcePicker.openedOk', { name: source.name }), '实际播放状态以窗口输出报告为准');
     emit('opened');
   } catch (error) {
     toast.error(t('sourcePicker.openFail'), error instanceof Error ? error.message : t('common.retry'));
@@ -206,6 +210,7 @@ async function uploadAndOpen(): Promise<void> {
     const result = uploadedSource.value ?? await sourceStore.upload(fileToUpload.value, {
       name: fileDisplayName.value.trim() || undefined,
       isTemporary: true,
+      folderId: null,
       onProgress: handleUploadProgress,
     });
     uploadedSource.value = result;
@@ -243,6 +248,7 @@ async function uploadOnly(): Promise<void> {
     const result = await sourceStore.upload(fileToUpload.value, {
       name: fileDisplayName.value.trim() || undefined,
       isTemporary: false,
+      folderId: null,
       onProgress: handleUploadProgress,
     });
     toast.success(t('sourcePicker.uploadedSaved'), t('sourcePicker.sourceNameDetail', { name: result.name }));
@@ -275,6 +281,7 @@ async function uploadOnly(): Promise<void> {
         <FIcon name="search_20_regular" />
       </template>
     </n-input>
+    <DirectoryNavigator v-model:folder-id="currentFolderId" :folders="sourceStore.folders" compact />
 
     <div class="source-picker__filter-scroll">
       <n-tabs v-model:value="filterValue" type="segment" :aria-label="t('sourcePicker.filterAria')">
@@ -319,6 +326,7 @@ async function uploadOnly(): Promise<void> {
           <SourceThumbnail :source="source" />
           <div class="source-picker__meta">
             <p class="source-picker__name">{{ source.name }}</p>
+            <p class="source-picker__sub">{{ sourcePath(source, sourceStore.folders) }}</p>
             <p class="source-picker__sub">
               <n-tag v-if="isCurrentSource(source)" :type="currentSourceIsPlaying ? 'success' : 'warning'" size="small" round>
                 当前输出{{ controlsDisabled ? '（离线，最后报告）' : '' }}
@@ -343,6 +351,7 @@ async function uploadOnly(): Promise<void> {
         <span>{{ t('sourcePicker.uploadNew') }}</span>
       </summary>
       <div class="source-picker__upload-body">
+        <p class="source-picker__pdf-hint">此处上传默认保存到 / 根目录；不会跟随浏览目录。</p>
         <n-form-item :label="t('sourcePicker.file')" required>
           <div class="source-picker__file-row">
             <label class="source-picker__file">

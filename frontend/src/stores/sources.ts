@@ -8,6 +8,7 @@
  */
 import { defineStore } from 'pinia';
 import { runSourceDeletion } from './sourceDeletion';
+import { inDirectory, sourcePath } from '@/features/directories/directoryPath';
 
 import { api, type MediaFolderItem, type MediaSourceItem, type MediaSourceUpdate, type StreamSourceCreate, type UploadOptions } from '@/services/api';
 
@@ -50,6 +51,7 @@ interface SourceState {
   folders: MediaFolderItem[];
   /** 当前浏览的文件夹 ID；null 表示根目录。 */
   currentFolderId: number | null;
+  searchSubfolders: boolean;
 }
 
 export const useSourceStore = defineStore('sources', {
@@ -60,6 +62,7 @@ export const useSourceStore = defineStore('sources', {
     searchKeyword: '',
     folders: [],
     currentFolderId: null,
+    searchSubfolders: true,
   }),
   getters: {
     findById: (state) => (sourceId: number | null): MediaSourceItem | undefined => (
@@ -94,7 +97,7 @@ export const useSourceStore = defineStore('sources', {
     filtered(state): MediaSourceItem[] {
       const keyword = state.searchKeyword.trim().toLowerCase();
       const matched = state.sources.filter((source) => {
-        if (source.folder_id !== state.currentFolderId) return false;
+        if (!inDirectory(source.folder_id, state.currentFolderId, state.folders, !!keyword && state.searchSubfolders)) return false;
         if (state.category !== 'all') {
           const cat = SOURCE_TYPE_TO_CATEGORY[source.source_type];
           if (cat !== state.category) return false;
@@ -103,7 +106,8 @@ export const useSourceStore = defineStore('sources', {
         const name = source.name?.toLowerCase() ?? '';
         const uri = source.uri?.toLowerCase() ?? '';
         const original = source.original_filename?.toLowerCase() ?? '';
-        return name.includes(keyword) || uri.includes(keyword) || original.includes(keyword);
+        return name.includes(keyword) || uri.includes(keyword) || original.includes(keyword)
+          || sourcePath(source, state.folders).toLowerCase().includes(keyword);
       });
       // 优先使用 `co-pinyin` collation 按汉语拼音首字母对中文排序，与英文混排；
       // 不支持该 collation 的运行时（部分 Node / 旧 Chromium）会自动 fallback 到 'zh-Hans-CN'。

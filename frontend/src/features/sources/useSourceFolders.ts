@@ -109,7 +109,9 @@ export function useSourceFolders(refresh: () => Promise<void>, isLoading: Ref<bo
     const result = new Set([folderId]);
     for (const folder of store.folders) {
       let cursor = folder.parent_id;
-      while (cursor !== null) {
+      const visited = new Set<number>();
+      while (cursor !== null && !visited.has(cursor)) {
+        visited.add(cursor);
         if (cursor === folderId) { result.add(folder.id); break; }
         cursor = store.folders.find((candidate) => candidate.id === cursor)?.parent_id ?? null;
       }
@@ -123,11 +125,12 @@ export function useSourceFolders(refresh: () => Promise<void>, isLoading: Ref<bo
    * :returns: 经过禁用门禁的语义菜单。
    */
   function buildFolderMenu(folder: MediaFolderItem): ActionDropdownOption[] {
+    if (folder.is_protected) return [];
     const excluded = descendantsOf(folder.id);
     const destinations: ActionDropdownOption[] = [
       { label: t('sources.moveToRoot'), key: `folder-root-${folder.id}`,
         disabled: folder.parent_id === null, action: () => moveFolder(folder, null) },
-      ...store.folders.filter((candidate) => !excluded.has(candidate.id)).map((candidate) => ({
+      ...store.folders.filter((candidate) => !excluded.has(candidate.id) && !candidate.is_protected).map((candidate) => ({
         label: candidate.relative_path || candidate.name,
         key: `folder-${folder.id}-to-${candidate.id}`,
         disabled: folder.parent_id === candidate.id,
@@ -155,7 +158,7 @@ export function useSourceFolders(refresh: () => Promise<void>, isLoading: Ref<bo
     return [
       { label: t('sources.moveToRoot'), key: 'move-root', disabled: source.folder_id === null,
         action: () => moveSourceToFolder(source, null) },
-      ...store.folders.filter((folder) => folder.id !== source.folder_id).map((folder) => ({
+      ...store.folders.filter((folder) => folder.id !== source.folder_id && !folder.is_protected).map((folder) => ({
         label: folder.relative_path || folder.name, key: `move-${folder.id}`,
         action: () => moveSourceToFolder(source, folder.id),
       })),

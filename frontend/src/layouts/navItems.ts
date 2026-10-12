@@ -15,6 +15,7 @@ export const DESKTOP_PRIMARY_NAV: NavItemDef[] = [
   { path: '/display/big-right', label: t('videoWall.window2'), icon: 'tv_24_regular', iconSelected: 'tv_24_filled' },
   { path: '/sources', label: t('nav.sources'), icon: 'library_24_regular', iconSelected: 'library_24_filled' },
   { path: '/background-audio', label: t('nav.backgroundAudio'), icon: 'music_note_2_24_regular' },
+  { path: '/devices', label: t('nav.devices'), icon: 'camera_24_regular' },
   { path: '/scenarios', label: t('nav.scenarios'), icon: 'layer_24_regular', iconSelected: 'layer_24_filled' },
 ];
 

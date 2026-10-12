@@ -92,13 +92,14 @@ export const useSessionStore = defineStore('sessions', {
 
       this.sessions = mergedSessions.sort((left, right) => left.window_id - right.window_id);
     },
-    async openSource(windowId: number, sourceId: number, autoplay = true, targetSlide = 0, presentationMode?: 'libreoffice' | 'slide_images' | 'pdf', fitText = false): Promise<void> {
+    async openSource(windowId: number, sourceId: number, autoplay = true, targetSlide = 0, presentationMode?: 'libreoffice' | 'slide_images' | 'pdf', fitText = false): Promise<SessionSnapshot | undefined> {
       this.ensurePlayerOnline(windowId);
       this.beginCommandFeedbackScope(windowId);
       const payload = targetSlide > 0 || presentationMode || fitText
         ? await api.openSourceWithOptions(windowId, { source_id: sourceId, autoplay, target_slide: targetSlide || undefined, presentation_mode: presentationMode, fit_text: fitText })
         : await api.openSource(windowId, sourceId, autoplay);
       this.applyRemoteSessions(payload.sessions);
+      return payload.sessions.find(session => session.window_id === windowId);
     },
     async closeSource(windowId: number): Promise<void> {
       this.ensurePlayerOnline(windowId);

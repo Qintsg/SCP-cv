@@ -111,6 +111,10 @@ void dialog;
           <template #icon><FIcon name="settings_24_regular" /></template>
           {{ t('more.openSettings') }}
         </n-button>
+        <n-button quaternary block @click="navigate('/devices')">
+          <template #icon><FIcon name="camera_24_regular" /></template>
+          {{ t('nav.devices') }}
+        </n-button>
         <n-button quaternary block @click="onAboutHelp">
           <template #icon><FIcon name="info_24_regular" /></template>
           {{ t('more.aboutHelp') }}

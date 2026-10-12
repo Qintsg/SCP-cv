@@ -4,6 +4,7 @@ import type { PlaybackCommandSnapshot } from './apiTypes';
 
 export interface ScreenShareSdp { type: 'offer' | 'answer'; sdp: string }
 export interface ScreenShareSnapshot {
+  receiver_quality?: { width: number | null; height: number | null; fps: number | null; bitrate_mbps: number | null } | null;
   id: string;
   window_id: number;
   state: 'allocated' | 'negotiating' | 'receiving' | 'stopping' | 'closed' | 'failed';

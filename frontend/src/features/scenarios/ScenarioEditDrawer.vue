@@ -38,6 +38,8 @@ import {
   type ScenarioWindowMode,
 } from './scenarioModel';
 import type { MediaSourceItem, ScenarioItem } from '@/services/api';
+import ScenarioAdvancedSettings from './ScenarioAdvancedSettings.vue';
+import { directoryPath, sourcePath } from '../directories/directoryPath';
 
 interface ScenarioEditDrawerProps {
   open: boolean;
@@ -104,7 +106,7 @@ const sourceOptionsByCategory = computed<(SelectOption | SelectGroupOption)[]>((
       label: groupLabel,
       key: groupLabel,
       children: list.map((item) => ({
-        label: item.name || item.original_filename || item.uri || t('scenarios.edit.sourceFallback', { id: item.id }),
+        label: sourcePath(item, sourceStore.folders),
         value: item.id,
         disabled: !item.is_available,
       })),
@@ -223,6 +225,8 @@ function close(): void {
         <n-form-item :label="t('scenarios.edit.name')" required>
           <n-input v-model:value="draft.name" :placeholder="t('scenarios.edit.namePlaceholder')" />
         </n-form-item>
+        <n-form-item label="预设目录"><n-select :value="draft.folderId ?? 0" :options="[{label:'/',value:0},...scenarioStore.folders.map(folder=>({label:directoryPath(folder.id,scenarioStore.folders),value:folder.id}))]"
+          aria-label="预设目录" @update:value="draft.folderId = $event || null" /></n-form-item>
         <n-form-item :label="t('scenarios.edit.remark')" :feedback="t('scenarios.edit.remarkHint')">
           <n-input v-model:value="draft.description" type="textarea" :rows="2" :placeholder="t('scenarios.edit.remarkPlaceholder')" />
         </n-form-item>
@@ -293,6 +297,7 @@ function close(): void {
         </div>
       </n-card>
 
+      <ScenarioAdvancedSettings v-model="draft.advanced" />
       <n-alert v-if="errorMessage" type="error" :title="t('scenarios.edit.cantSave')">
         {{ errorMessage }}
       </n-alert>

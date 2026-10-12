@@ -234,6 +234,9 @@ onBeforeUnmount(() => { alive = false; });
       {{ capabilityMessage }}
     </p>
     <n-alert v-if="errorMessage" type="error" class="wall-map__notice">{{ errorMessage }}</n-alert>
+    <n-alert v-if="runtime.venueAudioResult" :type="['confirmed','simulated'].includes(runtime.venueAudioResult.status) ? 'info' : 'warning'">
+      {{ runtime.venueAudioResult.detail }}
+    </n-alert>
     <div class="wall-map__actions">
       <n-button :loading="saving" :disabled="busy" @click="save">{{ t('videoWall.save') }}</n-button>
       <n-button type="primary" :loading="applying" :disabled="!canApply || busy"

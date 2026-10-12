@@ -118,6 +118,20 @@ async function mountMenu(component = SourcesView, folderId = 1, folderFixture) {
   return pinia;
 }
 
+test('内置目录和源不可批量选择，原生角色同时提供禁用语义', async () => {
+  const pinia = await mountMenu(SourcesView, 1, [{ id: 1, name: 'Camera', parent_id: null, is_protected: true }]);
+  const store = useSourceStore(pinia);
+  store.sources = [{ ...source, is_protected: true }];
+  await flushUi();
+  const item = browser.document.querySelector('[role="checkbox"][aria-label="选择 '+source.name+'"]');
+  assert.ok(item);
+  assert.equal(item.getAttribute('aria-disabled'), 'true');
+  item.click(); await flushUi();
+  assert.equal(browser.document.querySelector('[aria-label="批量操作"]'), null);
+  assert.equal(browser.document.querySelector('[role="checkbox"][aria-label="全选当前普通媒体"]').getAttribute('aria-disabled'), 'true');
+  assert.deepEqual(requests, []);
+});
+
 /**
  * 按实际渲染文本找到菜单项，不读取组件私有方法。
  * :param label: 菜单可见文字。
@@ -135,7 +149,7 @@ function menuItem(label) {
  * :returns: 已渲染的移动目标项。
  */
 async function openSourceMove() {
-  browser.document.querySelector('button[aria-label="受控图卡 的操作菜单"]').click();
+  browser.document.querySelector('button[aria-label="媒体 受控图卡 的操作"]').click();
   await flushUi();
   menuItem('移动到…').dispatchEvent(new browser.MouseEvent('mouseenter', { bubbles: true }));
   await flushUi();
@@ -147,7 +161,7 @@ async function openSourceMove() {
  * :returns: 已渲染的根目录目标项。
  */
 async function openFolderMove() {
-  browser.document.querySelector('.sources-view__folder-card button[aria-label="编辑"]').click();
+  browser.document.querySelector('.sources-view__folder-card button[aria-label]').click();
   await flushUi();
   menuItem('移动文件夹到…').dispatchEvent(new browser.MouseEvent('mouseenter', { bubbles: true }));
   await flushUi();
@@ -191,10 +205,13 @@ test('媒体库打开受理不冒称已在窗口出画', async () => {
     if (new URL(String(url), browser.location.href).pathname !== '/api/playback/1/open/') return fallback(url, options);
     return new Response(JSON.stringify({ success: true, sessions: [{ ...session, source_id: 1, playback_state: 'loading', pending_command: 'OPEN', last_updated_at: '2026-10-05T00:00:01Z' }] }), { headers: { 'Content-Type': 'application/json' } });
   };
-  browser.document.querySelector('button[aria-label="受控图卡 的操作菜单"]').click(); await flushUi();
-  menuItem('打开到窗口').dispatchEvent(new browser.MouseEvent('mouseenter', { bubbles: true })); await flushUi();
-  menuItem('窗口 1').click(); await flushUi();
-  assert.equal(useToastStore().items.at(-1)?.message, '已向窗口 1 提交打开请求：受控图卡');
+  browser.document.querySelector('button[aria-label="媒体 受控图卡 的操作"]').click(); await flushUi();
+  menuItem('打开到…').click(); await flushUi();
+  const target = [...browser.document.querySelectorAll('.source-open-card button')].find(button => button.textContent.trim() === '窗口 1');
+  assert.ok(target, '打开到小卡片应提供窗口1');
+  target.click(); await flushUi();
+  assert.match(browser.document.querySelector('.source-open-card').textContent, /请求已受理，等待实际输出/);
+  assert.doesNotMatch(browser.document.querySelector('.source-open-card').textContent, /播放器已确认播放/);
 });
 
 test('媒体库背景音乐受理不冒称已开始播放', async () => {
@@ -206,7 +223,7 @@ test('媒体库背景音乐受理不冒称已开始播放', async () => {
     if (new URL(String(url), browser.location.href).pathname !== '/api/background-audio/play-source/') return fallback(url, options);
     return new Response(JSON.stringify({ success: true, background_audio: { state: { source_id: 1, playback_state: 'loading', pending_command: 'OPEN', updated_at: '2026-10-05T00:00:01Z' }, playlist: [] } }), { headers: { 'Content-Type': 'application/json' } });
   };
-  browser.document.querySelector('button[aria-label="受控音乐 的操作菜单"]').click(); await flushUi();
+  browser.document.querySelector('button[aria-label="媒体 受控音乐 的操作"]').click(); await flushUi();
   menuItem('立即播放背景音乐').click(); await flushUi();
   assert.equal(useToastStore().items.at(-1)?.message, '已提交播放请求：受控音乐');
 });

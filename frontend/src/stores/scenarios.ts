@@ -5,16 +5,19 @@
 import { defineStore } from 'pinia';
 
 import { api, type ScenarioItem, type ScenarioPayload } from '@/services/api';
+import { scenarioDirectoryApi } from '@/services/scenarioDirectoryApi';
 
 import { useSessionStore } from './sessions';
 
 interface ScenarioState {
+  folders: import('@/services/api').MediaFolderItem[];
   scenarios: ScenarioItem[];
 }
 
 export const useScenarioStore = defineStore('scenarios', {
   state: (): ScenarioState => ({
     scenarios: [],
+    folders: [],
   }),
   getters: {
     /** 置顶预案排在前；置顶组内以后置顶的更靠前。 */
@@ -34,6 +37,7 @@ export const useScenarioStore = defineStore('scenarios', {
     async refresh(): Promise<void> {
       const payload = await api.listScenarios();
       this.scenarios = payload.scenarios;
+      this.folders = (await scenarioDirectoryApi.list()).folders;
     },
     async create(payload: ScenarioPayload): Promise<ScenarioItem> {
       const result = await api.createScenario(payload);

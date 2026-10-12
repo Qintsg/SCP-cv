@@ -4,11 +4,14 @@ export interface MediaFolderItem {
   name: string;
   parent_id: number | null;
   relative_path?: string;
+  is_protected?: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export interface MediaSourceItem {
+  path?: string;
+  is_protected?: boolean;
   id: number;
   source_type: string;
   name: string;
@@ -167,6 +170,9 @@ export interface ScenarioTargetItem {
 }
 
 export interface ScenarioItem {
+  folder_id?: number | null;
+  path?: string;
+  advanced?: ScenarioAdvanced;
   id: number;
   name: string;
   description: string;
@@ -296,6 +302,8 @@ export interface UploadOptions {
 }
 
 export interface ScenarioPayload {
+  folder_id?: number | null;
+  advanced?: ScenarioAdvanced;
   name: string;
   description?: string;
   big_screen_mode_state?: 'unset' | 'empty' | 'set';
@@ -309,4 +317,10 @@ export interface ScenarioPayload {
     autoplay?: boolean;
     resume?: boolean;
   }>;
+}
+
+/** 可选的现场高级配置；空字段保持当前设备状态。 */
+export interface ScenarioAdvanced {
+  camera_positions?: Record<string, number | null>;
+  audio?: import('./venueApi').VenueAudioSettings | null;
 }

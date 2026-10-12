@@ -9,6 +9,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NButton,
+  NCheckbox,
   NCard,
   NEmpty,
   NSkeleton,
@@ -25,6 +26,8 @@ import { useScenarioStore } from '@/stores/scenarios';
 import { useSessionStore } from '@/stores/sessions';
 import { formatRelativeTime } from '@/design-system/utils';
 import type { ScenarioItem } from '@/services/api';
+import ScenarioDirectoryTools from './ScenarioDirectoryTools.vue';
+import { inDirectory } from '../directories/directoryPath';
 
 const { t } = useI18n();
 const scenarioStore = useScenarioStore();
@@ -42,7 +45,11 @@ const previewScenarioId = ref<number | null>(null);
 const editingScenario = ref<ScenarioItem | null>(null);
 const prefillDraft = ref<ScenarioDraft | undefined>(undefined);
 
-const sortedScenarios = computed(() => scenarioStore.sorted);
+const folderId = ref<number | null>(null), search = ref(''), selected = ref<number[]>([]);
+const sortedScenarios = computed(() => scenarioStore.sorted.filter(item =>
+  inDirectory(item.folder_id ?? null, folderId.value, scenarioStore.folders, !!search.value.trim()) &&
+  (!search.value.trim() || `${item.name} ${item.path ?? ''} ${item.description}`.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))));
+// 列表与目录由应用启动同步统一加载；路由挂载不重复刷新或产生额外错误提示。
 const previewScenario = computed<ScenarioItem | null>(() => {
   if (previewScenarioId.value === null) return null;
   return scenarioStore.scenarios.find((scenario) => scenario.id === previewScenarioId.value) ?? null;
@@ -66,7 +73,7 @@ function openPreview(scenario: ScenarioItem): void {
 
 function openCreate(): void {
   editingScenario.value = null;
-  prefillDraft.value = undefined;
+  prefillDraft.value = { ...createEmptyDraft(), folderId: folderId.value };
   editOpen.value = true;
 }
 
@@ -86,6 +93,7 @@ function captureFromCurrent(): void {
   }
   const draft: ScenarioDraft = createEmptyDraft();
   draft.name = '';
+  draft.folderId = folderId.value;
   draft.bigScreenModeState = 'set';
   // 旧预案只支持两个固定预设；手动布局默认保持，不强行投影成窗口1全屏。
   if (runtime.runtime?.big_screen_mode === 'custom') draft.bigScreenModeState = 'unset';
@@ -176,6 +184,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
       </div>
     </header>
 
+    <ScenarioDirectoryTools v-model:folder-id="folderId" v-model:search="search" v-model:selected="selected" />
     <section class="scenarios-view__grid">
       <template v-if="isLoading && sortedScenarios.length === 0">
         <n-card v-for="i in 4" :key="i" size="small">
@@ -223,6 +232,8 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
           </template>
           <template #header-extra>
             <div class="scenarios-view__card-actions" @click.stop>
+              <n-checkbox :checked="selected.includes(scenario.id)" :aria-label="'选择'+scenario.name"
+                @update:checked="selected = $event ? [...selected,scenario.id] : selected.filter(id=>id!==scenario.id)" />
               <n-button
                 quaternary
                 size="small"
@@ -255,6 +266,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
             </n-tag>
           </p>
           <p v-if="scenario.description" class="scenarios-view__desc">{{ scenario.description }}</p>
+          <p class="scenarios-view__desc">{{ scenario.path ?? '/'+scenario.name }}</p>
           <p class="scenarios-view__updated">{{ t('scenarios.updatedAt', { time: formatRelativeTime(scenario.updated_at) }) }}</p>
         </n-card>
       </template>

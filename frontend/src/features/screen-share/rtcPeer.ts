@@ -1,10 +1,12 @@
 /** 发布者独占WebRTC；无外部STUN/TURN、不获取麦克风，不用连接状态冒充帧。SCP-cv 2026-10-11。 */
 import type { ScreenShareSdp } from '@/services/screenSharing';
+import { configureVideoSender, preferTextDetail, qualitySampler, type ShareQuality } from './shareQuality';
 
 export interface ScreenSharePeer {
   offer(signal: AbortSignal): Promise<ScreenShareSdp>;
   answer(description: ScreenShareSdp, signal: AbortSignal): Promise<void>;
   close(): void;
+  quality?(): Promise<ShareQuality>;
 }
 
 /** :param peer: 当前连接。:param signal: 当前尝试寿命。:returns: 最多12秒聚合ICE，停止后移除自有监听/计时器。 */
@@ -29,6 +31,10 @@ function gatherIce(peer: RTCPeerConnection, signal: AbortSignal): Promise<void> 
 export function createScreenSharePeer(stream: MediaStream, failed: () => void): ScreenSharePeer {
   const peer = new RTCPeerConnection({ iceServers: [] });
   let closed = false;
+  let parameters = 'pending';
+  const video = stream.getVideoTracks().find(track => track.readyState === 'live');
+  if (video) preferTextDetail(video);
+  const sample = video ? qualitySampler(peer, video, () => parameters) : undefined;
   const connectionChanged = (): void => {
     if (!closed && ['disconnected', 'failed', 'closed'].includes(peer.connectionState)) failed();
   };
@@ -48,7 +54,13 @@ export function createScreenSharePeer(stream: MediaStream, failed: () => void): 
       signal.throwIfAborted();
       if (description.type !== 'answer' || new TextEncoder().encode(description.sdp).byteLength > 65536) throw new Error('share_sdp_invalid');
       await peer.setRemoteDescription(description); signal.throwIfAborted();
+      for (const sender of peer.getSenders()) {
+        if (closed || signal.aborted) break;
+        if (sender.track?.kind === 'video') parameters = await configureVideoSender(sender, () => !closed && !signal.aborted);
+      }
+      signal.throwIfAborted();
     },
+    quality: sample,
     close() {
       if (closed) return;
       closed = true; peer.removeEventListener('connectionstatechange', connectionChanged); peer.close();

@@ -19,6 +19,7 @@ import { useDialog } from '@/composables/useDialog';
 import { useToast } from '@/composables/useToast';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useScenarioStore } from '@/stores/scenarios';
+import ScenarioAdvancedSummary from './ScenarioAdvancedSummary.vue';
 import { useSourceStore } from '@/stores/sources';
 import { formatRelativeTime } from '@/design-system/utils';
 import { hasRetiredActiveTargets } from './scenarioModel';
@@ -226,6 +227,7 @@ void runtime;
         </n-card>
       </div>
 
+      <ScenarioAdvancedSummary :advanced="scenario?.advanced" />
       <template #footer>
         <div class="scenario-preview__actions">
           <n-button @click="close">{{ t('common.close') }}</n-button>

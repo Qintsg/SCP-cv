@@ -2,6 +2,7 @@
 import type { ScreenSharingApi, ScreenShareSnapshot } from '@/services/screenSharing';
 import type { ScreenSharePeer } from './rtcPeer';
 import { ScreenShareAudioController, type ScreenShareAudioView } from './ScreenShareAudioController';
+import { displayVideoConstraints, type ShareQuality } from './shareQuality';
 
 export interface ScreenShareView {
   phase: 'idle' | 'selecting' | 'connecting' | 'sharing' | 'stopping' | 'closed' | 'failed' | 'cancelled';
@@ -10,6 +11,7 @@ export interface ScreenShareView {
   captureActive: boolean;
   localHasAudio: boolean;
   audio: ScreenShareAudioView;
+  quality?: ShareQuality | null;
 }
 export interface PublisherDependencies {
   windowId(): number;
@@ -32,6 +34,7 @@ interface Attempt {
   stopped?: Promise<void>;
   issuedRead: number;
   acceptedRead: number;
+  qualityBusy?: boolean;
 }
 
 /** :param signal: 本次寿命。:returns: 一秒后继续，停止时立即清理监听和计时器。 */
@@ -97,7 +100,7 @@ export class ScreenSharePublisher {
     if (attempt.ended) for (const track of attempt.stream?.getVideoTracks() ?? []) track.removeEventListener('ended', attempt.ended);
     attempt.peer?.close();
     for (const track of attempt.stream?.getTracks() ?? []) track.stop();
-    this.update({ captureActive: false });
+    this.update({ captureActive: false, quality: null });
   }
   /** :param attempt: 原尝试。:param snapshot: HTTP结果。:returns: 相同会话、目标及代次；错误响应不覆盖原身份。 */
   private accept(attempt: Attempt, snapshot: ScreenShareSnapshot): void {
@@ -132,10 +135,10 @@ export class ScreenSharePublisher {
     if (unavailable) { this.update({ phase: 'failed', errorCode: unavailable }); return; }
     const attempt: Attempt = { window: this.deps.windowId(), abort: new AbortController(), answered: false, issuedRead: 0, acceptedRead: 0 };
     this.attempt = attempt;
-    this.update({ phase: 'selecting', errorCode: '', snapshot: null, captureActive: false, localHasAudio: false });
+    this.update({ phase: 'selecting', errorCode: '', snapshot: null, captureActive: false, localHasAudio: false, quality: null });
     try {
       // 必须在原点击栈直接调用，前面无await、HTTP或计时器；保留浏览器瞬时用户激活。
-      const stream = await this.deps.capture({ video: { width: { ideal: 1920, max: 1920 }, height: { ideal: 1080, max: 1080 }, frameRate: { ideal: 30, max: 30 } }, audio });
+      const stream = await this.deps.capture({ video: displayVideoConstraints, audio });
       if (!this.live(attempt)) { for (const track of stream.getTracks()) track.stop(); return; }
       attempt.stream = stream;
       if (!stream.getVideoTracks().some((track) => track.readyState === 'live')) throw new Error('share_capture_empty');
@@ -174,6 +177,13 @@ export class ScreenSharePublisher {
       while (this.live(attempt)) {
         const snapshot = await this.read(attempt, attempt.abort.signal);
         if (!this.live(attempt)) break;
+        // 统计不能阻塞心跳/关闭；每个资源不重叠，迟到值不复活旧页面。
+        if (attempt.answered && attempt.peer?.quality && !attempt.qualityBusy) {
+          attempt.qualityBusy = true;
+          void attempt.peer.quality().then(quality => {
+            if (this.live(attempt)) this.update({ quality });
+          }).catch(() => { /* 不支持统计不结束有效共享。 */ }).finally(() => { attempt.qualityBusy = false; });
+        }
         if (!snapshot) { await nextPoll(attempt.abort.signal); continue; }
         if (snapshot.state === 'closed' || snapshot.state === 'failed') {
           this.release(attempt); this.attempt = undefined;

@@ -51,6 +51,7 @@ export default {
     bigScreenLeft: '大屏左',
     bigScreenRight: '大屏右',
     sources: '媒体源',
+    devices: '摄像机与音量',
     backgroundAudio: '背景音乐',
     scenarios: '预案',
     settings: '设置',
