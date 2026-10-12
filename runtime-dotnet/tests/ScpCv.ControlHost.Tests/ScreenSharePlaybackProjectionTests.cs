@@ -42,7 +42,11 @@ public sealed class ScreenSharePlaybackProjectionTests
         using var snapshot = JsonDocument.Parse(updates.Current.Data);
         AssertActual(snapshot.RootElement.GetProperty("sessions").EnumerateArray().Single(item => item.GetProperty("window_id").GetInt32() == window), id, 73);
         await using var database = factory.Services.GetRequiredService<IDbContextFactory<ControlDbContext>>().CreateDbContext();
-        Assert.Empty(await database.MediaSources.ToArrayAsync());
+        // 内置摄像机是永久目录项；临时共享不得增加任何普通/临时媒体项。
+        var catalog = await database.MediaSources.ToArrayAsync();
+        Assert.Equal(6, catalog.Length);
+        Assert.All(catalog, source => Assert.StartsWith("camera:", source.SystemKey));
+        Assert.DoesNotContain(catalog, source => source.IsTemporary || source.StreamIdentifier.Length > 0);
         Assert.DoesNotContain("receiver_uri", actual.GetRawText(), StringComparison.Ordinal);
         Assert.DoesNotContain("sdp", actual.GetRawText(), StringComparison.Ordinal);
     }

@@ -27,6 +27,7 @@ public sealed partial class MediaSourceService
                 folderPath = _paths.FolderPath(folderId, folders);
                 _paths.EnsureNoReparsePoint(folderPath);
                 var subtree = CollectSubtree(folderId, folders);
+                foreach (var id in subtree) MediaDirectoryProtection.EnsureWritable(id, folders);
                 var sources = await database.MediaSources.Where(source => source.FolderId != null &&
                     subtree.Contains(source.FolderId.Value)).ToListAsync(token).ConfigureAwait(false);
                 await EnsureSourcesIdleAsync(database, sources.Select(source => source.Id).ToArray(), token)

@@ -1,3 +1,4 @@
+// ControlHost受管SQLite上下文与UTC/枚举转换。
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ScpCv.Domain.Model;
@@ -13,6 +14,7 @@ public sealed class ControlDbContext(DbContextOptions<ControlDbContext> options)
     public DbSet<PlaybackSession> PlaybackSessions => Set<PlaybackSession>();
     public DbSet<RuntimeState> RuntimeStates => Set<RuntimeState>();
     public DbSet<Scenario> Scenarios => Set<Scenario>();
+    public DbSet<ScenarioFolder> ScenarioFolders => Set<ScenarioFolder>();
     public DbSet<BackgroundAudioState> BackgroundAudioStates => Set<BackgroundAudioState>();
     public DbSet<BackgroundAudioPlaylistItem> BackgroundAudioPlaylistItems => Set<BackgroundAudioPlaylistItem>();
     public DbSet<StreamSource> StreamSources => Set<StreamSource>();

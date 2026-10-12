@@ -1,0 +1,13 @@
+type: object
+description: 保存是意图，不保证设备可执行；激活前检查全部绑定。空值保持，不调用默认位置。
+properties:
+  camera_positions:
+    type: object
+    additionalProperties:
+      type: integer
+      nullable: true
+      minimum: 1
+      maximum: 255
+    description: 键仅rear/center1/center2/left/right；固定监控拒绝
+  audio:
+    $ref: ./VenueAudioSettings.yaml

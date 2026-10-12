@@ -1,0 +1,22 @@
+type: object
+description: 未配置为保持；当前仅screen_volume有已核实绑定。来源/话筒值被409拒绝且零写出。
+properties:
+  screen_volume:
+    type: integer
+    nullable: true
+    minimum: 0
+    maximum: 100
+  handheld_volume:
+    type: integer
+    nullable: true
+    minimum: 0
+    maximum: 100
+  hanging_volume:
+    type: integer
+    nullable: true
+    minimum: 0
+    maximum: 100
+  source:
+    type: string
+    nullable: true
+    enum: [ip81, scp_cv, null]

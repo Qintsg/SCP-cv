@@ -59,6 +59,20 @@ security:
   - sessionAuthHttp: []
 
 paths:
+  /venue/:
+    $ref: './paths/venue-directory.yaml#/Venue'
+  /venue/audio/read/:
+    $ref: './paths/venue-directory.yaml#/AudioRead'
+  /venue/audio/:
+    $ref: './paths/venue-directory.yaml#/Audio'
+  /venue/cameras/{id}/motion/:
+    $ref: './paths/venue-directory.yaml#/Motion'
+  /venue/cameras/{id}/positions/{position}/{action}/:
+    $ref: './paths/venue-directory.yaml#/Position'
+  /scenario-folders/:
+    $ref: './paths/venue-directory.yaml#/Folders'
+  /scenario-folders/{id}/:
+    $ref: './paths/venue-directory.yaml#/Folder'
   /auth/csrf/:
     $ref: './paths/auth_csrf_.yaml'
   /auth/login/:

@@ -19,6 +19,7 @@ internal sealed class ScreenShareEntry
     internal long ActualFrames { get; set; }
     internal DateTimeOffset? LastFrameAt { get; set; }
     internal bool ReceiverHasAudio { get; set; }
+    internal ReceiverQuality? Quality { get; set; }
     internal bool NativeReleased { get; set; }
     internal string StopReason { get; set; } = "";
     internal DateTimeOffset? TerminalAt { get; set; }
@@ -26,5 +27,5 @@ internal sealed class ScreenShareEntry
 
     internal ScreenShareSnapshot Snapshot() => new(
         Id, WindowId, State, HasAudio, ReceiverHasAudio, SourceGeneration,
-        ExpiresAt, ActualFrames, LastFrameAt, Answer, StopReason);
+        ExpiresAt, ActualFrames, LastFrameAt, Answer, StopReason) { ReceiverQuality = Quality };
 }

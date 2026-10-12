@@ -3,6 +3,8 @@ allOf:
   - type: object
     required: [runtime, sessions]
     properties:
+      audio:
+        $ref: ./VenueAudioResult.yaml
       runtime:
         $ref: ./RuntimeSnapshot.yaml
       sessions:

@@ -16,6 +16,7 @@ public sealed class UserAccount
 public sealed class MediaFolder
 {
     public long Id { get; set; }
+    public string SystemKey { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public long? ParentId { get; set; }
     public MediaFolder? Parent { get; set; }
@@ -28,6 +29,8 @@ public sealed class MediaFolder
 public sealed class MediaSource
 {
     public long Id { get; set; }
+    public string SystemKey { get; set; } = string.Empty;
+    public string EntryName { get; set; } = string.Empty;
     public MediaSourceType SourceType { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Uri { get; set; } = string.Empty;
@@ -106,12 +109,15 @@ public sealed class RuntimeState
     public long WallLayoutAppliedRevision { get; set; }
     public string WallLayoutDispatchStatus { get; set; } = "none";
     public string WallLayoutDispatchDetail { get; set; } = string.Empty;
+    public string VenueAudioJson { get; set; } = "{}";
     public DateTimeOffset UpdatedAt { get; set; }
 }
 
 public sealed class Scenario
 {
     public long Id { get; set; }
+    public long? FolderId { get; set; }
+    public string AdvancedJson { get; set; } = "{}";
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public int SortOrder { get; set; }

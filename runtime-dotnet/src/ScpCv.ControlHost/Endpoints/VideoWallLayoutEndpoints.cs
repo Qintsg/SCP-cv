@@ -4,6 +4,7 @@ using ScpCv.Contracts.Http;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Playback;
 using ScpCv.Infrastructure.VideoWall;
+using ScpCv.Infrastructure.Devices;
 
 namespace ScpCv.ControlHost.Endpoints;
 
@@ -55,6 +56,7 @@ public static class VideoWallLayoutEndpoints
         HttpRequest request,
         VideoWallLayoutService layouts,
         RuntimeStateService runtime,
+        VenueDeviceService venue,
         CancellationToken cancellationToken)
     {
         try
@@ -73,10 +75,12 @@ public static class VideoWallLayoutEndpoints
                 }
             }
             var layout = await layouts.ApplyDraftAsync(expectedRevision, cancellationToken).ConfigureAwait(false);
+            var audio = await venue.ReapplyAsync(cancellationToken).ConfigureAwait(false);
             return Results.Ok(new
             {
                 success = true,
                 layout,
+                audio,
                 runtime = await runtime.GetRuntimeAsync(cancellationToken).ConfigureAwait(false),
                 sessions = await runtime.GetSessionsAsync(cancellationToken).ConfigureAwait(false),
             });
@@ -90,15 +94,18 @@ public static class VideoWallLayoutEndpoints
         string preset,
         VideoWallLayoutService layouts,
         RuntimeStateService runtime,
+        VenueDeviceService venue,
         CancellationToken cancellationToken)
     {
         try
         {
             var layout = await layouts.ApplyPresetAsync(preset, cancellationToken).ConfigureAwait(false);
+            var audio = await venue.ReapplyAsync(cancellationToken).ConfigureAwait(false);
             return Results.Ok(new
             {
                 success = true,
                 layout,
+                audio,
                 runtime = await runtime.GetRuntimeAsync(cancellationToken).ConfigureAwait(false),
                 sessions = await runtime.GetSessionsAsync(cancellationToken).ConfigureAwait(false),
             });

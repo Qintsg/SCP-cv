@@ -42,7 +42,8 @@ public sealed partial class MediaSourceService(
         }
 
         var sources = await query.OrderBy(source => source.Id).ToListAsync(cancellationToken).ConfigureAwait(false);
-        return sources.Select(ProjectManagedSource).ToArray();
+        var folders = await database.MediaFolders.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+        return sources.Select(source => ProjectPath(source, folders)).ToArray();
     }
 
     public async Task<MediaSourceDto> AddLocalAsync(

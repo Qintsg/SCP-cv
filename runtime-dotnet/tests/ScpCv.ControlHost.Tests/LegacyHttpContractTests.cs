@@ -48,8 +48,8 @@ public sealed class LegacyHttpContractTests
         {
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             AssertObjectHasExactly(body.RootElement, "success", "folders");
-            var folder = Assert.Single(body.RootElement.GetProperty("folders").EnumerateArray());
-            AssertObjectHasExactly(folder, "id", "name", "parent_id", "relative_path", "created_at", "updated_at");
+            var folder = Assert.Single(body.RootElement.GetProperty("folders").EnumerateArray(), item => !item.GetProperty("is_protected").GetBoolean());
+            AssertObjectHasExactly(folder, "id", "name", "parent_id", "relative_path", "is_protected", "created_at", "updated_at");
         }
 
         using (var response = await client.GetAsync("/api/sources/"))
@@ -58,14 +58,14 @@ public sealed class LegacyHttpContractTests
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
             AssertObjectHasExactly(body.RootElement, "success", "sources", "sync_result");
             Assert.Equal(JsonValueKind.Object, body.RootElement.GetProperty("sync_result").ValueKind);
-            var source = Assert.Single(body.RootElement.GetProperty("sources").EnumerateArray());
+            var source = Assert.Single(body.RootElement.GetProperty("sources").EnumerateArray(), item => !item.GetProperty("is_protected").GetBoolean());
             AssertObjectHasExactly(
                 source,
                 "id", "source_type", "name", "uri", "is_available", "stream_identifier", "folder_id",
                 "original_filename", "file_size", "mime_type", "is_temporary", "expires_at", "metadata",
                 "keep_alive", "preheat_enabled", "playback_mode", "preparation_state", "page_count",
                 "created_at", "preview_url",
-                "thumbnail_url", "preview_kind", "preview_label");
+                "thumbnail_url", "preview_kind", "preview_label", "path", "is_protected");
             Assert.Equal("ppt", source.GetProperty("source_type").GetString());
             Assert.Equal("libreoffice", source.GetProperty("playback_mode").GetString());
         }
@@ -130,7 +130,7 @@ public sealed class LegacyHttpContractTests
                 "id", "name", "description", "sort_order", "big_screen_mode_state", "big_screen_mode",
                 "big_screen_mode_label", "volume_state", "volume_level", "targets", "window1_source_id",
                 "window1_source_name", "window1_autoplay", "window1_resume", "window2_source_id",
-                "window2_source_name", "window2_autoplay", "window2_resume", "created_at", "updated_at");
+                "window2_source_name", "window2_autoplay", "window2_resume", "created_at", "updated_at", "folder_id", "path", "advanced");
         }
 
         using (var response = await client.GetAsync("/api/devices/"))

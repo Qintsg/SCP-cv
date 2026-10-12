@@ -148,14 +148,16 @@ public sealed partial class ScreenShareRegistry(TimeProvider timeProvider)
     }
 
     /// <summary>只信任授权接收资源的实际视频帧，接收活动不延长发布者寿命。</summary>
-    public void ReportFrame(Guid id, int windowId, long sourceGeneration, string token, long frames, bool hasAudio)
+    public void ReportFrame(Guid id, int windowId, long sourceGeneration, string token, long frames, bool hasAudio, ReceiverQuality? quality = null)
     {
         lock (_sync)
         {
             var entry = AuthorizedReceiverLocked(id, windowId, sourceGeneration, token);
+            quality?.Validate();
             if (entry.Answer is null || frames <= entry.ActualFrames || (hasAudio && !entry.HasAudio))
                 throw Error("接收帧证据无效。", "share_frame_invalid");
             entry.ActualFrames = frames;
+            entry.Quality = quality;
             entry.LastFrameAt = timeProvider.GetUtcNow();
             entry.ReceiverHasAudio = hasAudio;
             entry.State = ScreenShareState.Receiving;
@@ -245,6 +247,7 @@ public sealed partial class ScreenShareRegistry(TimeProvider timeProvider)
         entry.ReceiverToken = null;
         entry.Offer = null;
         entry.Answer = null;
+        entry.Quality = null;
         entry.StopReason = reason;
         entry.State = entry.SourceGeneration.HasValue ? ScreenShareState.Stopping : ScreenShareState.Closed;
         if (entry.IsTerminal) entry.TerminalAt = timeProvider.GetUtcNow();

@@ -14,6 +14,7 @@ public sealed partial class MediaSourceService
         Id = folder.Id,
         Name = folder.Name,
         ParentId = folder.ParentId,
+        IsProtected = folder.SystemKey.Length > 0,
         CreatedAt = folder.CreatedAt.ToString("O"),
         UpdatedAt = folder.UpdatedAt.ToString("O"),
     };
@@ -80,6 +81,7 @@ public sealed partial class MediaSourceService
         return new MediaSourceDto
         {
             Id = source.Id,
+            IsProtected = source.SystemKey.Length > 0,
             SourceType = SourceTypeName(source.SourceType),
             Name = source.Name,
             Uri = source.Uri,
@@ -122,14 +124,17 @@ public sealed partial class MediaSourceService
     private MediaSourceDto ProjectManagedSource(MediaSource source) => ToSourceDto(source, _artifactRoot);
 
     /// <summary>:param source: 持久媒体源。:param database: 当前事务。:param cancellationToken: 寿命。:param artifactRoot: 调用服务显式根。:returns: 根已贯穿的预览投影。</summary>
-    internal static Task<MediaSourceDto> ProjectSourceAsync(
+    internal static async Task<MediaSourceDto> ProjectSourceAsync(
         MediaSource source,
         ControlDbContext database,
         string artifactRoot,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(ToSourceDto(source, artifactRoot));
+        var folders = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            database.MediaFolders, cancellationToken).ConfigureAwait(false);
+        var mediaRoot = Path.GetFullPath(Path.Combine(artifactRoot, "..", "..", "media"));
+        return ToSourceDto(source, artifactRoot) with { Path = PublicPath(source, folders, mediaRoot) };
     }
 
     /// <summary>

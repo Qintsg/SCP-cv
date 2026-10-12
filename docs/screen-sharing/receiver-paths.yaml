@@ -109,6 +109,8 @@ Frames:
             type: object
             required: [frames, activated]
             properties:
+              quality:
+                $ref: '../components/schemas/ReceiverQuality.yaml'
               frames:
                 type: integer
                 format: int64

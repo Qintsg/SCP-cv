@@ -47,6 +47,8 @@ Share:
   type: object
   required: [id, window_id, state, has_audio, receiver_has_audio, source_generation, expires_at, actual_frames, last_frame_at, answer, stop_reason, actual_volume, actual_muted]
   properties:
+    receiver_quality:
+      $ref: '../components/schemas/ReceiverQuality.yaml'
     id:
       type: string
       format: uuid

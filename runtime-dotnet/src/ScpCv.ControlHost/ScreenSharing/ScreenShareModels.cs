@@ -26,6 +26,7 @@ public sealed record ScreenShareSnapshot(
     ScreenShareSdp? Answer,
     string StopReason)
 {
+    public ReceiverQuality? ReceiverQuality { get; init; }
     public int? ActualVolume { get; init; }
     public bool? ActualMuted { get; init; }
 }

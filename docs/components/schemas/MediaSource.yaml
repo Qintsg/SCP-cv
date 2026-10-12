@@ -18,6 +18,12 @@ required:
   - preview_label
   - created_at
 properties:
+  path:
+    type: string
+    description: 从/开始；受管上传文件为实际保存的叶名，重名不覆盖
+  is_protected:
+    type: boolean
+    description: 系统内置项禁止编辑、移动、删除；不能通过metadata修改保护
   id:
     type: integer
   source_type:

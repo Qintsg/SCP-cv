@@ -81,7 +81,9 @@ public sealed class ScreenShareAudioEndpointTests
         var command = await database.CommandRecords.SingleAsync(item => item.CommandId == submitted);
         Assert.Equal(TimeSpan.FromSeconds(3), command.Deadline!.Value - command.CreatedAt);
         Assert.DoesNotContain("receiver_uri", command.ArgsJson, StringComparison.Ordinal);
-        Assert.Empty(await database.MediaSources.ToArrayAsync());
+        // 启动已有六个内置摄像机；共享音频不能额外创建媒体源。
+        Assert.Equal(6, await database.MediaSources.CountAsync());
+        Assert.All(await database.MediaSources.ToArrayAsync(), source => Assert.StartsWith("camera:", source.SystemKey));
     }
 
     [Theory]

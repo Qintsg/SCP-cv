@@ -26,7 +26,9 @@ public sealed class MediaUploadLimitTests
         Assert.Equal("invalid_upload_form", error.RootElement.GetProperty("code").GetString());
         using var listed = await client.GetAsync("/api/sources/");
         using var listedJson = JsonDocument.Parse(await listed.Content.ReadAsStringAsync());
-        Assert.Empty(listedJson.RootElement.GetProperty("sources").EnumerateArray());
+        var sources = listedJson.RootElement.GetProperty("sources").EnumerateArray().ToArray();
+        Assert.Equal(6, sources.Length);
+        Assert.All(sources, source => Assert.True(source.GetProperty("is_protected").GetBoolean()));
     }
 
     [Fact]
@@ -49,6 +51,8 @@ public sealed class MediaUploadLimitTests
         Assert.Equal("upload_too_large", error.RootElement.GetProperty("code").GetString());
         using var listed = await client.GetAsync("/api/sources/");
         using var listedJson = JsonDocument.Parse(await listed.Content.ReadAsStringAsync());
-        Assert.Empty(listedJson.RootElement.GetProperty("sources").EnumerateArray());
+        var sources = listedJson.RootElement.GetProperty("sources").EnumerateArray().ToArray();
+        Assert.Equal(6, sources.Length);
+        Assert.All(sources, source => Assert.True(source.GetProperty("is_protected").GetBoolean()));
     }
 }

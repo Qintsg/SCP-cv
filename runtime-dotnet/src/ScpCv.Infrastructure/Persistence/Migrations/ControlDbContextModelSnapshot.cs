@@ -1014,6 +1014,34 @@ namespace ScpCv.Infrastructure.Persistence.Migrations
                 {
                     b.Navigation("PptResources");
                 });
+            // 012增量模型：受管标记、现场音频意图及独立预设目录。
+            modelBuilder.Entity("ScpCv.Domain.Model.MediaFolder", b =>
+                b.Property<string>("SystemKey").IsRequired().HasColumnType("TEXT"));
+            modelBuilder.Entity("ScpCv.Domain.Model.MediaSource", b =>
+            {
+                b.Property<string>("SystemKey").IsRequired().HasColumnType("TEXT");
+                b.Property<string>("EntryName").IsRequired().HasColumnType("TEXT");
+            });
+            modelBuilder.Entity("ScpCv.Domain.Model.RuntimeState", b =>
+                b.Property<string>("VenueAudioJson").IsRequired().HasColumnType("TEXT"));
+            modelBuilder.Entity("ScpCv.Domain.Model.Scenario", b =>
+            {
+                b.Property<string>("AdvancedJson").IsRequired().HasColumnType("TEXT");
+                b.Property<long?>("FolderId").HasColumnType("INTEGER");
+                b.HasIndex("FolderId");
+            });
+            modelBuilder.Entity("ScpCv.Domain.Model.ScenarioFolder", b =>
+            {
+                b.Property<long>("Id").ValueGeneratedOnAdd().HasColumnType("INTEGER");
+                b.Property<string>("Name").IsRequired().HasMaxLength(120).HasColumnType("TEXT");
+                b.Property<long?>("ParentId").HasColumnType("INTEGER");
+                b.Property<long>("CreatedAt").HasColumnType("INTEGER");
+                b.Property<long>("UpdatedAt").HasColumnType("INTEGER");
+                b.HasKey("Id"); b.HasIndex("ParentId"); b.ToTable("scenario_folders");
+                b.HasOne("ScpCv.Domain.Model.ScenarioFolder", "Parent").WithMany()
+                    .HasForeignKey("ParentId").OnDelete(DeleteBehavior.Restrict);
+                b.Navigation("Parent");
+            });
 #pragma warning restore 612, 618
         }
     }

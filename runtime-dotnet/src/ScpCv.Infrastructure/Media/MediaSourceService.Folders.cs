@@ -35,6 +35,7 @@ public sealed partial class MediaSourceService
             return await writes.ExecuteAsync(async (database, token) =>
             {
                 var folders = await database.MediaFolders.ToListAsync(token).ConfigureAwait(false);
+                MediaDirectoryProtection.EnsureWritable(parentId, folders);
                 if (parentId is not null && folders.All(folder => folder.Id != parentId.Value))
                     throw new MediaServiceException($"父文件夹 id={parentId.Value} 不存在");
                 if (folders.Any(folder => folder.ParentId == parentId &&
@@ -97,6 +98,9 @@ public sealed partial class MediaSourceService
                 var folders = await database.MediaFolders.ToListAsync(token).ConfigureAwait(false);
                 var folder = folders.SingleOrDefault(candidate => candidate.Id == folderId)
                     ?? throw new MediaServiceException($"文件夹 id={folderId} 不存在", isNotFound: true);
+                MediaDirectoryProtection.EnsureWritable(folderId, folders);
+                MediaDirectoryProtection.EnsureWritable(updateParent ? parentId : folder.ParentId, folders);
+                foreach (var id in CollectSubtree(folderId, folders)) MediaDirectoryProtection.EnsureWritable(id, folders);
                 originalPath = _paths.FolderPath(folderId, folders);
                 var nextParentId = updateParent ? parentId : folder.ParentId;
                 var nextName = normalizedName ?? folder.Name;
@@ -213,7 +217,7 @@ public sealed partial class MediaSourceService
         var relative = Path.GetRelativePath(_mediaRoot, _paths.FolderPath(folder.Id, folders));
         return ToFolderDto(folder) with
         {
-            RelativePath = relative == "." ? string.Empty : relative.Replace('\\', '/'),
+            RelativePath = relative == "." ? "/" : "/" + relative.Replace('\\', '/'),
         };
     }
 }

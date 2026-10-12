@@ -8,6 +8,7 @@ using ScpCv.Infrastructure.Playback;
 using ScpCv.Infrastructure.Presentations;
 using ScpCv.Infrastructure.Commands;
 using ScpCv.Infrastructure.VideoWall;
+using ScpCv.Infrastructure.Devices;
 
 namespace ScpCv.Infrastructure.Scenarios;
 
@@ -19,7 +20,8 @@ public sealed partial class ScenarioService(
     IVideoWallController? videoWall = null,
     ISystemAudioController? systemAudio = null,
     VideoWallOperationGate? wallGate = null,
-    ScreenSharePlaybackProjection? screenSharePlayback = null)
+    ScreenSharePlaybackProjection? screenSharePlayback = null,
+    VenueDeviceService? venueDevices = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
@@ -53,10 +55,14 @@ public sealed partial class ScenarioService(
         writes.ExecuteAsync(
             async (database, token) =>
             {
+                await ScenarioFolderService.ValidateParentAsync(database, model.FolderId, token).ConfigureAwait(false);
+                await EnsureUniquePathAsync(database, ValidateName(model.Name), model.FolderId, null, token).ConfigureAwait(false);
                 var now = _timeProvider.GetUtcNow();
                 var scenario = new Scenario
                 {
                     Name = ValidateName(model.Name),
+                    FolderId = model.FolderId,
+                    AdvancedJson = ValidateAdvanced(model.Advanced ?? new()),
                     Description = model.Description.Trim(),
                     BigScreenModeState = ParseValueState(model.BigScreenModeState),
                     BigScreenMode = ParseBigScreenMode(model.BigScreenMode),
@@ -83,7 +89,17 @@ public sealed partial class ScenarioService(
                         item => item.Id == scenarioId,
                         token).ConfigureAwait(false)
                     ?? throw new ScenarioServiceException($"预案 id={scenarioId} 不存在", isNotFound: true);
-                if (model.Name is not null) scenario.Name = ValidateName(model.Name);
+                var nextName = model.Name is null ? scenario.Name : ValidateName(model.Name);
+                var nextFolder = model.UpdateFolder ? model.FolderId : scenario.FolderId;
+                if (nextName != scenario.Name || nextFolder != scenario.FolderId)
+                    await EnsureUniquePathAsync(database, nextName, nextFolder, scenario.Id, token).ConfigureAwait(false);
+                scenario.Name = nextName;
+                if (model.UpdateFolder)
+                {
+                    await ScenarioFolderService.ValidateParentAsync(database, model.FolderId, token).ConfigureAwait(false);
+                    scenario.FolderId = model.FolderId;
+                }
+                if (model.Advanced is not null) scenario.AdvancedJson = ValidateAdvanced(model.Advanced);
                 if (model.Description is not null) scenario.Description = model.Description.Trim();
                 if (model.BigScreenModeState is not null) scenario.BigScreenModeState = ParseValueState(model.BigScreenModeState);
                 if (model.BigScreenMode is not null) scenario.BigScreenMode = ParseBigScreenMode(model.BigScreenMode);
@@ -164,7 +180,10 @@ public sealed partial class ScenarioService(
                     database.Scenarios.Add(scenario);
                 }
 
-                scenario.Name = ValidateName(name);
+                var nextName = ValidateName(name);
+                if (scenario.Id == 0 || nextName != scenario.Name)
+                    await EnsureUniquePathAsync(database, nextName, scenario.FolderId, scenario.Id, token).ConfigureAwait(false);
+                scenario.Name = nextName;
                 scenario.Description = description.Trim();
                 // 旧预案合同只承载两个预设，手动布局快照不静默变为错误的单/双屏。
                 scenario.BigScreenModeState = runtime.BigScreenMode == BigScreenMode.Custom ? ScenarioValueState.Unset : ScenarioValueState.Set;
@@ -190,6 +209,8 @@ public sealed partial class ScenarioService(
         }
 
         var targets = DeserializeTargets(scenario.TargetsJson);
+        var advanced = ReadAdvanced(scenario.AdvancedJson);
+        PreflightAdvanced(advanced);
         var retiredTarget = targets.FirstOrDefault(target =>
             target.WindowId is < WindowId.Minimum or > WindowId.Maximum && target.SourceState != "unset");
         if (retiredTarget is not null)
@@ -207,6 +228,8 @@ public sealed partial class ScenarioService(
                 var source = await preflight.MediaSources.AsNoTracking()
                     .SingleOrDefaultAsync(item => item.Id == target.SourceId.Value, cancellationToken)
                     .ConfigureAwait(false) ?? throw new ScenarioServiceException($"媒体源 id={target.SourceId.Value} 不存在");
+                if (source.SystemKey.StartsWith("camera:", StringComparison.Ordinal) && string.IsNullOrWhiteSpace(source.Uri))
+                    throw new ScenarioServiceException("预设中的摄像机尚未绑定播放地址。");
                 if (source.SourceType != MediaSourceType.Presentation) continue;
                 try
                 {
@@ -222,6 +245,7 @@ public sealed partial class ScenarioService(
         }
 
         await ApplyRuntimeAsync(scenario, cancellationToken).ConfigureAwait(false);
+        await ApplyAdvancedAsync(advanced, cancellationToken).ConfigureAwait(false);
 
         await using var snapshotDb = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
         var snapshot = await snapshotDb.PlaybackSessions.AsNoTracking()
@@ -352,7 +376,9 @@ public sealed partial class ScenarioService(
             source => source.Id,
             source => source.Name,
             cancellationToken).ConfigureAwait(false);
-        return scenarios.Select(scenario => ToDto(scenario, sourceNames)).ToArray();
+        var folders = await database.ScenarioFolders.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false);
+        return scenarios.Select(scenario => ToDto(scenario, sourceNames) with
+        { Path = ScenarioFolderService.PublicPath(scenario.FolderId, folders).TrimEnd('/') + "/" + scenario.Name }).ToArray();
     }
 
     private static ScenarioDto ToDto(Scenario scenario, Dictionary<long, string> sourceNames)
@@ -367,6 +393,8 @@ public sealed partial class ScenarioService(
         {
             Id = scenario.Id,
             Name = scenario.Name,
+            FolderId = scenario.FolderId,
+            Advanced = ReadAdvanced(scenario.AdvancedJson),
             Description = scenario.Description,
             SortOrder = scenario.SortOrder,
             BigScreenModeState = EnumName(scenario.BigScreenModeState),
@@ -428,15 +456,15 @@ public sealed partial class ScenarioService(
         var now = _timeProvider.GetUtcNow();
         return now.ToUnixTimeMilliseconds() > previous.ToUnixTimeMilliseconds() ? now : previous.AddMilliseconds(1);
     }
-    private static string ValidateName(string value) => value.Trim().Length > 0 ? value.Trim() : throw new ScenarioServiceException("预案名称不能为空");
+    private static string ValidateName(string value) => ScenarioFolderService.Segment(value.Trim());
     private static int ValidateVolume(int value) => value is >= 0 and <= 100 ? value : throw new ScenarioServiceException("音量必须在 0 到 100 之间");
     private static ScenarioValueState ParseValueState(string value) => value.Trim().ToLowerInvariant() switch { "unset" => ScenarioValueState.Unset, "empty" => ScenarioValueState.Empty, "set" => ScenarioValueState.Set, _ => throw new ScenarioServiceException($"无效的三态值：{value}") };
     private static BigScreenMode ParseBigScreenMode(string value) => value.Trim().ToLowerInvariant() switch { "single" => BigScreenMode.Single, "double" => BigScreenMode.Double, _ => throw new ScenarioServiceException($"无效的大屏模式：{value}") };
     private static string EnumName<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant();
 }
 
-public sealed record ScenarioWriteModel(string Name, string Description, string BigScreenModeState, string BigScreenMode, string VolumeState, int VolumeLevel, IReadOnlyList<ScenarioTargetDto> Targets);
-public sealed record ScenarioPatchModel(string? Name, string? Description, string? BigScreenModeState, string? BigScreenMode, string? VolumeState, int? VolumeLevel, IReadOnlyList<ScenarioTargetDto>? Targets);
+public sealed record ScenarioWriteModel(string Name, string Description, string BigScreenModeState, string BigScreenMode, string VolumeState, int VolumeLevel, IReadOnlyList<ScenarioTargetDto> Targets, long? FolderId = null, ScenarioAdvancedDto? Advanced = null);
+public sealed record ScenarioPatchModel(string? Name, string? Description, string? BigScreenModeState, string? BigScreenMode, string? VolumeState, int? VolumeLevel, IReadOnlyList<ScenarioTargetDto>? Targets, long? FolderId = null, bool UpdateFolder = false, ScenarioAdvancedDto? Advanced = null);
 public sealed class ScenarioServiceException(
     string message,
     bool isNotFound = false,

@@ -13,6 +13,14 @@ required:
   - created_at
   - updated_at
 properties:
+  folder_id:
+    type: integer
+    nullable: true
+  path:
+    type: string
+    description: 从/开始的预设路径
+  advanced:
+    $ref: ./ScenarioAdvanced.yaml
   id:
     type: integer
   name:

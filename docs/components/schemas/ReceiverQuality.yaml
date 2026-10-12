@@ -1,0 +1,25 @@
+type: object
+nullable: true
+additionalProperties: false
+description: 同授权接收资源的有限实际统计，缺字段为未知，停止清空；不是理论建议码率。
+properties:
+  width:
+    type: integer
+    nullable: true
+    minimum: 1
+    maximum: 32768
+  height:
+    type: integer
+    nullable: true
+    minimum: 1
+    maximum: 32768
+  fps:
+    type: number
+    nullable: true
+    minimum: 0
+    maximum: 240
+  bitrate_mbps:
+    type: number
+    nullable: true
+    minimum: 0
+    maximum: 1000

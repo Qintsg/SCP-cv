@@ -1,0 +1,302 @@
+# 目录控制台现场设备/预设目录路径合同。
+Venue:
+  get:
+    tags: [devices]
+    summary: 获取现场摄像机与音频能力
+    operationId: getVenue
+    responses:
+      '200':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                venue:
+                  $ref: '../components/schemas/VenueState.yaml'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+AudioRead:
+  post:
+    tags: [devices]
+    summary: 只读查询并记录实际屏幕音量
+    operationId: readVenueAudio
+    responses:
+      '200':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                audio:
+                  $ref: '../components/schemas/VenueAudioResult.yaml'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Audio:
+  put:
+    tags: [devices]
+    summary: 配置已绑定的屏幕音量
+    operationId: setVenueAudio
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/VenueAudioSettings.yaml'
+    responses:
+      '200':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                audio:
+                  $ref: '../components/schemas/VenueAudioResult.yaml'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Motion:
+  post:
+    tags: [devices]
+    summary: 摄像机运动（未绑定时拒绝且零写出）
+    operationId: moveVenueCamera
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: 当前未绑定，实际返回409；保留后续已核实协议的成功合同
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Position:
+  post:
+    tags: [devices]
+    summary: 保存或调用摄像机位置（未绑定时拒绝）
+    operationId: venueCameraPosition
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: position
+        in: path
+        required: true
+        schema:
+          type: integer
+      - name: action
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: 当前未绑定，实际返回409；保留后续已核实协议的成功合同
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Folders:
+  get:
+    tags: [scenarios]
+    summary: 列出预设目录
+    operationId: listScenarioFolders
+    responses:
+      '200':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                folders:
+                  type: array
+                  items:
+                    $ref: '../components/schemas/Folder.yaml'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+  post:
+    tags: [scenarios]
+    summary: 新建预设目录
+    operationId: createScenarioFolder
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/ScenarioFolderRequest.yaml'
+    responses:
+      '200':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                folder:
+                  $ref: '../components/schemas/Folder.yaml'
+      '201':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                folder:
+                  $ref: '../components/schemas/Folder.yaml'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Folder:
+  put:
+    tags: [scenarios]
+    summary: 编辑或移动预设目录
+    operationId: updateScenarioFolder
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/ScenarioFolderRequest.yaml'
+    responses:
+      '200':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                folder:
+                  $ref: '../components/schemas/Folder.yaml'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+  delete:
+    tags: [scenarios]
+    summary: 删除空预设目录
+    operationId: deleteScenarioFolder
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: 成功；发送/读回/仿真状态见响应详情
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+

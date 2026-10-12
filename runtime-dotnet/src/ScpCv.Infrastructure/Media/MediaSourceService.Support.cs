@@ -1,3 +1,4 @@
+// 媒体查找、路径与受管目录验证；写入查找统一保护内置项。
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
@@ -19,11 +20,15 @@ public sealed partial class MediaSourceService
     private static async Task<MediaSource> FindSourceAsync(
         ControlDbContext database,
         long sourceId,
-        CancellationToken cancellationToken) =>
-        await database.MediaSources.Include(source => source.PptResources).SingleOrDefaultAsync(
+        CancellationToken cancellationToken)
+    {
+        var found = await database.MediaSources.Include(source => source.PptResources).SingleOrDefaultAsync(
                 source => source.Id == sourceId,
                 cancellationToken).ConfigureAwait(false)
             ?? throw new MediaServiceException($"媒体源 id={sourceId} 不存在", isNotFound: true);
+        MediaDirectoryProtection.EnsureWritable(found);
+        return found;
+    }
 
     private static async Task<long?> OptionalFolderIdAsync(
         ControlDbContext database,
@@ -37,6 +42,8 @@ public sealed partial class MediaSourceService
         if (folderId <= 0 || !await database.MediaFolders.AnyAsync(folder => folder.Id == folderId, cancellationToken)
                 .ConfigureAwait(false))
             throw new MediaServiceException($"文件夹 id={folderId} 不存在", isNotFound: true);
+        MediaDirectoryProtection.EnsureWritable(folderId,
+            await database.MediaFolders.AsNoTracking().ToListAsync(cancellationToken).ConfigureAwait(false));
         return folderId;
     }
 

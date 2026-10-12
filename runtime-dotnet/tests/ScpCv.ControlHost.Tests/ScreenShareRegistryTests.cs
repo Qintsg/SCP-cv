@@ -114,6 +114,23 @@ public sealed class ScreenShareRegistryTests
     }
 
     [Fact]
+    public void ReceiverQualityRequiresMatchingGrantAndIsClearedOnStop()
+    {
+        var registry = new ScreenShareRegistry(new TestClock());
+        var share = registry.Create("alice", Target(1), false);
+        var grant = Negotiate(registry, share.Id, 7);
+        registry.SetAnswer(share.Id, 1, 7, grant.Token, "answer", "v=0\r\n");
+        var quality = new ReceiverQuality(1920, 1080, 30, 7.8);
+        Assert.Throws<ScreenShareException>(() => registry.ReportFrame(share.Id, 1, 8, grant.Token, 1, false, quality));
+        Assert.Null(registry.GetOwned("alice", share.Id).ReceiverQuality);
+        registry.ReportFrame(share.Id, 1, 7, grant.Token, 1, false, quality);
+        Assert.Equal(quality, registry.GetOwned("alice", share.Id).ReceiverQuality);
+        registry.BeginStop("alice", share.Id, "publisher_stop");
+        Assert.Null(registry.GetOwned("alice", share.Id).ReceiverQuality);
+        Assert.Throws<ScreenShareException>(() => registry.ReportFrame(share.Id, 1, 7, grant.Token, 2, false, quality));
+    }
+
+    [Fact]
     public void AllocatedDeadlineCannotBeExtendedByHeartbeatAndExpiredGrantIsRevoked()
     {
         var clock = new TestClock();

@@ -62,7 +62,8 @@ public static class ScreenShareReceiverEndpoints
             if (!body.TryGetProperty("frames", out var value) || value.ValueKind != JsonValueKind.Number ||
                 !value.TryGetInt64(out var frames) || !ScreenShareHttpSupport.Boolean(body, "activated"))
                 throw new ScreenShareException("未激活或无实际帧的接收不能授予播出状态。", "share_frame_invalid");
-            registry.ReportFrame(id, grant.WindowId, grant.SourceGeneration, grant.Token, frames, ScreenShareHttpSupport.Boolean(body, "has_audio"));
+            registry.ReportFrame(id, grant.WindowId, grant.SourceGeneration, grant.Token, frames,
+                ScreenShareHttpSupport.Boolean(body, "has_audio"), ReceiverQuality.Read(body));
             return Results.Ok(new { success = true });
         });
 

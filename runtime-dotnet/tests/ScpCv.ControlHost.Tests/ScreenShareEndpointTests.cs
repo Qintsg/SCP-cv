@@ -89,7 +89,8 @@ public sealed class ScreenShareEndpointTests
         Assert.Equal(generation, command.SourceGeneration);
         Assert.DoesNotContain(grant.Token, command.ArgsJson, StringComparison.Ordinal);
         Assert.DoesNotContain("receiver_uri", command.ArgsJson, StringComparison.Ordinal);
-        Assert.Empty(await database.MediaSources.ToArrayAsync());
+        Assert.Equal(6, await database.MediaSources.CountAsync());
+        Assert.All(await database.MediaSources.ToArrayAsync(), source => Assert.StartsWith("camera:", source.SystemKey));
         using var stop = await MutateAsync(client, csrf, HttpMethod.Delete, $"/api/screen-shares/{id}/");
         Assert.Equal("stopping", (await JsonAsync(stop)).GetProperty("share").GetProperty("state").GetString());
         Assert.Throws<ScreenShareException>(() => factory.Services.GetRequiredService<ScreenShareRegistry>().GetReceiverGrant(id, target, generation));

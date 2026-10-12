@@ -59,6 +59,11 @@ builder.Services.AddSingleton(safetyMode);
 builder.Services.AddSingleton(mediaOptions);
 builder.Services.AddSingleton(bigScreenOutputs);
 builder.Services.AddSingleton(deviceOptions);
+builder.Services.AddSingleton(builder.Configuration.GetSection(VenueOptions.SectionName).Get<VenueOptions>() ?? new());
+builder.Services.AddSingleton<CameraCatalog>();
+builder.Services.AddSingleton<VenueDeviceService>();
+if (safetyMode.IsSimulation) builder.Services.AddSingleton<IVenueAudioTransport, SimulationVenueAudioTransport>();
+else builder.Services.AddSingleton<IVenueAudioTransport, TcpVenueAudioTransport>();
 builder.Services.AddSingleton(sseOptions);
 builder.Services.AddSingleton(supervisorOptions);
 builder.Services.AddSingleton(TimeProvider.System);
@@ -145,6 +150,7 @@ builder.Services.AddSingleton<PresentationCoordinator>();
 builder.Services.AddSingleton<IPresentationDependencySnapshotReader, WindowsPresentationDependencySnapshotReader>();
 builder.Services.AddSingleton<IPresentationDependencyProbe, PresentationDependencyProbe>();
 builder.Services.AddSingleton<ScenarioService>();
+builder.Services.AddSingleton<ScenarioFolderService>();
 builder.Services.AddSingleton<BackgroundAudioService>();
 builder.Services.AddSingleton<SseEventHub>();
 builder.Services.AddSingleton<RuntimeProjectionPublisher>();
@@ -169,6 +175,8 @@ var app = builder.Build();
 
 await app.Services.GetRequiredService<DatabaseInitializer>()
     .InitializeAsync(app.Lifetime.ApplicationStopping);
+try { await app.Services.GetRequiredService<CameraCatalog>().SynchronizeAsync(app.Lifetime.ApplicationStopping); }
+catch (VenueDeviceException exception) { ControlHostLog.CameraCatalogUnavailable(app.Logger, exception.Message); }
 await using (var seedScope = app.Services.CreateAsyncScope())
 {
     await seedScope.ServiceProvider.GetRequiredService<DevelopmentAccountSeeder>()
@@ -217,7 +225,9 @@ app.MapVideoWallLayoutEndpoints();
 app.MapPresentationSettingsEndpoints();
 app.MapPresentationEndpoints();
 app.MapScenarioEndpoints();
+app.MapScenarioFolderEndpoints();
 app.MapSystemEndpoints();
+app.MapVenueDeviceEndpoints();
 app.MapBackgroundAudioEndpoints();
 app.MapSseEventEndpoints();
 

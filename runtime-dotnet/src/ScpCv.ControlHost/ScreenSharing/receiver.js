@@ -23,6 +23,7 @@
   let reporting = false;
   let polling = false;
   let statusTimer = null;
+  let qualityPrevious = null;
   // fragment只在本机内存中使用，移除后不能从地址/历史/HTTP访问日志读到凭据。
   history.replaceState(null, '', endpoint);
 
@@ -55,6 +56,7 @@
   function stop() {
     if (stopped) return;
     stopped = true;
+    qualityPrevious = null;
     lifetime.abort();
     clearInterval(statusTimer);
     if (callbackId !== null) video.cancelVideoFrameCallback(callbackId);
@@ -110,10 +112,32 @@
     if (activated && negotiated && !reporting && (lastReportAt === 0 || performance.now() - lastReportAt >= 1000)) {
       reporting = true;
       lastReportAt = performance.now();
-      void request('frames/', 'POST', { frames, has_audio: hasAudio, activated: true })
+      void reportQuality(hasAudio)
         .catch(() => fail('share_receiver_report_failed')).finally(() => { reporting = false; });
     }
     callbackId = video.requestVideoFrameCallback(observeFrame);
+  }
+
+  /** :param hasAudio: 实际音频轨道。:returns: 一次非重叠统计与后帧回报，统计失败不损坏既有共享。 */
+  async function reportQuality(hasAudio) {
+    const quality = { width: video.videoWidth || null, height: video.videoHeight || null, fps: null, bitrate_mbps: null };
+    try {
+      const stats = await peer.getStats();
+      if (stopped) return;
+      stats.forEach(report => {
+        if (report.type !== 'inbound-rtp' || (report.kind ?? report.mediaType) !== 'video' || report.isRemote) return;
+        const finite = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+        if (finite(report.framesPerSecond) && report.framesPerSecond <= 240) quality.fps = report.framesPerSecond;
+        if (finite(report.bytesReceived) && finite(report.timestamp)) {
+          if (qualityPrevious?.id === report.id && report.timestamp > qualityPrevious.timestamp && report.bytesReceived >= qualityPrevious.bytes) {
+            const rate = (report.bytesReceived - qualityPrevious.bytes) * 8 / ((report.timestamp - qualityPrevious.timestamp) * 1000);
+            if (finite(rate) && rate <= 1000) quality.bitrate_mbps = rate;
+          }
+          qualityPrevious = { id: report.id, timestamp: report.timestamp, bytes: report.bytesReceived };
+        }
+      });
+    } catch { /* 无统计字段保持未知，不把理论参数作为实际接收。 */ }
+    if (!stopped) await request('frames/', 'POST', { frames, has_audio: hasAudio, activated: true, quality });
   }
 
   peer.addEventListener('track', event => {

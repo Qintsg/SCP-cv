@@ -1,3 +1,4 @@
+// ControlHost结构化日志声明，避免运行时模板解析。
 using Microsoft.Extensions.Logging;
 using ScpCv.ControlHost.Configuration;
 
@@ -5,6 +6,8 @@ namespace ScpCv.ControlHost.Logging;
 
 internal static partial class ControlHostLog
 {
+    [LoggerMessage(EventId = 1012, Level = LogLevel.Error, Message = "内置摄像机目录未同步：{Detail}")]
+    public static partial void CameraCatalogUnavailable(ILogger logger, string detail);
     [LoggerMessage(
         EventId = 1000,
         Level = LogLevel.Information,

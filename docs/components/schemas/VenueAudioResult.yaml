@@ -1,0 +1,13 @@
+type: object
+required: [status, detail]
+properties:
+  status:
+    type: string
+    enum: [not_sent, confirmed, simulated, unchanged, uncertain, sent_unconfirmed, mismatch]
+  detail:
+    type: string
+  screen_volume:
+    type: integer
+    nullable: true
+    minimum: 0
+    maximum: 100

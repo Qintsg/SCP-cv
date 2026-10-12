@@ -33,6 +33,8 @@ public sealed partial class RuntimeStateService
         {
             var source = await database.MediaSources.SingleOrDefaultAsync(item => item.Id == sourceId, token)
                 .ConfigureAwait(false) ?? throw new PlaybackServiceException($"媒体源 id={sourceId} 不存在");
+            if (source.SystemKey.StartsWith("camera:", StringComparison.Ordinal) && string.IsNullOrWhiteSpace(source.Uri))
+                throw new PlaybackServiceException("该内置摄像机尚未绑定播放地址。", "camera_unconfigured");
             PresentationSelection? presentation = null;
             if (source.SourceType == MediaSourceType.Presentation)
             {

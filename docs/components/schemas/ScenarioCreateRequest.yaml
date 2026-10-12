@@ -2,6 +2,11 @@ type: object
 required:
   - name
 properties:
+  folder_id:
+    type: integer
+    nullable: true
+  advanced:
+    $ref: ./ScenarioAdvanced.yaml
   name:
     type: string
   description:

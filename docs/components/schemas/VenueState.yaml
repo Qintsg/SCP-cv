@@ -1,0 +1,44 @@
+type: object
+required: [cameras, audio, capabilities, simulation]
+properties:
+  cameras:
+    type: array
+    items:
+      type: object
+      required: [id, name, path, source_id, stream_configured, movable, control_available, unavailable_reason]
+      properties:
+        id:
+          type: string
+          enum: [rear, center1, center2, left, right, fixed]
+        name:
+          type: string
+        path:
+          type: string
+        source_id:
+          type: integer
+          description: 目录冲突未同步时为0，不得用作播放目标
+        stream_configured:
+          type: boolean
+        movable:
+          type: boolean
+        control_available:
+          type: boolean
+        unavailable_reason:
+          type: string
+  audio:
+    $ref: ./VenueAudioSettings.yaml
+  capabilities:
+    type: object
+    properties:
+      screen_volume:
+        type: boolean
+      handheld_volume:
+        type: boolean
+      hanging_volume:
+        type: boolean
+      source:
+        type: boolean
+      reason:
+        type: string
+  simulation:
+    type: boolean

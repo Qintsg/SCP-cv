@@ -1,5 +1,11 @@
 type: object
 properties:
+  folder_id:
+    type: integer
+    nullable: true
+    description: 未提交保持；null移到根
+  advanced:
+    $ref: ./ScenarioAdvanced.yaml
   name:
     type: string
   description:

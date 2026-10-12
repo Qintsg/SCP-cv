@@ -1,3 +1,4 @@
+// 预设公开合同保留旧三态，增加逻辑目录与可选现场高级项。
 using System.Text.Json.Serialization;
 
 namespace ScpCv.Contracts.Http;
@@ -25,6 +26,9 @@ public sealed record ScenarioTargetDto
 
 public sealed record ScenarioDto
 {
+    [JsonPropertyName("folder_id")] public long? FolderId { get; init; }
+    [JsonPropertyName("path")] public string Path { get; init; } = string.Empty;
+    [JsonPropertyName("advanced")] public ScenarioAdvancedDto Advanced { get; init; } = new();
     [JsonPropertyName("id")]
     public long Id { get; init; }
 

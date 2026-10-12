@@ -1,3 +1,4 @@
+// 内容与目录的实体约束，文件系统动作不在数据库迁移中执行。
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ScpCv.Domain.Model;
@@ -71,6 +72,19 @@ public sealed class ScenarioConfiguration : IEntityTypeConfiguration<Scenario>
         builder.HasKey(entity => entity.Id);
         builder.Property(entity => entity.Name).HasMaxLength(255);
         builder.HasIndex(entity => new { entity.SortOrder, entity.UpdatedAt });
+        builder.HasIndex(entity => entity.FolderId);
+    }
+}
+
+public sealed class ScenarioFolderConfiguration : IEntityTypeConfiguration<ScenarioFolder>
+{
+    public void Configure(EntityTypeBuilder<ScenarioFolder> builder)
+    {
+        builder.ToTable("scenario_folders");
+        builder.HasKey(entity => entity.Id);
+        builder.Property(entity => entity.Name).HasMaxLength(120);
+        builder.HasOne(entity => entity.Parent).WithMany().HasForeignKey(entity => entity.ParentId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
 

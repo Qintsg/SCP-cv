@@ -48,7 +48,7 @@ public static class ScenarioEndpoints
                 String(body.Value, "big_screen_mode", "single"),
                 String(body.Value, "volume_state", "unset"),
                 Integer(body.Value, "volume_level", 100),
-                Targets(body.Value) ?? []), cancellationToken).ConfigureAwait(false);
+                Targets(body.Value) ?? [], FolderId(body.Value), Advanced(body.Value)), cancellationToken).ConfigureAwait(false);
             return Results.Json(new { success = true, scenario }, statusCode: StatusCodes.Status201Created);
         }
         catch (ScenarioServiceException exception) { return Error(exception); }
@@ -67,7 +67,8 @@ public static class ScenarioEndpoints
                 Has(body.Value, "big_screen_mode") ? String(body.Value, "big_screen_mode") : null,
                 Has(body.Value, "volume_state") ? String(body.Value, "volume_state") : null,
                 Has(body.Value, "volume_level") ? Integer(body.Value, "volume_level", 100) : null,
-                Has(body.Value, "targets") ? Targets(body.Value) : null), cancellationToken).ConfigureAwait(false);
+                Has(body.Value, "targets") ? Targets(body.Value) : null,
+                FolderId(body.Value), Has(body.Value, "folder_id"), Advanced(body.Value)), cancellationToken).ConfigureAwait(false);
             return Results.Ok(new { success = true, scenario });
         }
         catch (ScenarioServiceException exception) { return Error(exception); }
@@ -186,6 +187,22 @@ public static class ScenarioEndpoints
             });
         }
         return targets.ToArray();
+    }
+
+    private static ScenarioAdvancedDto? Advanced(JsonElement body)
+    {
+        if (!body.TryGetProperty("advanced", out var value)) return null;
+        if (value.ValueKind != JsonValueKind.Object) throw new ScenarioServiceException("advanced必须为对象；清空请提交{}。");
+        try { return value.Deserialize<ScenarioAdvancedDto>(); }
+        catch (JsonException) { throw new ScenarioServiceException("advanced配置结构无效。"); }
+    }
+
+    // :param body: 请求对象。:returns: 缺省或null为根目录；非法值不得静默变为根目录。
+    private static long? FolderId(JsonElement body)
+    {
+        if (!body.TryGetProperty("folder_id", out var value) || value.ValueKind == JsonValueKind.Null) return null;
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt64(out var id) && id > 0) return id;
+        throw new ScenarioServiceException("folder_id必须为正整数或null。", code: "invalid_folder_id");
     }
 
     private static bool FlexibleBoolean(JsonElement body, string name, bool fallback)

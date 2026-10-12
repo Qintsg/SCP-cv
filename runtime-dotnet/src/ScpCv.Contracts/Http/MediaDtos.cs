@@ -17,6 +17,8 @@ public sealed record MediaFolderDto
 
     [JsonPropertyName("relative_path")]
     public string RelativePath { get; init; } = string.Empty;
+    [JsonPropertyName("is_protected")]
+    public bool IsProtected { get; init; }
 
     [JsonPropertyName("created_at")]
     public string CreatedAt { get; init; } = string.Empty;
@@ -27,6 +29,10 @@ public sealed record MediaFolderDto
 
 public sealed record MediaSourceDto
 {
+    [JsonPropertyName("path")]
+    public string Path { get; init; } = string.Empty;
+    [JsonPropertyName("is_protected")]
+    public bool IsProtected { get; init; }
     [JsonPropertyName("id")]
     public long Id { get; init; }
 
