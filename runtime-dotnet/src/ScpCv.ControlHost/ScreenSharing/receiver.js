@@ -24,6 +24,9 @@
   let polling = false;
   let statusTimer = null;
   let qualityPrevious = null;
+  let qualitySample = null;
+  let qualityCapturedAt = 0;
+  let qualitySampling = false;
   // fragment只在本机内存中使用，移除后不能从地址/历史/HTTP访问日志读到凭据。
   history.replaceState(null, '', endpoint);
 
@@ -57,6 +60,7 @@
     if (stopped) return;
     stopped = true;
     qualityPrevious = null;
+    qualitySample = null;
     lifetime.abort();
     clearInterval(statusTimer);
     if (callbackId !== null) video.cancelVideoFrameCallback(callbackId);
@@ -118,9 +122,9 @@
     callbackId = video.requestVideoFrameCallback(observeFrame);
   }
 
-  /** :param hasAudio: 实际音频轨道。:returns: 一次非重叠统计与后帧回报，统计失败不损坏既有共享。 */
-  async function reportQuality(hasAudio) {
-    const quality = { width: video.videoWidth || null, height: video.videoHeight || null, fps: null, bitrate_mbps: null };
+  /** :returns: 独立的可选统计；悬挂或失败不能阻塞真实帧报告，不重叠、不复活已停止资源。 */
+  async function sampleQuality() {
+    const quality = { fps: null, bitrate_mbps: null };
     try {
       const stats = await peer.getStats();
       if (stopped) return;
@@ -136,7 +140,20 @@
           qualityPrevious = { id: report.id, timestamp: report.timestamp, bytes: report.bytesReceived };
         }
       });
+      qualitySample = quality;
+      qualityCapturedAt = performance.now();
     } catch { /* 无统计字段保持未知，不把理论参数作为实际接收。 */ }
+  }
+
+  /** :param hasAudio: 实际音频轨道。:returns: 实际后帧立即报告，仅附带三秒内统计；不会等待getStats。 */
+  async function reportQuality(hasAudio) {
+    if (!qualitySampling) {
+      qualitySampling = true;
+      void sampleQuality().finally(() => { qualitySampling = false; });
+    }
+    const fresh = qualitySample !== null && performance.now() - qualityCapturedAt <= 3000;
+    const quality = { width: video.videoWidth || null, height: video.videoHeight || null,
+      fps: fresh ? qualitySample.fps : null, bitrate_mbps: fresh ? qualitySample.bitrate_mbps : null };
     if (!stopped) await request('frames/', 'POST', { frames, has_audio: hasAudio, activated: true, quality });
   }
 
