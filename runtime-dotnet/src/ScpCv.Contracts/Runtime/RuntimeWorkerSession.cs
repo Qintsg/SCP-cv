@@ -141,7 +141,7 @@ public sealed class RuntimeWorkerSession(
                     }
 
                     await WaitForWakeOrPollAsync(linked.Token).ConfigureAwait(false);
-                    // 心跳只放在空闲路径，避免打断领取、执行与结果回放的既有帧顺序。
+                    // 空闲与命令等待都串行发送传输心跳；不把命令续租当作目标在线证明。
                     await SendTransportHeartbeatIfDueAsync(linked.Token).ConfigureAwait(false);
                     if (sampleState is not null && await sampleState(linked.Token).ConfigureAwait(false) is { } sample)
                         await ReportStateAsync(sample.SourceGeneration, sample.State, linked.Token).ConfigureAwait(false);
@@ -258,24 +258,31 @@ public sealed class RuntimeWorkerSession(
         try
         {
             var execution = execute(lease, cancellationToken);
+            var renewAt = DateTimeOffset.UtcNow.AddSeconds(5);
             while (!execution.IsCompleted)
             {
-                var completed = await Task.WhenAny(execution, Task.Delay(TimeSpan.FromSeconds(5), cancellationToken))
+                var completed = await Task.WhenAny(execution, Task.Delay(TimeSpan.FromSeconds(1), cancellationToken))
                     .ConfigureAwait(false);
                 if (completed == execution) break;
-                var renewal = await _client.ExchangeAsync(Frame("lease_renew", new LeaseRenewDto
+                if (DateTimeOffset.UtcNow >= renewAt)
                 {
-                    CommandId = lease.CommandId,
-                    ClaimToken = lease.ClaimToken,
-                    OwnerEpoch = lease.OwnerEpoch,
-                    Stage = "executing",
-                    UiHealthy = true,
-                }), cancellationToken).ConfigureAwait(false);
-                if (!string.Equals(renewal.MessageType, "renew_result", StringComparison.OrdinalIgnoreCase) ||
-                    !renewal.Payload.Deserialize<RenewResultDto>()!.Accepted)
-                {
-                    throw new InvalidOperationException("命令租约续期被 fencing。" );
+                    var renewal = await _client.ExchangeAsync(Frame("lease_renew", new LeaseRenewDto
+                    {
+                        CommandId = lease.CommandId,
+                        ClaimToken = lease.ClaimToken,
+                        OwnerEpoch = lease.OwnerEpoch,
+                        Stage = "executing",
+                        UiHealthy = true,
+                    }), cancellationToken).ConfigureAwait(false);
+                    if (!string.Equals(renewal.MessageType, "renew_result", StringComparison.OrdinalIgnoreCase) ||
+                        !renewal.Payload.Deserialize<RenewResultDto>()!.Accepted)
+                    {
+                        throw new InvalidOperationException("命令租约续期被 fencing。" );
+                    }
+                    renewAt = DateTimeOffset.UtcNow.AddSeconds(5);
                 }
+                // 长OPEN可能等待真实首帧超过五秒；保持两秒传输心跳但UiHealthy仍false。
+                await SendTransportHeartbeatIfDueAsync(cancellationToken).ConfigureAwait(false);
             }
             result = await execution.ConfigureAwait(false);
         }
