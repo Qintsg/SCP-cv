@@ -15,6 +15,41 @@ public sealed class ScreenShareReceiverEndpointTests
     private readonly ReceiverClock _clock = new();
 
     [Fact]
+    public async Task ReceiverFixtureArrangementAndConcurrentFormalCleanupKeepGrantValid()
+    {
+        // 强制清理与准备相交：必须经过正式Service的同窗口门禁，不能关闭后台或增大期限。
+        for (var round = 0; round < 10; round++)
+        {
+            using var root = new ControlHostApplicationFactory();
+            using var factory = ReceiverHost(root);
+            var service = factory.Services.GetRequiredService<ScreenShareService>();
+            using var stop = new CancellationTokenSource();
+            var ready = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var cleanup = Task.Run(async () =>
+            {
+                ready.SetResult();
+                while (!stop.IsCancellationRequested)
+                {
+                    await service.CleanupOnceAsync(stop.Token);
+                    await Task.Delay(1, stop.Token);
+                }
+            });
+            try
+            {
+                await ready.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                var (grant, _) = await ArrangeAsync(factory).WaitAsync(TimeSpan.FromSeconds(10));
+                Assert.Equal(200, (await ExchangeAsync(factory, grant, "offer/", "GET")).Status);
+            }
+            finally
+            {
+                await stop.CancelAsync();
+                try { await cleanup.WaitAsync(TimeSpan.FromSeconds(5)); }
+                catch (OperationCanceledException) when (stop.IsCancellationRequested) { }
+            }
+        }
+    }
+
+    [Fact]
     public async Task ReceiverContractFixtureKeepsSeededWorkerOnlineUntilTestClockAdvances()
     {
         using var root = new ControlHostApplicationFactory();
@@ -128,10 +163,10 @@ public sealed class ScreenShareReceiverEndpointTests
         using var client = CreateHttpsClient(factory);
         var target = await ScreenShareEndpointTests.SeedOnlineAsync(factory);
         var registry = factory.Services.GetRequiredService<ScreenShareRegistry>();
-        var share = registry.Create("test-owner", target, false);
-        registry.SetOffer("test-owner", share.Id, "offer", "v=0\r\n");
-        var runtime = factory.Services.GetRequiredService<ScpCv.Infrastructure.Playback.RuntimeStateService>();
-        await runtime.OpenScreenShareAsync(target, share.Id, generation => registry.BindReceiver("test-owner", share.Id, generation));
+        // 直接跨Registry/Runtime准备会跳过正式窗口门禁，让周期清理观察到提交中间态。
+        var service = factory.Services.GetRequiredService<ScreenShareService>();
+        var share = await service.CreateAsync("test-owner", target.WindowId, false);
+        share = await service.OfferAsync("test-owner", share.Id, "offer", "v=0\r\n");
         return (registry.GetReceiverGrant(share.Id, target, registry.GetOwned("test-owner", share.Id).SourceGeneration!.Value), registry);
     }
 

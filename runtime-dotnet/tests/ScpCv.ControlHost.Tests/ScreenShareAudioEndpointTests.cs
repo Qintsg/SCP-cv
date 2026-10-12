@@ -110,11 +110,15 @@ public sealed class ScreenShareAudioEndpointTests
     }
 
     [Theory]
-    [InlineData("instance")]
-    [InlineData("owner")]
-    [InlineData("group")]
-    [InlineData("offline")]
-    public async Task ChangedTargetCannotQueueAudio(string change)
+    [InlineData("instance", false)]
+    [InlineData("owner", false)]
+    [InlineData("group", false)]
+    [InlineData("offline", false)]
+    [InlineData("instance", true)]
+    [InlineData("owner", true)]
+    [InlineData("group", true)]
+    [InlineData("offline", true)]
+    public async Task ChangedTargetCannotQueueAudio(string change, bool cleanupFirst)
     {
         using var factory = new ControlHostApplicationFactory();
         using var client = factory.CreateHttpsClient();
@@ -128,9 +132,19 @@ public sealed class ScreenShareAudioEndpointTests
             if (change == "group") (await database.RuntimeGroupControls.SingleAsync()).GroupEpoch++;
             await database.SaveChangesAsync();
         }
+        if (cleanupFirst) await factory.Services.GetRequiredService<ScreenShareService>().CleanupOnceAsync();
         using var response = await ScreenShareEndpointTests.MutateAsync(client, csrf, HttpMethod.Patch,
             $"/api/screen-shares/{id}/audio/", new { volume = 29, muted = false });
-        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        // 原Worker失效先被事务发现是503；若真实后台先撤销分享则409。两者均严格核码和零排队。
+        if (cleanupFirst) Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        else Assert.Contains(response.StatusCode, new[] { HttpStatusCode.ServiceUnavailable, HttpStatusCode.Conflict });
+        var code = (await ScreenShareEndpointTests.JsonAsync(response)).GetProperty("code").GetString();
+        Assert.Equal(response.StatusCode == HttpStatusCode.ServiceUnavailable ? "share_player_offline" : "share_audio_unavailable", code);
+        if (response.StatusCode == HttpStatusCode.Conflict)
+        {
+            using var owned = await client.GetAsync($"/api/screen-shares/{id}/");
+            Assert.Equal("stopping", (await ScreenShareEndpointTests.JsonAsync(owned)).GetProperty("share").GetProperty("state").GetString());
+        }
         await AssertAudioCountAsync(factory, 0);
     }
 
