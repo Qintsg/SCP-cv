@@ -18,6 +18,7 @@ public sealed class RuntimeWorkerBusyHeartbeatTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(18));
         using var caller = CancellationTokenSource.CreateLinkedTokenSource(timeout.Token);
         var completion = new TaskCompletionSource<WorkerExecutionResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var runFinished = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var commandId = Guid.NewGuid();
         var claimToken = Guid.NewGuid();
         var executed = 0;
@@ -85,6 +86,8 @@ public sealed class RuntimeWorkerBusyHeartbeatTests
                 MessageType = "shutdown_request", MessageId = Guid.NewGuid(), OwnerEpoch = 7,
                 Payload = JsonSerializer.SerializeToElement(new { reason = "test_done" }),
             }), timeout.Token);
+            // shutdown是异步通知；等接收循环完成才关测试管道，避免EOF抢先掩盖协作停止。
+            await runFinished.Task.WaitAsync(timeout.Token);
         }, timeout.Token);
         await using var session = new RuntimeWorkerSession(pipeName,
             new("player", Guid.NewGuid(), new IpcTargetDto { Kind = "display", Id = 1 }, ["test"]));
@@ -95,14 +98,18 @@ public sealed class RuntimeWorkerBusyHeartbeatTests
         }, caller.Token);
         try
         {
-            await serverTask;
+            var first = await Task.WhenAny(run, serverTask);
+            if (first == serverTask) await serverTask;
             await run.WaitAsync(timeout.Token);
+            runFinished.TrySetResult();
+            await serverTask;
             Assert.Equal(1, executed);
             Assert.False(timeout.IsCancellationRequested);
         }
         finally
         {
             caller.Cancel();
+            runFinished.TrySetResult();
             try { await run; } catch (OperationCanceledException) { }
         }
     }
