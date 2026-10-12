@@ -47,8 +47,9 @@ public sealed class VideoWallProtocolOptions
         UnicastAddress = $"192.168.5.{number}",
         MulticastAddress = $"224.1.1.{number}",
         Port = 5000,
-        Width = 3840,
-        Height = 2160,
+        // 63/64是1080P实测输入；81尺寸独立，不能跟随工作站默认值。
+        Width = number is 63 or 64 ? 1920 : 3840,
+        Height = number is 63 or 64 ? 1080 : 2160,
         UnicastPort = 59993,
     };
 }

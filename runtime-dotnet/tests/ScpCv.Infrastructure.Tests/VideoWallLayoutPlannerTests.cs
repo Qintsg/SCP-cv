@@ -44,11 +44,16 @@ public sealed class VideoWallLayoutPlannerTests
             Assert.Equal(U16(packet, 8), U16(packet, 24));
             Assert.Equal(right is null ? 1 : 2, U16(packet, 34));
             Assert.Equal(right is null ? row * 10 + col + 1 : row * 5 + col % 5 + 1, U16(packet, 36));
-            var width = right is null ? 384 : 768;
+            var sourceWidth = source == WallInputKind.Laptop ? 3840 : 1920;
+            var sourceHeight = source == WallInputKind.Laptop ? 2160 : 1080;
+            var width = sourceWidth / (right is null ? 10 : 5);
+            var height = sourceHeight / 5;
             Assert.Equal((right is null ? col : col % 5) * width, U16(packet, 26));
-            Assert.Equal(row * 432, U16(packet, 28));
+            Assert.Equal(row * height, U16(packet, 28));
             Assert.Equal(width, U16(packet, 30));
-            Assert.Equal(432, U16(packet, 32));
+            Assert.Equal(height, U16(packet, 32));
+            Assert.InRange(U16(packet, 26) + width, 1, sourceWidth);
+            Assert.InRange(U16(packet, 28) + height, 1, sourceHeight);
         }
     }
 
@@ -80,6 +85,11 @@ public sealed class VideoWallLayoutPlannerTests
         historical.Inputs["window_1"].MulticastAddress = "224.1.1.55";
         historical.Inputs["window_2"].UnicastAddress = "192.168.5.56";
         historical.Inputs["window_2"].MulticastAddress = "224.1.1.56";
+        foreach (var key in new[] { "window_1", "window_2" })
+        {
+            historical.Inputs[key].Width = 3840;
+            historical.Inputs[key].Height = 2160;
+        }
         var actual = VideoWallLayoutPlanner.Build(layout, historical);
         var expected = VideoWallSequenceBuilder.Build(mode);
         Assert.Equal(expected.Select(item => Convert.ToHexString(item.Packet)),
