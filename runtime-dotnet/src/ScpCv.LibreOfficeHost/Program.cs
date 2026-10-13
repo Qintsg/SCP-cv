@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using ScpCv.LibreOfficeHost.Runtime;
+using ScpCv.LibreOfficeHost.Audio;
 using ScpCv.LibreOfficeHost.Uno;
 using ScpCv.Presentation.Protocol;
 
@@ -31,9 +32,12 @@ internal static class Program
             var epoch = long.Parse(Option(args, "engine-epoch"), CultureInfo.InvariantCulture);
             if (role != "impress-1" && role != "impress-2" && role != "converter") throw new InvalidDataException("宿主role无效");
             if (instance == Guid.Empty || group <= 0 || owner <= 0 || epoch <= 0) throw new InvalidDataException("宿主身份无效");
-            using var process = new OfficeProcess(Option(args, "office-program"), Option(args, "profile"), role == "converter");
+            var officeProgram = Option(args, "office-program");
+            var audioEndpoint = OfficeAudioOutputBinding.Preflight(role, officeProgram);
+            using var process = new OfficeProcess(officeProgram, Option(args, "profile"), role == "converter");
             using var connection = new UnoConnection(process.ProgramDirectory, process.Profile + "-client", process.Port);
-            using var document = new PresentationDocument(connection);
+            using var audio = new OfficeAudioOutputBinding(process, connection, audioEndpoint);
+            using var document = new PresentationDocument(connection, audio);
             var capabilities = new PresentationCapabilities { CanOpen = role != "converter", CanClose = role != "converter", CanNavigateSlides = role != "converter", CanStepEffects = role != "converter", CanObserve = role != "converter", CanShutdown = true, CanExportSlides = role == "converter" };
             using var input = Console.OpenStandardInput();
             using var output = Console.OpenStandardOutput();
@@ -60,11 +64,9 @@ internal static class Program
                     if (accepted.Operation == "shutdown")
                     {
                         Console.Error.WriteLine("presentation_shutdown_close_enter: instance=" + instance);
-                        document.Close();
-                        Console.Error.WriteLine("presentation_shutdown_document_closed: instance=" + instance);
-                        if (!connection.Desktop.terminate()) throw new InvalidOperationException("Office拒绝terminate");
-                        Console.Error.WriteLine("presentation_shutdown_termination_requested: instance=" + instance);
-                        process.ConfirmStopped();
+                        NormalOfficeShutdown.Run(process, () => { document.Close(); audio.ReleaseWarmups(); }, connection.Desktop.terminate);
+                        document.RetireExitedEngine(); audio.RetireExitedEngine();
+                        Console.Error.WriteLine("presentation_shutdown_native_exit_confirmed: instance=" + instance);
                         observation = null;
                     }
                     else if (accepted.Operation == "export_slides")
@@ -112,6 +114,8 @@ internal static class Program
                     }
                     catch (Exception error) when (accepted.Operation == "open")
                     {
+                        Console.Error.WriteLine("presentation_open_primary_failure: " + error);
+                        process.TraceExitState("open_failure_before_cleanup");
                         // 候选OPEN失败：正常关闭其文稿后才返回failed，父进程保留旧容器。
                         // 关闭自身失败则继续向外抛，按transport uncertain处理并清理独占job。
                         document.Close();
@@ -129,9 +133,8 @@ internal static class Program
                 PresentationWireCodec.WriteResponseAsync(output, response).GetAwaiter().GetResult();
                 if (request.Operation == "shutdown" && response.Status == "succeeded") return 0;
             }
-            document.Close();
-            if (!connection.Desktop.terminate()) throw new InvalidOperationException("断管时Office拒绝退出");
-            process.ConfirmStopped();
+            NormalOfficeShutdown.Run(process, () => { document.Close(); audio.ReleaseWarmups(); }, connection.Desktop.terminate);
+            document.RetireExitedEngine(); audio.RetireExitedEngine();
             return 0;
         }
         catch (Exception error) { Console.Error.WriteLine("presentation_host_failure: " + error); return 2; }

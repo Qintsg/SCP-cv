@@ -99,4 +99,10 @@ internal sealed class PresentationTerminalController : IDisposable
         if(_listener is not { } listener)return;
         listener.Retire();_controller.removeSlideShowListener(listener);_listener=null;
     }
+
+    /// <summary>:returns: 仅在自有引擎OS正常退出已确认后退役本地回调，不重入已死亡的UNO桥。</summary>
+    internal void RetireExitedEngine()
+    {
+        _listener?.Retire(); _listener = null;
+    }
 }

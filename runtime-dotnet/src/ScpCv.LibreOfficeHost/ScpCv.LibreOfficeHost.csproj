@@ -10,6 +10,10 @@
   <ItemGroup>
     <Compile Include="../../shared/PresentationProcessJob.cs" Link="Runtime/PresentationProcessJob.cs" />
     <Compile Include="../../shared/PresentationPackageMetadata.cs" Link="Uno/PresentationPackageMetadata.cs" />
+    <Compile Include="../../shared/NativeApplicationAudioPolicy.cs" Link="Audio/NativeApplicationAudioPolicy.cs" />
+    <Compile Include="../../shared/PrivateAudioEnginePaths.cs" Link="Audio/PrivateAudioEnginePaths.cs" />
+    <Compile Include="../ScpCv.Contracts/Runtime/AudioOutputBinding.cs" Link="Audio/AudioOutputBinding.cs" />
+    <PackageReference Include="NAudio" />
     <ProjectReference Include="../ScpCv.Presentation.Protocol/ScpCv.Presentation.Protocol.csproj" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.IO.Compression" />

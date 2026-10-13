@@ -4,6 +4,7 @@ using System.IO;
 using System.Windows;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
+using ScpCv.PlayerWorker.Audio;
 
 namespace ScpCv.PlayerWorker.ScreenSharing;
 
@@ -23,19 +24,22 @@ internal sealed class ScreenShareSurface : IScreenShareSurface
     }
 
     /// <summary>:param window: 所属Player窗口。:param identity: 已认证lease。:param token: 端到端OPEN寿命。:returns: 独立资源；首帧门禁仍由Host等待。</summary>
-    internal static async Task<IScreenShareSurface> CreateAsync(PlayerWindow window, ScreenShareReceiverIdentity identity, CancellationToken token, Action? released = null)
+    internal static async Task<IScreenShareSurface> CreateAsync(PlayerWindow window, ScreenShareReceiverIdentity identity, CancellationToken token, Action? released = null,
+        string? audioOutputDeviceId = null, string? webViewUserDataRoot = null)
     {
         token.ThrowIfCancellationRequested();
         var resource = new ScreenShareSurface(window, identity, released);
         window.PrepareSurface(resource.Surface);
         try
         {
-            var userData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "SCP-cv", "WebView2", "screen-share", $"player-{identity.WindowId}");
-            var environment = await CoreWebView2Environment.CreateAsync(userDataFolder: userData).WaitAsync(token);
+            var userData = WebViewProfilePaths.For(identity.WindowId, shared: true, webViewUserDataRoot);
+            var browser = WebViewAudioOutputBinding.Browser(identity.WindowId, audioOutputDeviceId);
+            var environment = await CoreWebView2Environment.CreateAsync(browserExecutableFolder: browser, userDataFolder: userData).WaitAsync(token);
+            WebViewProfilePaths.Verify(webViewUserDataRoot, userData, environment.UserDataFolder);
             var options = environment.CreateCoreWebView2ControllerOptions();
             options.IsInPrivateModeEnabled = true; options.ProfileName = "share-" + identity.ShareId.ToString("N");
             await resource._view.EnsureCoreWebView2Async(environment, options).WaitAsync(token);
+            await WebViewAudioOutputBinding.PrepareAsync(resource._view.CoreWebView2, environment, browser, audioOutputDeviceId, token);
             token.ThrowIfCancellationRequested();
             resource.Configure();
             var request = environment.CreateWebResourceRequest(identity.Address.AbsoluteUri, "GET", null,

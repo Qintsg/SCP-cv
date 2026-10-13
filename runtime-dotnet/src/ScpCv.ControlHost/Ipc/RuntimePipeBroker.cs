@@ -253,6 +253,7 @@ public sealed partial class RuntimePipeBroker(
             return Response(frame, "error", new ErrorMessageDto { Code = "instance_fenced", Stage = "dispatch", Detail = "instance_id 与握手身份不匹配" });
 
         var messageType = frame.MessageType.Trim().ToLowerInvariant();
+        if (messageType == "shutdown_prepared") return AcceptSupervisorStop(connection, frame);
         if (messageType == "register_process")
         {
             if (!string.Equals(connection.Identity.Role, "supervisor", StringComparison.Ordinal))
@@ -286,6 +287,9 @@ public sealed partial class RuntimePipeBroker(
                 var group = await authority.GetGroupAsync(cancellationToken).ConfigureAwait(false);
                 accepted = group.GroupEpoch == connection.GroupEpoch &&
                     group.State is RuntimeGroupState.Starting or RuntimeGroupState.Armed;
+                if (connection.Identity.Role == "supervisor")
+                    return Response(frame, "health_accepted", new { accepted, group_epoch = group.GroupEpoch,
+                        group_state = group.State.ToString().ToLowerInvariant() });
             }
             else
             {

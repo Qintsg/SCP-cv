@@ -4,6 +4,7 @@ using System.ComponentModel;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Runtime;
 using ScpCv.PlayerWorker.Playback;
+using ScpCv.PlayerWorker.Audio;
 
 namespace ScpCv.PlayerWorker;
 
@@ -53,7 +54,8 @@ public partial class App : System.Windows.Application, IAsyncDisposable
             new IpcTargetDto { Kind = "display", Id = windowId },
             ["wpf", "libvlc", "webview2", "windows.data.pdf", "image"]));
         _runtime = new PlayerRuntimeHost(window, windowId, _session,
-            audioOutputDeviceId: Environment.GetEnvironmentVariable(AudioOutputBinding.EnvironmentVariable));
+            audioOutputDeviceId: Environment.GetEnvironmentVariable(AudioOutputBinding.EnvironmentVariable),
+            webViewUserDataRoot: Environment.GetEnvironmentVariable(WebViewProfilePaths.EnvironmentVariable));
         _ = RunRuntimeAsync(_session, _runtime, startGate, _stop.Token);
     }
 

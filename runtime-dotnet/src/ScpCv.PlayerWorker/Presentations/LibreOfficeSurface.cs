@@ -4,8 +4,10 @@ using System.IO;
 using System.Runtime.ExceptionServices;
 using ScpCv.Contracts.Ipc;
 using ScpCv.Contracts.Presentations;
+using ScpCv.Contracts.Runtime;
 using ScpCv.Presentation.Protocol;
 using ScpCv.Runtime.Presentations;
+using ScpCv.Runtime.Audio;
 
 namespace ScpCv.PlayerWorker.Presentations;
 
@@ -26,6 +28,8 @@ internal sealed class LibreOfficeSurface : IPresentationSurface
     {
         // 无引擎副作用的包检查在候选窗口/侧车创建前完成；失败保留旧画面。
         _ = new PresentationPackageMetadata(sourcePath);
+        var officeProgram = PrivateAudioEnginePaths.Office(windowId, Environment.GetEnvironmentVariable(AudioOutputBinding.EnvironmentVariable))
+            ?? PresentationRuntimePaths.OfficeProgram;
         using var process = Process.GetCurrentProcess();
         var viewport = new PresentationViewport(window);
         var scope = new PresentationScope
@@ -44,7 +48,7 @@ internal sealed class LibreOfficeSurface : IPresentationSurface
         PresentationProcessClient client;
         try
         {
-            client = new PresentationProcessClient(PresentationRuntimePaths.HostExecutable(), PresentationRuntimePaths.OfficeProgram,
+            client = new PresentationProcessClient(PresentationRuntimePaths.HostExecutable(), officeProgram,
                 PresentationRuntimePaths.EngineProfile(scope.EngineInstanceId), scope);
         }
         catch { viewport.Dispose(); throw; }

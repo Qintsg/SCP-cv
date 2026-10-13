@@ -117,6 +117,14 @@ STA已进入的同步COM调用无法靠消息撤销；过期只撤销后续发�
 
 ## 停止与清理
 
+### Supervisor停机准备（012，2026-10-14补充）
+
+正常停机不能由子进程退出码0或心跳`accepted=false`单独推断。ControlHost在撤销派发后，先对原认证Supervisor连接发送`shutdown_request`，payload含`reason`、原连接`group_epoch`及本次非空GUID `shutdown_id`，header的`owner_epoch`仍为该连接身份。Supervisor核Owner/原Group/nonce和消息类型，先建立本地退出围栏，再通过原管道发送`shutdown_prepared`（相同nonce、原instance/owner）。Broker只接受原连接/角色/owner及仍在等待的nonce，返回`shutdown_prepared_accepted`。最多三秒等待，缺失或错误确认不通知任何Worker，不声明已准备。
+
+准备确认后才发送各Worker已有的协作退出通知。Supervisor在准备前看到任何成员退出（包括0）都视作故障；准备后仍不接纳非零退出，最终还核各原成员真实退出码。被迫兜底退出不能因准备标志变成正常成功。不要将旧Supervisor与新增准备协议混用，完整运行包须同步。
+
+Supervisor的`health_accepted`额外带当前`group_epoch`和`group_state`。BeginDrain会将运行组epoch加一，旧Supervisor只可在原组恰下一代`draining/stopped`时保持通信、等待上述显式准备；这不是新组授权或正常退出证据。`armed/starting`、更远代次和错误schema仍拒绝。其余Worker/Office的既有心跳回执保持。
+
 默认保留002的组级协作停止。ControlHost先将组置draining并撤销新派发→Supervisor通知各宿主停止领取→等待在途结果或明确uncertain→隐藏/解绑窗口→释放页面/VLC/Office/音频→上报清理结果→退出。默认协作等待5秒、terminate后再等3秒沿用旧行为，Office长任务如需更长超时须由专项验证后通过显式配置确定，不伪报已取消。
 
 每步独立try/finally，失败不跳过后续清理。普通自有Worker用已登记process handle/PID+start time识别。Office还须在Quit/强退前重新核对Presentation清单及对象所有权：进程由本系统创建不保证后来没有用户文稿加入。无法证明持续独占时只关闭明确自有文稿，不Application.Quit、不强杀，保留Faulted/inflight并请求人工处置；COM卡死无法核验亦按此规则。旧Office未退出/未证明安全归还时不启动替代Host。

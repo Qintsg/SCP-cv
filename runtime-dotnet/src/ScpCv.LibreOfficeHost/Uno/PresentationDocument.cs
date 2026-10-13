@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using ScpCv.LibreOfficeHost.Audio;
 using ScpCv.Presentation.Protocol;
 using unoidl.com.sun.star.awt;
 using unoidl.com.sun.star.beans;
@@ -19,6 +20,7 @@ namespace ScpCv.LibreOfficeHost.Uno;
 internal sealed partial class PresentationDocument : IDisposable
 {
     private readonly UnoConnection _connection;
+    private readonly OfficeAudioOutputBinding? _audio;
     private XComponent? _document;
     private XFrame? _frame;
     private XPresentation2? _presentation;
@@ -29,7 +31,7 @@ internal sealed partial class PresentationDocument : IDisposable
     private PresentationTerminalController? _terminal;
 
     /// <summary>:param connection: 唯一线程的官方连接。</summary>
-    internal PresentationDocument(UnoConnection connection) => _connection = connection;
+    internal PresentationDocument(UnoConnection connection, OfficeAudioOutputBinding? audio = null) { _connection = connection; _audio = audio; }
 
     /// <summary>:param request: 已验证OS/原件/租约的请求。:returns: 真实页码观测。</summary>
     internal PresentationObservation Open(PresentationRequest request)
@@ -37,6 +39,7 @@ internal sealed partial class PresentationDocument : IDisposable
         Close();
         var package = new PresentationPackageReader(request.SourcePath);
         var parent = request.ParentWindow ?? throw new InvalidDataException("缺少父窗口");
+        _audio?.Prepare(parent);
         var toolkit = (XSystemChildFactory)_connection.Context.getServiceManager().createInstanceWithContext("com.sun.star.awt.Toolkit", _connection.Context);
         var window = (XWindow)toolkit.createSystemChild(new uno.Any(typeof(long), parent.Handle), Array.Empty<byte>(), 1);
         window.setPosSize(0, 0, parent.Width, parent.Height, 15);
@@ -76,6 +79,8 @@ internal sealed partial class PresentationDocument : IDisposable
         }
         GotoSlideOnUi(request.TargetSlide,_terminal.HasHeldAnimations);
         PresentationGeometry.Trace(_frame, parent, "slideshow_started");
+        // 此承载模型中关闭暖机Frame会结束整个Office（r22原始句柄退出0）。
+        // 两个有限零音已自然结束；保留资源到独占shutdown，不在用户放映期间关闭。
         return Observe();
     }
 
@@ -114,6 +119,7 @@ internal sealed partial class PresentationDocument : IDisposable
     /// <summary>:returns: 实际页码；统一媒体时钟不可得，保持null。</summary>
     internal PresentationObservation Observe()
     {
+        _audio?.Verify();
         _terminal?.Drain();
         PresentationGeometry.Note("presentation_observe_enter");
         var current = Controller().getCurrentSlideIndex() + 1;
@@ -229,4 +235,12 @@ internal sealed partial class PresentationDocument : IDisposable
 
     /// <summary>:returns: 自有文稿正常关闭，异常不吞掉。</summary>
     public void Dispose() => Close();
+
+    /// <summary>:returns: 原生引擎完整正常退出证明后，只退役本地引用；不按断桥调用此入口。</summary>
+    internal void RetireExitedEngine()
+    {
+        _terminal?.RetireExitedEngine(); _events?.Retire();
+        _terminal = null; _events = null; _eventController = null;
+        _document = null; _presentation = null; _frame = null; _scope = null; _advance = null;
+    }
 }

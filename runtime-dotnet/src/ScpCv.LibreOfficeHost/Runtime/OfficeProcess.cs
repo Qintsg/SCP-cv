@@ -1,11 +1,13 @@
 // 独占profile和原生job，端口只接受属于该job的监听者；正常退出需核所有成员。
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using ScpCv.Runtime.Processes;
+using ScpCv.Presentation.Protocol;
 
 namespace ScpCv.LibreOfficeHost.Runtime;
 
@@ -13,10 +15,26 @@ internal sealed class OfficeProcess : IDisposable
 {
     private readonly Process _launcher;
     private readonly PresentationProcessJob _job;
+    private Process? _native;
     private bool _confirmedStopped;
     internal string ProgramDirectory { get; }
     internal string Profile { get; }
     internal int Port { get; }
+    internal bool NativeHasExited => _native?.HasExited == true;
+    internal uint NativeProcessId => checked((uint)(_native ?? throw new InvalidOperationException("Office原生身份未就绪。")).Id);
+
+    /// <summary>:param stage: 固定诊断阶段。:returns: 原始句柄的存活/退出信息；诊断失败不得覆盖操作异常。</summary>
+    internal void TraceExitState(string stage)
+    {
+        try
+        {
+            Console.Error.WriteLine("office_exit_state: stage=" + stage + ";launcher=" + _launcher.Id +
+                ";launcher_exit=" + (_launcher.HasExited ? _launcher.ExitCode.ToString(CultureInfo.InvariantCulture) : "running") +
+                ";native=" + _native?.Id + ";native_exit=" + (_native?.HasExited == true ? _native.ExitCode.ToString(CultureInfo.InvariantCulture) : "running") +
+                ";job_members=" + string.Join(",", _job.Members()));
+        }
+        catch (Exception failure) { Console.Error.WriteLine("office_exit_diagnostic_unavailable: " + failure.GetType().Name); }
+    }
 
     /// <summary>:param program: 官方目录。:param profile: 本次全新自有目录。:param headless: 转换无需窗口。</summary>
     internal OfficeProcess(string program, string profile, bool headless)
@@ -50,6 +68,12 @@ internal sealed class OfficeProcess : IDisposable
                 if (portOwner != 0)
                 {
                     if (!_job.Members().Contains(portOwner)) throw new InvalidOperationException("监听端口归属其它进程，拒绝连接");
+                    _native = Process.GetProcessById(checked((int)portOwner));
+                    _ = _native.Handle;
+                    if (_native.HasExited || _native.SessionId != _launcher.SessionId ||
+                        !string.Equals(Path.GetFullPath(_native.MainModule?.FileName ?? string.Empty),
+                            Path.Combine(ProgramDirectory, "soffice.bin"), StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidOperationException("Office监听引擎身份已变化，拒绝继续连接。");
                     using var socket = new TcpClient();
                     socket.Connect("127.0.0.1", Port);
                     Console.Error.WriteLine("libreoffice_owned: launcher=" + _launcher.Id + ";listener=" + portOwner + ";port=" + Port);
@@ -59,7 +83,7 @@ internal sealed class OfficeProcess : IDisposable
             }
             throw new TimeoutException("LibreOffice未在启动预算内监听；自有job成员=" + string.Join(",", _job.Members()));
         }
-        catch { _job.Dispose(); launcher?.Dispose(); throw; }
+        catch { _job.Dispose(); _native?.Dispose(); launcher?.Dispose(); throw; }
     }
 
     /// <summary>:returns: UNO退出后核job所有成员及监听，不将launcher早退等同引擎退出。</summary>
@@ -69,7 +93,12 @@ internal sealed class OfficeProcess : IDisposable
         var sampled = false;
         while (budget.Elapsed.TotalSeconds < 5)
         {
-            if (!_job.HasRunningMembers() && NativeTcpOwnership.ListenerOwner(Port) == 0)
+            int? launcherExit = _launcher.HasExited ? _launcher.ExitCode : null;
+            int? nativeExit = _native?.HasExited == true ? _native.ExitCode : null;
+            if (launcherExit is not null && launcherExit != 0 || nativeExit is not null && nativeExit != 0)
+                throw new InvalidOperationException("Office异常退出；launcher=" + launcherExit + ";engine=" + nativeExit);
+            if (PresentationNativeExitPolicy.Confirmed(launcherExit, nativeExit,
+                !_job.HasRunningMembers(), NativeTcpOwnership.ListenerOwner(Port) == 0))
             {
                 _confirmedStopped = true;
                 return;
@@ -88,6 +117,6 @@ internal sealed class OfficeProcess : IDisposable
     public void Dispose()
     {
         if (!_confirmedStopped) Console.Error.WriteLine("libreoffice_forced_cleanup: normal_exit_unconfirmed");
-        _job.Dispose(); _launcher.Dispose();
+        _job.Dispose(); _native?.Dispose(); _launcher.Dispose();
     }
 }

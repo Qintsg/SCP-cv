@@ -53,8 +53,10 @@ $env:SCP_CV_LIBREOFFICE_PROGRAM = 'C:\Program Files\LibreOffice\program'
 $env:SCP_CV_LIBREOFFICE_HOST = '<Framework宿主绝对路径>\ScpCv.LibreOfficeHost.exe'
 ```
 
-发布时将Framework宿主及其Net48协议程序集放到运行根的`libreoffice/`子目录，
+发布时将Framework宿主、Net48协议及全部托管依赖放到运行根的`libreoffice/`子目录，
 不要把Net48协议DLL覆盖到.NET10运行根。发现顺序为显式环境变量、独立子目录、直达路径和已知开发输出。
+
+2026-10-13工作区加入声音绑定：该子目录还需包含NAudio及其对应Framework依赖，不能只复制exe/协议两文件。可信`SCP_CV_AUDIO_OUTPUT_DEVICE_ID`与`SCP_CV_PRIVATE_AUDIO_ENGINE_ROOT`明确配置时，两个Player选择各自私有Office；converter仍沿原安装路径，不参与声音暖机。侧车启动前核端点和私有映像路径，用户原件加载前核真实声音流，缺失不回退默认设备。已停止的零音暖机资源统一留到独占shutdown，关闭中丢失UNO回复必须用原始进程正常退出0、job空与监听关闭共同证明。D4正式客户端/宿主双文稿有限重复通过，常驻未更新，见[接续验证](../specs/012-directory-camera-console/verification/20261013-venue-followup.md)。
 设置页“静态检查通过”来自同次只读检查：必需文件非空可读、Windows/x64、Framework Full/64位CLR、
 宿主与Net48协议映像/协议版本，以及五类官方CLI的身份、架构和引用绑定；不要求SDK或targeting pack。
 逐项原因与建议不返回配置值或磁盘路径。缺失、不兼容或绑定配置尚未确认时明确报告，不启动Office探测。

@@ -135,6 +135,13 @@ public sealed partial class RuntimePipeBrokerTests
 
         Assert.Equal("health_accepted", heartbeat.MessageType);
         Assert.True(heartbeat.Payload.GetProperty("accepted").GetBoolean());
+        var drain = await fixture.RuntimeAuthority.BeginDrainAsync("controlled_stop");
+        await WriteAsync(client, Frame("health_report", supervisorId, 0, null, new HealthReportDto
+        { TransportHealthy = true, UiHealthy = false, ReportSequence = 2, ObservedAt = DateTimeOffset.UtcNow.ToString("O") }));
+        var draining = await ReadAsync(client);
+        Assert.False(draining.Payload.GetProperty("accepted").GetBoolean());
+        Assert.Equal(drain.GroupEpoch, draining.Payload.GetProperty("group_epoch").GetInt64());
+        Assert.Equal("draining", draining.Payload.GetProperty("group_state").GetString());
         await broker.StopAsync(CancellationToken.None);
     }
 

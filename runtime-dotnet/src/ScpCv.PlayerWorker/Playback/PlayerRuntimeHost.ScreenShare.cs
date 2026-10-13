@@ -27,7 +27,7 @@ public sealed partial class PlayerRuntimeHost
             throw new InvalidDataException("屏幕共享动态源身份无效。");
         var identity = ScreenShareReceiverIdentity.Parse(String(lease.Args, "receiver_uri"), shareId, _windowId, lease.SourceGeneration);
         var native = await (ScreenShareFactory is { } factory ? factory(identity, token) : ScreenShareSurface.CreateAsync(_window, identity, token,
-            () => RememberScreenShareRelease(shareId, lease.SourceGeneration)));
+            () => RememberScreenShareRelease(shareId, lease.SourceGeneration), audioOutputDeviceId, webViewUserDataRoot));
         Task? disposal = null;
         // 关闭失败保持同一失败Task，不重复原生副作用；只有完整Dispose成功才记录原身份。
         /// <summary>:returns: 原对象的实际关闭完成；请求租约身份不冒替原生对象自身身份。</summary>

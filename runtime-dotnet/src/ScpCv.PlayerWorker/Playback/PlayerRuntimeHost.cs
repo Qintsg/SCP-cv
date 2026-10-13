@@ -23,7 +23,8 @@ public sealed partial class PlayerRuntimeHost(
     RuntimeWorkerSession? officeSession = null,
     Func<LibVLC>? libVlcFactory = null,
     Action<VlcMediaPlayer>? configureVlcPlayer = null,
-    string? audioOutputDeviceId = null) : IAsyncDisposable
+    string? audioOutputDeviceId = null,
+    string? webViewUserDataRoot = null) : IAsyncDisposable
 {
     private readonly PlayerWindow _window = window;
     private readonly int _windowId = windowId;
@@ -161,6 +162,7 @@ public sealed partial class PlayerRuntimeHost(
             }
         }
         if (await ActivateCandidateAsync(lease, previous, next, cancellationToken) is { } activationFailure) return activationFailure;
+        await ActivateWebAudioAsync(previous, next);
         // 布局属于成功发布的资源，不让失败OPEN的意图覆盖旧画面的实际布局。
         next.ActualFitText = sourceType == "ppt" ? Bool(lease.Args, "fit_text", false) : null;
         _current = next;
@@ -286,6 +288,7 @@ public sealed partial class PlayerRuntimeHost(
         await CloseUnconfirmedCandidatesAsync();
         var previous = _current;
         if (previous?.Kind is "libreoffice" or "screen_share") await previous.DisposeAsync();
+        previous?.SetAudible(false);
         _current = null;
         _window.SetSurface(new Grid { Background = WpfBrushes.Black });
         if (previous is not null && previous.Kind is not ("web" or "libreoffice" or "screen_share")) await previous.DisposeAsync();
@@ -359,13 +362,15 @@ public sealed partial class PlayerRuntimeHost(
         FrameworkElement surface,
         Func<ValueTask> dispose,
         object? native = null,
-        Func<bool>? health = null) : IAsyncDisposable
+        Func<bool>? health = null,
+        Action<bool>? audible = null) : IAsyncDisposable
     {
         public string Kind { get; } = kind;
         public FrameworkElement Surface { get; } = surface;
         public object? Native { get; } = native;
         public bool? ActualFitText { get; set; }
         public bool IsHealthy => health?.Invoke() ?? true;
+        public void SetAudible(bool enabled) => audible?.Invoke(enabled);
         public ValueTask DisposeAsync() => dispose();
     }
 }
