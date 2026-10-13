@@ -161,3 +161,8 @@
 
 - 常驻普通网页OPEN/导航完成，但WASAPI没有实际正峰值；自有页面事件明确play()被NotAllowedError拒绝、时间0/paused，而非已播放后丢声音。共享/Office声音成功不能代替普通网页手势验收。
 - 仅自有零音暖机使用已验证手势，后续用户页面策略保持。新增夹具事件诊断，不给生产加全局autoplay flag或假造用户媒体回执；失败原件和正常清理/明确恢复分别保存，T033不提前勾。另把设备探测区分TCP连接、RTSP描述与实际后帧，中控缓存/未知外框不当DSP读回。详见[常驻接续](../../specs/012-directory-camera-console/verification/20261014-formal-engines.md)。
+
+## 坑127 — 中控快照长度与同名证据都不能凭数量猜测
+
+- FE82声明2049，但正文2048、尾4未解释字节+FC，整帧2059；旧夹具按6+声明等FC误拒。原47dca0/48cb50/48cc90与真实原指令/流接口红绿证明正确累计；不把缓存改动叫DSP实际读回。
+- 归档六个来源文件但两个都叫result.json，解压报冲突仍可能留下一个看似成功的结果；改明确标签后先核唯一Entry再解压并逐结果检查，旧包不删除或回填成功。见[快照与滑杆记录](../../specs/012-directory-camera-console/verification/20261014-touch-snapshot.md)。
