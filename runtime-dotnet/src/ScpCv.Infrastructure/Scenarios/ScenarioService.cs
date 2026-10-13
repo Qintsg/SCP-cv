@@ -21,7 +21,8 @@ public sealed partial class ScenarioService(
     ISystemAudioController? systemAudio = null,
     VideoWallOperationGate? wallGate = null,
     ScreenSharePlaybackProjection? screenSharePlayback = null,
-    VenueDeviceService? venueDevices = null)
+    VenueDeviceService? venueDevices = null,
+    VenueCameraController? venueCameras = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
@@ -210,7 +211,7 @@ public sealed partial class ScenarioService(
 
         var targets = DeserializeTargets(scenario.TargetsJson);
         var advanced = ReadAdvanced(scenario.AdvancedJson);
-        PreflightAdvanced(advanced);
+        await PreflightAdvancedAsync(advanced, cancellationToken).ConfigureAwait(false);
         var retiredTarget = targets.FirstOrDefault(target =>
             target.WindowId is < WindowId.Minimum or > WindowId.Maximum && target.SourceState != "unset");
         if (retiredTarget is not null)

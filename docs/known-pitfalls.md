@@ -17,7 +17,8 @@
 |---|---|---|---|---|
 | 拼接屏画面映射（视频墙） | 草稿PUT、应用POST、快捷预设及预案兼容入口 | Service→操作门禁/组合Planner→控制器→50节点4830；D4的63/64/81组合，未知输入/几何拒绝；被动回读仅诊断 | 相同预检与Planner，明确simulated | Planner/Protocol/Dispatch、SQLite/HTTP/DOM；现场抓包/出画另验，不把回环称实体通过 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
-| 现场屏幕音量 / 切墙重发 / 高级预设 | `POST /api/venue/audio/read/`、`PUT /api/venue/audio/`；两种布局应用及预案激活 | `VenueDeviceService`→串行门禁→`TcpVenueAudioTransport`→155:4830，6190配置/6191读回；首个未记忆值先读，不默认100；未知话筒/来源/云台在副作用前拒绝 | 相同预检和明确simulated，模拟计数不证明实际收包 | `VenueDeviceTests`、`VenueAudioWallTests`、`ScenarioDirectoryEndpointTests`；D4读100/同值写后读100，实际可听及未绑定设备未验 |
+| 现场音量 / 切墙重发 / 高级预设 | `POST /api/venue/audio/read/`、`PUT /api/venue/audio/`；两种布局及预案激活 | `VenueDeviceService`→串行门禁→155:4830的6190/6191；另经`VenueJoinDispatcher`向5.10:8889发送悬挂（原头戴1/2）/手持/电脑Join1/2/3，Lock=19量程；headset/hanging同值去重、冲突及未知来源首包前拒绝，155读回不覆盖其他字段 | 相同预检/明确simulated，不证明实体收包 | `VenueDeviceTests`、`VenueAudioWallTests`、`VenueBoundControlTests`、`VenueMicrophoneAliasTests`；机械/实际DSP/完整来源未验，不将发送当confirmed |
+| 云台运动 / 六位置 / 高级预设 | `/api/venue/cameras/{id}/motion/`、`positions/{position}/{action}/`及预设 | `VenueCameraController`→令牌/短租约/独立停止看门狗→`VenueJoinDispatcher`→84–88:8889；固定监控拒绝；旧停止不影响新动作，停止先取消在途按下，保存/调用不重试 | 相同门禁与包计数，无机械模型假反馈 | `VenueCameraControllerTests`、`VenueBoundControlTests`、真实DOM租约；85截图未确认运动，位置保存未执行，见012接续记录 |
 | 显示器拓扑与落位 | `GET /api/displays/`、`POST /api/displays/select/` | `IDisplayTopologyProvider` → `WindowsDisplayTopologyProvider`；`POST /api/system/restart/` 后由 `ReapplyDisplayTargetsAsync`（`RuntimeStateService.cs:104`）按已保存目标恢复落位 | `SimulationDisplayTopologyProvider` | `ScpCv.Windows.Tests`、`specs/003` verification 的 D4 记录 |
 | 播放器窗口内容（仅大屏 1/2） | `POST /api/playback/{windowId}/open\|close\|control\|show-ids\|reset-all/`、`PATCH .../volume/`、`.../mute/`、`.../loop/` | 持久命令队列 → Named Pipe → `PlayerWorker`（WPF + VLC + WebView2 + 页图）；明确显示器绑定缺失时拒绝落到控制桌面；长命令仍通过原认证管道传输心跳，不把续租当在线/UI进度 | `QueuedCommandWakeNotifier`（仅排队，不启动 worker） | `ScpCv.Integration.Tests`、`ScpCv.Windows.Tests`、`RuntimeWorkerBusyHeartbeatTests`；3/4 请求拒绝、旧命令不重放 |
 | 网页屏幕共享 | 网页原生许可后`/api/screen-shares/`预约/offer/停止；本人PATCH音频；私有receiver信令 | 独占Publisher轨道/peer→Service→原子OPEN/条件CLOSE及身份音频→原Worker领取复核/cap注入→独占InPrivate Player WebView→已提交HTTP/SSE观测；统计不阻塞实际后帧；完整Dispose/原PID退出→一秒后台确证关闭及原身份投影清除；重启清孤立意图，不保温 | 同会话/cap保护与周期清理，仅队列/HTTP，不启动Player、不造OS退出、出画或可听声音 | `ScreenShare*Tests`；010历史双路/十轮/像素证据保留，012新尺寸/码率及间歇失败、修复复测以012记录为准；独立音频峰值/扬声器可听未验 |
@@ -436,7 +437,8 @@
 1080P源尺寸沿用4K导致错裁剪、可信系统目录不能靠页面隐藏保护、切墙和现场声音的分阶段结果、真实浏览器标签/夹具端口误复用、可选统计阻塞真实帧、长命令漏发在线心跳及发布中版本变化见[目录与现场记录](known-pitfalls/directory-venue.md)。实体绑定未知时先拒绝，不能用合成帧或电脑总音量冒充已完成。
 坑107补充规划表的输入节点/控制端点区分及D4同名HDMI完整ID辨识；接线已确认不能冒称设备族、所有软件引擎或现场可听已完成。
 坑108记录自有部署检查只规范化一侧路径的误拒绝；统一两侧分隔符，但进程归属/启动时刻、实际退出及真实完成回执门禁保持。
-坑109–111记录局部取消导致整组退出、VLC模块/当前端点的区别、背景音频旧错误残留和通知覆盖上传按钮；回执、实际端点、释放及真实点击须分别核验。
+坑109–113记录局部取消导致整组退出、VLC模块/当前端点的区别、背景音频旧错误残留、通知覆盖上传按钮、触控General/同偏移字段误判与WebView实际声音进程；回执、实际端点、释放及真实点击须分别核验。
+坑115–117记录正常退出时UNO断桥须用精确OS退出证明、用户确认后的话筒别名去重/冲突/清空语义、响应式预设structuredClone使编辑空白；手机抽屉的独立44px门禁不能用设备页结果代替。
 
 ## 3. 相关沉淀点（不在这里重复）
 

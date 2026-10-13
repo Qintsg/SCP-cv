@@ -1,4 +1,4 @@
-// 预设现场高级项先预检全部绑定，未配置零副作用；当前只确认屏幕音量。
+// 预设高级项全部先预检；摄像机调用及音频只报告实际发送阶段，不假称物理确认。
 using System.Text.Json;
 using ScpCv.Contracts.Http;
 using ScpCv.Infrastructure.Devices;
@@ -25,34 +25,54 @@ public sealed partial class ScenarioService
         if (advanced.Audio is { } audio)
         {
             if (audio.Source is not (null or "ip81" or "scp_cv") ||
-                new[] { audio.ScreenVolume, audio.HandheldVolume, audio.HangingVolume }.Any(value => value is < 0 or > 100))
+                new[] { audio.ScreenVolume, audio.ComputerVolume, audio.HandheldVolume, audio.HeadsetVolume, audio.HangingVolume }.Any(value => value is < 0 or > 100))
                 throw new ScenarioServiceException("高级音量或来源无效。");
+            try { advanced = advanced with { Audio = VenueAudioAliases.Normalize(audio) }; }
+            catch (VenueDeviceException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_invalid"); }
         }
         return JsonSerializer.Serialize(advanced);
     }
 
-    private void PreflightAdvanced(ScenarioAdvancedDto advanced)
+    private async Task PreflightAdvancedAsync(ScenarioAdvancedDto advanced, CancellationToken token)
     {
         _ = ValidateAdvanced(advanced);
-        if (advanced.CameraPositions.Any(position => position.Value is not null))
-            throw new ScenarioServiceException("摄像机位置控制绑定尚未完成，预设未执行。", code: "scenario_advanced_unavailable");
+        foreach (var position in advanced.CameraPositions.Where(pair => pair.Value is not null))
+        {
+            if (venueCameras is null) throw new ScenarioServiceException("云台服务未装配，预设未执行。", code: "scenario_advanced_unavailable");
+            try { VenueCameraController.ValidatePosition(position.Key, position.Value!.Value, "call"); }
+            catch (VenueDeviceException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_unavailable"); }
+        }
         if (advanced.Audio is null) return;
         try { VenueDeviceService.Validate(advanced.Audio); }
         catch (VenueDeviceException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_unavailable"); }
-        if (advanced.Audio.ScreenVolume is not null && venueDevices is null)
+        if (HasAudio(advanced.Audio) && venueDevices is null)
             throw new ScenarioServiceException("现场音量服务未配置，预设未执行。", code: "scenario_advanced_unavailable");
+        try { if (venueDevices is not null) await venueDevices.PreflightAudioAsync(advanced.Audio, token).ConfigureAwait(false); }
+        catch (VenueDeviceException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_unavailable"); }
     }
 
     private async Task ApplyAdvancedAsync(ScenarioAdvancedDto advanced, CancellationToken cancellationToken)
     {
-        if (advanced.Audio?.ScreenVolume is null) return;
+        var unconfirmed = new List<string>();
         try
         {
-            var result = await venueDevices!.ApplyAsync(advanced.Audio, cancellationToken).ConfigureAwait(false);
-            if (result.Status is not ("confirmed" or "simulated" or "unchanged"))
-                throw new ScenarioServiceException("预设画面/系统配置已执行，现场音量阶段未确认：" + result.Detail, code: "scenario_advanced_uncertain");
+            foreach (var position in advanced.CameraPositions.Where(pair => pair.Value is not null))
+            {
+                var camera = await venueCameras!.PositionAsync(position.Key, position.Value!.Value, "call", cancellationToken).ConfigureAwait(false);
+                if (camera.Status != "simulated") unconfirmed.Add(camera.Detail);
+            }
+            if (advanced.Audio is { } audio && HasAudio(audio))
+            {
+                var result = await venueDevices!.ApplyAsync(audio, cancellationToken).ConfigureAwait(false);
+                if (result.Status is not ("confirmed" or "simulated" or "unchanged")) unconfirmed.Add(result.Detail);
+            }
+            if (unconfirmed.Count > 0)
+                throw new ScenarioServiceException("预设画面/系统配置已执行，现场阶段未确认：" + string.Join("；", unconfirmed), code: "scenario_advanced_uncertain");
         }
         catch (VenueDeviceException exception)
         { throw new ScenarioServiceException("预设画面/系统配置已执行，现场音量失败：" + exception.Message, code: "scenario_advanced_uncertain"); }
     }
+
+    private static bool HasAudio(VenueAudioSettings audio) => audio.ScreenVolume is not null || audio.ComputerVolume is not null ||
+        audio.HandheldVolume is not null || audio.HeadsetVolume is not null || audio.HangingVolume is not null || audio.Source is not null;
 }

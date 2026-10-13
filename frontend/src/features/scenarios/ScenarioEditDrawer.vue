@@ -384,4 +384,11 @@ function close(): void {
     grid-template-columns: 1fr 1fr;
   }
 }
+
+@media (max-width: 640px) {
+  .scenario-edit__actions :deep(.n-button) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
 </style>

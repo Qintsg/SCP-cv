@@ -5,6 +5,7 @@
  */
 import { t } from '@/locales';
 import type { ScenarioItem, ScenarioPayload, ScenarioTargetItem } from '@/services/api';
+import type { ScenarioAdvanced } from '@/services/apiTypes';
 
 export type ScenarioWindowMode = 'unset' | 'empty' | 'set';
 
@@ -60,6 +61,15 @@ export function createEmptyDraft(): ScenarioDraft {
   };
 }
 
+/** :param advanced: 可能来自Vue响应式store的高级纯值。:returns: 两个嵌套纯值映射的独立草稿，不对Proxy使用structuredClone。 */
+function copyAdvanced(advanced: ScenarioAdvanced | undefined): ScenarioAdvanced {
+  return {
+    ...advanced,
+    ...(advanced?.camera_positions ? { camera_positions: { ...advanced.camera_positions } } : {}),
+    ...(advanced?.audio ? { audio: { ...advanced.audio } } : {}),
+  };
+}
+
 /**
  * 把后端 ScenarioItem 反序列化为编辑草稿。
  * @param item 后端列表项或详情
@@ -80,7 +90,7 @@ export function fromScenarioItem(item: ScenarioItem): ScenarioDraft {
   return {
     id: item.id,
     folderId: item.folder_id ?? null,
-    advanced: structuredClone(item.advanced ?? {}),
+    advanced: copyAdvanced(item.advanced),
     name: item.name,
     description: item.description ?? '',
     bigScreenModeState: item.big_screen_mode_state,

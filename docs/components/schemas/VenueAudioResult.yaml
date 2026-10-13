@@ -11,3 +11,18 @@ properties:
     nullable: true
     minimum: 0
     maximum: 100
+  source:
+    type: string
+    nullable: true
+    enum: [ip81, scp_cv, null]
+    description: 本次已完成写出的来源请求，可能出现在后续阶段失败的响应中；不是实体路由读回。
+  sent_fields:
+    type: array
+    description: 本次已完成TCP写出的字段；不等于设备执行或可听确认。
+    items:
+      type: string
+      enum: [screen_volume, computer_volume, handheld_volume, headset_volume, source]
+  failed_field:
+    type: string
+    nullable: true
+    description: 失败或不确定阶段；已写出项不自动回滚/重发。

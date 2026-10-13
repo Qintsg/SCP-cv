@@ -24,22 +24,20 @@ public static class VenueDeviceEndpoints
             try { return Results.Ok(new { success = true, audio = await service.ApplyAsync(settings, token).ConfigureAwait(false) }); }
             catch (VenueDeviceException exception) { return Error(exception); }
         });
-        api.MapPost("/cameras/{id}/motion/", RejectCamera);
-        api.MapPost("/cameras/{id}/positions/{position:int}/{action}/", RejectPosition);
+        api.MapPost("/cameras/{id}/motion/", async (string id, CameraControlRequest request, VenueCameraController cameras, CancellationToken token) =>
+        {
+            try { return Results.Ok(new { success = true, camera = await cameras.MotionAsync(id, request, token).ConfigureAwait(false) }); }
+            catch (VenueDeviceException exception) { return Error(exception); }
+        });
+        api.MapPost("/cameras/{id}/positions/{position:int}/{action}/", async (string id, int position, string action,
+            VenueCameraController cameras, CancellationToken token) =>
+        {
+            try { return Results.Ok(new { success = true, camera = await cameras.PositionAsync(id, position, action, token).ConfigureAwait(false) }); }
+            catch (VenueDeviceException exception) { return Error(exception); }
+        });
         return endpoints;
     }
 
-    private static IResult RejectCamera(string id, VenueDeviceService service)
-    {
-        try { service.ValidateCameraControl(id); return Results.NoContent(); }
-        catch (VenueDeviceException exception) { return Error(exception); }
-    }
-    private static IResult RejectPosition(string id, int position, string action, VenueDeviceService service)
-    {
-        if (position is < 1 or > 255 || action is not ("save" or "call"))
-            return ApiEndpointSupport.Error("位置应为1–255，动作只能save或call。", "invalid_position");
-        return RejectCamera(id, service);
-    }
     private static IResult Error(VenueDeviceException exception) => ApiEndpointSupport.Error(
         exception.Message, "venue_unavailable", StatusCodes.Status409Conflict);
 }

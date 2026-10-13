@@ -23,6 +23,14 @@ properties:
           type: boolean
         control_available:
           type: boolean
+          description: 已装配绑定，可以发送；不是摄像机在线或机械动作确认。
+        position_count:
+          type: integer
+          enum: [0, 6]
+        motion_intent:
+          type: string
+          enum: [idle, held, stop_pending]
+          description: 本服务意图；stop_pending表示安全释放仍未写出，不是物理角度。
         unavailable_reason:
           type: string
   audio:
@@ -32,13 +40,34 @@ properties:
     properties:
       screen_volume:
         type: boolean
+      computer_volume:
+        type: boolean
       handheld_volume:
         type: boolean
+      headset_volume:
+        type: boolean
+        description: 原头戴1/2即悬挂话筒；与hanging_volume为同一通道的发送能力，不是DSP读回。
       hanging_volume:
         type: boolean
+        description: 与headset_volume相同，仅表示兼容旧输入，不是额外话筒分组。
       source:
         type: boolean
+        description: 是否装配固定二选一来源传输；具体选项还需检查source_ip81/source_scp_cv。
+      source_ip81:
+        type: boolean
+        description: IP81来源的发送能力，不依赖软件输出，不代表实体路由读回。
+      source_scp_cv:
+        type: boolean
+        description: 已确认63号总线的活动端点、两个窗口私有网页/Office引擎及声音策略接口通过只读预检；发送前再次预检。
       reason:
         type: string
+      hanging_label:
+        type: string
+      headset_label:
+        type: string
+  server_time_ms:
+    type: integer
+    format: int64
+    description: 供控制端修正开始请求的时钟偏差，不代表运动事件时间。
   simulation:
     type: boolean

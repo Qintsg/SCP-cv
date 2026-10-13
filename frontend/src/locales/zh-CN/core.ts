@@ -175,7 +175,7 @@ export default {
     currentProfile: '当前配置：{profile}',
     notConfigured: '未配置',
     origin: 'ControlHost 地址',
-    originPlaceholder: '192.168.5.194:5173 或 https://192.168.5.194:5174',
+    originPlaceholder: '192.168.5.194 或 https://192.168.5.194',
     protocolHint: '地址未写协议时默认 HTTP；明确填写 http:// 或 https:// 会保持原样。',
     packagedHttpsRequired: 'Windows/Android 封装客户端的认证仍使用受信 HTTPS；HTTP 双入口适用于网页。',
     displayName: '显示名称',

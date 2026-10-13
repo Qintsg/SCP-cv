@@ -3,9 +3,9 @@
 - MediaFolder：原字段；增加SystemKey（空为普通目录，camera为内置目录），DTO投影is_protected。根目录ID=null；相对路径公开为`/folder`。
 - MediaSource：原字段；增加SystemKey（空为普通源，camera:ID为系统项）与EntryName（虚拟流叶名）；DTO增加path/is_protected。实体文件path以media根相对文件路径为准；RTSP为目录+逻辑文件名。内置摄像机由服务配置同步，禁止用户写入、移动、删除或向保护目录新增。
 - CameraDefinition：稳定ID、名称、路径、RTSP、movable、control binding/evidence。配置只在主机配置侧管理，用户API只读。未确认流地址不得显示可用。
-- VenueAudioState：来源ip81/scp_cv、screen/handheld/hanging三个0..100值、输出绑定、发送阶段与详情。意图与实体确认分离。
+- VenueAudioState：来源ip81/scp_cv、screen/computer/handheld/headset四个可选0..100请求值及旧输入别名hanging、输出绑定、sent_fields/failed_field和发送阶段详情。screen为155增益读回；computer/handheld/headset对应中控三路20档请求。用户确认悬挂即原头戴1/2；headset为Join1唯一保存/响应字段，hanging单值或同值规范化到headset，不同值拒绝而不擅自选取。中控缓存与DSP实际增益分开；IP81独立可发送，SCP-cv须可信输出/活动端点/私有引擎/策略接口完整预检。来源保存与结果source仅为已写出请求，不是实体路由读回，后续失败不得抹掉。
 - ScenarioFolder：Id/Name/ParentId/CreatedAt/UpdatedAt；拒绝循环和同父同名。
-- Scenario：增加FolderId、AdvancedJson；旧记录位于根且高级字段为空。Advanced包含camera_positions（ID→位置或null）、可选audio（source/screen_volume/handheld_volume/hanging_volume）；空或null表示保持，不等于关闭/归零。FolderId由服务验证而非新增外键重建旧Scenario表。
+- Scenario：增加FolderId、AdvancedJson；旧记录位于根且高级字段为空。Advanced包含camera_positions（ID→六位置或null）、可选audio（source/screen_volume/computer_volume/handheld_volume/headset_volume及兼容hanging_volume）；空或null表示保持，不等于关闭/归零。旧hanging单值可调用，保存时规范化到headset；别名冲突保存拒绝，历史冲突激活在墙面/摄像机/声音/播放器动作前拒绝。编辑或清空唯一话筒项同时清除旧别名，不能让遗留值重新生效。FolderId由服务验证而非新增外键重建旧Scenario表。
 - ShareQuality：捕获与发送真实宽高/fps/差分Mbps/qualityLimitationReason、建议上限及参数接受状态；每个共享实例独立，停止后不采样/不发布迟到结果。
 
 ## 持久化与安全

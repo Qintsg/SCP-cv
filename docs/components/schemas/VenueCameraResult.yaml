@@ -1,0 +1,13 @@
+# 云台只确认发送，仿真与机械反馈严格分开。
+type: object
+required: [status, detail]
+properties:
+  status:
+    type: string
+    enum: [not_sent, sent_unconfirmed, simulated]
+  detail:
+    type: string
+  motion_id:
+    type: string
+    format: uuid
+    nullable: true

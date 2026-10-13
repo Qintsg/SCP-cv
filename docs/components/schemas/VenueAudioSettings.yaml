@@ -1,5 +1,5 @@
 type: object
-description: 未配置为保持；当前仅screen_volume有已核实绑定。来源/话筒值被409拒绝且零写出。
+description: 未配置为保持。screen_volume为155读回增益；computer_volume、handheld_volume与headset_volume为中控请求百分比，按floor(percent*19/100)换算原工程0–19共20档，非DSP读回。悬挂与头戴为同一组，hanging_volume是兼容输入别名；不同值冲突或SCP-cv软件输出未就绪时409且全部零写出。IP81可独立发送。
 properties:
   screen_volume:
     type: integer
@@ -11,12 +11,27 @@ properties:
     nullable: true
     minimum: 0
     maximum: 100
+  computer_volume:
+    type: integer
+    nullable: true
+    minimum: 0
+    maximum: 100
+    description: 原工程电脑音频滑杆Join3，SQL Lock=19为满量程，不是255或65535。
+  headset_volume:
+    type: integer
+    nullable: true
+    minimum: 0
+    maximum: 100
+    description: 悬挂（头戴）话筒，原工程头戴1/2分组Join1。唯一保存与响应字段；旧hanging_volume规范化到此字段。
   hanging_volume:
     type: integer
     nullable: true
     minimum: 0
     maximum: 100
+    deprecated: true
+    description: 用户已确认与headset_volume为同一组的旧输入别名。单独提交仍可用；两个非空值相同只发Join1一次，不同则首包前拒绝；保存与响应规范化为headset_volume，hanging_volume为null。
   source:
     type: string
     nullable: true
     enum: [ip81, scp_cv, null]
+    description: 固定输出155/音频通道1选择IP81或软件总线63；请求值不是实体路由读回。SCP-cv需要可信启动输出与私有引擎通过预检。

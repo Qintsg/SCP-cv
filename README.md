@@ -2,7 +2,7 @@
 
 SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。普通网页支持HTTP/HTTPS，裸地址默认HTTP；共享屏幕/应用/标签页到窗口1或2仍需要可信HTTPS，HTTP点击共享会确认跳转，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
-2026-10-12目录控制台已部署并启动D4：[普通控制HTTP](http://192.168.5.194/)、[共享入口HTTPS](https://192.168.5.194/)，端口为80/443。原数据库、媒体、证书和两块大屏绑定保留；旧5173/5174入口已停止。媒体和预设按路径浏览，摄像机地址已更正为8X；云台、固定监控、话筒和IP81/SCP-cv音频来源仍有未确认绑定，不发送猜测控制帧。使用说明见[目录与现场控制台](docs/web-access.md)，实际验收及未完成项见[012部署记录](specs/012-directory-camera-console/verification/d4-deployment.md)。
+目录控制台已部署D4：[普通控制HTTP](http://192.168.5.194/)、[共享入口HTTPS](https://192.168.5.194/)，端口80/443；原数据库、媒体、证书与两块大屏保留，旧5173/5174已停止。媒体/预设按路径浏览，五路摄像机84–88，固定监控76已补齐。后续工作区恢复触控协议/三路19满量程滑杆，用户确认悬挂即原头戴1/2，统一Join1及新旧字段兼容。各声音引擎、共享/背景与双PPT真实IPC完整组接线/正常退出已隔离验证；来源API/小卡片改为独立IP81与实时软件输出预检，但尚未激活D4新常驻。机械动作、DSP实际增益、实体来源效果及正式部署仍单列。使用说明见[现场控制台](docs/web-access.md)，当前边界见[接续记录](specs/012-directory-camera-console/verification/20261013-venue-followup.md)及[部署记录](specs/012-directory-camera-console/verification/d4-deployment.md)。
 
 ## 项目信息
 
@@ -150,6 +150,8 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 - [三输入大屏组合与协议接入规范](specs/009-wall-input-mapping/spec.md)
 - [D4 两窗实机收敛规范](specs/006-d4-live-convergence/spec.md)
 - [变更记录](docs/CHANGELOG.md)
+
+2026-10-13工作区后续已修正IP81实测1080P默认、选源编码和手机44px设备操作。LibreOffice两实例实际声音可到63，但正常退出尚未稳定，完整来源仍禁用，未提交部署；当前结论见[选源与手机操作台接续](specs/012-directory-camera-console/verification/20261013-venue-followup.md)。
 
 ## 许可证
 

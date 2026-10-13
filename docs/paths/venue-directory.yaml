@@ -56,7 +56,7 @@ AudioRead:
 Audio:
   put:
     tags: [devices]
-    summary: 配置已绑定的屏幕音量
+    summary: 配置IP81/SCP-cv来源、输出155增益或中控三路音量
     operationId: setVenueAudio
     requestBody:
       required: true
@@ -89,7 +89,7 @@ Audio:
 Motion:
   post:
     tags: [devices]
-    summary: 摄像机运动（未绑定时拒绝且零写出）
+    summary: 摄像机方向/变焦短租约控制
     operationId: moveVenueCamera
     parameters:
       - name: id
@@ -97,9 +97,16 @@ Motion:
         required: true
         schema:
           type: string
+          enum: [rear, center1, center2, left, right]
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/CameraMotionRequest.yaml'
     responses:
       '200':
-        description: 当前未绑定，实际返回409；保留后续已核实协议的成功合同
+        description: 只表示发送或租约处理；没有机械状态读回。仿真不会写实体。
         content:
           application/json:
             schema:
@@ -107,6 +114,8 @@ Motion:
               properties:
                 success:
                   type: boolean
+                camera:
+                  $ref: '../components/schemas/VenueCameraResult.yaml'
       '400':
         $ref: '../components/responses/ErrorResponse.yaml'
       '401':
@@ -120,7 +129,7 @@ Motion:
 Position:
   post:
     tags: [devices]
-    summary: 保存或调用摄像机位置（未绑定时拒绝）
+    summary: 保存或调用工程绑定的六个摄像机位置
     operationId: venueCameraPosition
     parameters:
       - name: id
@@ -128,19 +137,23 @@ Position:
         required: true
         schema:
           type: string
+          enum: [rear, center1, center2, left, right]
       - name: position
         in: path
         required: true
         schema:
           type: integer
+          minimum: 1
+          maximum: 6
       - name: action
         in: path
         required: true
         schema:
           type: string
+          enum: [save, call]
     responses:
       '200':
-        description: 当前未绑定，实际返回409；保留后续已核实协议的成功合同
+        description: 模式按钮及位置按钮已写出；没有位置读回，不自动重试。
         content:
           application/json:
             schema:
@@ -148,6 +161,8 @@ Position:
               properties:
                 success:
                   type: boolean
+                camera:
+                  $ref: '../components/schemas/VenueCameraResult.yaml'
       '400':
         $ref: '../components/responses/ErrorResponse.yaml'
       '401':

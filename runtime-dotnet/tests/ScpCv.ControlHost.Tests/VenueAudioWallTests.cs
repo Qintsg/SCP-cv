@@ -49,18 +49,18 @@ public sealed class VenueAudioWallTests
     }
 
     [Fact]
-    public async Task UnboundAudioOrCameraAdvancedIsRejectedBeforeAnyDeviceChange()
+    public async Task UnboundSourceOrUnsupportedPositionIsRejectedBeforeAnyDeviceChange()
     {
         using var factory = new ControlHostApplicationFactory();
         using var client = factory.CreateHttpsClient();
         client.DefaultRequestHeaders.Add("X-CSRFToken", await ScreenShareEndpointTests.LoginAsync(client));
         var transport = Assert.IsType<SimulationVenueAudioTransport>(factory.Services.GetRequiredService<IVenueAudioTransport>());
-        using var rejected = await client.PutAsJsonAsync("/api/venue/audio/", new { screen_volume = 20, source = "ip81" });
+        using var rejected = await client.PutAsJsonAsync("/api/venue/audio/", new { screen_volume = 20, source = "scp_cv" });
         Assert.Equal(HttpStatusCode.Conflict, rejected.StatusCode);
         Assert.Equal(0, transport.WriteCount);
         using var create = await client.PostAsJsonAsync("/api/scenarios/", new { name = "未绑定",
             big_screen_mode_state = "set", big_screen_mode = "double",
-            advanced = new { camera_positions = new { rear = 1 } } });
+            advanced = new { camera_positions = new { rear = 7 } } });
         create.EnsureSuccessStatusCode();
         using var body = JsonDocument.Parse(await create.Content.ReadAsStringAsync());
         var id = body.RootElement.GetProperty("scenario").GetProperty("id").GetInt64();

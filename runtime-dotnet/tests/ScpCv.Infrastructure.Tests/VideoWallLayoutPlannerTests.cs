@@ -8,6 +8,18 @@ namespace ScpCv.Infrastructure.Tests;
 
 public sealed class VideoWallLayoutPlannerTests
 {
+    [Fact]
+    public void CurrentIp81DefaultMatchesLive1080SpsButExplicit4kStaysIndependent()
+    {
+        var options = new VideoWallProtocolOptions();
+        Assert.Equal(1920, options.Inputs["laptop"].Width);
+        Assert.Equal(1080, options.Inputs["laptop"].Height);
+        options.Inputs["laptop"].Width = 3840; options.Inputs["laptop"].Height = 2160;
+        options.Inputs["laptop"].Validate();
+        Assert.Equal(3840, options.Inputs["laptop"].Width);
+        Assert.Equal(1920, options.Inputs["window_1"].Width);
+    }
+
     public static IEnumerable<object[]> Combinations()
     {
         var kinds = new[] { WallInputKind.Window1, WallInputKind.Window2, WallInputKind.Laptop };
@@ -44,8 +56,9 @@ public sealed class VideoWallLayoutPlannerTests
             Assert.Equal(U16(packet, 8), U16(packet, 24));
             Assert.Equal(right is null ? 1 : 2, U16(packet, 34));
             Assert.Equal(right is null ? row * 10 + col + 1 : row * 5 + col % 5 + 1, U16(packet, 36));
-            var sourceWidth = source == WallInputKind.Laptop ? 3840 : 1920;
-            var sourceHeight = source == WallInputKind.Laptop ? 2160 : 1080;
+            // 独立于产品默认值：63/64为用户/实测确认，81由本轮实际SPS确认1080P。
+            var sourceWidth = 1920;
+            var sourceHeight = 1080;
             var width = sourceWidth / (right is null ? 10 : 5);
             var height = sourceHeight / 5;
             Assert.Equal((right is null ? col : col % 5) * width, U16(packet, 26));

@@ -1,0 +1,18 @@
+# 迟到开始与跨运动续租防护；停止令牌不会影响另一运动。
+type: object
+required: [direction, phase, motion_id, issued_at_ms]
+properties:
+  direction:
+    type: string
+    enum: [up, down, left, right, zoom_in, zoom_out]
+  phase:
+    type: string
+    enum: [start, hold, stop]
+    description: 开始后每300ms续租；无有效续租900ms后服务端独立释放。stop不继承客户端取消。
+  motion_id:
+    type: string
+    format: uuid
+  issued_at_ms:
+    type: integer
+    format: int64
+    description: 使用venue.server_time_ms校正的开始时间；开始超过2秒或未来超过250ms拒绝。续租不能重新启动。
