@@ -228,7 +228,8 @@ async function addStreamSource(): Promise<void> {
 </script>
 
 <template>
-  <n-drawer v-model:show="isOpen" width="min(480px, 100vw)" placement="right">
+  <!-- 使用既有--f-z-drawer层级；旧持久通知留在后面，上传失败仍由抽屉内Alert反馈。 -->
+  <n-drawer v-model:show="isOpen" :z-index="7500" width="min(480px, 100vw)" placement="right">
     <n-drawer-content :title="t('sources.add.title')" closable>
       <p class="add-source__desc">{{ t('sources.add.desc') }}</p>
 

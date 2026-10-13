@@ -25,6 +25,9 @@ let createPinia;
 let useToastStore;
 let FNotificationProvider;
 let FToastHost;
+let AddSourceDrawer;
+let createI18n;
+let drawerOpen;
 let app;
 
 before(async () => {
@@ -36,6 +39,8 @@ before(async () => {
   server = testServer;
   ({ default: FNotificationProvider } = await server.ssrLoadModule('/src/design-system/FNotificationProvider.vue'));
   ({ default: FToastHost } = await server.ssrLoadModule('/src/design-system/FToastHost.vue'));
+  ({ default: AddSourceDrawer } = await server.ssrLoadModule('/src/features/sources/AddSourceDrawer.vue'));
+  ({ createI18n } = await import('vue-i18n'));
   ({ useToastStore } = await server.ssrLoadModule('/src/composables/useToast.ts'));
 });
 
@@ -100,10 +105,13 @@ async function mountNotifications(width) {
   store.error('保存失败', '当前目录已存在同名媒体');
   const host = browser.document.createElement('div');
   browser.document.body.append(host);
+  drawerOpen = vue.ref(false);
   app = vue.createApp({
-    render: () => vue.h(FNotificationProvider, null, { default: () => vue.h(FToastHost) }),
+    render: () => vue.h(FNotificationProvider, null, { default: () => [vue.h(FToastHost),
+      vue.h(AddSourceDrawer, { open: drawerOpen.value })] }),
   });
   app.use(pinia);
+  app.use(createI18n({ legacy: false, locale: 'zh', messages: { zh: {} }, missingWarn: false, fallbackWarn: false }));
   app.mount(host);
   await flushUi();
   const container = browser.document.querySelector('.n-notification-container');
@@ -151,4 +159,16 @@ test('手机持久错误通知仍可通过实际关闭按钮移除', async () =>
   close.click();
   await waitForUi(() => store.items.length === 0);
   assert.equal(Boolean(browser.document.querySelector('.n-notification')), false);
+});
+
+test('已有持久通知不能盖住新上传抽屉的保存按钮，错误不会被自动删除', async () => {
+  const { store, container } = await mountNotifications(1440);
+  drawerOpen.value = true;
+  await flushUi();
+  const drawer = browser.document.querySelector('.n-drawer-container');
+  assert.ok(drawer, '真实上传抽屉应已显示');
+  const layer = Number.parseInt(browser.getComputedStyle(drawer).zIndex, 10);
+  const notificationLayer = Number.parseInt(browser.getComputedStyle(container).zIndex, 10);
+  assert.ok(layer > notificationLayer, `上传层${layer}须高于旧通知层${notificationLayer}`);
+  assert.equal(store.items.length, 1, '不能用删除旧错误的方式解决遮挡');
 });
