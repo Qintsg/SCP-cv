@@ -114,3 +114,11 @@ T038接续r28已通过实际WPF PlayerRuntimeHost两轮双文稿、缺引擎失�
 T038接续r41已通过真实Hardware主机/认证REST/队列/IPC双共享与背景声音只63、音量/静音/换图/重开/旧ID围栏及完整自有原生退出0。r39/r40正常Worker退出误使Supervisor失败1已修为当前认证nonce停机准备，13纯围栏/4真实管道针对性和Integration283/Windows252通过，失败记录保留。LibreOffice实际IPC、来源及正式常驻绑定仍待验，不扩大当前证明为完整任务完成；39/27/12保持。
 
 T038现已完成：r44通过实际Hardware认证REST/持久队列/IPC双PPT两轮打开、带声音页、A换图B继续、关闭及完整组退出，16个原进程退出0，原件/系统默认输出保持。结合VLC20项、网页r30/r37及共享/背景r41，所有受影响引擎的软件接线与生命周期已有对应实测；正式常驻激活仍由T033/T034追踪，不据此称已部署或扬声器已可听。当前39项、28完成、11未完成。T037新增独立IP81/实时SCP-cv门禁、部分失败保留source、预设首包前拒绝及显式来源卡片，相关Host466/前端476通过；D4就绪矩阵和实体来源效果继续单列。
+
+## Phase 11: Convergence
+
+2026-10-14本次检查T033涉及的FR-004/012/015、SC-003、双输出/可信声音/完整运行组方案与宪章I/III/IV。原未完成的实体/声音任务不重复追加；新增一个HIGH partial：正式012h含MediaMTX的停机实测，两个Player/Audio正常0，但MediaMTX被强制结束-1、Supervisor最终1，API200不是正常退出证据。状态文件已消失且原句柄全退出后通过正式API明确恢复；服务启动/页面可用不替代完整部署验收，T033保持未完成。
+
+- [ ] T040 补齐MediaMTX的定向协作退出，覆盖真实原进程身份、独立控制范围、其它进程不得收到控制信号、未知/失效身份拒绝及失败兜底仍非正常；在D4含MediaMTX完整组通过停机/恢复、原句柄与状态文件核验后重新固定提交发布，涉及`runtime-dotnet/src/ScpCv.Supervisor/Runtime/RuntimeLauncher.cs`、`ShutdownCoordinator.cs`、`Program.cs`及`runtime-dotnet/tests/ScpCv.Windows.Tests/`，追溯T033、plan:完整运行组/停机围栏、Constitution I/III/IV（partial，HIGH）。
+
+追加后40项、28完成、12未完成；012h实际激活与失败证据见部署记录。不得通过接受所有非零退出或仅移除MediaMTX监控来消除该缺口。

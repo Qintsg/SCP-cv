@@ -1,8 +1,10 @@
-# D4 012部署记录（更新至2026-10-13）
+# D4 012部署记录（更新至2026-10-14）
 
 ## 当前状态
 
-实际运行包为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261013-012g-91d883b`，HTTP80/HTTPS443、内部18444/18443保持。`ScpCvRuntime-012g-20261013`及原网页任务运行中，旧012f/012e任务停止禁用、包保留。运行包固定`91d883b`发布；后续网页触控补丁和文档不重建或重启该运行组。当前六进程均Session1，Node23616保持，原11源保留；完整声音来源仍未启用。
+当前实际运行包为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261014-012h-d99a851`，HTTP80/HTTPS443、内部18444/18443保持。新Runtime/Frontend两项012h登录任务Running；旧012g及旧网页任务禁用，所有旧包和备份保留。可信63号声音/私有引擎及来源卡片已激活；Node23616未重启、原11源及输出目标DISPLAY2/3保留。完整组停机未通过：MediaMTX强制-1、Supervisor1，原句柄全退出后正式API恢复；T040及T033验收保持未完成，详见[012h激活](20261014-activation.md)。
+
+以下012g及更早内容为历史证据，不代表当前正在运行的包。
 
 012g ZIP摘要`8517DD1F93EB71F9FA4C4CCB5E6F6D9B510A9D475D2B5C864920F137BF0C72A7`、Host摘要`CBE4D36081750CF34217537EFE8CCB7354CEBDE605E47A0A4A0CCBEC75007749`、Contracts摘要`CA900EC25A43F467CFAFF129F53ED4342A149E3BE77130A37040BA233F557B66`，本机与D4一致。首次012g网页index摘要`C060E80D13A1A37A8FE1D5EFE7057B97EB8B3011FE7D8B5DAD57072EB491979F`；最终触控网页来自`609ae2c`，index摘要`3A2813F7ACFB57ACFEB06A4D3F65A86E8E03CEF8AA27D223DA02DE7338D57511`。此前012d被拒绝，012e/012f是历史包，不混作当前运行版本。
 

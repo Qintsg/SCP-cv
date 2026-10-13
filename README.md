@@ -2,7 +2,7 @@
 
 SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。普通网页支持HTTP/HTTPS，裸地址默认HTTP；共享屏幕/应用/标签页到窗口1或2仍需要可信HTTPS，HTTP点击共享会确认跳转，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
-目录控制台已部署D4：[普通控制HTTP](http://192.168.5.194/)、[共享入口HTTPS](https://192.168.5.194/)，端口80/443；原数据库、媒体、证书与两块大屏保留，旧5173/5174已停止。媒体/预设按路径浏览，五路摄像机84–88，固定监控76已补齐。后续工作区恢复触控协议/三路19满量程滑杆，用户确认悬挂即原头戴1/2，统一Join1及新旧字段兼容。各声音引擎、共享/背景与双PPT真实IPC完整组接线/正常退出已隔离验证；来源API/小卡片改为独立IP81与实时软件输出预检，但尚未激活D4新常驻。机械动作、DSP实际增益、实体来源效果及正式部署仍单列。使用说明见[现场控制台](docs/web-access.md)，当前边界见[接续记录](specs/012-directory-camera-console/verification/20261013-venue-followup.md)及[部署记录](specs/012-directory-camera-console/verification/d4-deployment.md)。
+目录控制台已部署D4：[普通控制HTTP](http://192.168.5.194/)、[共享入口HTTPS](https://192.168.5.194/)，端口80/443。2026-10-14常驻012h固定代码`d99a851`已启用可信63号声音输出、私有网页/Office引擎与来源小卡片，原数据库、媒体、证书、两输出目标和Node保留。悬挂即原头戴1/2，统一Join1与旧字段兼容；媒体/预设按路径浏览，摄像机84–88及固定76保持。完整组停机发现MediaMTX被强制结束-1、Supervisor返回1；正式API已恢复服务，T040待修，不能称完整稳定性验收通过。机械动作、DSP与实体来源效果仍未确认。使用说明见[现场控制台](docs/web-access.md)，当前证据见[部署记录](specs/012-directory-camera-console/verification/d4-deployment.md)。
 
 ## 项目信息
 
