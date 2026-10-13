@@ -442,6 +442,8 @@
 
 坑125接续已闭环：MediaMTX控制台服务不能靠CloseMainWindow协作退出。只允许原生创建的隐藏独立控制台，核原PID/时刻/会话/映像及恰目标+自有助手两成员后发送BREAK；共享或未知控制台拒绝，非零兜底仍失败。真实回环红绿、额外成员拒绝、D4隔离两轮及固定012i正式完整空闲组五原句柄退出0/状态删除/API恢复通过，详见[协作退出记录](../specs/012-directory-camera-console/verification/20261014-mediamtx-stop.md)；不扩大为动态媒体/实体声音验收。
 
+坑126记录常驻网页OPEN/playing与DOM媒体play()拒绝的区别：实际NotAllowedError/时间0不能称有音，不用共享/Office代验，也不放宽全局autoplay；现场连接、描述、后帧和中控缓存分别核，见[目录与现场记录](known-pitfalls/directory-venue.md#坑126--网页打开不等于其中媒体已获准播放)。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 009的重复输入窗口、屏号/裁剪、重启不确定、版本与诊断边界见[大屏映射记录](known-pitfalls/video-wall-mapping.md)；历史坑21的门禁已在受限三输入范围内接续。
