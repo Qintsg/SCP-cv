@@ -172,3 +172,18 @@ test('已有持久通知不能盖住新上传抽屉的保存按钮，错误不�
   assert.ok(layer > notificationLayer, `上传层${layer}须高于旧通知层${notificationLayer}`);
   assert.equal(store.items.length, 1, '不能用删除旧错误的方式解决遮挡');
 });
+
+test('手机上传抽屉的确认和取消具有至少44px触控高度', async () => {
+  browser.document.documentElement.style.setProperty('--touch-target-min', '44px');
+  try {
+    await mountNotifications(390);
+    drawerOpen.value = true;
+    await flushUi();
+    const buttons = browser.document.querySelectorAll('.add-source__actions button');
+    assert.equal(buttons.length, 2);
+    for (const button of buttons) {
+      assert.ok(Number.parseFloat(browser.getComputedStyle(button).minHeight) >= 44,
+        '真实按钮应收到44px最小高度；实际排版另在浏览器验证');
+    }
+  } finally { browser.document.documentElement.style.removeProperty('--touch-target-min'); }
+});

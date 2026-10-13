@@ -3,7 +3,7 @@
  * 添加源 Drawer / Sheet：上传文件、网页与直播流采用同一文件夹语义。
  * 文件上传统一保存为可管理媒体源；临时上传只在显示控制页“上传并打开”使用。
  */
-import { computed, ref } from 'vue';
+import { computed, ref, type CSSProperties } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
   NAlert,
@@ -21,6 +21,7 @@ import {
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
+import { useWindowSizeClass } from '@/composables/useWindowSizeClass';
 import { useSourceStore } from '@/stores/sources';
 import type { StreamSourceCreate } from '@/services/api';
 import { pickUploadFile } from '@/platform/files';
@@ -35,6 +36,10 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const sourceStore = useSourceStore();
 const toast = useToast();
+const { isCompact } = useWindowSizeClass();
+/** :returns: 手机确认/取消使用既有44px触控令牌，桌面保持紧凑尺寸。 */
+const footerButtonStyle = computed<CSSProperties | undefined>(() => isCompact.value
+  ? { minHeight: 'var(--touch-target-min, 44px)' } : undefined);
 
 type TabId = 'file' | 'web' | 'stream';
 
@@ -308,17 +313,17 @@ async function addStreamSource(): Promise<void> {
 
       <template #footer>
         <div class="add-source__actions">
-          <n-button :disabled="uploading" @click="close">{{ t('common.cancel') }}</n-button>
+          <n-button :style="footerButtonStyle" :disabled="uploading" @click="close">{{ t('common.cancel') }}</n-button>
           <template v-if="activeTab === 'file'">
-            <n-button type="primary" :disabled="uploading || !fileToUpload" :loading="uploading"
+            <n-button :style="footerButtonStyle" type="primary" :disabled="uploading || !fileToUpload" :loading="uploading"
               @click="uploadFile">
               {{ t('sources.add.uploadSave') }}
             </n-button>
           </template>
-          <n-button v-else-if="activeTab === 'web'" type="primary" :disabled="uploading" :loading="uploading" @click="addWebSource">
+          <n-button v-else-if="activeTab === 'web'" :style="footerButtonStyle" type="primary" :disabled="uploading" :loading="uploading" @click="addWebSource">
             {{ t('sources.add.addWeb') }}
           </n-button>
-          <n-button v-else type="primary" :disabled="uploading" :loading="uploading" @click="addStreamSource">
+          <n-button v-else :style="footerButtonStyle" type="primary" :disabled="uploading" :loading="uploading" @click="addStreamSource">
             {{ t('sources.add.addStream') }}
           </n-button>
         </div>
