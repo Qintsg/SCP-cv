@@ -82,7 +82,23 @@ public sealed partial class PlayerRuntimeHost
         BindVlcAttempt(player, media, generation, liveInput);
         _state = autoplay ? "loading" : "paused";
         _errorMessage = string.Empty;
-        return !autoplay || player.Play(media);
+        if (!autoplay) return true;
+        var requestedMute = player.Mute;
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(audioOutputDeviceId)) player.Mute = true;
+            if (!player.Play(media)) return false;
+            await VlcAudioOutputBinding.ConfirmPlaybackAsync(player, audioOutputDeviceId);
+            player.Mute = requestedMute;
+            return true;
+        }
+        catch (Exception failure)
+        {
+            await VlcResourceLifecycle.StopAsync(player.Stop);
+            _vlcBindings[player].Attempt.RecordError();
+            _errorMessage = failure.Message;
+            throw;
+        }
     }
 
     /// <summary>延迟结束处理必须仍属于当前资源、当前 generation 和当前不可变尝试。</summary>

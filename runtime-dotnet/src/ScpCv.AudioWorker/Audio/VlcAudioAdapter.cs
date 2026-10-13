@@ -70,14 +70,24 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    public Task PlayAsync(CancellationToken cancellationToken = default)
+    public async Task PlayAsync(CancellationToken cancellationToken = default)
     {
         if (_player.State is VLCState.Playing or VLCState.Paused)
             VlcAudioOutputBinding.Validate(_player, _audioOutputDeviceId);
         else VlcAudioOutputBinding.Apply(_player, _audioOutputDeviceId);
         if (_player.State == VLCState.Paused) _player.SetPause(false);
-        else if (_media is not null) _ = _player.Play(_media);
-        return Task.CompletedTask;
+        else if (_media is not null)
+        {
+            var requestedMute = _player.Mute;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(_audioOutputDeviceId)) _player.Mute = true;
+                if (!_player.Play(_media)) throw new InvalidOperationException("LibVLC未接受音频播放。");
+                await VlcAudioOutputBinding.ConfirmPlaybackAsync(_player, _audioOutputDeviceId, cancellationToken).ConfigureAwait(false);
+                _player.Mute = requestedMute;
+            }
+            catch { _player.Stop(); throw; }
+        }
     }
     public Task PauseAsync(CancellationToken cancellationToken = default) { _player.SetPause(true); return Task.CompletedTask; }
     public Task StopAsync(CancellationToken cancellationToken = default) { _player.Stop(); return Task.CompletedTask; }

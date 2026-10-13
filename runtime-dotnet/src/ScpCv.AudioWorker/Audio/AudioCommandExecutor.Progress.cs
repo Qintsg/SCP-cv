@@ -19,15 +19,20 @@ public sealed partial class AudioCommandExecutor
     }
 
     /// <summary>:param generation: 已确认命令代次。:param playbackState: 本次先读取的状态，避免二次读取跨自然末尾。:returns: 纯值观测，不授予声音或解码完成。</summary>
-    private JsonElement Snapshot(long generation, string? playbackState = null) => JsonSerializer.SerializeToElement(new
+    private JsonElement Snapshot(long generation, string? playbackState = null)
     {
-        source_generation = generation,
-        source_id = audio.SourceId == 0 ? (long?)null : audio.SourceId,
-        playback_state = playbackState ?? audio.PlaybackState,
-        position_ms = audio.PositionMs,
-        duration_ms = audio.DurationMs,
-        volume = audio.Volume,
-        muted = audio.IsMuted,
-        loop_enabled = audio.LoopEnabled,
-    });
+        var actualState = playbackState ?? audio.PlaybackState;
+        return JsonSerializer.SerializeToElement(new
+        {
+            source_generation = generation,
+            source_id = audio.SourceId == 0 ? (long?)null : audio.SourceId,
+            playback_state = actualState,
+            error_message = actualState == "error" ? "音频播放器报告运行故障；请检查媒体及绑定的输出设备。" : string.Empty,
+            position_ms = audio.PositionMs,
+            duration_ms = audio.DurationMs,
+            volume = audio.Volume,
+            muted = audio.IsMuted,
+            loop_enabled = audio.LoopEnabled,
+        });
+    }
 }

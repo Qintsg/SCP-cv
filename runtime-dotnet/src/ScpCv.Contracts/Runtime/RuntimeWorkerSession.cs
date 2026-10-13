@@ -286,8 +286,9 @@ public sealed class RuntimeWorkerSession(
             }
             result = await execution.ConfigureAwait(false);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
+            // 单条OPEN的独立截止时间不等于Worker停机；仅运行循环自身取消才退出整组。
             // 已下发的原生结果未知不能被通用worker异常降为安全失败；仍保留实际资源观测。
             var uncertain = exception is PresentationTransportException;
             result = new WorkerExecutionResult(

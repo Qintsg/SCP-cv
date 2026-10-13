@@ -47,10 +47,21 @@ public sealed partial class PlayerRuntimeHost
         _vlcMedia[player] = media;
         BindVlcAttempt(player, media, generation, liveInput);
         var view = new VideoView { MediaPlayer = player };
-        if (autoplay && !player.Play())
+        var requestedMute = player.Mute;
+        try
+        {
+            if (autoplay)
+            {
+                if (!string.IsNullOrWhiteSpace(audioOutputDeviceId)) player.Mute = true;
+                if (!player.Play()) throw new InvalidOperationException("LibVLC 无法开始播放媒体。");
+                await VlcAudioOutputBinding.ConfirmPlaybackAsync(player, audioOutputDeviceId, cancellationToken);
+                player.Mute = requestedMute;
+            }
+        }
+        catch
         {
             await ReleaseVlcResourceAsync(player, view, media);
-            throw new InvalidOperationException("LibVLC 无法开始播放媒体。");
+            throw;
         }
         return new SurfaceResource("vlc", view, async () =>
         {

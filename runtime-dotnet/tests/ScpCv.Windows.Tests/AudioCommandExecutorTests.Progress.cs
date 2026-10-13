@@ -5,6 +5,16 @@ namespace ScpCv.Windows.Tests;
 
 public sealed partial class AudioCommandExecutorTests
 {
+    /// <summary>:returns: 实际STOP成功明确报告无错误，供主机在身份围栏内清除旧Supervisor故障；不在入队时清除。</summary>
+    [Fact]
+    public async Task SuccessfulStopReportsExplicitEmptyError()
+    {
+        var executor = new AudioCommandExecutor(new FakeAudioAdapter());
+        var result = await executor.ExecuteAsync(Lease("STOP", 0, new { }));
+        Assert.Equal("stopped", result.ActualState.GetProperty("playback_state").GetString());
+        Assert.Equal(string.Empty, result.ActualState.GetProperty("error_message").GetString());
+    }
+
     /// <summary>:returns: 未打开、停止和采样取消均不执行新控制；暂停仍可报告稳定时钟。</summary>
     [Fact]
     public async Task UnknownStoppedPausedAndCancelledSamplesRespectBoundary()

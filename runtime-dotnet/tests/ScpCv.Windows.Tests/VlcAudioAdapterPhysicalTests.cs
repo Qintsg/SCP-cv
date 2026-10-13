@@ -9,6 +9,18 @@ namespace ScpCv.Windows.Tests;
 [Trait("Category", "Physical")]
 public sealed class VlcAudioAdapterPhysicalTests
 {
+    /// <summary>:returns: 新建实例未打开任何音频时，STOP也能确认原生没有输入，不等到就绪超时。</summary>
+    [Fact]
+    public async Task StopBeforeFirstOpenConfirmsNoNativePlayback()
+    {
+        await using var audio = new VlcAudioAdapter { IsMuted = true };
+        var executor = new AudioCommandExecutor(audio, TimeSpan.FromMilliseconds(200));
+        var result = await executor.ExecuteAsync(Lease("STOP", 0, new { }));
+        Assert.Equal("completed", result.Status);
+        Assert.Equal("stopped", result.ActualState.GetProperty("playback_state").GetString());
+        Assert.Equal(JsonValueKind.Null, result.ActualState.GetProperty("source_id").ValueKind);
+    }
+
     /// <summary>:param loop: 列表循环意图。:returns: 始终报告本曲自然结束，不能在原生层吞掉通知而循环同一曲。</summary>
     [Theory]
     [InlineData(false)]
