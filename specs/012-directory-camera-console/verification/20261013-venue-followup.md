@@ -125,3 +125,5 @@ T037新增来源传输独立能力及实时软件门禁，不再一概禁止IP81
 本轮完整非Physical六套1593/1593、0跳过：Contracts345、Host466、Domain41、Infrastructure206、Integration283、Windows252，TRX在`.validation/venue-completion-20261013/source-all-tests/`；前端476/476、类型检查和pnpm网页构建通过。Redocly合同有效，四个既有警告（退役入口无2XX及旧背景控制oneOf）保留，不新增假2XX来消警；Spec Kit通过。在线NuGet审计仍未完成，使用缓存locked依赖，不改仓库源/系统代理/TLS。pnpm本机入口初始化慢，最终pnpm类型/构建完成；全前端测试直接执行同一Node脚本，不用npm。
 
 完整五组件r46包生成967文件，tar SHA256`D344219569DA898FCF1285E8FA83F73D0A76790C76C1444FE046FD279938892D`，Host SHA256`3E44E2B90218C2A5E859F2E91AB3B261A7E0001088E54FDBCB01D37D446A0398`；D4安全解包/摘要验证，activated=false。r47在已登录会话1用这个真实Hardware Host执行四次认证只读GET：缺输出、64错输出、缺引擎都禁SCP-cv，正确63/私有引擎启用；四次IP81均可发送，拒绝原因非空。不启动Supervisor/Worker、不调用选源/音量/云台/电源API；每个自有只读Host精确结束，无自有组件残留，任务Ready最终0后移除。归档SHA256`962675223358D86DD54A3F75D067B6D5AAF34D4978AEC971E6A92F5D532DF0D5`。正式七原PID及会话1不变，未替换常驻或激活新环境；实体来源路由及云台/话筒实际效果继续单列。
+
+本轮实现拆为两个已核GPG有效的签名提交：`f3fe1d4`运行时声音/原生与监督者停机，`7b50437`现场协议、来源与前端/合同/证据。D4新增私有引擎根属于生成资产，补充精确仓库忽略约定；不删除已验证副本/摘要、不提交第三方数GB二进制。源码快进与常驻换包为不同阶段，后者仍须协作停机/冷备份/同步新Host和Supervisor后激活，禁止把已上传隔离包当作已上线。

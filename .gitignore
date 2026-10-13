@@ -228,6 +228,8 @@ logs/*
 !logs/.gitkeep
 
 # Third-party download caches and extracted binaries
+# D4按窗口生成的私有网页/Office引擎与摘要在设备上保留，不提交数GB第三方副本。
+runtime-dotnet/private-audio-engines-*/
 tools/third_party/*.zip
 tools/third_party/vlc/runtime/*
 !tools/third_party/vlc/runtime/libvlc.dll
