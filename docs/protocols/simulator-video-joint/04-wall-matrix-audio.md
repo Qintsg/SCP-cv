@@ -147,6 +147,8 @@ lenA:u8 textA[lenA] valueA:u8
 
 ## 音量与静音相关路径
 
+2026-10-14接续：原7037A0(type1)→65C5E0(selector0)构造Audio查询`FBFC610B00000000006CFDFE`；663C80将FCFD6103的IPv4/端口交给InputAudioRecall。155实机单独查询和同连接61FA设备确认后均未返回来源，所以不把该解析器可用视为本型号已读回。61FA当前状态2及6191音量也不是来源；无可靠恢复基线时不盲切，见[现场只读记录](../../../specs/012-directory-camera-console/verification/20261014-audio-source-readonly.md)。
+
 | 命令 | 可确认含义／格式 |
 | --- | --- |
 | `61 90`，`0x0065FFB0` | 设置音量；一个字节的 payload，尾部校验位置写零 |
