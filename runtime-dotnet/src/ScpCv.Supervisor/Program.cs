@@ -22,6 +22,7 @@ var display2 = GetOption(args, "display-2");
 
 try
 {
+    if (args.FirstOrDefault() == "console-stop") return MediaMtxConsoleLifetime.Signal(args);
     return action switch
     {
         "start" => await StartAsync(runtimeRoot, statePath, mediaMtxPath, controlPipe, display1, display2),

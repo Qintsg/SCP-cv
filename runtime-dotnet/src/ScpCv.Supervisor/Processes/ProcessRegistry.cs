@@ -1,3 +1,4 @@
+// 自有进程原身份登记；独立控制台创建证明只在内存保留，不接受状态文件授信。
 using System.Diagnostics;
 
 namespace ScpCv.Supervisor.Processes;
@@ -8,14 +9,15 @@ public sealed record OwnedProcess(
     DateTimeOffset StartTime,
     int SessionId,
     Process Process,
-    Guid InstanceId = default);
+    Guid InstanceId = default,
+    bool IsolatedConsole = false);
 
 public sealed class ProcessRegistry
 {
     private readonly Dictionary<int, OwnedProcess> _processes = [];
     private readonly object _gate = new();
 
-    public OwnedProcess Register(string role, Process process, Guid instanceId = default)
+    public OwnedProcess Register(string role, Process process, Guid instanceId = default, bool isolatedConsole = false)
     {
         ArgumentNullException.ThrowIfNull(process);
         process.Refresh();
@@ -25,7 +27,8 @@ public sealed class ProcessRegistry
             new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero),
             process.SessionId,
             process,
-            instanceId);
+            instanceId,
+            isolatedConsole);
         lock (_gate) _processes[process.Id] = owned;
         return owned;
     }

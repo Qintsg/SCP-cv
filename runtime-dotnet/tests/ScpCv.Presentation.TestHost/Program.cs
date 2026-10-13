@@ -10,6 +10,7 @@ internal static class Program
     private static async Task<int> Main(string[] args)
     {
         if (!OperatingSystem.IsWindows()) return 2;
+        if (args.FirstOrDefault() == "--console-holder") return await ConsoleHolder.RunAsync(args).ConfigureAwait(false);
         if (args.Length == 1 && args[0].StartsWith("--gated-child=", StringComparison.Ordinal))
         {
             using var childGate = EventWaitHandle.OpenExisting(args[0]["--gated-child=".Length..]);

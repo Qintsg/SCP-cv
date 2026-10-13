@@ -60,6 +60,7 @@ public sealed class RuntimeLauncher(ProcessRegistry registry)
     private OwnedProcess StartProcess(string role, string path, string arguments, Guid instanceId = default)
     {
         if (!File.Exists(path)) throw new FileNotFoundException($"运行时组件不存在：{role}", path);
+        if (role == "mediamtx") return registry.Register(role, MediaMtxConsoleLifetime.Start(path, arguments), isolatedConsole: true);
         var process = Process.Start(new ProcessStartInfo(path, arguments)
             {
                 UseShellExecute = false,

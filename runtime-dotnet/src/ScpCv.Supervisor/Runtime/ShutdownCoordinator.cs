@@ -10,6 +10,11 @@ public sealed class ShutdownCoordinator(ProcessRegistry registry, TimeSpan? coop
         foreach (var owned in registry.Snapshot())
         {
             if (!ProcessRegistry.StillOwns(owned)) { registry.Remove(owned.ProcessId); continue; }
+            if (owned.Role == "mediamtx" && owned.IsolatedConsole)
+            {
+                if (await MediaMtxConsoleLifetime.TryStopAsync(owned, cancellationToken).ConfigureAwait(false)) registry.Remove(owned.ProcessId);
+                continue;
+            }
             try { owned.Process.CloseMainWindow(); } catch (InvalidOperationException) { }
         }
 
@@ -20,7 +25,7 @@ public sealed class ShutdownCoordinator(ProcessRegistry registry, TimeSpan? coop
         foreach (var owned in registry.Snapshot())
         {
             if (!ProcessRegistry.StillOwns(owned)) { registry.Remove(owned.ProcessId); continue; }
-            // office 角色是项目自有 PowerPointHost，不是 POWERPNT.EXE。
+            // office角色只允许项目自有侧车，不按Office应用名关闭用户实例。
             // 只结束 Host 本身；绝不能用进程树强杀可能包含用户文稿的 Office 实例。
             owned.Process.Kill(entireProcessTree: owned.Role != "office");
             await owned.Process.WaitForExitAsync(cancellationToken).WaitAsync(TimeSpan.FromSeconds(3), cancellationToken).ConfigureAwait(false);
