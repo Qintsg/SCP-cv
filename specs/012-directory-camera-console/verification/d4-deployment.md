@@ -1,12 +1,12 @@
-# D4 012部署记录（2026-10-12）
+# D4 012部署记录（更新至2026-10-13）
 
 ## 当前状态
 
-实际运行包已切换为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261012-012f-b04f65b`，网页入口HTTP80/HTTPS443，内部ControlHost仍18444/18443。运行任务`ScpCvRuntime-012f-20261012`及网页任务`ScpCvFrontend-012-20261012`运行中；旧012e及此前旧运行任务停止并禁用，不删除历史包。固定监控修正`d7c0487`与可选声音绑定/接线记录`b04f65b`已签名提交、推送GitHub与现场GitLab，并由D4快进拉取；包基于固定`b04f65b`，后续文档同步不触发再次构建或重启。
+实际运行包为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261013-012g-91d883b`，HTTP80/HTTPS443、内部18444/18443保持。`ScpCvRuntime-012g-20261013`及原网页任务运行中，旧012f/012e任务停止禁用、包保留。运行包固定`91d883b`发布；后续网页触控补丁和文档不重建或重启该运行组。当前六进程均Session1，Node23616保持，原11源保留；完整声音来源仍未启用。
 
-运行包ControlHost摘要`BE2A9278E1F3B390A71B60EEE30E793F0DF4F20F73528D62BD5E4384B5477A6D`，Contracts摘要`B4DA8987A31EA2B8A49D2446B4E1E40AFEC471227ECB35F5E93A3E9976BBAE60`；网页index摘要`4A22023DF43085E57133F6E13C7B4D7110B1602ED839BE0F5BBCC661B1AE08D2`。完整012f包SHA256为`2571DD06176416D6A23C512B9B2C302A2EA4CF308B38C6697BE3E1D6EBCFA49B`，本机与远端一致。012d为被合并检查拒绝的本机部分产物，未部署；012e为保留的历史运行包。
+012g ZIP摘要`8517DD1F93EB71F9FA4C4CCB5E6F6D9B510A9D475D2B5C864920F137BF0C72A7`、Host摘要`CBE4D36081750CF34217537EFE8CCB7354CEBDE605E47A0A4A0CCBEC75007749`、Contracts摘要`CA900EC25A43F467CFAFF129F53ED4342A149E3BE77130A37040BA233F557B66`，本机与D4一致。首次012g网页index摘要`C060E80D13A1A37A8FE1D5EFE7057B97EB8B3011FE7D8B5DAD57072EB491979F`；最终触控网页来自`609ae2c`，index摘要`3A2813F7ACFB57ACFEB06A4D3F65A86E8E03CEF8AA27D223DA02DE7338D57511`。此前012d被拒绝，012e/012f是历史包，不混作当前运行版本。
 
-## 已核对
+## 历史部署已核对（2026-10-12）
 
 - 原`t129-workstation`数据库在旧组停止后连同WAL/SHM备份到`.validation/deploy-012/backup/`；增量迁移保留原三源ID1/2/53及其URI，新增六路Camera，共九源。原件、缓存、证书没有删除或重排。
 - 两个PlayerWorker在线，目标仍DISPLAY2/3，各1920×1080；DISPLAY1控制桌面及DISPLAY4/5不是播放目标。Supervisor/AudioWorker/MediaMTX与ControlHost属于新包/运行组。
@@ -49,4 +49,14 @@
 
 ## 未完成实体项
 
-固定监控76默认已在D4激活，音频处理器/中控及话筒接线已经确认；云台控制端点/停止/位置、话筒控制协议、IP81/SCP-cv音频路由和完整软件输出绑定未闭环，未知控制仍禁用且API拒绝。背景音频空列表的历史错误状态尚未清理。12种组合的新包现场视觉、摄像机真实播放、实际可听声音与人工共享选择仍不能据自动化或旧010结果声称完成。
+固定监控76已在正式012f实际playing并关闭；012g空背景音频的旧错误已由真实STOP回执清除。云台控制端点/停止/位置、话筒控制协议、IP81/SCP-cv音频路由及WebView2/LibreOffice声音仍未闭环；新VLC接线已隔离实测，常驻配置仍未启用。其它摄像机真实后帧、现场可听、共享文字清晰度和长稳不据构建或旧记录声称完成。
+
+## 012g正式切换与复测（2026-10-13）
+
+- `819b1d2`运行时、`54425e5`上传层级、`91d883b`记录均签名并推送两仓库，D4快进拉取。固定91d883b完整五组件发布，隔离Net48协议、323个VLC插件及索引齐全；归属与摘要检查不放松。
+- 协作停机后独立确认原六进程退出、状态文件删除，再精确停止原Host；无写入者时冷备数据库/WAL/SHM至`D:/SCP-cv/.validation/deploy-012g/backup-before-012g/`，逐文件摘要一致。数据库大小3223552、WAL4169472、SHM32768字节。原网页移动到同stage的`frontend-dist-before-012g`，原Node23616未重启；证书、权限和防火墙未改。
+- 新Host11720、Supervisor9772、Player23000/20448、Audio2120、MediaMTX24492均Session1；状态文件四成员与OS的PID/会话/启动时刻逐项一致。两窗仍DISPLAY2/3、1920×1080；实际CLOSE命令`605e803a…`/`832d88a2…`均completed/ok，最终代次926/926、635/635，online idle，无源/共享/错误/清理残留。
+- 空背景列表显式STOP后，真实观测stopped、pending空、error_message空；没有直接清DB或用进程存活代替完成证据。固定监控88仍76且受保护，原11源保留；自有92/93/94/95和空测试目录通过正式API清理，磁盘文件确认消失，本机原自有图片副本保留。
+- 严格TLS验证的HTTP80/HTTPS443均200，正常登录通过。上传抽屉7500高于旧通知4000；旧错误仍存在，保存按钮中心实际命中按钮且普通点击成功，没有force。390px无横向溢出，另发现32px手机按钮，追加44px补丁仅更新网页，后续证据见[接续记录](20261013-continuation.md)。部署短停的502和测试占用拒绝400是预期网络结果，不虚报零控制台错误。
+- 609ae2c仅网页补丁通过SCP传输及ZIP摘要核对，原网页精确移动到`frontend-dist-before-touch`后切入；七个常驻进程的PID/会话/启动时刻逐项不变，没有重启。真实390×844浏览器选择自有图片后上传/取消均44px且中心命中，正常取消未提交重复源；1280px仍32px，两个尺寸无横向溢出，注销200后关闭仅自有标签。HTTP/HTTPS严格TLS均200，Healthy、两窗926/926及635/635空闲、背景stopped且错误为空、原11源与状态文件保持。
+- 证据保存在`.validation/deploy-012g/{activation-preflight,stop-backup-result,activation-result,frontend-touch-result,final-verification}.json`及原故障日志；没有临时HTTP传输服务。新的可选软件声音配置仍保持未设置，未知云台/话筒/来源指令零下发。T019完整通过，任务34/27/7；T033/T034不据局部验证勾完成。

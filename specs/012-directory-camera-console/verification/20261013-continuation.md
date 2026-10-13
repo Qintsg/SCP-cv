@@ -2,7 +2,7 @@
 
 ## 运行组故障与修复
 
-D4本轮入场只有ControlHost14488和Node23616存活，桌面会话1保持登录。昨晚23:31（香港时间）的日志显示：共享OPEN等待首帧触发TaskCanceledException，Player退出后Supervisor停止其余成员。不是根据残留PPT源推断Office崩溃。原日志复制保留在忽略的`.validation/remaining-012-20261013/before-recovery.*.log`。
+D4本轮入场只有ControlHost14488和Node23616存活，桌面会话1保持登录。昨晚23:31（香港时间）的日志显示：共享OPEN等待首帧触发TaskCanceledException，Player退出后Supervisor停止其余成员。不是根据残留PPT源推断Office崩溃。原日志复制保留在D4忽略的`D:/SCP-cv/.validation/remaining-012-20261013/before-recovery.*.log`。
 
 独立核对无Supervisor/Player/Audio/MediaMTX/Office残余后，通过认证restart显式恢复原012f；不重放旧OPEN，使用真实CLOSE清除旧实际源投影。修复命令执行循环：只有其自身令牌取消才退出，命令局部截止时间失败回报后继续领取。真实命名管道测试先红后绿，后续CLOSE、原调用方取消、协作停机及结果重放均保持。
 
@@ -29,10 +29,16 @@ D4本轮入场只有ControlHost14488和Node23616存活，桌面会话1保持登�
 
 ## 上传交互
 
-真实桌面错误通知层4000遮挡添加源抽屉默认2000，实际保存点击被拦截。上传抽屉调整到已有7500层；旧错误不删除，上传失败仍通过抽屉内Alert可见。真实组件DOM测试先红后绿（5/5），实际浏览器几何与点击复测另记；不使用force点击或隐藏错误。
+真实桌面错误通知层4000遮挡添加源抽屉默认2000，实际保存点击被拦截。上传抽屉调整到已有7500层；旧错误不删除，上传失败仍通过抽屉内Alert可见。真实组件DOM测试先红后绿，补充触控回归后6/6；不使用force点击或隐藏错误。
+
+012g正式网页复核：旧拒绝通知4000仍保留，抽屉7500，保存按钮中心命中button，正常点击上传自有95成功；94/95随后正式删除且磁盘文件消失。390px无横向溢出，但按钮实际仅32px，追加44px触控补丁，桌面保持紧凑；该补丁只更新网页，运行包仍固定91d883b。
+
+最终609ae2c网页补丁已部署，ZIP摘要`7308F74893B44DE659CC99DE68FDB8E4FF8BE8189F4DC768FC5CD2C7F8897B58`，index摘要`3A2813F7ACFB57ACFEB06A4D3F65A86E8E03CEF8AA27D223DA02DE7338D57511`。真实HTTP浏览器加载`index-Cv-WMlf1.js`；390×844选择自有图片后上传/取消均44px且中心命中按钮，未提交重复夹具，正常取消成功。1280px桌面按钮仍32px，两尺寸无横向溢出。正常注销200后关闭仅本轮标签；原about:blank保留。这里只验收上传页脚，不声称其它页面所有触控目标均已全面审计。
 
 ## 验证与边界
 
-Release整套构建0警告/0错误，锁定还原通过。最终常规后端Domain41、Contracts337、Infrastructure176、Windows198、ControlHost446、Integration281，共1479通过，0失败/跳过，独立TRX保留在`.validation/remaining-012-20261013/trx/final/`。前端最终459/459及类型/Web构建通过，通知5项红绿通过；保留既有构建提示。完整部署与浏览器几何另记。
+Release整套构建0警告/0错误，锁定还原通过。最终常规后端Domain41、Contracts337、Infrastructure176、Windows198、ControlHost446、Integration281，共1479通过，0失败/跳过，独立TRX保留在`.validation/remaining-012-20261013/trx/final/`。前端最终460/460及类型/Web构建通过，通知/触控6项红绿通过；保留既有构建提示。Redocly实际校验0错误、4条既有警告；Spec Kit通过，hooks文件不存在。
+
+012g六进程及原Node在网页补丁前后PID/会话/启动时刻未变，HTTP80/HTTPS443严格TLS访问均200，后端Healthy；原11源保留，两窗online idle、背景stopped且无旧错误。网页旧版可从`.validation/deploy-012g/frontend-dist-before-touch`恢复，运行包及更早备份不删。T019完整目录流程勾选完成，当前34项任务27完成、7未完成；服务保持运行。
 
 未完成：完整软件声音（WebView2/LibreOffice）、IP81/SCP-cv实体音频路由、云台/话筒型号与控制帧、现场共享文字清晰度和更长混合稳定性。不猜测协议，不用可选绑定、构建成功或隔离探针替代这些验收。
