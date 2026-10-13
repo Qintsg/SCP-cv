@@ -4,6 +4,8 @@
 
 **Tests**: 每故事先写测试；自动化与实体确认分开记录。
 
+**当前统计（2026-10-14）**：40项、30完成、10未完成。012i正式空闲完整组停机/恢复及常驻VLC两播放器/背景音频实际63接线均通过，T040/T034完成；下文阶段统计按日期保留，不能作为当前数量。
+
 ## Phase 1: Setup
 
 - [X] T001 核对工作区、宪章、路径/实体副作用约束与忽略文件：`AGENTS.md`、`.specify/memory/constitution.md`、`docs/known-pitfalls.md`。
@@ -54,7 +56,7 @@
 - [X] T023 [US4] 设备HTTP合同/权限/缺绑定拒绝：`runtime-dotnet/src/ScpCv.ControlHost/Endpoints/VenueDeviceEndpoints.cs`、`ScpCv.Contracts/Http/VenueDeviceDtos.cs`。
 - [ ] T024 [US4] 摄像机与音量页面/来源小卡片及软件输出绑定：`frontend/src/features/devices/DevicesView.vue`、`frontend/src/layouts/AppNavigation.vue`及既有音频设置。
 - [ ] T025 [US4] 摄像机/声音有界实测，未知项不勾完成：`specs/012-directory-camera-console/verification/devices.md`。
-- [ ] T034 [US4] D4端点63/64独立窄带辨识，LibVLC两播放器/背景音频的显式绑定、缺失拒绝与重播观测：`ScpCv.Contracts/Runtime/AudioOutputBinding.cs`、`runtime-dotnet/shared/VlcAudioOutputBinding.cs`及Windows/Contracts回归；WebView2/LibreOffice仍属于T024，不能用VLC结果代替。
+- [X] T034 [US4] D4端点63/64独立窄带辨识，LibVLC两播放器/背景音频的显式绑定、缺失拒绝与重播观测：`ScpCv.Contracts/Runtime/AudioOutputBinding.cs`、`runtime-dotnet/shared/VlcAudioOutputBinding.cs`及Windows/Contracts回归；WebView2/LibreOffice仍属于T024，不能用VLC结果代替。
 
 ## Phase 7: US5 目录预设与高级项（P2）
 
@@ -119,6 +121,10 @@ T038现已完成：r44通过实际Hardware认证REST/持久队列/IPC双PPT两�
 
 2026-10-14本次检查T033涉及的FR-004/012/015、SC-003、双输出/可信声音/完整运行组方案与宪章I/III/IV。原未完成的实体/声音任务不重复追加；新增一个HIGH partial：正式012h含MediaMTX的停机实测，两个Player/Audio正常0，但MediaMTX被强制结束-1、Supervisor最终1，API200不是正常退出证据。状态文件已消失且原句柄全退出后通过正式API明确恢复；服务启动/页面可用不替代完整部署验收，T033保持未完成。
 
-- [ ] T040 补齐MediaMTX的定向协作退出，覆盖真实原进程身份、独立控制范围、其它进程不得收到控制信号、未知/失效身份拒绝及失败兜底仍非正常；在D4含MediaMTX完整组通过停机/恢复、原句柄与状态文件核验后重新固定提交发布，涉及`runtime-dotnet/src/ScpCv.Supervisor/Runtime/RuntimeLauncher.cs`、`ShutdownCoordinator.cs`、`Program.cs`及`runtime-dotnet/tests/ScpCv.Windows.Tests/`，追溯T033、plan:完整运行组/停机围栏、Constitution I/III/IV（partial，HIGH）。
+- [X] T040 补齐MediaMTX的定向协作退出，覆盖真实原进程身份、独立控制范围、其它进程不得收到控制信号、未知/失效身份拒绝及失败兜底仍非正常；在D4含MediaMTX完整组通过停机/恢复、原句柄与状态文件核验后重新固定提交发布，涉及`runtime-dotnet/src/ScpCv.Supervisor/Runtime/RuntimeLauncher.cs`、`ShutdownCoordinator.cs`、`Program.cs`及`runtime-dotnet/tests/ScpCv.Windows.Tests/`，追溯T033、plan:完整运行组/停机围栏、Constitution I/III/IV（partial，HIGH）。
 
 追加后40项、28完成、12未完成；012h实际激活与失败证据见部署记录。不得通过接受所有非零退出或仅移除MediaMTX监控来消除该缺口。
+
+T040于2026-10-14完成：真实MediaMTX先红-1后绿0，额外控制台成员/旧身份/错误身份/无创建证明/提前取消均拒绝；后端最终1601项通过。D4隔离完整组两轮10原句柄退出0；固定签名d67ce53重新发布012i、逐967文件核验、旧组退出后冷备，正式实际MediaMTX配置完整空闲组五原句柄全部0、状态文件删除、restart202恢复通过。原11媒体、DISPLAY2/3、Node23616/80/443/证书及系统声音基线保持。T033/T034的常驻实际声音及实体链路不据空闲停机勾完成。当前40项、29完成、11未完成，详见[012i证据](verification/20261014-mediamtx-stop.md)。
+
+后续T034完成：常驻012i两个Player及Audio通过正常认证REST/队列/IPC三轮真实低增益播放，57次正峰值会话仅63，交错关闭/重开/背景持续通过；精确自有源96已删除、磁盘残留0、原静音/循环与音量恢复、原七进程身份及系统声音保持。结合此前63/64独立辨识和正式模块缺失拒绝，T034闭环；WebView/LibreOffice的常驻逐引擎播放及实体声音仍属于T033/T024，不用VLC结果代替。当前40/30/10，见[常驻声音记录](verification/20261014-formal-audio.md)。

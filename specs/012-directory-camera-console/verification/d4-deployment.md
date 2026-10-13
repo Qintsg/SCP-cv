@@ -2,7 +2,9 @@
 
 ## 当前状态
 
-当前实际运行包为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261014-012h-d99a851`，HTTP80/HTTPS443、内部18444/18443保持。新Runtime/Frontend两项012h登录任务Running；旧012g及旧网页任务禁用，所有旧包和备份保留。可信63号声音/私有引擎及来源卡片已激活；Node23616未重启、原11源及输出目标DISPLAY2/3保留。完整组停机未通过：MediaMTX强制-1、Supervisor1，原句柄全退出后正式API恢复；T040及T033验收保持未完成，详见[012h激活](20261014-activation.md)。
+当前实际运行包为`D:/SCP-cv/runtime-dotnet/artifacts/deploy-20261014-012i-d67ce53`，HTTP80/HTTPS443、内部18444/18443保持。新`ScpCvRuntime-012i-20261014`与原`ScpCvFrontend-012h-20261014`登录任务Running；旧012h运行任务禁用，所有旧包和备份保留。可信63号声音/私有引擎及来源卡片保持；Node23616未重启、原11源及输出目标DISPLAY2/3不变。正式含MediaMTX完整空闲组五原进程退出0、状态文件删除及API恢复已通过，T040完成；T033的常驻实际声音与实体效果仍未完成，详见[协作退出与012i证据](20261014-mediamtx-stop.md)。[012h激活失败](20261014-activation.md)保留为历史记录。
+
+后续常驻VLC两Player/背景音频三轮57次正峰值会话只63、交错关闭/重开、配置恢复及自有源清理通过，T034完成；其它引擎的常驻逐项实测、实体来源/DSP/机位仍待验，详见[正式声音记录](20261014-formal-audio.md)。以下早期“常驻VLC绑定未启用”是历史阶段，不是当前结论。
 
 以下012g及更早内容为历史证据，不代表当前正在运行的包。
 
