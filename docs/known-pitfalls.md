@@ -450,6 +450,8 @@
 
 ## 3. 相关沉淀点（不在这里重复）
 
+坑129记录固定RTSP默认传输的少量视频/零音频与TCP对照：SDP、短时Playing、配置端点和空WASAPI均不能证明完整出画/声音；按真实SETUP、包、解码与活动会话分层验证，见[可靠RTSP](known-pitfalls/directory-venue.md#坑129--rtsp可描述或短时playing不证明完整音视频传输)。本机红绿及D4隔离修复通过，正式新包和一小时待验。
+
 009的重复输入窗口、屏号/裁剪、重启不确定、版本与诊断边界见[大屏映射记录](known-pitfalls/video-wall-mapping.md)；历史坑21的门禁已在受限三输入范围内接续。
 
 - `specs/003-dotnet-runtime-refactor/baseline.md` §易错语义：迁移前必须保住的**旧 Python 语义**（冻结在基线提交）。

@@ -47,6 +47,9 @@ public sealed partial class PlayerRuntimeHost
         var media = File.Exists(localPath)
             ? new Media(libVlc, Path.GetFullPath(localPath), FromType.FromPath)
             : new Media(libVlc, uri, FromType.FromLocation);
+        // 摄像机默认UDP在现场仅有少量视频且无音频；逐资源请求TCP，不修改文件/SRT或全局选项。
+        if (Uri.TryCreate(uri, UriKind.Absolute, out var streamUri) && streamUri.Scheme == "rtsp")
+            media.AddOption(":rtsp-tcp");
         player.Media = media;
         _vlcMedia[player] = media;
         BindVlcAttempt(player, media, generation, liveInput);
