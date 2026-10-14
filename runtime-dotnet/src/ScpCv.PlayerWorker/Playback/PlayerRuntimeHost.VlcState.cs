@@ -51,19 +51,19 @@ public sealed partial class PlayerRuntimeHost
     }
 
     /// <summary>健康同源打开保留进度/暂停恢复，只有真实失败、结束或停止才重新启动输入。</summary>
-    private async Task<bool> ReopenVlcAttemptAsync(VlcMediaPlayer player, Media media, long generation, bool autoplay)
+    private async Task<bool> ReopenVlcAttemptAsync(VlcMediaPlayer player, Media media, long generation, bool autoplay, int volume, bool muted)
     {
         VlcAudioOutputBinding.Validate(player, audioOutputDeviceId);
         _vlcBindings.TryGetValue(player, out var previous);
         if (previous?.Attempt.HasError == true || player.State is VLCState.Error or VLCState.Ended or VLCState.Stopped)
-            return await RestartVlcAttemptAsync(player, media, generation, autoplay);
+            return await RestartVlcAttemptAsync(player, media, generation, autoplay, volume, muted);
         // autoplay=false 的首次 OPEN 只设置 Media，尚无输入线程；下次显式启动不能只换 token。
         if (autoplay && player.State == VLCState.NothingSpecial)
-            return await RestartVlcAttemptAsync(player, media, generation, autoplay);
+            return await RestartVlcAttemptAsync(player, media, generation, autoplay, volume, muted);
         BindVlcAttempt(player, media, generation);
         // 订阅交接期间旧输入确已结束/失败，显式 OPEN 的恢复意图仍能重新启动，不复用旧错误。
         if (previous?.Attempt.HasError == true || player.State is VLCState.Error or VLCState.Ended or VLCState.Stopped)
-            return await RestartVlcAttemptAsync(player, media, generation, autoplay);
+            return await RestartVlcAttemptAsync(player, media, generation, autoplay, volume, muted);
         if (autoplay && player.State == VLCState.Paused) player.SetPause(false);
         else if (!autoplay) player.SetPause(true);
         _state = autoplay ? "loading" : "paused";
@@ -72,24 +72,26 @@ public sealed partial class PlayerRuntimeHost
     }
 
     /// <summary>显式重开、失败重试和循环只复用原生播放器，不复用旧尝试的状态或回调。</summary>
-    private async Task<bool> RestartVlcAttemptAsync(VlcMediaPlayer player, Media media, long generation, bool autoplay)
+    private async Task<bool> RestartVlcAttemptAsync(VlcMediaPlayer player, Media media, long generation, bool autoplay, int? volume = null, bool? muted = null)
     {
+        var requestedVolume = volume ?? _vlcVolume ?? player.Volume;
+        var requestedMute = muted ?? _vlcMuted ?? player.Mute;
         var liveInput = _vlcBindings.TryGetValue(player, out var previous) && previous.Attempt.IsLiveInput;
         UnbindVlcAttempt(player);
         await VlcResourceLifecycle.StopAsync(player.Stop);
         VlcAudioOutputBinding.Apply(player, audioOutputDeviceId);
+        player.Volume = requestedVolume;
+        player.Mute = autoplay || requestedMute;
         player.Time = 0;
         BindVlcAttempt(player, media, generation, liveInput);
         _state = autoplay ? "loading" : "paused";
         _errorMessage = string.Empty;
         if (!autoplay) return true;
-        var requestedMute = player.Mute;
         try
         {
-            if (!string.IsNullOrWhiteSpace(audioOutputDeviceId)) player.Mute = true;
             if (!player.Play(media)) return false;
             await VlcAudioOutputBinding.ConfirmPlaybackAsync(player, audioOutputDeviceId);
-            player.Mute = requestedMute;
+            await ApplyVlcAudioConfirmedAsync(player, requestedVolume, requestedMute, CancellationToken.None);
             return true;
         }
         catch (Exception failure)

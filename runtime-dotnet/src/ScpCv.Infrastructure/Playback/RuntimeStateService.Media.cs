@@ -64,6 +64,8 @@ public sealed partial class RuntimeStateService
                 content_digest = source.ContentDigest,
                 autoplay,
                 loop = session.LoopEnabled,
+                volume = session.Volume,
+                muted = session.IsMuted,
                 target_slide = targetSlide,
                 presentation_mode = presentation?.Mode switch
                 {

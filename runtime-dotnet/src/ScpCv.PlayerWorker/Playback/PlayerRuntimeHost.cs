@@ -88,8 +88,8 @@ public sealed partial class PlayerRuntimeHost(
                 case "GOTO": await NavigateAsync(lease, Int(lease.Args, "target_index", 1), cancellationToken); break;
                 case "NEXT_EFFECT":
                 case "PREVIOUS_EFFECT": resultCode = await StepLibreOfficeAsync(lease, cancellationToken); break;
-                case "SET_VOLUME": SetVolume(Int(lease.Args, "volume", 100)); break;
-                case "SET_MUTE": SetMute(Bool(lease.Args, "muted", false)); break;
+                case "SET_VOLUME": await SetVolumeAsync(Int(lease.Args, "volume", 100), cancellationToken); break;
+                case "SET_MUTE": await SetMuteAsync(Bool(lease.Args, "muted", false), cancellationToken); break;
                 case "SET_LOOP": SetLoop(Bool(lease.Args, "enabled", false)); break;
                 case "SELECT_DISPLAY": SelectDisplay(String(lease.Args, "target_label")); break;
                 case "SHOW_ID": ShowWindowId(); break;
@@ -112,14 +112,21 @@ public sealed partial class PlayerRuntimeHost(
         var uri = isShare ? string.Empty : String(lease.Args, "uri");
         var sourceType = String(lease.Args, "source_type", InferType(uri));
         var autoplay = Bool(lease.Args, "autoplay", true);
+        var audio = sourceType is "video" or "audio" or "rtsp" or "srt" or "custom_stream"
+            ? ReadVlcAudioIntent(lease) : (Volume: (int?)null, Muted: (bool?)null);
         _loopEnabled = Bool(lease.Args, "loop", _loopEnabled);
         if (_current?.Native is VlcMediaPlayer currentPlayer &&
             sourceId == _sourceId && lease.SourceRevision == _sourceRevision &&
             string.Equals(uri, _sourceUri, StringComparison.Ordinal))
         {
             var currentMedia = OwnedVlcMedia(currentPlayer);
-            if (!await ReopenVlcAttemptAsync(currentPlayer, currentMedia, lease.SourceGeneration, autoplay))
+            var requestedVolume = audio.Volume ?? currentPlayer.Volume;
+            var requestedMute = audio.Muted ?? currentPlayer.Mute;
+            if (!await ReopenVlcAttemptAsync(currentPlayer, currentMedia, lease.SourceGeneration, autoplay, requestedVolume, requestedMute))
                 throw new InvalidOperationException("LibVLC 无法重新播放当前媒体。");
+            await ApplyVlcAudioConfirmedAsync(currentPlayer, requestedVolume, requestedMute, cancellationToken);
+            _vlcVolume = requestedVolume;
+            _vlcMuted = requestedMute;
             _generation = lease.SourceGeneration;
             _errorMessage = string.Empty;
             return null;
@@ -135,7 +142,9 @@ public sealed partial class PlayerRuntimeHost(
             case "custom_stream":
             case "rtsp":
             case "srt": next = await OpenVlcAsync(uri, autoplay, lease.SourceGeneration,
-                sourceType is "rtsp" or "srt" or "custom_stream", cancellationToken); break;
+                sourceType is "rtsp" or "srt" or "custom_stream",
+                audio.Volume, audio.Muted,
+                cancellationToken); break;
             case "ppt" when Path.GetExtension(LocalPath(uri)).Equals(".pdf", StringComparison.OrdinalIgnoreCase):
                 next = await OpenPdfAsync(uri, Int(lease.Args, "target_slide", 1), cancellationToken);
                 break;
@@ -166,6 +175,12 @@ public sealed partial class PlayerRuntimeHost(
         // 布局属于成功发布的资源，不让失败OPEN的意图覆盖旧画面的实际布局。
         next.ActualFitText = sourceType == "ppt" ? Bool(lease.Args, "fit_text", false) : null;
         _current = next;
+        // 只记住已成功发布的VLC资源；候选打开/激活失败不得覆盖旧资源的声音默认值。
+        if (next.Native is VlcMediaPlayer openedPlayer)
+        {
+            _vlcVolume = audio.Volume ?? (openedPlayer.Volume >= 0 ? openedPlayer.Volume : _vlcVolume);
+            _vlcMuted = audio.Muted ?? openedPlayer.Mute;
+        }
         _sourceId = sourceId;
         _sourceRevision = lease.SourceRevision;
         _sourceUri = uri;

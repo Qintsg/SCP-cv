@@ -12,6 +12,8 @@ namespace ScpCv.PlayerWorker.Playback;
 public sealed partial class PlayerRuntimeHost
 {
     private LibVLC? _libVlc;
+    private int? _vlcVolume;
+    private bool? _vlcMuted;
 
     private LibVLC GetOrCreateLibVlc()
     {
@@ -31,6 +33,8 @@ public sealed partial class PlayerRuntimeHost
         bool autoplay,
         long generation,
         bool liveInput,
+        int? volume,
+        bool? muted,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -47,15 +51,18 @@ public sealed partial class PlayerRuntimeHost
         _vlcMedia[player] = media;
         BindVlcAttempt(player, media, generation, liveInput);
         var view = new VideoView { MediaPlayer = player };
-        var requestedMute = player.Mute;
+        // 新资源应用当前窗口配置，不以构造器默认100/false覆盖控制台设置。
+        var requestedVolume = Math.Clamp(volume ?? player.Volume, 0, 100);
+        var requestedMute = muted ?? player.Mute;
+        player.Volume = requestedVolume;
+        player.Mute = autoplay || requestedMute;
         try
         {
             if (autoplay)
             {
-                if (!string.IsNullOrWhiteSpace(audioOutputDeviceId)) player.Mute = true;
                 if (!player.Play()) throw new InvalidOperationException("LibVLC 无法开始播放媒体。");
                 await VlcAudioOutputBinding.ConfirmPlaybackAsync(player, audioOutputDeviceId, cancellationToken);
-                player.Mute = requestedMute;
+                await ApplyVlcAudioConfirmedAsync(player, requestedVolume, requestedMute, cancellationToken);
             }
         }
         catch
@@ -151,14 +158,19 @@ public sealed partial class PlayerRuntimeHost
         await Task.CompletedTask;
     }
 
-    private void SetVolume(int volume)
+    private async Task SetVolumeAsync(int volume, CancellationToken token)
     {
-        if (_current?.Native is VlcMediaPlayer player) player.Volume = Math.Clamp(volume, 0, 100);
+        var requested = Math.Clamp(volume, 0, 100);
+        if (_current?.Native is VlcMediaPlayer player)
+            await ApplyVlcAudioConfirmedAsync(player, requested, _vlcMuted ?? player.Mute, token);
+        _vlcVolume = requested;
     }
 
-    private void SetMute(bool muted)
+    private async Task SetMuteAsync(bool muted, CancellationToken token)
     {
-        if (_current?.Native is VlcMediaPlayer player) player.Mute = muted;
+        if (_current?.Native is VlcMediaPlayer player)
+            await ApplyVlcAudioConfirmedAsync(player, _vlcVolume ?? player.Volume, muted, token);
+        _vlcMuted = muted;
     }
 
     private void SetLoop(bool enabled) => _loopEnabled = enabled;

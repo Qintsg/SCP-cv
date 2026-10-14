@@ -295,6 +295,8 @@ public sealed partial class ScenarioService(
                         uri = source.Uri,
                         content_digest = source.ContentDigest,
                         autoplay = target.Autoplay,
+                        volume = current.Volume,
+                        muted = current.IsMuted,
                         target_slide = 0,
                         presentation_mode = presentationBySource.TryGetValue(sourceId, out var presentation)
                             ? presentation.Mode switch
