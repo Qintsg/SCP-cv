@@ -182,3 +182,8 @@
 - 固定76的SDP有AAC、FFprobe实际251音频包，但正式默认VLC只解码8视频帧/音频0、WASAPI为空；不能把空列表解释为无音轨或静音，更不能删掉声音门禁。
 - 同源同端点仅改TCP的真实Player对照持续解码音视频；在每个`rtsp://` Media设置TCP选项，经公开OPEN/真实SETUP首包由UDP先红变interleaved TCP后绿，文件/SRT不改。修复后的隔离副本无全局开关也有实际63静音会话，仍待完整固定发布/正式REST和新一小时。
 - 诊断必须分别记录声明、真实包、解码/播放缓冲、实际声音会话和可见画面；异常候选被宿主释放后不继续读原生指针。r2长稳失败和恢复不改写，见[完整记录](../../specs/012-directory-camera-console/verification/20261014-mixed-soak.md)。
+
+## 坑130 — WinPS5.1的集合包装会误报观测数量或中断报告
+
+- `@(Get-Content -Raw | ConvertFrom-Json)`在D4把52条观察包成一项；`@($List[object])`又可抛参数类型不匹配。前者导致收尾数量失真，后者让已完成RTSP查询没有可用报告，不能据此归因于播放器或设备。
+- JSON数组显式枚举行，泛型List调用ToArray；在同一捕获快照核实际条数，并用空观察/未静音样例确认拒绝门禁仍有效。只修自有只读夹具，旧脚本/失败保留，不改产品或运行中的长稳。87进一步证明OPTIONS200并不代表DESCRIBE成功；实际超时仍记失败，见[摄像机只读证据](../../specs/012-directory-camera-console/verification/20261014-camera-recovery.md)与[混合收尾记录](../../specs/012-directory-camera-console/verification/20261014-mixed-soak.md)。

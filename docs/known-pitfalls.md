@@ -448,6 +448,8 @@
 
 坑128记录窗口持久静音未进入新VLC、原生setter异步完成及观察器漏掉Player根进程；普通/预设OPEN、空闲设置、重播/循环和实际会话必须分别覆盖，见[窗口声音保持](known-pitfalls/directory-venue.md#坑128--保存的静音不等于新媒体实际静音)。本机与D4隔离双进程已验证，正式新包与长稳待验。
 
+坑130记录WinPS5.1的JSON数组被包成一项及泛型List转数组报告异常：显式枚举行/ToArray核数量，空观察与未静音仍拒绝；只修自有夹具，不放宽播放门禁或把RTSP查询报告失败归给设备，见[目录与现场记录](known-pitfalls/directory-venue.md#坑130--winps51的集合包装会误报观测数量或中断报告)。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 坑129记录固定RTSP默认传输的少量视频/零音频与TCP对照：SDP、短时Playing、配置端点和空WASAPI均不能证明完整出画/声音；按真实SETUP、包、解码与活动会话分层验证，见[可靠RTSP](known-pitfalls/directory-venue.md#坑129--rtsp可描述或短时playing不证明完整音视频传输)。本机红绿及D4隔离修复通过，正式新包和一小时待验。
