@@ -146,3 +146,5 @@ T037后续只读：155管理80/控制4830可连接、61FA回复13字节状态2�
 2026-10-14在T041接续中复核FR-012/015、窗口声音/实际状态方案及宪章I/III/IV。新增一项CRITICAL contradicts：普通与预设OPEN没有音量/静音字段；Player新建VLC不读取或记忆窗口配置，空闲SET_VOLUME/SET_MUTE不作用于下一资源，HTTP持久值0/true不能证明原生静音。补充根进程WASAPI观察器在第五轮VLC阶段未达到静音判据而退出1；此失败仍需交互会话原始量值核对，不按当前主探针状态通过声音验收。原实体缺口不重复追加。
 
 - [ ] T042 CRITICAL 修复VLC打开、同源重开、切源与自然循环的窗口音量/静音保持：从普通/预设OPEN传递当前窗口音频值，在新资源首次播放前安全应用且实际就绪后复核，空闲设置保留到下次打开，失败留旧、两窗隔离和未支持引擎限制不变；通过正常公开租约/真实Player接口的红绿回归及D4原始WASAPI观测，再重新验收T041，不修改系统主音量/默认输出。涉及`RuntimeStateService.Media.cs`、`ScenarioService.cs`、`PlayerRuntimeHost.Vlc.cs`及相关Contracts/Windows/Host测试和IPC文档，追溯FR-012/015、T033/T041、plan:软件声音与实际状态、Constitution I/III/IV（contradicts）。
+
+T042本机1603非Physical/8真实全零PCM及D4固定3d9725c隔离双Player八阶段/36活动WASAPI样本通过，四原进程退出0、系统声音与正式七身份保持。修复已签名推送两仓库、D4源码同步，正式服务仍用d67ce53；待新包常驻激活与新的T041长稳，不提前勾选。初夹具路径规范化误拒及r69声音/清理失败全部保留，详见同一混合记录。
