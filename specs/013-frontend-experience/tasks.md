@@ -55,4 +55,4 @@ T001–T002→T003–T004→US1→US2→US3→US4→Polish。同一文件串行�
 
 ## Phase 8: 用户追加部署授权（2026-10-15）
 
-- [ ] T017 推送GitHub/GitLab并在D4干净工作区快进拉取；固定已测网页产物，备份并部署，核对HTTP/HTTPS、资产摘要、原进程及两窗状态不变：`specs/013-frontend-experience/deployment.md`与忽略的`.validation/deploy-013/`。不重启播放组、不发墙面/电源/声音/媒体指令；T013未验项不据部署完成。
+- [X] T017 推送GitHub/GitLab并在D4干净工作区快进拉取；固定已测网页产物，备份并部署，核对HTTP/HTTPS、资产摘要、原进程及两窗状态不变：`specs/013-frontend-experience/deployment.md`与忽略的`.validation/deploy-013/`。不重启播放组、不发墙面/电源/声音/媒体指令；T013未验项不据部署完成。

@@ -454,7 +454,7 @@
 
 ## 3. 相关沉淀点（不在这里重复）
 
-前端坑132记录预热配置被写成执行完成，以及公共页头改造时端口摘要真回归与旧选择器误判的区别，见[前端体验记录](known-pitfalls/frontend-experience.md)。
+前端坑132–133记录配置与完成状态的区别、公共页头真回归与旧选择器误判，以及部署核验空字段/错误投影不能充当一致性证据，见[前端体验记录](known-pitfalls/frontend-experience.md)。
 
 坑129记录固定RTSP默认传输的少量视频/零音频与TCP对照：SDP、短时Playing、配置端点和空WASAPI均不能证明完整出画/声音；按真实SETUP、包、解码与活动会话分层验证，见[可靠RTSP](known-pitfalls/directory-venue.md#坑129--rtsp可描述或短时playing不证明完整音视频传输)。本机红绿及D4隔离修复通过，正式新包和一小时待验。
 
