@@ -16,6 +16,7 @@ import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
 import { useDisplayStore } from '@/stores/displays';
 import type { DisplayTargetItem } from '@/services/api';
+import { useSettingsRequestContext } from '../useSettingsRequestContext';
 
 interface DisplaySelection {
   target: DisplayTargetItem | null;
@@ -28,10 +29,15 @@ const display = useDisplayStore();
 const toast = useToast();
 
 const targetWindowId = ref<number>(1);
+const pending = ref(false);
 const displaySelection = ref<DisplaySelection>({
   target: null,
   mode: 'single',
   label: '',
+});
+const captureContext = useSettingsRequestContext(() => {
+  pending.value = false;
+  displaySelection.value = { target: null, mode: 'single', label: '' };
 });
 
 const selectableTargets = computed(() => display.targets.filter((target) => {
@@ -44,7 +50,9 @@ watch(targetWindowId, () => {
   displaySelection.value = { target: null, mode: 'single', label: '' };
 });
 
+/** :param target: 当前可选的显示器。:returns: 只更新未提交的选择。 */
 function pickDisplay(target: DisplayTargetItem): void {
+  if (pending.value) return;
   displaySelection.value = {
     target,
     mode: 'single',
@@ -52,25 +60,31 @@ function pickDisplay(target: DisplayTargetItem): void {
   };
 }
 
+/** :returns: 向捕获的窗口/显示器提交一次绑定，仅当前归属展示反馈。 */
 async function applyDisplay(): Promise<void> {
+  if (pending.value) return;
   const selection = displaySelection.value;
   if (!selection.label || !selectableTargets.value.some((target) => target.name === selection.label)) {
     toast.warning(t('settings.pickDisplayFirst'));
     return;
   }
+  const windowId = targetWindowId.value;
+  const targetLabel = selection.label;
+  const current = captureContext();
+  pending.value = true;
   try {
-    await display.applyToWindow(targetWindowId.value, selection.mode, selection.label);
-    toast.success(t('settings.appliedOk', { id: targetWindowId.value }));
+    await display.applyToWindow(windowId, selection.mode, targetLabel);
+    if (current()) toast.success(t('settings.appliedOk', { id: windowId }));
   } catch (error) {
-    toast.error(t('settings.applyFail'), error instanceof Error ? error.message : t('common.retry'));
-  }
+    if (current()) toast.error(t('settings.applyFail'), error instanceof Error ? error.message : t('common.retry'));
+  } finally { if (current()) pending.value = false; }
 }
 </script>
 
 <template>
   <section class="settings-view__display">
     <n-card :title="t('settings.windowSelect')">
-      <n-radio-group v-model:value="targetWindowId">
+      <n-radio-group v-model:value="targetWindowId" :disabled="pending" :aria-label="t('settings.windowSelect')">
         <n-radio :value="1">{{ t('settings.window', { id: 1 }) }}</n-radio>
         <n-radio :value="2">{{ t('settings.window', { id: 2 }) }}</n-radio>
       </n-radio-group>
@@ -80,6 +94,8 @@ async function applyDisplay(): Promise<void> {
       <div class="settings-view__display-grid">
         <button v-for="target in selectableTargets" :key="target.index" type="button"
           class="settings-view__display-tile"
+          :disabled="pending"
+          :aria-pressed="displaySelection.label === target.name"
           :class="{ 'settings-view__display-tile--selected': displaySelection.label === target.name && displaySelection.mode === 'single' }"
           @click="pickDisplay(target)">
           <p class="settings-view__display-name">{{ t('settings.displayName', { n: target.index + 1 }) }}</p>
@@ -90,7 +106,7 @@ async function applyDisplay(): Promise<void> {
       </div>
     </n-card>
 
-    <n-button type="primary" :disabled="!displaySelection.label" @click="applyDisplay">
+    <n-button type="primary" :disabled="pending || !displaySelection.label" :loading="pending" @click="applyDisplay">
       <template #icon><FIcon name="checkmark_24_regular" /></template>
       {{ t('settings.applyToWindow', { id: targetWindowId }) }}
     </n-button>

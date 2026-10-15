@@ -381,7 +381,7 @@ function exitFocus(): void {
           </aside>
         </div>
 
-        <div class="ppt-focus__controls" :aria-label="t('pptFocus.controlsAria')">
+        <div class="ppt-focus__controls" role="group" :aria-label="t('pptFocus.controlsAria')">
           <PresentationEffectControls v-if="isLibreOffice" :window-id="windowId" :disabled="controlsDisabled || !!session?.pending_command" />
           <template v-if="!isStaticSlideMode && !isLibreOffice">
             <div class="ppt-focus__media-picker">
@@ -395,24 +395,24 @@ function exitFocus(): void {
                 size="large"
               />
             </div>
-            <n-button :disabled="!canControlSelectedMedia" @click="controlSelectedMedia('pause')">
+            <n-button :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.pauseMedia')" @click="controlSelectedMedia('pause')">
               <template #icon><FIcon name="pause_24_regular" /></template>
               <span class="ppt-focus__control-label">{{ t('pptFocus.pauseMedia') }}</span>
             </n-button>
-            <n-button type="primary" :disabled="!canControlSelectedMedia" @click="controlSelectedMedia('play')">
+            <n-button type="primary" :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.playMedia')" @click="controlSelectedMedia('play')">
               <template #icon><FIcon name="play_24_regular" /></template>
               <span class="ppt-focus__control-label">{{ t('pptFocus.playMedia') }}</span>
             </n-button>
-            <n-button type="error" :disabled="!canControlSelectedMedia" @click="controlSelectedMedia('stop')">
+            <n-button type="error" :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.stopMedia')" @click="controlSelectedMedia('stop')">
               <template #icon><FIcon name="stop_24_regular" /></template>
               <span class="ppt-focus__control-label">{{ t('pptFocus.stopMedia') }}</span>
             </n-button>
           </template>
-          <n-button :disabled="controlsDisabled" @click="nav('prev')">
+          <n-button :disabled="controlsDisabled" :aria-label="t('pptFocus.prevPage')" @click="nav('prev')">
             <template #icon><FIcon name="previous_24_regular" /></template>
             <span class="ppt-focus__control-label">{{ t('pptFocus.prevPage') }}</span>
           </n-button>
-          <n-button :disabled="controlsDisabled" @click="nav('next')">
+          <n-button :disabled="controlsDisabled" :aria-label="t('pptFocus.nextPage')" @click="nav('next')">
             <template #icon><FIcon name="next_24_regular" /></template>
             <span class="ppt-focus__control-label">{{ t('pptFocus.nextPage') }}</span>
           </n-button>
