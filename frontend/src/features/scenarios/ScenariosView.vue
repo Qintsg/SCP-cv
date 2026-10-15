@@ -8,6 +8,7 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
+  NAlert,
   NButton,
   NCheckbox,
   NCard,
@@ -21,6 +22,7 @@ import FEmptyState from '@/design-system/FEmptyState.vue';
 import ScenarioEditDrawer from './ScenarioEditDrawer.vue';
 import ScenarioPreviewDrawer from './ScenarioPreviewDrawer.vue';
 import { createEmptyDraft, hasRetiredActiveTargets, type ScenarioDraft } from './scenarioModel';
+import { captureScenarioState } from './scenarioCapture';
 import { useToast } from '@/composables/useToast';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useScenarioStore } from '@/stores/scenarios';
@@ -38,7 +40,8 @@ const toast = useToast();
 
 const previewOpen = ref(false);
 const editOpen = ref(false);
-const isLoading = ref(false);
+const isLoading = computed(() => scenarioStore.loading);
+const batchBusy = ref(false);
 const pendingActivateId = ref<number | null>(null);
 const pendingPinId = ref<number | null>(null);
 
@@ -50,6 +53,7 @@ const folderId = ref<number | null>(null), search = ref(''), selected = ref<numb
 const sortedScenarios = computed(() => scenarioStore.sorted.filter(item =>
   inDirectory(item.folder_id ?? null, folderId.value, scenarioStore.folders, !!search.value.trim()) &&
   (!search.value.trim() || `${item.name} ${item.path ?? ''} ${item.description}`.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))));
+const visibleIds = computed(() => sortedScenarios.value.map(item => item.id));
 // 列表与目录由应用启动同步统一加载；路由挂载不重复刷新或产生额外错误提示。
 const previewScenario = computed<ScenarioItem | null>(() => {
   if (previewScenarioId.value === null) return null;
@@ -57,17 +61,18 @@ const previewScenario = computed<ScenarioItem | null>(() => {
 });
 
 async function refresh(): Promise<void> {
-  isLoading.value = true;
   try {
     await scenarioStore.refresh();
   } catch (error) {
     toast.error(t('scenarios.loadFail'), error instanceof Error ? error.message : t('common.retry'));
-  } finally {
-    isLoading.value = false;
   }
 }
 
-function openPreview(scenario: ScenarioItem): void {
+/** :param scenario: 明确预览对象。:param event: 真实触发元素。:returns: 打开预览并让抽屉关闭时可恢复原按钮焦点。 */
+function openPreview(scenario: ScenarioItem, event: MouseEvent): void {
+  const trigger = event.currentTarget as HTMLElement;
+  const button = trigger.tagName === 'BUTTON' ? trigger : trigger.querySelector<HTMLButtonElement>('.scenarios-view__preview-button');
+  button?.focus({ preventScroll: true });
   previewScenarioId.value = scenario.id;
   previewOpen.value = true;
 }
@@ -87,35 +92,18 @@ function openEdit(scenario: ScenarioItem): void {
 
 /** :returns: 临时共享先明确拒绝，不生成可被误解为已保存共享的草稿。 */
 function captureFromCurrent(): void {
-  const shared = sessionStore.sessions.find((session) => session.share_id || session.actual_share_id || session.actual_adapter_kind === 'screen_share');
-  if (shared) {
-    toast.warning(t('scenarios.transientCaptureTitle'), t('scenarios.transientCaptureDetail', { id: shared.window_id }));
+  const captured = captureScenarioState({ sessions: sessionStore.sessions, runtime: runtime.runtime,
+    volume: runtime.systemVolume, folderId: folderId.value });
+  if (!captured.draft) {
+    toast.warning(t('scenarios.transientCaptureTitle'), t('scenarios.transientCaptureDetail', { id: captured.sharedWindowId }));
     return;
   }
-  const draft: ScenarioDraft = createEmptyDraft();
-  draft.name = '';
-  draft.folderId = folderId.value;
-  draft.bigScreenModeState = 'set';
-  // 旧预案只支持两个固定预设；手动布局默认保持，不强行投影成窗口1全屏。
-  if (runtime.runtime?.big_screen_mode === 'custom') draft.bigScreenModeState = 'unset';
-  else draft.bigScreenMode = runtime.runtime?.big_screen_mode ?? 'single';
-  draft.volumeState = 'set';
-  draft.volumeLevel = runtime.systemVolume.level;
-
-  draft.windows = draft.windows.map((win) => {
-    const session = sessionStore.byWindowId(win.windowId);
-    if (!session?.source_id) return { ...win, sourceState: 'unset' };
-    return {
-      ...win,
-      sourceState: 'set',
-      sourceId: session.source_id,
-      autoplay: true,
-      resume: false,
-    };
-  });
-
+  const omitted = captured.omittedWindowIds.map(id => t('scenarios.captureWindow', { id }));
+  if (captured.omittedSystemVolume) omitted.push(t('scenarios.captureSystemVolume'));
+  if (omitted.length) toast.warning(t('scenarios.partialCaptureTitle'),
+    t('scenarios.partialCaptureDetail', { items: omitted.join('、') }));
   editingScenario.value = null;
-  prefillDraft.value = draft;
+  prefillDraft.value = captured.draft;
   editOpen.value = true;
 }
 
@@ -181,8 +169,13 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
       </template>
     </FPageHeader>
 
-    <ScenarioDirectoryTools v-model:folder-id="folderId" v-model:search="search" v-model:selected="selected" />
-    <section class="scenarios-view__grid">
+    <ScenarioDirectoryTools v-model:folder-id="folderId" v-model:search="search" v-model:selected="selected"
+      v-model:busy="batchBusy" :visible-ids="visibleIds" />
+    <n-alert v-if="scenarioStore.loadError" type="error" title="预设列表读取失败" role="alert">
+      <p>{{ scenarioStore.loadError }}<template v-if="scenarioStore.scenarios.length"> · 下方保留上次读取的内容。</template></p>
+      <n-button :loading="isLoading" @click="refresh">重新读取</n-button>
+    </n-alert>
+    <section class="scenarios-view__grid" :aria-busy="isLoading || batchBusy">
       <template v-if="isLoading && sortedScenarios.length === 0">
         <n-card v-for="i in 4" :key="i" size="small">
           <n-skeleton text width="50%" />
@@ -191,7 +184,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
         </n-card>
       </template>
 
-      <template v-else-if="sortedScenarios.length === 0">
+      <template v-else-if="sortedScenarios.length === 0 && !scenarioStore.loadError">
         <FEmptyState :title="search.trim() ? '没有匹配的预设' : '当前目录没有预设'" :description="search.trim() ? '试试其他名称，或清除搜索条件。' : t('scenarios.emptyDesc')">
           <n-button v-if="search.trim()" @click="search = ''">清除搜索</n-button>
           <template v-else>
@@ -207,14 +200,14 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
         </FEmptyState>
       </template>
 
-      <template v-else>
+      <template v-else-if="sortedScenarios.length">
         <n-card
           v-for="scenario in sortedScenarios"
           :key="scenario.id"
           size="small"
           hoverable
           :class="{ 'scenarios-view__card--pinned': scenario.sort_order > 0 }"
-          @click="openPreview(scenario)"
+          @click="openPreview(scenario, $event)"
         >
           <template #header>
             <div class="scenarios-view__card-header">
@@ -222,12 +215,13 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
                 <FIcon name="pin_24_filled" /> {{ t('scenarios.pinned') }}
               </span>
               <span v-else class="scenarios-view__eyebrow">{{ t('scenarios.label') }}</span>
-              <h3 class="scenarios-view__card-title">{{ scenario.name }}</h3>
+              <h3 class="scenarios-view__card-title"><button type="button" class="scenarios-view__preview-button"
+                :aria-label="`查看预设 ${scenario.name}`" @click.stop="openPreview(scenario, $event)">{{ scenario.name }}</button></h3>
             </div>
           </template>
           <template #header-extra>
             <div class="scenarios-view__card-actions" @click.stop>
-              <n-checkbox :checked="selected.includes(scenario.id)" :aria-label="'选择'+scenario.name"
+              <n-checkbox :checked="selected.includes(scenario.id)" :disabled="batchBusy" :aria-label="'选择'+scenario.name"
                 @update:checked="selected = $event ? [...selected,scenario.id] : selected.filter(id=>id!==scenario.id)" />
               <n-button
                 quaternary
@@ -350,6 +344,21 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
   font-size: var(--fontSizeBase400);
   font-weight: 600;
 }
+
+.scenarios-view__preview-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.scenarios-view__preview-button:hover { color: var(--colorBrandForeground1); text-decoration: underline; }
 
 .scenarios-view__eyebrow {
   font-size: var(--fontSizeBase200);

@@ -13,14 +13,24 @@ import { useAuthStore } from '@/stores/auth';
 const folderId = defineModel<number | null>('folderId', { required: true });
 const selected = defineModel<number[]>('selected', { required: true });
 const search = defineModel<string>('search', { required: true });
+const props = defineProps<{ visibleIds: number[] }>();
+const emit = defineEmits<{ (event: 'update:busy', value: boolean): void }>();
 const store = useScenarioStore(), dialog = useDialog(), auth = useAuthStore();
 const busy = ref(false), error = ref(''), results = ref<string[]>([]), modal = ref(false);
 const editing = ref<number | null>(null), name = ref(''), parent = ref<number | null>(null), destination = ref<number>(0);
 const currentFolder = computed(() => store.folders.find(folder => folder.id === folderId.value));
 const options = computed(() => [{ label: '/', value: 0 }, ...store.folders.map(folder => ({ label: directoryPath(folder.id, store.folders), value: folder.id }))]);
-let alive = true;
+let alive = true, scopeRevision = 0;
 onBeforeUnmount(() => { alive = false; });
-watch(folderId, () => { if (!busy.value) selected.value = []; });
+watch(busy, value => emit('update:busy', value), { flush: 'sync' });
+/** :returns: 筛选或目录改变时清理隐藏选择，已确认批次独立保留。 */
+function pruneSelection(): void {
+  const visible = new Set(props.visibleIds);
+  const next = selected.value.filter(id => visible.has(id));
+  if (next.length !== selected.value.length) selected.value = next;
+}
+watch([folderId, search], () => { scopeRevision++; pruneSelection(); }, { flush: 'sync' });
+watch(() => props.visibleIds, pruneSelection, { deep: true, flush: 'sync' });
 
 /** :param edit: 是否修改当前目录。:returns: 可改名称和父目录的小卡片。 */
 function editFolder(edit: boolean): void {
@@ -34,32 +44,45 @@ async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Pr
   if (busy.value) return;
   const generation = clientConnection.captureGeneration(), user = auth.user?.id;
   const current = () => alive && generation === clientConnection.captureGeneration() && user === auth.user?.id;
-  if (action === 'delete' || action === 'folder-delete') {
-    if (!await dialog.danger({ title: '确认删除？', description: action === 'folder-delete' ? '只删除空目录；非空目录会被拒绝。' : `删除所选${selected.value.length}个预设。`, confirmLabel: '删除' }) || !current()) return;
-  }
+  pruneSelection();
+  const batch = selected.value.map(id => ({ id, path: store.scenarios.find(item => item.id === id)?.path
+    ?? `/${store.scenarios.find(item => item.id === id)?.name ?? id}` }));
+  if ((action === 'delete' || action === 'move') && batch.length === 0) return;
+  const revision = scopeRevision, target = destination.value || null;
+  const targetLabel = options.value.find(item => item.value === destination.value)?.label ?? '/';
+  const folder = folderId.value, folderParent = currentFolder.value?.parent_id ?? null;
+  const folderPath = directoryPath(folder, store.folders), editId = editing.value, nextName = name.value, nextParent = parent.value;
   busy.value = true; error.value = ''; results.value = [];
   try {
+    if (action === 'delete' || action === 'folder-delete' || action === 'move') {
+      const paths = batch.map(item => item.path).join('\n');
+      const accepted = action === 'move'
+        ? await dialog.confirm({ title: `移动 ${batch.length} 个预设？`, description: `${paths}\n目标：${targetLabel}`, confirmLabel: '移动所选' })
+        : await dialog.danger({ title: action === 'folder-delete' ? '删除空目录？' : `删除 ${batch.length} 个预设？`,
+          description: action === 'folder-delete' ? `${folderPath}\n只删除空目录；非空目录会被拒绝。` : paths, confirmLabel: '删除' });
+      if (!accepted || !current()) return;
+      if (revision !== scopeRevision) { error.value = '目录或搜索条件已改变，本次操作未发送。'; return; }
+    }
     if (action === 'save') {
-      if (editing.value === null) await scenarioDirectoryApi.create(name.value, parent.value);
-      else await scenarioDirectoryApi.update(editing.value, name.value, parent.value);
+      if (editId === null) await scenarioDirectoryApi.create(nextName, nextParent);
+      else await scenarioDirectoryApi.update(editId, nextName, nextParent);
       if (current()) modal.value = false;
-    } else if (action === 'folder-delete' && folderId.value !== null) {
-      await scenarioDirectoryApi.remove(folderId.value);
-      if (current()) folderId.value = currentFolder.value?.parent_id ?? null;
+    } else if (action === 'folder-delete' && folder !== null) {
+      await scenarioDirectoryApi.remove(folder);
+      if (current() && folderId.value === folder) folderId.value = folderParent;
     } else {
-      for (const id of [...selected.value]) {
+      for (const { id, path } of batch) {
         if (!current()) break;
-        const path = store.scenarios.find(item => item.id === id)?.path ?? String(id);
         try {
-          if (action === 'move') await scenarioDirectoryApi.move(id, destination.value || null);
+          if (action === 'move') await scenarioDirectoryApi.move(id, target);
           else await store.remove(id);
-          if (current()) { results.value.push(`${path}：成功`); selected.value = selected.value.filter(item => item !== id); }
+          if (current()) { results.value.push(`${path}：${action === 'move' ? '已移动' : '已删除'}`); selected.value = selected.value.filter(item => item !== id); }
         } catch (failure) { if (current()) results.value.push(`${path}：${failure instanceof Error ? failure.message : '失败'}`); }
       }
     }
     if (current()) await store.refresh();
   } catch (failure) { if (current()) error.value = failure instanceof Error ? failure.message : '操作失败'; }
-  finally { if (alive) busy.value = false; }
+  finally { if (alive) { busy.value = false; pruneSelection(); } }
 }
 </script>
 <template>
@@ -73,6 +96,7 @@ async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Pr
       <n-select v-model:value="destination" :options="options" :disabled="busy" aria-label="预设移动目标" style="width:240px" />
       <n-button :disabled="busy" @click="execute('move')">移动到…</n-button><n-button type="error" secondary :disabled="busy" @click="execute('delete')">删除所选</n-button>
       <n-button quaternary :disabled="busy" @click="selected = []">取消选择</n-button></div>
+    <p v-if="busy" role="status">正在处理已选预设；结果将按原路径逐项显示。</p>
     <n-alert v-if="error" type="error">{{ error }}</n-alert>
     <n-alert v-if="results.length" type="info"><p v-for="result in results" :key="result">{{ result }}</p></n-alert>
     <n-modal v-model:show="modal" preset="card" title="预设目录" style="width:min(440px,calc(100vw - 32px))">

@@ -149,6 +149,7 @@ export const useRuntimeStore = defineStore('runtime', {
           useDisplayStore().$reset();
           this.runtime = null;
           this.venueAudioResult = null;
+          this.systemVolume = { level: 100, muted: false, systemSynced: false, backend: 'runtime_state' };
           this.sseLastUpdate = 0;
         },
         saveProfile: async (nextProfile) => {

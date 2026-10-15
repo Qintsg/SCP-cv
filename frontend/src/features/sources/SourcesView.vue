@@ -112,6 +112,7 @@ function activeWindowLabel(id: number): string {
           <n-button type="error" secondary :disabled="busy" @click="execute('delete')">删除所选</n-button>
           <n-button quaternary :disabled="busy" @click="selected = []">取消选择</n-button>
         </div>
+        <p v-if="busy" class="sources-view__caption" role="status">正在处理已选媒体；结果将按原路径逐项显示。</p>
         <n-alert v-if="results.length" :type="results.some(item => !item.success) ? 'warning' : 'success'" title="逐项操作结果" :show-icon="false">
           <p v-for="item in results" :key="item.id">{{ item.path }} · {{ item.detail }}</p>
         </n-alert>
