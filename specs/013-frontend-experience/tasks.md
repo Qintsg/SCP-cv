@@ -70,3 +70,5 @@ T001–T002→T003–T004→US1→US2→US3→US4→Polish。同一文件串行�
 - [X] T024 为账户密码表单提供输入名称、错误关联和回车提交，保留原验证/安全流程；使用隔离组件验证，不修改真实账号口令，涉及`frontend/src/features/settings/tabs/AccountSettingsTab.vue`及设置DOM回归，追溯FR-007、US4/AC2（partial，MEDIUM）。
 
 本阶段验证见[接续验证](followup-verification.md)：新增51项、全量535/535通过，真实浏览器关键流程与PPT两模式12组尺寸通过。T013保留真实缩放/系统偏好未验项。
+
+本阶段已沿用授权推送两个仓库并部署D4网页013b/20651cb，原七身份/播放保持，18次HTTP/HTTPS资源核验通过，见[部署证据](deployment.md#013b接续部署)。
