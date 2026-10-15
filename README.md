@@ -1,6 +1,6 @@
 # SCP-cv
 
-SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。普通网页支持HTTP/HTTPS，裸地址默认HTTP；共享屏幕/应用/标签页到窗口1或2仍需要可信HTTPS，HTTP点击共享会确认跳转，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
+SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。配置HTTPS后，HTTP访问默认跳到同主机HTTPS并保留路径和查询；登录、控制及屏幕共享在HTTPS页面操作，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
 目录控制台已部署D4：[普通控制HTTP](http://192.168.5.194/)、[共享入口HTTPS](https://192.168.5.194/)，端口80/443。2026-10-14常驻012i固定代码`d67ce53`保留可信63号声音输出、私有网页/Office引擎与来源小卡片，原数据库、媒体、证书、两输出目标和Node不变。悬挂即原头戴1/2，统一Join1与旧字段兼容；媒体/预设按路径浏览，摄像机84–88及固定76保持。MediaMTX协作退出已修复，正式完整空闲组五个原进程均退出0、状态文件删除并通过API恢复，T040完成；不代表全部媒体长稳或实体声音验收。机械动作、DSP与实体来源效果仍未确认。使用说明见[现场控制台](docs/web-access.md)，当前证据见[部署记录](specs/012-directory-camera-console/verification/d4-deployment.md)。
 

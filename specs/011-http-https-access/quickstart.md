@@ -5,6 +5,6 @@
 3. VITE_BACKEND_HTTP_TARGET默认http://127.0.0.1:18444，VITE_BACKEND_HTTPS_TARGET默认https://127.0.0.1:18443；保留VITE_BACKEND_TARGET明确单协议配置，不静默重写。
 4. ControlHost网页推荐Authentication__CrossSiteCookies=false，默认true也支持独立HTTP同站Cookie；AllowedOrigins精确包含两网页Origin，receiver仍loopback18444，不公开其cap入口。
 5. pnpm --dir frontend test/build:web及.NET认证/全非Physical检查；本机正式ControlHost Simulation使用自有数据库，不启Player/墙面/电源。
-6. 真实浏览器测试HTTP普通登录、确认取消/键盘/主题宽度、确认跳转到实际HTTPS端口及正确页面。未信任证书时浏览器正常警告，不自动采集。
+6. 已配置TLS时，检查HTTP根页、深层路径和查询均307跳到实际HTTPS端口，HTTPS正常认证且不循环。旧HTTP页需刷新；无TLS开发才检查旧共享确认。未信任证书时浏览器正常警告，不自动采集。
 7. 显式信任公开CA的独立HTTPS测试客户端验证TLS/并发/会话往返，不能当浏览器或D4共享出画证明。
 8. 本机实现验证结束时关闭自有监听，Git/dist无证书秘密，证据记verification/local.md。后续用户授权的D4部署已启动HTTP5173/HTTPS5174；当前任务、私有路径、限定内网防火墙及验收边界见verification/d4-deployment.md，不沿用010旧端口启动第二组。

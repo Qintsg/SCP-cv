@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: SCP-cv 网页入口发现
-  version: 1.0.0
+  version: 1.1.0
   description: Vite网页服务只读入口，不属于ControlHost信令。
   license:
     name: Artistic-2.0
@@ -17,7 +17,7 @@ paths:
       tags: [web-access]
       operationId: discoverWebAccess
       summary: 获取同网页HTTPS端口
-      description: 无证书返回null，不猜测、不重定向。
+      description: HTTPS返回实际端口；配置TLS时HTTP先307跳到同主机HTTPS，无TLS开发入口返回null。
       security: []
       responses:
         '200':
@@ -44,3 +44,19 @@ paths:
                     nullable: true
         '405':
           description: 不允许写请求
+        '307':
+          description: HTTP进入同主机HTTPS入口，保留请求路径与查询
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+                format: uri
+            Cache-Control:
+              schema:
+                type: string
+                enum: [no-store]
+        '400':
+          description: 主机或请求目标无效
+        '503':
+          description: 已配置HTTPS但安全入口尚未就绪

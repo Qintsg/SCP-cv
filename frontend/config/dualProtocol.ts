@@ -5,6 +5,17 @@ import type { Plugin, PreviewServer, ProxyOptions, ViteDevServer } from 'vite';
 
 export const ACCESS_PATH = '/.well-known/scp-cv-access';
 
+/** :param host: 原HTTP主机头。:param path: 原请求路径/查询。:param port: 实际HTTPS端口。:returns: 同主机安全入口；畸形输入明确拒绝。 */
+export function httpsRedirectTarget(host: string | undefined, path: string, port: number): string | null {
+  if (!host || !path.startsWith('/') || /[^\x21-\x7e]/.test(path)) return null;
+  try {
+    const target = new URL(`https://${host}`);
+    if (!target.hostname || target.username || target.password || target.pathname !== '/' || target.search || target.hash) return null;
+    target.port = port === 443 ? '' : String(accessPort(String(port), 443));
+    return target.origin + path;
+  } catch { return null; }
+}
+
 /** :param value: 配置值。:param fallback: 默认端口。:returns: 严格的1..65535整数；不接受部分数字。 */
 export function accessPort(value: string | undefined, fallback: number): number {
   if (!value?.trim()) return fallback;
@@ -77,6 +88,16 @@ export function dualProtocolPlugin(tls: ServerOptions | undefined, httpsPort = 5
   async function configure(server: ViteDevServer | PreviewServer, primaryPort: number, host: string | boolean | undefined): Promise<void> {
     if (tls && primaryPort === httpsPort) throw new Error('HTTP与HTTPS网页入口必须使用不同端口。');
     server.middlewares.use((req, res, next) => {
+      if (tls && !(req.socket as TLSSocket).encrypted) {
+        res.setHeader('Cache-Control', 'no-store');
+        if (!secureListening) { res.statusCode = 503; res.end(); return; }
+        const location = httpsRedirectTarget(req.headers.host, req.url ?? '/', httpsPort);
+        if (!location) { res.statusCode = 400; res.end(); return; }
+        res.statusCode = 307;
+        res.setHeader('Location', location);
+        res.end();
+        return;
+      }
       if (req.url?.split('?')[0] !== ACCESS_PATH) return next();
       res.setHeader('Cache-Control', 'no-store');
       res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -101,7 +122,7 @@ export function dualProtocolPlugin(tls: ServerOptions | undefined, httpsPort = 5
         });
       });
       secureListening = true;
-      server.config.logger.info(`  HTTPS 网页入口同时监听端口 ${httpsPort}（HTTP入口保持可用）。`);
+      server.config.logger.info(`  HTTPS 网页入口监听端口 ${httpsPort}，HTTP入口自动跳转到HTTPS。`);
     } catch {
       await dispose();
       throw new Error('HTTPS网页入口无法监听：请检查配置端口是否被占用。');

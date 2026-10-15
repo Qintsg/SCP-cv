@@ -68,3 +68,9 @@ T001→T002→US1(T003–005)→US2(T006–007)→US3(T008–010)→T011–013�
 - [x] T014 核对D4源码、进程/计划任务、原DataRoot和两块输出，完整发布运行包及网页；记录 verification/d4-deployment.md
 - [x] T015 提交并推送011源码到secondary，D4快进、安装独立包/私有叶证书和公开根；协作停旧组、冷备份数据库、启动双入口及原两窗
 - [x] T016 验收D4实际HTTP/HTTPS证书、认证隔离/状态、两窗在线及浏览器确认取消/跳转且零共享写；更新 verification/d4-deployment.md 和运维入口，提交推送最终证据并同步D4源码
+
+## Phase 8: HTTP默认跳转HTTPS（2026-10-15）
+
+- [x] T017 先覆盖同主机路径/查询、443/自定义端口、IPv6、畸形主机、GET/HEAD/POST、HTTPS不循环和无TLS开发行为：`frontend/scripts/dual-protocol.test.mjs`及新增socket回归。
+- [x] T018 在`frontend/config/dualProtocol.ts`接入默认307/no-store跳转；同步入口合同与使用文档，保持地址输入/共享许可/后端会话规则。
+- [ ] T019 验证类型/构建、相关入口回归、Redocly和SpecKit；推送两个仓库，D4快进并仅重启网页Node，核验HTTP跳转/HTTPS内容、原运行组及播放保持，记录`verification/https-default-20261015.md`。

@@ -456,6 +456,8 @@
 
 前端坑132–136记录配置与完成状态、部署核验、批量确认对象、主机/账号快照归属，以及旧响应式断点覆盖新布局的问题，见[前端体验记录](known-pitfalls/frontend-experience.md)。
 
+入口坑137记录HTTP跳转必须先于业务处理，以及方法/路径/端口和无循环验证，见[默认HTTPS入口](known-pitfalls/http-default-upgrade.md)。
+
 坑129记录固定RTSP默认传输的少量视频/零音频与TCP对照：SDP、短时Playing、配置端点和空WASAPI均不能证明完整出画/声音；按真实SETUP、包、解码与活动会话分层验证，见[可靠RTSP](known-pitfalls/directory-venue.md#坑129--rtsp可描述或短时playing不证明完整音视频传输)。本机红绿及D4隔离修复通过，正式新包和一小时待验。
 
 009的重复输入窗口、屏号/裁剪、重启不确定、版本与诊断边界见[大屏映射记录](known-pitfalls/video-wall-mapping.md)；历史坑21的门禁已在受限三输入范围内接续。

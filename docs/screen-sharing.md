@@ -2,7 +2,7 @@
 
 ## 当前实现状态
 
-2026-10-12普通网页双协议与目录控制台已部署D4，当前入口HTTP80/HTTPS443，旧5173/5174停止；本地开发默认仍5173/5174。普通功能不强制重定向；HTTP共享先确认跳转同主机HTTPS，再登录和主动点击，不自动采集。原用户证书不变，历史010出画证据不代替新参数验收，当前配置与结果见[012入口记录](../specs/012-directory-camera-console/verification/d4-deployment.md)。
+2026-10-15入口规则更新：D4的HTTP80默认跳转HTTPS443，保留原路径/查询；旧5173/5174停止。本机未配置TLS的开发环境仍提供HTTP。原用户证书保持，共享必须在HTTPS正常登录后主动选择内容，浏览器许可和历史现场验收边界保持，见[默认HTTPS记录](../specs/011-http-https-access/verification/https-default-20261015.md)。
 
 已接入网页显示控制页并部署到D4。正常可信HTTPS、真实登录/队列/两正式Worker完成两路连续312秒、十轮32次共享、普通换源及发布浏览器退出；原生DISPLAY2/3运动画面独立核对通过。有声双路360秒及12组网页音量/静音控制通过。详细版本、故障修复、原始证据和清理见[D4记录](../specs/010-browser-screen-share/verification/t016-d4.md)。
 
@@ -14,7 +14,7 @@ T013原生桥、本人认证API/领取复核、实际回读及网页声音区已
 
 ## 网页操作区
 
-普通控制台可通过HTTP或HTTPS登录，连接页裸地址默认HTTP，明确协议保持。HTTP不加密密码和控制内容，页面提供风险提示。HTTP点击“选择共享内容”会先说明HTTPS、证书警告和可能重新登录；“继续使用HTTP”不导航、不采集，“前往HTTPS”读取实际安全端口并跳转同主机的对应窗口页，不传会话/密码令牌。未配置入口或查询失败明确提示，不能猜端口；显式连接另一主机时应先直接打开该主机的控制台，不能悄悄更换共享目标。
+已配置TLS的网页入口自动将HTTP访问转到HTTPS，登录与控制在HTTPS进行。连接页仍兼容裸地址解析，建议直接填写HTTPS。旧HTTP页面应刷新；无TLS开发页保留共享前的确认和缺入口提示，不能自动采集或猜测端口。显式连接另一主机时，先打开该主机的HTTPS控制台。
 
 在可信HTTPS控制台登录后，打开“显示控制”，选择窗口1或窗口2，再主动点击“选择共享内容”，在浏览器原生选择器中确认要分享的屏幕、应用或标签页。另一目标可由第二个独立网页同时共享。默认只分享画面；需要声音时先勾选内容音频，并在取得实际音轨/后帧后明确开启声音。结束时点“停止共享”，或使用浏览器自己的停止分享。
 
@@ -141,4 +141,4 @@ SCP_CV_HTTPS_HOSTS=192.168.5.194,127.0.0.1
 
 ### 4. 分层检查
 
-新部署先分别访问`http://192.168.5.194/`和`https://192.168.5.194/`，验证各自登录/CSRF/普通操作、三轮往返与独立注销；HTTP确认应导航到实际HTTPS端口，取消无影响。发现接口`GET /.well-known/scp-cv-access`仅返回版本和HTTPS端口，未配置证书时端口null，不提供外部主机或秘密。确认浏览器正常信任证书后，在HTTPS再次主动选择自有内容。浏览器安全上下文、原生许可、指定Player实际后帧及停止释放分别成立才算共享可用，不把HTTPS200或页面测试当D4出画。011历史双入口验收见[旧部署记录](../specs/011-http-https-access/verification/d4-deployment.md)，旧010双Worker出画见[T016记录](../specs/010-browser-screen-share/verification/t016-d4.md)；当前012结果见[本轮部署记录](../specs/012-directory-camera-console/verification/d4-deployment.md)。
+新部署先检查HTTP返回307和准确的HTTPS Location，再检查HTTPS页面、登录/CSRF与只读状态；HTTPS自身不能重定向循环。发现接口在HTTPS返回版本和端口，HTTP同样跳转；无TLS开发时返回null。证书须正常受信，共享仍由用户主动选择内容。浏览器安全上下文、原生许可、指定Player实际后帧及停止释放分别验收，不以HTTPS200代替出画。历史双入口会话隔离记录见[旧部署记录](../specs/011-http-https-access/verification/d4-deployment.md)，当前跳转见[默认HTTPS记录](../specs/011-http-https-access/verification/https-default-20261015.md)。

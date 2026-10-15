@@ -176,7 +176,7 @@ export default {
     notConfigured: '未配置',
     origin: 'ControlHost 地址',
     originPlaceholder: '192.168.5.194 或 https://192.168.5.194',
-    protocolHint: '地址未写协议时默认 HTTP；明确填写 http:// 或 https:// 会保持原样。',
+    protocolHint: '地址未写协议时先按 HTTP 解析；网页服务启用 HTTPS 后，HTTP 访问会自动跳转。建议直接填写 HTTPS 地址。',
     packagedHttpsRequired: 'Windows/Android 封装客户端的认证仍使用受信 HTTPS；HTTP 双入口适用于网页。',
     displayName: '显示名称',
     displayNamePlaceholder: '例如：报告厅播放主机',
@@ -189,6 +189,6 @@ export default {
     openLogin: '登录此主机',
     backToConsole: '返回控制台',
     securityTitle: '安全说明',
-    securityHint: '主机配置不保存密码或令牌。网页普通控制可用 HTTP，但账号和控制数据不加密，请仅在可信内网使用；屏幕共享会提示前往 HTTPS。HTTPS 仍需正确证书与信任，不会自动降级。',
+    securityHint: '主机配置不保存密码或令牌。已配置 HTTPS 的网页服务会将 HTTP 访问转到 HTTPS，请正常信任服务器证书。未配置 TLS 的开发环境仍可使用 HTTP，数据不加密。',
   },
 } as const;

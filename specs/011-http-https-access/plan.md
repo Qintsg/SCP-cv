@@ -8,6 +8,8 @@
 
 HTTP主监听，配置TLS时增加独立HTTPS监听，共用Vite middleware。通过同源无秘密入口发现接口获得实际HTTPS端口；HTTP共享先确认再导航，不自动采集。按请求协议选择上游，认证及CSRF按协议分名。
 
+2026-10-15更新：TLS已配置时，HTTP middleware在业务处理前返回307与no-store，目标为原主机+实际HTTPS端口+原路径/查询；HTTPS正常提供内容，未配置TLS的开发服务保持原HTTP。发现接口同样遵循跳转，HTTPS仍返回原版本/端口JSON。纯目标构造及真实HTTP socket覆盖主机/端口/方法/零下游调用；D4正常TLS客户端核验跳转和内容。无应用源码或后端合同变更，只需网页Node重启。
+
 ## Technical Context
 
 **Language/Version**: TypeScript6/Vue3、Node现有运行时、C#/.NET10。
