@@ -73,4 +73,4 @@ T001→T002→US1(T003–005)→US2(T006–007)→US3(T008–010)→T011–013�
 
 - [x] T017 先覆盖同主机路径/查询、443/自定义端口、IPv6、畸形主机、GET/HEAD/POST、HTTPS不循环和无TLS开发行为：`frontend/scripts/dual-protocol.test.mjs`及新增socket回归。
 - [x] T018 在`frontend/config/dualProtocol.ts`接入默认307/no-store跳转；同步入口合同与使用文档，保持地址输入/共享许可/后端会话规则。
-- [ ] T019 验证类型/构建、相关入口回归、Redocly和SpecKit；推送两个仓库，D4快进并仅重启网页Node，核验HTTP跳转/HTTPS内容、原运行组及播放保持，记录`verification/https-default-20261015.md`。
+- [x] T019 验证类型/构建、相关入口回归、Redocly和SpecKit；推送两个仓库，D4快进并仅重启网页Node，核验HTTP跳转/HTTPS内容、原运行组及播放保持，记录`verification/https-default-20261015.md`。

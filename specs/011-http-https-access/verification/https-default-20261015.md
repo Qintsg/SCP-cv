@@ -19,4 +19,20 @@ HTTP socket回归是真实本机监听；HTTPS分支单测不等同真实握手�
 
 ## D4部署
 
-待同步已验证源码与网页，重启原网页任务并核验跳转、正常TLS内容和认证、原六个播放运行进程及两窗状态。旧网页、Node日志及原任务配置保留在私有部署目录，不复制用户证书或口令。
+已将`c4d62d2cbf379fcd00203324e65af2c9b6b26ab1`推送GitHub与内网GitLab，D4干净工作区正常快进；9个网页文件逐项核SHA256后替换，ZIP为`D182BA2DBB7792C575FDC2625A85F066908866843D1CF67EA00C1EA5B14705F6`，index为`6CCEDCC3079AFA2957A23B88F5EE627C12484726181ABEF6A5F455538CAA4BA3`。
+
+原网页和启动摘要保存在`D:/SCP-cv/.validation/https-default-20261015/frontend-dist-before`及`frontend-startup-manifest-before.json`，11个旧哈希资源保留。原Node日志和任务XML也已保存。停止原网页任务并通过原PID/启动时刻/持有句柄确认Node23616退出后，以原任务`ScpCvFrontend-012h-20261014`启动Node23932，仍在会话1并拥有80/443。TLS、根信任、防火墙和原任务参数未变。
+
+| D4检查 | 结果 |
+| --- | --- |
+| HTTP默认跳转 | 根页、带查询的媒体页、入口发现、HEAD深链、POST非业务测试路径，共5项均307/no-store且Location准确 |
+| 跟随跳转 | HTTP根页恰一次跳到HTTPS，200且index摘要一致，没有循环 |
+| HTTPS静态文件 | 9次请求全部200且逐文件摘要一致，正常验证证书 |
+| HTTPS发现 | 200，公布443 |
+| HTTPS代理认证 | 用现有CA正常校验，登录/CSRF/两窗状态/注销均200；口令与Cookie只留进程内存 |
+| 播放运行组 | Host10436、Supervisor27108、Player28752/19400、Audio18540、MediaMTX29576的路径/会话/启动时刻全部保持 |
+| 原播放与数据 | 窗口1仍源115/playing/1107、DISPLAY2；窗口2idle/772、DISPLAY3；原13源、声音/背景/静音/循环投影不变，健康Healthy |
+
+八文件证据归档在本机/D4的SHA256均为`57BCE88E364A001191056221CF09488587E8DCD4560015FC68B80E0BC264143D`；本机另行比较重启前后运行组与状态通过。自有脚本/证据在忽略的`.validation/https-default-20261015/`；未复制证书、口令、数据库或用户媒体。
+
+内嵌浏览器本次访问现场地址得到ERR_EMPTY_RESPONSE，错误页又受工具URL策略限制，浏览器导航未记通过；未修改浏览器代理或绕过策略。服务端跳转、正常TLS内容及认证由上述独立网络验证确认。不把本次入口检查扩展为媒体/采集/实体设备测试。

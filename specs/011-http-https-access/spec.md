@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-12
 
-**Status**: In progress — 2026-10-15追加HTTP默认跳转HTTPS；此前双入口历史见verification/d4-deployment.md
+**Status**: Complete — 2026-10-15默认HTTPS跳转、D4网页重启及独立TLS认证验证完成；边界见verification/https-default-20261015.md
 
 **Input**: 2026-10-15用户要求“访问http修改为默认跳转到https”，取代此前HTTP直接提供控制页的默认行为。证书继续使用用户提供的现有配置。
 
