@@ -56,3 +56,17 @@ T001–T002→T003–T004→US1→US2→US3→US4→Polish。同一文件串行�
 ## Phase 8: 用户追加部署授权（2026-10-15）
 
 - [X] T017 推送GitHub/GitLab并在D4干净工作区快进拉取；固定已测网页产物，备份并部署，核对HTTP/HTTPS、资产摘要、原进程及两窗状态不变：`specs/013-frontend-experience/deployment.md`与忽略的`.validation/deploy-013/`。不重启播放组、不发墙面/电源/声音/媒体指令；T013未验项不据部署完成。
+
+## Phase 9: Convergence
+
+2026-10-15接续检查FR-004至FR-008、US2/US3/US4相关验收、当前状态捕获及五项宪章原则。发现7项可实现缺口（3项contradicts、4项partial；1项CRITICAL、3项HIGH、3项MEDIUM），按下列任务收敛。012未勾项主要是现场验收，用户暂挂的摄像机机位不在本轮恢复；T013人工偏好/缩放仍单独验证。
+
+- [X] T018 修复显示器绑定在途重复提交和可变目标导致的错误成功提示；冻结请求窗口/显示器，提交期间明确等待，卸载/换主机/换账号后抑制迟到提示；用延迟响应组件测试覆盖，涉及`frontend/src/features/settings/tabs/DisplaySettingsTab.vue`及`frontend/scripts/settings-experience.test.mjs`，追溯FR-005/006、US3/AC1–2、Constitution I（contradicts，CRITICAL）。
+- [X] T019 使媒体/预设选择范围随目录和筛选结果保持可见，确认框固定本次对象/目标并列出路径，处理确认期间改选和忙时切目录；覆盖批量逐项失败与零意外请求，涉及`frontend/src/features/sources/useSourceSelection.ts`、`ScenarioDirectoryTools.vue`及相关目录回归，追溯FR-004/006、US2/AC2（contradicts，HIGH）。
+- [X] T020 原子提交预设列表与目录的同次刷新，保留旧快照及持久错误/重试入口，不把失败显示为空目录；覆盖部分读取失败与迟到响应，涉及`frontend/src/stores/scenarios.ts`、`ScenariosView.vue`及组件回归，追溯FR-006、Edge Cases网络失败（partial，HIGH）。
+- [X] T021 为预设预览提供原生键盘入口，关闭后返回触发位置，不让预览触发激活；涉及`ScenariosView.vue`、`ScenarioPreviewDrawer.vue`及DOM回归，追溯FR-007、US4/AC2（partial，MEDIUM）。
+- [X] T022 “从当前状态生成”依据在线实际源/实际播放状态生成草稿，拒绝暂态共享，对未知/未确认窗口说明保持原状；不得保存失败换源的请求源；覆盖实际/请求不一致、离线、暂停/空闲及无HTTP副作用，涉及`frontend/src/features/scenarios/scenarioCapture.ts`、`ScenariosView.vue`及回归；同时在`stores/runtime.ts`切主机时清除旧系统音量可信标记，追溯FR-005/006、US3/AC2（contradicts，HIGH）。
+- [X] T023 清除PPT专注页旧五/六列和低高度隐藏名称规则，与现有两列动画/翻页布局统一；补页图/LibreOffice在768×560、840及1024宽度浏览器检查，涉及`PptFocusResponsive.css`、`PptFocusView.vue`，追溯FR-007/008、US4/AC1–2（partial，MEDIUM）。
+- [X] T024 为账户密码表单提供输入名称、错误关联和回车提交，保留原验证/安全流程；使用隔离组件验证，不修改真实账号口令，涉及`frontend/src/features/settings/tabs/AccountSettingsTab.vue`及设置DOM回归，追溯FR-007、US4/AC2（partial，MEDIUM）。
+
+本阶段验证见[接续验证](followup-verification.md)：新增51项、全量535/535通过，真实浏览器关键流程与PPT两模式12组尺寸通过。T013保留真实缩放/系统偏好未验项。
