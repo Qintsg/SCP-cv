@@ -98,7 +98,7 @@ test('来源选择只是草稿，明确应用才发送一次且保留其它音�
   assert.deepEqual(requests.filter(item => item.method === 'PUT').map(item => item.body), [{ source: 'scp_cv' }]);
   assert.equal(browser.document.querySelector('input[aria-label="手持话筒"]').value, '72');
   assert.match(browser.document.body.textContent, /最后发送请求：SCP-cv/);
-  assert.match(browser.document.body.textContent, /不代表实体路由已确认/);
+  assert.match(browser.document.body.textContent, /实际声音来源需现场确认/);
 });
 
 test('软件未就绪时仍可独立选择IP81，SCP-cv明确禁用', async () => {

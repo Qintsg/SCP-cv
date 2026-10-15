@@ -7,6 +7,7 @@ import { useRuntimeStore } from '@/stores/runtime';
 import { useSourceStore } from '@/stores/sources';
 import { useAuthStore } from '@/stores/auth';
 import SourceOpenCard from '@/features/sources/SourceOpenCard.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
 import type { MediaSourceItem } from '@/services/api';
 import CameraControlPad from './CameraControlPad.vue';
 import VenueAudioCard from './VenueAudioCard.vue';
@@ -80,8 +81,9 @@ onBeforeUnmount(() => { alive = false; });
 
 <template>
   <section class="venue-page">
-    <header><div><h1>摄像机与音量</h1><p>选择画面与机位，再调整现场声音。</p></div>
-      <n-button :loading="busy" :disabled="busy" @click="run('load')">刷新</n-button></header>
+    <FPageHeader title="摄像机与音量" description="打开摄像机画面、控制机位，或调整现场声音。">
+      <template #actions><n-button :loading="busy" :disabled="busy" @click="run('load')">刷新</n-button></template>
+    </FPageHeader>
     <n-alert v-if="error" type="error">{{ error }}</n-alert>
     <n-alert v-if="state?.simulation" type="warning">当前为仿真模式，所有音量结果均非实体设备状态。</n-alert>
     <div class="camera-grid">
@@ -97,9 +99,9 @@ onBeforeUnmount(() => { alive = false; });
     <n-card v-if="controlled" size="small"><CameraControlPad :camera="controlled" :clock-offset="clockOffset" /></n-card>
     <n-alert v-if="result" :type="['confirmed', 'simulated', 'unchanged'].includes(result.status) ? 'info' : 'warning'">{{ result.detail }}</n-alert>
     <div class="audio-grid" v-if="state">
-      <VenueAudioCard v-model="computer" title="大屏音量" caption="原工程电脑音频 · 百分比换算20档，非设备读回" :busy="busy" :disabled="!state.capabilities.computer_volume" @apply="run('apply', { computer_volume: computer })" />
-      <VenueAudioCard v-model="handheld" title="手持话筒" caption="原工程手持分组 · 百分比换算20档" :busy="busy" :disabled="!state.capabilities.handheld_volume" @apply="run('apply', { handheld_volume: handheld })" />
-      <VenueAudioCard v-model="headset" title="悬挂（头戴）话筒" caption="原工程头戴1/2 · 同一分组，百分比换算20档" :busy="busy" :disabled="!state.capabilities.headset_volume" @apply="run('apply', { headset_volume: headset })" />
+      <VenueAudioCard v-model="computer" title="大屏音量" caption="电脑音频通道 · 百分比换算20档，显示的是请求值" :busy="busy" :disabled="!state.capabilities.computer_volume" @apply="run('apply', { computer_volume: computer })" />
+      <VenueAudioCard v-model="handheld" title="手持话筒" caption="手持话筒分组 · 百分比换算20档" :busy="busy" :disabled="!state.capabilities.handheld_volume" @apply="run('apply', { handheld_volume: handheld })" />
+      <VenueAudioCard v-model="headset" title="悬挂（头戴）话筒" caption="头戴话筒1/2为同一分组 · 百分比换算20档" :busy="busy" :disabled="!state.capabilities.headset_volume" @apply="run('apply', { headset_volume: headset })" />
     </div>
     <div class="audio-extra" v-if="state">
       <VenueSourceCard v-model="audioSource" :busy="busy" :capabilities="state.capabilities" :requested="state.audio.source" @apply="run('apply', { source: audioSource })" />

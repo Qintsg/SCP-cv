@@ -192,7 +192,7 @@ function close(): void {
           </n-button>
         </n-alert>
         <n-form-item :label="t('sources.editDrawer.displayName')" required :feedback="t('sources.editDrawer.displayNameHint')">
-          <n-input v-model:value="draftName" :placeholder="t('sources.editDrawer.displayNamePlaceholder')" :disabled="saving" />
+          <n-input v-model:value="draftName" :placeholder="t('sources.editDrawer.displayNamePlaceholder')" :disabled="saving" :input-props="{ 'aria-label': t('sources.editDrawer.displayName') }" />
         </n-form-item>
 
         <template v-if="isUrlSource">
@@ -204,7 +204,7 @@ function close(): void {
         </template>
 
         <n-form-item :label="t('sources.editDrawer.preheat')" :feedback="t('sources.editDrawer.preheatHint')">
-          <n-switch v-model:value="draftPreheatEnabled" :disabled="saving">
+          <n-switch v-model:value="draftPreheatEnabled" :disabled="saving" :aria-label="t('sources.editDrawer.preheat')">
             <template #checked>{{ t('sources.editDrawer.preheatSwitch') }}</template>
             <template #unchecked>{{ t('sources.editDrawer.preheatSwitchOff') }}</template>
           </n-switch>

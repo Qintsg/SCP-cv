@@ -79,7 +79,7 @@ async function upgrade(trigger: HTMLElement): Promise<void> {
     <p v-if="view.phase === 'stopping'" class="screen-share__hint">{{ t('screenShare.stopPending') }}</p>
     <p v-if="view.captureActive" class="screen-share__hint">{{ t(view.localHasAudio ? 'screenShare.audioPresent' : 'screenShare.noAudio') }}</p>
     <details v-if="view.captureActive" class="screen-share__hint">
-      <summary>共享质量 · 清晰度优先</summary>
+      <summary>查看共享清晰度与网络状态</summary>
       <p>采集 {{ view.quality?.captureWidth ?? '未知' }} × {{ view.quality?.captureHeight ?? '未知' }}；
         发送 {{ view.quality?.sentWidth ?? '未知' }} × {{ view.quality?.sentHeight ?? '未知' }}</p>
       <p>实际 {{ view.quality?.bitrateMbps?.toFixed(2) ?? '未知' }} Mbps · {{ view.quality?.fps ?? '未知' }} fps；

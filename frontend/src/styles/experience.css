@@ -1,0 +1,33 @@
+/* 现场控制台公共几何与输入体验；业务规则与主题颜色仍由原组件/令牌拥有。 */
+.app-shell{height:var(--app-height,100dvh);min-height:0}
+.app-shell__content{padding-block:var(--spacingVerticalL);scroll-behavior:auto;scrollbar-gutter:stable}
+.app-shell .app-shell__content>div,.app-shell .app-shell__content>section{width:100%;max-width:1520px;margin-inline:auto;min-width:0}
+.app-shell__content :where(.n-card,.n-card__content,.n-card-header__main){min-width:0}
+.app-shell__content :where(.n-card-header__main){overflow-wrap:anywhere}
+.app-shell__content :where(.n-input,.n-select){max-width:100%}
+.app-shell__content :where(code){overflow-wrap:anywhere;font-family:'Cascadia Mono',Consolas,monospace}
+.app-shell__content :where(.n-button){max-width:100%}
+.app-shell__content :where(.n-button__content){white-space:normal;text-align:center}
+.app-shell__content :where(.sources-view__filters,.sources-view__batch){display:flex;align-items:center;gap:var(--spacingHorizontalS);flex-wrap:wrap;padding-block:var(--spacingVerticalM)}
+.app-shell__content :where(.sources-view__path){min-width:0;overflow-wrap:anywhere;font-family:Consolas,monospace}
+.app-shell__content :where(.sources-view__uri,.background-audio__item-main span){overflow-wrap:anywhere}
+.app-shell__content :where(.settings-view__grid,.audio-grid,.audio-extra){min-width:0}
+.app-shell__content :where(.background-audio__item-main){min-width:0}
+.app-shell__content :where(.background-audio__source-item,.background-audio__playlist-item){flex-wrap:wrap}
+.login-view__card .page-header{margin-bottom:var(--spacingVerticalXL)}
+.ppt-focus__topbar-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media(max-width:767px){
+ .app-shell__content{padding:var(--spacingVerticalM) var(--spacingHorizontalM) calc(var(--spacingVerticalXL) + env(safe-area-inset-bottom,0px))}
+ .app-shell__content :where(.n-button){min-height:var(--touch-target-min);min-width:var(--touch-target-min)}
+ .app-shell__content :where(.n-input,.n-select){--n-height:44px!important}
+ .app-shell__content :where(.n-checkbox){min-height:var(--touch-target-min);min-width:var(--touch-target-min);align-items:center}
+ .app-shell__content :where(.n-radio){min-height:var(--touch-target-min);align-items:center}
+ .app-shell__content :where(summary){min-height:var(--touch-target-min);align-content:center}
+ .settings-view .n-tabs-tab{min-height:var(--touch-target-min)}
+ .scenario-directories .tools>.n-input{min-width:0;flex-basis:100%}
+ .ppt-focus :where(.n-button){min-height:var(--touch-target-min);min-width:var(--touch-target-min)}
+ .login-view :where(.n-button,.n-input){min-height:var(--touch-target-min)}
+ :where(.n-drawer,[role='dialog']) :where(.n-button){min-height:var(--touch-target-min);min-width:var(--touch-target-min)}
+ :where(.n-drawer,[role='dialog']) :where(.n-input,.n-select){--n-height:44px!important}
+ :where(.n-input__input-el,.n-input__textarea-el){font-size:var(--fontSizeBase400)}
+}

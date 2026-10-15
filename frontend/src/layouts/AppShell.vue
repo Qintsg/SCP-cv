@@ -9,7 +9,7 @@
  *    内容滚动时由 0 级升至 2 级（E3）；
  *  - 首个可聚焦元素为「跳到主内容」（A4），landmark 完整（R14）。
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterView, useRoute, useRouter } from 'vue-router';
 
@@ -68,6 +68,17 @@ function onMainScroll(): void {
   scrolled.value = (mainRef.value?.scrollTop ?? 0) > 4;
 }
 
+/** :param path: 新页面路径。:returns: 导航后定位主内容；不重置同页查询与表单。 */
+watch(() => route.path, async () => {
+  await nextTick();
+  const main = mainRef.value;
+  if (!main) return;
+  main.scrollTop = 0;
+  main.scrollLeft = 0;
+  scrolled.value = false;
+  main.focus({ preventScroll: true });
+});
+
 onMounted(() => {
   mainRef.value?.addEventListener('scroll', onMainScroll, { passive: true });
 });
@@ -101,7 +112,7 @@ onBeforeUnmount(() => {
       <main
         id="main-content"
         ref="mainRef"
-        class="app-shell__content min-w-0 flex-1 overflow-x-hidden overflow-y-auto py-8 pb-12 scroll-smooth"
+        class="app-shell__content min-w-0 flex-1 overflow-y-auto py-8 pb-12"
         :class="navVariant === 'bottom' ? 'px-4' : 'px-8'"
         tabindex="-1"
       >

@@ -61,7 +61,8 @@ for (const mode of ['single', 'double', 'custom']) for (const width of [1440, 39
       assert.equal(browser.document.activeElement?.textContent.trim(), '播放控制');
       assert.equal(browser.document.activeElement?.getAttribute('aria-selected'), 'true');
     }
-    assert.match(browser.document.querySelector('.display-view__title')?.textContent ?? '', /窗口 2/);
+    assert.equal(browser.document.querySelectorAll('.display-view h1').length, 1);
+    assert.match(browser.document.querySelector('.display-view h1')?.textContent ?? '', /窗口 2/);
     assert.match(browser.document.querySelector('.screen-share__target')?.textContent ?? '', /窗口 2/);
     assert.ok(browser.document.querySelector('.playback-control'), '窗口2控制区不能被单屏旧判断遮住');
     await router.push('/display/big-left'); await flush();

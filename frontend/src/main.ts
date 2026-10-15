@@ -18,6 +18,7 @@ import { resolveNativePlatformAdapter, setNativePlatformAdapter } from './platfo
 import { installClientLifecycle } from './platform/lifecycle';
 import './styles/base.css';
 import './styles/tailwind.css';
+import './styles/experience.css';
 
 const pinia = createPinia();
 const app = createApp(App).use(pinia).use(i18n).use(router);

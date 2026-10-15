@@ -71,7 +71,8 @@ async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Pr
       <n-button v-if="folderId !== null" :disabled="busy" @click="execute('folder-delete')">删除空目录</n-button></div>
     <div v-if="selected.length" class="tools"><span>已选 {{ selected.length }} 项</span>
       <n-select v-model:value="destination" :options="options" :disabled="busy" aria-label="预设移动目标" style="width:240px" />
-      <n-button :disabled="busy" @click="execute('move')">移动到</n-button><n-button type="error" :disabled="busy" @click="execute('delete')">删除</n-button></div>
+      <n-button :disabled="busy" @click="execute('move')">移动到…</n-button><n-button type="error" secondary :disabled="busy" @click="execute('delete')">删除所选</n-button>
+      <n-button quaternary :disabled="busy" @click="selected = []">取消选择</n-button></div>
     <n-alert v-if="error" type="error">{{ error }}</n-alert>
     <n-alert v-if="results.length" type="info"><p v-for="result in results" :key="result">{{ result }}</p></n-alert>
     <n-modal v-model:show="modal" preset="card" title="预设目录" style="width:min(440px,calc(100vw - 32px))">

@@ -58,7 +58,7 @@
   align-items: center;
   gap: var(--spacing-s);
   flex-wrap: wrap;
-  min-width: 320px;
+  min-width: 0;
 }
 
 .sources-view__actions :deep(.f-input) {
@@ -307,12 +307,12 @@
 }
 
 .sources-view__table tbody tr:hover {
-  background: color-mix(in srgb, var(--colorBrandBackgroundSelected) 56%, transparent);
+  background: var(--colorNeutralBackground2);
   box-shadow: inset 3px 0 0 var(--colorBrandBackground);
 }
 
 .sources-view__table tbody tr:focus-within {
-  background: color-mix(in srgb, var(--colorBrandBackgroundSelected) 72%, transparent);
+  background: var(--colorBrandBackground2);
   box-shadow: inset 3px 0 0 var(--colorBrandBackground), var(--shadow-focus);
 }
 
@@ -346,6 +346,7 @@
 .sources-view__name {
   margin: 0;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .sources-view__on-air {
@@ -452,6 +453,6 @@
   }
 
   .sources-view__folders {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

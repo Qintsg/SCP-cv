@@ -13,10 +13,11 @@ import {
   NCard,
   NSlider,
   NSwitch,
-  NTag,
 } from 'naive-ui';
 
 import FIcon from '@/design-system/FIcon.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
+import DashboardWindows from './DashboardWindows.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
 import VideoWallMappingPanel from '@/features/runtime/VideoWallMappingPanel.vue';
 import { useDialog } from '@/composables/useDialog';
@@ -24,11 +25,9 @@ import { useThrottledSlider } from '@/composables/useThrottledSlider';
 import { useToast } from '@/composables/useToast';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useDeviceStore } from '@/stores/devices';
-import { useSessionStore } from '@/stores/sessions';
 
 const { t } = useI18n();
 const runtime = useRuntimeStore();
-const sessionStore = useSessionStore();
 const device = useDeviceStore();
 const toast = useToast();
 const dialog = useDialog();
@@ -58,18 +57,6 @@ const heroSubtitle = computed(() => {
   return t('dashboard.heroCaption');
 });
 
-const sseLabel = computed(() => {
-  switch (runtime.sseStatus) {
-    case 'connected':
-      return t('app.sse.connected');
-    case 'connecting':
-      return t('app.sse.connecting');
-    case 'reconnecting':
-      return t('app.sse.reconnecting');
-    default:
-      return t('app.sse.closed');
-  }
-});
 
 async function powerOnSplice(): Promise<void> {
   try {
@@ -112,22 +99,9 @@ const hasDeviceError = computed(() =>
 
 <template>
   <div class="dashboard">
-    <section class="dashboard__hero" :aria-label="t('dashboard.overview')">
-      <p class="dashboard__hero-eyebrow">{{ t('dashboard.heroEyebrow') }}</p>
-      <h2 class="dashboard__hero-title">{{ t('nav.dashboard') }}</h2>
-      <p class="dashboard__hero-caption">{{ heroSubtitle }}</p>
-      <div class="dashboard__hero-status">
-        <n-tag :type="runtime.sseStatus === 'connected' ? 'success' : 'warning'" round size="small">
-          {{ sseLabel }}
-        </n-tag>
-        <n-tag :type="sessionStore.hasOnlinePlayer ? 'success' : 'error'" round size="small">
-          {{ sessionStore.hasOnlinePlayer ? t('app.player.online', { count: sessionStore.onlinePlayerCount }) : t('app.player.offline') }}
-        </n-tag>
-        <n-tag :type="runtime.isDoubleScreen ? 'info' : 'default'" round size="small">
-          {{ runtime.bigScreenLabel }}
-        </n-tag>
-      </div>
-    </section>
+    <FPageHeader :title="t('nav.dashboard')" :description="heroSubtitle" />
+
+    <DashboardWindows />
 
     <n-alert v-if="hasDeviceError" type="error" :title="t('dashboard.deviceErrorTitle')">
       {{ t('dashboard.deviceErrorBody') }}
@@ -151,7 +125,7 @@ const hasDeviceError = computed(() =>
         />
         <div class="dashboard__mute-row">
           <span>{{ t('dashboard.enableSystemMute') }}</span>
-          <n-switch v-model:value="muteToggle" />
+          <n-switch v-model:value="muteToggle" :aria-label="t('dashboard.enableSystemMute')" />
         </div>
       </n-card>
 

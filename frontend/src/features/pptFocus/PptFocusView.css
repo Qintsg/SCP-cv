@@ -91,6 +91,8 @@
 }
 
 .ppt-focus__topbar-title {
+  margin: 0;
+  font-size: inherit;
   max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -323,11 +325,11 @@
 .ppt-focus__controls {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: minmax(240px, 320px) repeat(5, minmax(118px, auto));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
   justify-content: center;
   gap: var(--spacing-s);
-  width: fit-content;
+  width: min(100%, 760px);
   max-width: 100%;
   margin: 0 auto;
   /* safe-area：底部 home indicator 与横屏左右黑边给 env() 让位。 */
@@ -376,184 +378,4 @@
   justify-content: center;
   gap: var(--spacing-s);
   color: var(--colorNeutralForeground2);
-}
-
-@media (hover: none) {
-
-  .ppt-focus__next:hover,
-  .ppt-focus__progress:hover,
-  .ppt-focus__teleprompter:hover {
-    box-shadow: var(--ppt-focus-panel-shadow);
-    transform: none;
-  }
-
-  .ppt-focus__teleprompter:hover {
-    box-shadow:
-      var(--ppt-focus-panel-shadow),
-      var(--ppt-focus-prompter-ring);
-  }
-}
-
-/*
- * 断点对齐 Fluent / WindowSizeClass（DESIGN.md §2 Scale）：
- *   1199px：large 以下（< 1200）—— 缩窄缩略图与控制条；
- *    839px：expanded 以下（< 840）—— 切到单列布局；
- *    599px：compact（< 600）—— 控件全宽、字号略减。
- */
-@media (max-width: 1199px) {
-  .ppt-focus__layout {
-    grid-template-columns: minmax(128px, 148px) minmax(0, 1fr) minmax(280px, 320px);
-  }
-
-  .ppt-focus__controls {
-    grid-template-columns: minmax(220px, 1fr) repeat(5, minmax(108px, auto));
-  }
-}
-
-@media (max-width: 839px) {
-  .ppt-focus__layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr) minmax(0, 0.78fr);
-  }
-
-  .ppt-focus__slide-rail {
-    display: none;
-  }
-
-  .ppt-focus__side {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 0.78fr) minmax(0, 1fr);
-  }
-
-  .ppt-focus__teleprompter {
-    grid-column: 1 / -1;
-  }
-
-  .ppt-focus__controls {
-    width: 100%;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .ppt-focus__media-picker {
-    grid-column: 1 / -1;
-  }
-
-  .ppt-focus__controls :deep(.f-button) {
-    min-width: 0;
-  }
-}
-
-@media (max-width: 599px) {
-  .ppt-focus__topbar {
-    align-items: center;
-    padding-block-start: max(var(--spacingVerticalS), env(safe-area-inset-top, 0px));
-    padding-block-end: var(--spacingVerticalS);
-    padding-inline-start: max(var(--spacingHorizontalL), env(safe-area-inset-left, 0px));
-    padding-inline-end: max(var(--spacingHorizontalL), env(safe-area-inset-right, 0px));
-  }
-
-  .ppt-focus__topbar-center {
-    flex: 1 1 auto;
-    justify-content: center;
-  }
-
-  .ppt-focus__topbar-center :deep(.n-tag) {
-    display: none;
-  }
-
-  .ppt-focus__topbar-progress {
-    flex: 0 0 auto;
-    font-size: var(--fontSizeBase200);
-  }
-
-  .ppt-focus__topbar-title {
-    max-width: 44vw;
-  }
-
-  .ppt-focus__side {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 1fr);
-  }
-
-  .ppt-focus__layout--remote {
-    grid-template-rows: minmax(0, 1fr);
-  }
-
-  .ppt-focus__next,
-  .ppt-focus__progress {
-    display: none;
-  }
-
-  .ppt-focus__teleprompter {
-    grid-column: auto;
-    min-height: 0;
-    padding: var(--spacing-m);
-  }
-
-  .ppt-focus__teleprompter-text {
-    font-size: var(--fontSizeBase400);
-    line-height: 1.7;
-  }
-
-  .ppt-focus__controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--spacing-xs);
-    border-radius: var(--borderRadiusMedium);
-  }
-
-  .ppt-focus__media-picker {
-    grid-column: 1 / -1;
-    width: 100%;
-  }
-
-  .ppt-focus__controls :deep(.f-button) {
-    width: 100%;
-    min-height: 48px;
-  }
-}
-
-@media (max-height: 760px) and (min-width: 600px) {
-  .ppt-focus__progress {
-    display: none;
-  }
-
-  .ppt-focus__side {
-    grid-template-rows: minmax(0, 0.7fr) minmax(0, 1fr);
-  }
-
-  .ppt-focus__teleprompter {
-    grid-row: auto;
-  }
-}
-
-@media (max-height: 620px) {
-  .ppt-focus__control-label {
-    display: none;
-  }
-
-  .ppt-focus__controls {
-    grid-template-columns: minmax(148px, 1fr) repeat(5, minmax(44px, auto));
-  }
-
-  .ppt-focus__controls :deep(.f-button) {
-    min-width: 44px;
-  }
-}
-
-@media (max-width: 479px) {
-  .ppt-focus__stage {
-    padding-inline: max(var(--spacing-xs), env(safe-area-inset-left, 0px));
-  }
-
-  .ppt-focus__teleprompter-text {
-    font-size: var(--fontSizeBase300);
-  }
-
-  .ppt-focus__media-picker {
-    grid-column: 1 / -1;
-  }
-
-  .ppt-focus__controls :deep(.f-button) {
-    min-width: 0;
-  }
 }

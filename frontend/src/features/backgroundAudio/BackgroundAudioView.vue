@@ -16,6 +16,7 @@ import {
 import AddSourceDrawer from '@/features/sources/AddSourceDrawer.vue';
 import SourceThumbnail from '@/features/sources/SourceThumbnail.vue';
 import FIcon from '@/design-system/FIcon.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
 import { useDialog } from '@/composables/useDialog';
 import { useToast } from '@/composables/useToast';
@@ -168,13 +169,8 @@ function setMute(muted: boolean): Promise<void> {
 
 <template>
   <div class="background-audio">
-    <header class="background-audio__hero">
-      <div class="background-audio__hero-copy">
-        <span class="background-audio__eyebrow">{{ t('backgroundAudio.routeTitle') }}</span>
-        <h2>{{ t('backgroundAudio.title') }}</h2>
-        <p>{{ t('backgroundAudio.subtitle') }}</p>
-      </div>
-      <div class="background-audio__hero-actions">
+    <FPageHeader :title="t('backgroundAudio.title')" :description="t('backgroundAudio.subtitle')">
+      <template #actions>
         <n-button :loading="busyAction === 'refresh'" @click="refreshAll">
           <template #icon><FIcon name="arrow_clockwise_20_regular" /></template>
           {{ t('backgroundAudio.refresh') }}
@@ -183,8 +179,8 @@ function setMute(muted: boolean): Promise<void> {
           <template #icon><FIcon name="add_24_regular" /></template>
           {{ t('backgroundAudio.addAudio') }}
         </n-button>
-      </div>
-    </header>
+      </template>
+    </FPageHeader>
 
     <section class="background-audio__deck">
       <n-card class="background-audio__player" content-style="padding:0">
@@ -198,7 +194,7 @@ function setMute(muted: boolean): Promise<void> {
           <div class="background-audio__now">
             <n-tag round :type="currentState?.playback_state === 'error' ? 'error' : 'info'">{{ statusLabel }}</n-tag>
             <h3>{{ currentSource?.name || t('backgroundAudio.standbyTitle') }}</h3>
-            <p>{{ currentSource?.uri || t('backgroundAudio.standbyHint') }}</p>
+            <p>{{ currentSource?.path || currentSource?.uri || t('backgroundAudio.standbyHint') }}</p>
           </div>
           <div class="background-audio__progress-row">
             <span>{{ formatDuration(currentState?.position_ms ?? 0) }}</span>
@@ -313,7 +309,7 @@ function setMute(muted: boolean): Promise<void> {
           <SourceThumbnail :source="item.source" />
           <div class="background-audio__item-main">
             <strong>{{ item.source_name }}</strong>
-            <span>{{ item.source.uri }}</span>
+            <span>{{ item.source.path || item.source.uri }}</span>
           </div>
           <n-tag v-if="item.id === currentState?.current_item_id" round type="success">{{ t('backgroundAudio.currentBadge') }}</n-tag>
           <n-button size="small" secondary @click="() => playItem(item)">{{ t('backgroundAudio.play') }}</n-button>

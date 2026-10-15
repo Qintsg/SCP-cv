@@ -29,7 +29,7 @@ const currentPath = computed(() => directoryPath(folderId.value, props.folders))
         <small v-if="folder.is_protected">内置</small>
       </button>
     </template>
-    <p class="directory-nav__path" :title="currentPath">{{ currentPath }}</p>
+    <p v-if="!compact" class="directory-nav__path" :title="currentPath">{{ currentPath }}</p>
   </nav>
 </template>
 <style scoped>

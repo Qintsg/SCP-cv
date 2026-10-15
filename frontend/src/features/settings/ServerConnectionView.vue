@@ -14,7 +14,7 @@ import {
   NTag,
 } from 'naive-ui';
 
-import FIcon from '@/design-system/FIcon.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
 import { getClientBuildTarget } from '@/platform';
 import { normalizeServerProfile } from '@/platform/connection';
 import { useAuthStore } from '@/stores/auth';
@@ -100,16 +100,7 @@ function openLogin(): void {
 <template>
   <main class="min-h-dvh bg-canvas px-4 py-8 text-foreground sm:px-6 lg:px-8">
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <header class="flex items-center gap-4">
-        <span class="grid size-12 shrink-0 place-items-center rounded-xl bg-brand text-white shadow-panel" aria-hidden="true">
-          <FIcon name="desktop_24_regular" :size="26" />
-        </span>
-        <div>
-          <p class="m-0 text-sm text-foreground-muted">SCP-cv</p>
-          <h1 class="m-0 text-2xl font-semibold">{{ t('serverConnection.title') }}</h1>
-          <p class="mt-1 text-sm text-foreground-muted">{{ t('serverConnection.subtitle') }}</p>
-        </div>
-      </header>
+      <FPageHeader :title="t('serverConnection.title')" :description="t('serverConnection.subtitle')" meta="SCP-cv" />
 
       <section class="grid gap-3 sm:grid-cols-2" :aria-label="t('serverConnection.layerStatus')">
         <n-card size="small" :title="t('serverConnection.controlLayer')">
@@ -131,6 +122,7 @@ function openLogin(): void {
             <n-input
               v-model:value="origin"
               inputmode="url"
+              :input-props="{ 'aria-label': t('serverConnection.origin') }"
               autocomplete="url"
               :disabled="probeState === 'checking'"
               :placeholder="t('serverConnection.originPlaceholder')"
@@ -139,6 +131,7 @@ function openLogin(): void {
           <n-form-item :label="t('serverConnection.displayName')">
             <n-input
               v-model:value="displayName"
+              :input-props="{ 'aria-label': t('serverConnection.displayName') }"
               :disabled="probeState === 'checking'"
               :placeholder="t('serverConnection.displayNamePlaceholder')"
             />

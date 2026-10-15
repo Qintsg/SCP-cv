@@ -50,7 +50,7 @@ const sseLabel = computed(() => {
   }
 });
 
-const playerType = computed<NTagType>(() => (sessions.hasOnlinePlayer ? 'success' : 'error'));
+const playerType = computed<NTagType>(() => sessions.onlinePlayerCount === 2 ? 'success' : sessions.hasOnlinePlayer ? 'warning' : 'error');
 const playerLabel = computed(() => (sessions.hasOnlinePlayer
   ? t('app.player.online', { count: sessions.onlinePlayerCount })
   : t('app.player.offline')));
@@ -66,19 +66,20 @@ const playerLabel = computed(() => (sessions.hasOnlinePlayer
       <span class="app-shell__brand-mark grid size-7 place-items-center rounded-md bg-brand font-semibold text-white sm:size-8" aria-hidden="true">S</span>
       <div class="app-shell__brand-meta hidden min-w-0 flex-col leading-none sm:flex">
         <p class="app-shell__brand-eyebrow m-0 text-xs tracking-[0.08em] text-foreground-muted uppercase">{{ t('app.brandEyebrow') }}</p>
-        <h1 class="app-shell__brand-title m-0 text-base font-semibold text-foreground">{{ t('app.brandTitle') }}</h1>
+        <p class="app-shell__brand-title m-0 text-base font-semibold text-foreground">{{ t('app.brandTitle') }}</p>
       </div>
     </div>
 
     <div class="app-shell__bar-meta inline-flex min-w-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
-      <n-tag :type="runtime.isDoubleScreen ? 'info' : 'default'" round size="small">
+      <n-tag class="app-shell__layout-tag" :type="runtime.isDoubleScreen ? 'info' : 'default'" round size="small">
         {{ runtime.bigScreenLabel }}
       </n-tag>
-      <n-tag :type="sseType" round size="small">
-        {{ sseLabel }}
+      <n-tag :type="sseType" round size="small" :title="sseLabel">
+        <span class="hidden sm:inline">{{ sseLabel }}</span>
+        <span class="sm:hidden">{{ runtime.sseStatus === 'connected' ? '已连接' : runtime.sseStatus === 'closed' ? '未连接' : '连接中' }}</span>
       </n-tag>
-      <n-tag :type="playerType" round size="small">
-        {{ playerLabel }}
+      <n-tag :type="playerType" round size="small" :title="playerLabel">
+        <span class="hidden sm:inline">{{ playerLabel }}</span><span class="sm:hidden">{{ sessions.onlinePlayerCount }}/2 在线</span>
       </n-tag>
       <span
         v-if="runtime.systemVolume.muted"

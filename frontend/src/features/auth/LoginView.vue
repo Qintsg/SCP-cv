@@ -13,6 +13,7 @@ import { NAlert, NButton, NCard, NForm, NFormItem, NInput } from 'naive-ui';
 import { useToast } from '@/composables/useToast';
 import { useAuthStore } from '@/stores/auth';
 import FIcon from '@/design-system/FIcon.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -57,10 +58,10 @@ async function submit(): Promise<void> {
         <FIcon name="tv_24_regular" :size="28" />
       </span>
     </div>
-    <n-card class="login-view__card" :title="t('auth.pageTitle')"
+    <n-card class="login-view__card"
       content-style="padding: 28px; padding-top: 8px; overflow: visible;"
       header-style="padding-bottom: 4px;">
-      <p class="login-view__subtitle">{{ t('auth.pageSubtitle') }}</p>
+      <FPageHeader :title="t('auth.pageTitle')" :description="t('auth.pageSubtitle')" />
       <n-form @submit.prevent="submit">
         <n-form-item :label="t('auth.username')" required>
           <n-input
@@ -68,6 +69,7 @@ async function submit(): Promise<void> {
             :placeholder="t('auth.usernamePlaceholder')"
             :disabled="submitting"
             autocomplete="username"
+            :input-props="{ 'aria-label': t('auth.username') }"
             @keydown.enter.prevent="submit"
           />
         </n-form-item>
@@ -79,6 +81,7 @@ async function submit(): Promise<void> {
             :placeholder="t('auth.passwordPlaceholder')"
             :disabled="submitting"
             autocomplete="current-password"
+            :input-props="{ 'aria-label': t('auth.password') }"
             @keydown.enter.prevent="submit"
           />
         </n-form-item>

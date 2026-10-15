@@ -11,12 +11,13 @@ import {
   NButton,
   NCheckbox,
   NCard,
-  NEmpty,
   NSkeleton,
   NTag,
 } from 'naive-ui';
 
 import FIcon from '@/design-system/FIcon.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
+import FEmptyState from '@/design-system/FEmptyState.vue';
 import ScenarioEditDrawer from './ScenarioEditDrawer.vue';
 import ScenarioPreviewDrawer from './ScenarioPreviewDrawer.vue';
 import { createEmptyDraft, hasRetiredActiveTargets, type ScenarioDraft } from './scenarioModel';
@@ -164,12 +165,8 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
 
 <template>
   <div class="scenarios-view">
-    <header class="scenarios-view__toolbar">
-      <div class="scenarios-view__heading">
-        <h2 class="scenarios-view__title">{{ t('scenarios.title') }}</h2>
-        <p class="scenarios-view__caption">{{ t('scenarios.caption') }}</p>
-      </div>
-      <div class="scenarios-view__actions">
+    <FPageHeader :title="t('scenarios.title')" :description="t('scenarios.caption')">
+      <template #actions>
         <n-button :loading="isLoading" :aria-label="t('scenarios.refreshAria')" @click="refresh">
           <template #icon><FIcon name="arrow_clockwise_20_regular" /></template>
         </n-button>
@@ -181,8 +178,8 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
           <template #icon><FIcon name="add_24_regular" /></template>
           {{ t('scenarios.create') }}
         </n-button>
-      </div>
-    </header>
+      </template>
+    </FPageHeader>
 
     <ScenarioDirectoryTools v-model:folder-id="folderId" v-model:search="search" v-model:selected="selected" />
     <section class="scenarios-view__grid">
@@ -195,11 +192,9 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
       </template>
 
       <template v-else-if="sortedScenarios.length === 0">
-        <n-empty :description="t('scenarios.emptyDesc')">
-          <template #icon>
-            <FIcon name="layer_24_regular" />
-          </template>
-          <template #extra>
+        <FEmptyState :title="search.trim() ? '没有匹配的预设' : '当前目录没有预设'" :description="search.trim() ? '试试其他名称，或清除搜索条件。' : t('scenarios.emptyDesc')">
+          <n-button v-if="search.trim()" @click="search = ''">清除搜索</n-button>
+          <template v-else>
             <n-button type="primary" @click="openCreate">
               <template #icon><FIcon name="add_24_regular" /></template>
               {{ t('scenarios.create') }}
@@ -209,7 +204,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
               {{ t('scenarios.captureFromState') }}
             </n-button>
           </template>
-        </n-empty>
+        </FEmptyState>
       </template>
 
       <template v-else>

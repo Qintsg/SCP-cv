@@ -26,6 +26,7 @@ import { useSourceStore } from '@/stores/sources';
 import type { StreamSourceCreate } from '@/services/api';
 import { pickUploadFile } from '@/platform/files';
 import { getNativePlatformAdapter } from '@/platform/native';
+import { directoryPath } from '../directories/directoryPath';
 
 const props = defineProps<{ open: boolean; folderId?: number | null }>();
 const emit = defineEmits<{
@@ -35,6 +36,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 const sourceStore = useSourceStore();
+const destinationPath = computed(() => directoryPath(props.folderId ?? null, sourceStore.folders));
 const toast = useToast();
 const { isCompact } = useWindowSizeClass();
 /** :returns: 手机确认/取消使用既有44px触控令牌，桌面保持紧凑尺寸。 */
@@ -236,6 +238,7 @@ async function addStreamSource(): Promise<void> {
   <!-- 使用既有--f-z-drawer层级；旧持久通知留在后面，上传失败仍由抽屉内Alert反馈。 -->
   <n-drawer v-model:show="isOpen" :z-index="7500" width="min(480px, 100vw)" placement="right">
     <n-drawer-content :title="t('sources.add.title')" closable>
+      <p class="source-add-destination">保存位置：<strong>{{ destinationPath }}</strong></p>
       <p class="add-source__desc">{{ t('sources.add.desc') }}</p>
 
       <n-tabs v-model:value="activeTab" type="line" :aria-label="t('sources.add.typeAria')">
@@ -257,10 +260,10 @@ async function addStreamSource(): Promise<void> {
             </div>
           </n-form-item>
           <n-form-item :label="t('sources.add.displayName')">
-            <n-input v-model:value="fileDisplayName" :placeholder="t('sources.add.displayNamePlaceholder')" />
+            <n-input v-model:value="fileDisplayName" :placeholder="t('sources.add.displayNamePlaceholder')" :input-props="{ 'aria-label': t('sources.add.displayName') }" />
           </n-form-item>
           <n-form-item :label="t('sources.add.preheat')">
-            <n-switch v-model:value="filePreheatEnabled">
+            <n-switch v-model:value="filePreheatEnabled" :aria-label="t('sources.add.preheat')">
               <template #checked>{{ t('sources.add.preheatSwitch') }}</template>
               <template #unchecked>{{ t('sources.add.preheatSwitchOff') }}</template>
             </n-switch>
@@ -274,13 +277,13 @@ async function addStreamSource(): Promise<void> {
 
         <n-tab-pane name="web" :tab="t('sources.add.tabWeb')">
           <n-form-item :label="t('sources.add.url')" required>
-            <n-input v-model:value="webUrl" placeholder="https://" :aria-label="t('sources.add.url')" />
+            <n-input v-model:value="webUrl" placeholder="https://" :input-props="{ 'aria-label': t('sources.add.url') }" />
           </n-form-item>
           <n-form-item :label="t('sources.add.webName')">
-            <n-input v-model:value="webName" :placeholder="t('sources.add.webNamePlaceholder')" />
+            <n-input v-model:value="webName" :placeholder="t('sources.add.webNamePlaceholder')" :input-props="{ 'aria-label': t('sources.add.webName') }" />
           </n-form-item>
           <n-form-item :label="t('sources.add.preheat')">
-            <n-switch v-model:value="webPreheatEnabled">
+            <n-switch v-model:value="webPreheatEnabled" :aria-label="t('sources.add.preheat')">
               <template #checked>{{ t('sources.add.preheatSwitch') }}</template>
               <template #unchecked>{{ t('sources.add.preheatSwitchOff') }}</template>
             </n-switch>
@@ -301,7 +304,7 @@ async function addStreamSource(): Promise<void> {
               :input-props="{ 'aria-label': t('sources.add.displayName') }" :disabled="uploading" />
           </n-form-item>
           <n-form-item :label="t('sources.add.preheat')">
-            <n-switch v-model:value="streamPreheatEnabled" :disabled="uploading" />
+            <n-switch v-model:value="streamPreheatEnabled" :disabled="uploading" aria-label="直播流预热" />
           </n-form-item>
           <n-alert type="info" :show-icon="true">{{ t('sources.add.streamHint') }}</n-alert>
         </n-tab-pane>
@@ -333,6 +336,8 @@ async function addStreamSource(): Promise<void> {
 </template>
 
 <style scoped>
+.source-add-destination { padding:var(--spacingVerticalS) var(--spacingHorizontalM); margin:0 0 var(--spacingVerticalM); border-radius:var(--borderRadiusMedium); background:var(--colorBrandBackground2); color:var(--colorNeutralForeground2); overflow-wrap:anywhere; }
+.source-add-destination strong { font-family:Consolas,monospace; color:var(--colorNeutralForeground1); }
 .add-source__desc {
   margin: 0 0 var(--spacingVerticalM);
   color: var(--colorNeutralForeground2);

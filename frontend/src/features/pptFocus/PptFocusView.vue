@@ -288,7 +288,7 @@ function exitFocus(): void {
       </n-button>
       <div class="ppt-focus__topbar-center">
         <n-tag type="info" size="small" round>{{ windowLabel }}</n-tag>
-        <span class="ppt-focus__topbar-title">{{ actualPresentationTitle }}</span>
+        <h1 class="ppt-focus__topbar-title">{{ actualPresentationTitle }}</h1>
         <n-tag :type="session?.playback_state === 'playing' ? 'success' : 'default'" size="small" round>
           {{ session?.playback_state_label || session?.playback_state || t('pptFocus.unknown') }}
         </n-tag>
@@ -423,3 +423,4 @@ function exitFocus(): void {
 </template>
 
 <style scoped src="./PptFocusView.css"></style>
+<style scoped src="./PptFocusResponsive.css"></style>

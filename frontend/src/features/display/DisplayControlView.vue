@@ -15,6 +15,7 @@ import {
 } from 'naive-ui';
 
 import FIcon from '@/design-system/FIcon.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
 import PlaybackControl from './PlaybackControl.vue';
 import SourcePicker from './SourcePicker.vue';
 import ScreenSharePanel from '../screen-share/ScreenSharePanel.vue';
@@ -94,13 +95,7 @@ function handleSourceOpened(): void {
       </label>
     </fieldset>
 
-    <header class="display-view__hero">
-      <p class="display-view__eyebrow">{{ t('display.windowEyebrow', { id: targetMeta?.windowId ?? '?' }) }}</p>
-      <h2 class="display-view__title">{{ targetTitle }}{{ t('display.titleSuffix') }}</h2>
-      <p class="display-view__caption">
-        {{ targetCaption }}
-      </p>
-    </header>
+    <FPageHeader :title="targetTitle + t('display.titleSuffix')" :description="targetCaption" />
 
     <n-alert
       v-if="commandObservation && !commandObservation.playerOnline"

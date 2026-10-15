@@ -5,10 +5,10 @@ export default {
   backgroundAudio: {
     routeTitle: '背景音乐',
     title: '背景音乐',
-    subtitle: '统一管理全局音频播放列表，现场播放由本机播放器进程输出。',
+    subtitle: '管理独立的背景音乐列表，声音由播放主机输出。',
     nowPlaying: '正在播放',
     standbyTitle: '背景音乐待机',
-    standbyHint: '从右侧音频源或下方播放列表中选择一首开始。',
+    standbyHint: '从音频源或播放列表中选择一首开始。',
     playlist: '播放列表',
     audioSources: '音频源',
     emptyPlaylist: '播放列表为空',

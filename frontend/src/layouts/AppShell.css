@@ -48,7 +48,9 @@
 }
 
 @media (max-width: 599px) {
+  .app-shell__bar-meta .app-shell__layout-tag { display: none; }
   .app-shell__bar-meta .n-tag {
-    font-size: var(--fontSizeBase100);
+    font-size: var(--fontSizeBase200);
   }
+  .app-shell__bar-meta .n-button { min-height: var(--touch-target-min); min-width: var(--touch-target-min); }
 }

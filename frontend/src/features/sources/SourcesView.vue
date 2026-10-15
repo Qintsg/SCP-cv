@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /** 目录优先的媒体文件管理：路径、类型筛选、多选结果与打开到小卡片。SCP-cv 2026-10-12。 */
-import { computed, ref } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NAlert, NButton, NCard, NCheckbox, NDropdown, NEmpty, NInput, NSelect, NTag, type DropdownOption } from 'naive-ui';
+import { NAlert, NButton, NCard, NCheckbox, NDropdown, NInput, NSelect, NTag, type DropdownOption } from 'naive-ui';
 import FIcon from '@/design-system/FIcon.vue';
+import FPageHeader from '@/design-system/FPageHeader.vue';
+import FEmptyState from '@/design-system/FEmptyState.vue';
 import { runDropdownAction } from '@/design-system/dropdownActions';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useToast } from '@/composables/useToast';
@@ -32,13 +34,25 @@ const path = computed(() => directoryPath(sourceStore.currentFolderId, sourceSto
 const protectedDirectory = computed(() => !!sourceStore.folders.find(folder => folder.id === sourceStore.currentFolderId)?.is_protected);
 const categoryModel = computed({ get: () => sourceStore.category, set: (value: SourceCategory) => sourceStore.setCategory(value) });
 const searchModel = computed({ get: () => sourceStore.searchKeyword, set: (value: string) => sourceStore.setSearchKeyword(value) });
+const hasFilters = computed(() => !!searchModel.value.trim() || categoryModel.value !== 'all');
+const loadError = ref('');
+const searchInput = ref<{ focus: () => void } | null>(null);
+const pathElement = ref<HTMLElement | null>(null);
+/** :returns: 目录卡片移除后，把键盘定位留在新目录，而非退回文档根。 */
+watch(() => sourceStore.currentFolderId, () => { void nextTick(() => pathElement.value?.focus({ preventScroll: true })); });
+/** :returns: 只清除搜索和类型，不改变当前目录或媒体。 */
+function clearFilters(): void {
+  sourceStore.setCategory('all'); sourceStore.setSearchKeyword('');
+  void nextTick(() => searchInput.value?.focus());
+}
 const categoryOptions = computed(() => ['all','ppt','video','audio','image','web','stream'].map(value => ({ value, label: t(`sources.cat.${value}Label`) })));
 const { selected, busy, destination, results, allSelected, destinations, toggle, toggleAll, execute } = useSourceSelection();
 /** :returns: 读取全量索引，呈现当前位置，不创建或移动任何文件。 */
 async function refresh(): Promise<void> {
   isLoading.value = true;
+  loadError.value = '';
   try { await sourceStore.refresh(); }
-  catch (error) { toast.error(t('sources.loadFail'), error instanceof Error ? error.message : t('common.retry')); }
+  catch (error) { loadError.value = error instanceof Error ? error.message : t('common.retry'); toast.error(t('sources.loadFail'), loadError.value); }
   finally { isLoading.value = false; }
 }
 const { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
@@ -62,25 +76,26 @@ function activeWindowLabel(id: number): string {
 
 <template>
   <div class="sources-view">
-    <header class="sources-view__toolbar">
-      <div class="sources-view__heading"><h2 class="sources-view__title">媒体文件</h2><p class="sources-view__caption">{{ sourceStore.filtered.length }} 个媒体源 · {{ path }}</p></div>
-      <div class="sources-view__actions">
-        <n-input v-model:value="searchModel" placeholder="搜索名称或路径" :input-props="{ 'aria-label': '搜索媒体名称或路径' }" clearable><template #prefix><FIcon name="search_20_regular" /></template></n-input>
+    <FPageHeader title="媒体文件" description="按目录管理文件，选好媒体后打开到窗口1或窗口2。">
+      <template #actions>
+        <n-input ref="searchInput" v-model:value="searchModel" placeholder="搜索名称或路径" :input-props="{ 'aria-label': '搜索媒体名称或路径' }" clearable><template #prefix><FIcon name="search_20_regular" /></template></n-input>
         <n-button :loading="isLoading" aria-label="刷新媒体文件" @click="refresh"><template #icon><FIcon name="arrow_clockwise_20_regular" /></template></n-button>
-        <n-button type="primary" :disabled="protectedDirectory || busy" @click="drawerOpen = true">上传 / 添加</n-button>
-      </div>
-    </header>
+        <n-button type="primary" :disabled="protectedDirectory || busy" @click="drawerOpen = true">上传或添加</n-button>
+      </template>
+    </FPageHeader>
     <div class="sources-view__layout" :class="{ 'sources-view__layout--mobile': isMobile }">
       <DirectoryNavigator v-if="!isMobile" v-model:folder-id="sourceStore.currentFolderId" :folders="sourceStore.folders" />
       <section class="sources-view__main">
         <DirectoryNavigator v-if="isMobile" v-model:folder-id="sourceStore.currentFolderId" :folders="sourceStore.folders" compact />
         <div class="sources-view__folder-bar">
-          <span class="sources-view__path">{{ path }}</span>
+          <span ref="pathElement" class="sources-view__path" :title="path" tabindex="-1">{{ path }}</span>
           <n-button size="small" aria-label="新建文件夹" :disabled="protectedDirectory || busy" @click="openFolderDialog">新建目录</n-button>
         </div>
         <div class="sources-view__filters">
           <n-select v-model:value="categoryModel" :options="categoryOptions" aria-label="媒体类型筛选" style="width:150px" />
           <n-checkbox v-model:checked="sourceStore.searchSubfolders">搜索包含子目录</n-checkbox>
+          <n-button v-if="hasFilters" quaternary size="small" @click="clearFilters">清除筛选</n-button>
+          <span class="sources-view__caption" role="status">{{ sourceStore.filtered.length }} 项</span>
           <span v-if="protectedDirectory" class="sources-view__caption">内置目录 · 配置只读</span>
         </div>
         <div v-if="childFolders.length" class="sources-view__folders">
@@ -101,7 +116,13 @@ function activeWindowLabel(id: number): string {
           <p v-for="item in results" :key="item.id">{{ item.path }} · {{ item.detail }}</p>
         </n-alert>
         <n-card content-style="padding:0; overflow-x:auto" :aria-busy="isLoading || busy">
-          <n-empty v-if="!sourceStore.filtered.length" :description="searchModel ? '未找到匹配媒体' : '当前目录没有媒体文件'" />
+          <FEmptyState v-if="loadError" title="媒体列表读取失败" :description="loadError"><n-button @click="refresh">重新读取</n-button></FEmptyState>
+          <div v-else-if="isLoading && !sourceStore.filtered.length" class="sources-view__loading" role="status">正在读取媒体文件…</div>
+          <FEmptyState v-else-if="!sourceStore.filtered.length" :title="hasFilters ? '没有匹配的媒体' : '当前目录没有媒体文件'"
+            :description="hasFilters ? '试试其他名称，或清除筛选条件。' : protectedDirectory ? '这里的内容由系统维护。' : '上传文件，或添加网页和直播流。'">
+            <n-button v-if="hasFilters" @click="clearFilters">清除筛选</n-button>
+            <n-button v-else-if="!protectedDirectory" type="primary" :disabled="busy" @click="drawerOpen = true">上传或添加</n-button>
+          </FEmptyState>
           <table v-else-if="!isMobile" class="sources-view__table">
             <thead><tr>
               <th scope="col"><n-checkbox :checked="allSelected" :disabled="busy || protectedDirectory" :aria-disabled="busy || protectedDirectory" aria-label="全选当前普通媒体" @update:checked="toggleAll" /></th>

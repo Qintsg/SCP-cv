@@ -33,7 +33,7 @@ const { t } = useI18n();
 <template>
   <nav
     v-if="!compact"
-    class="app-shell__nav sticky top-14 flex h-[calc(var(--app-height,100dvh)-3.5rem)] shrink-0 self-start flex-col gap-4 overflow-y-auto py-4"
+    class="app-shell__nav flex min-h-0 shrink-0 flex-col gap-4 overflow-y-auto py-4"
     :class="navVariant === 'drawer' ? 'w-60 bg-surface-subtle px-4' : 'w-[5.5rem] items-center bg-surface px-2'"
     :data-variant="navVariant"
     :aria-label="t('app.primaryNav')"

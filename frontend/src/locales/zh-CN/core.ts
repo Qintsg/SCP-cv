@@ -136,8 +136,8 @@ export default {
   },
   auth: {
     routeTitle: '登录',
-    pageTitle: '欢迎使用 SCP-cv 播放控制台',
-    pageSubtitle: '请使用管理员账号登录后再进入控制面板',
+    pageTitle: '登录 SCP-cv 播放控制台',
+    pageSubtitle: '使用管理员提供的账号登录。',
     username: '用户名',
     usernamePlaceholder: '请输入用户名',
     password: '密码',
