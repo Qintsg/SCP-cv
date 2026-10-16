@@ -41,7 +41,7 @@ ControlHost 是业务数据库的唯一写入者。控制端只访问 REST/SSE�
 - VLC/libVLC Windows x64 运行时
 - MediaMTX Windows x64
 
-Node 依赖通过仓库级 `.npmrc` 使用 `https://mirrors.cernet.edu.cn/npm/`。项目不提交 pnpm 锁文件，依赖版本以 `package.json` 中的精确版本为准。
+Node 依赖通过仓库级 `.npmrc` 使用 `https://registry.npmmirror.com/`（2026-10-16按维护要求选择淘宝镜像，原CERNET跳转节点失效）。项目不提交 pnpm 锁文件，依赖版本以 `package.json` 中的精确版本为准。前端工作区显式拒绝已核对、仅展示捐赠广告的`core-js`安装后脚本，其余依赖构建权限不放宽。
 
 ## 快速开始
 

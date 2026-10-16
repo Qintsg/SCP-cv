@@ -1,5 +1,7 @@
 # Feature Specification: 现场控制台前端体验优化
 
+2026-10-16后续组件库和布局重构以[014](../014-ant-design-console/spec.md)为准。013保留功能安全、请求归属及历史验证要求，不将旧视觉排布作为新Ant界面的限制；014尚未部署。
+
 **Feature Branch**: `main`（沿用当前分支）
 
 **Created**: 2026-10-15

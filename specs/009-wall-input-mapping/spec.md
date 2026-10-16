@@ -1,5 +1,7 @@
 # Feature Specification: 大屏输入组合与逆向协议接入
 
+2026-10-16后续UI需求由[014](../014-ant-design-console/spec.md)覆盖：一次明确应用，不再暴露保存草稿及常驻发送诊断。本文原协议、安全和历史验收边界不变；旧交互描述保留作历史，014尚未部署。
+
 **Feature Branch**: `main`（保留当前未提交工作，不切换分支）
 **Created**: 2026-10-09
 **Status**: Approved

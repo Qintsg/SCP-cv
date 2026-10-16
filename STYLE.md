@@ -20,6 +20,8 @@
 
 ## 3. TypeScript / Vue
 
+- 014前端使用真实Ant Design Vue组件与ConfigProvider主题；菜单、Slider、Drawer/Modal及通知按Ant事件/Slot接线，不保留旧组件库兼容套壳。主页面按路由加载；共享业务请求和危险确认必须复核主机/账号/页面归属。D4部署状态与本机验收分别记录。
+
 - API 类型集中在服务或 store 附近维护，避免组件内散落重复接口。
 - 控制台状态由 Pinia store 承载，组件只处理展示和局部交互。
 - 异步请求必须覆盖 loading、error、empty 或禁用态。
