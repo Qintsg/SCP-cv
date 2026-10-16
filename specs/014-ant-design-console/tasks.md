@@ -57,3 +57,9 @@ T001→T002→T003→T004；US1与外壳设计在基础完成后分片推进，U
 - [x] T017 为媒体库单源背景音频及目录操作的异步反馈补齐页面/主机/账号归属，冻结名称与目标；旧响应不得在新页面提示成功/失败或启动后续刷新，正常操作与失败反馈保留。先以延迟HTTP覆盖离页/换主机/换账号、正常提交及防重，涉及`frontend/src/features/sources/useSourceActions.ts`、`useSourceFolders.ts`、`SourcesView.vue`及相关真实DOM回归，追溯FR-004/009、US3/AC3–4、Constitution I（partial，HIGH）。
 
 本阶段完整前端601/601、Web/App类型与构建、56组页面/10组流程，以及390px/真实200%重命名键盘流程通过；41项新增归属回归覆盖失效/正常/原错误及恢复读取，详见[目录与归属收口](verification/20261017-directory-scope.md)。
+
+## Phase 8: Convergence
+
+2026-10-17进一步审计认证传输边界，新增一个CRITICAL contradicts：旧会话的401响应晚于新登录到达时，`api.requestJson`只复核主机代次，仍执行main的全局401回调并清除新用户。实际模块/内存HTTP红回归输出`unauthorizedCallbacks=1,currentUser=null`；当前401正对照通过。既有601不覆盖此时序，不提前推送或部署。
+
+- [ ] T018 CRITICAL 为JSON/XHR请求补齐认证寿命围栏并接入真实登录/退出/本地失效/初始化流程；旧401/成功响应不得清除或覆盖已成立的新登录、继续旧认证链路，当前401必须仍正常退出。先将本机真实模块红回归持久化，再覆盖迟到401/成功、当前401、XHR、同ID重新登录、初始化和认证操作交错；保留原CSRF/主机围栏/错误语义，不全局忽略401、不盲目重放或发现场指令。涉及`frontend/src/services/api.ts`、`stores/auth.ts`、`main.ts`及新增认证HTTP回归，追溯Constitution I、FR-009/011、US3/AC3–4（contradicts，CRITICAL）。

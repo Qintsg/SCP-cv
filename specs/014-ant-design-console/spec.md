@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-16
 
-**Status**: Implemented（本机验收完成，未部署）
+**Status**: Implemented — Phase 7本机验收完成，Phase 8认证传输竞态待修复；未部署
 
 **Input**: 仪表盘布局选好后直接应用，不再先保存草稿；删除发送状态、发送详情及上次发送布局。使用 Ant Design 重构前端，并参考同类开源项目重新优化布局，不照搬现有排布。
 
