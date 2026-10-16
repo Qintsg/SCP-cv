@@ -15,7 +15,7 @@ test('手机播控的停止等按钮至少44px，桌面仍保留紧凑尺寸', a
       const style = browser.document.createElement('style');
       style.textContent = result.code;
       browser.document.head.append(style);
-      browser.document.body.innerHTML = '<div data-v-playback-touch class="playback-control"><button class="n-button">停止共享</button></div>';
+      browser.document.body.innerHTML = '<div data-v-playback-touch class="playback-control"><button class="ant-btn">停止共享</button></div>';
       const minimum = browser.getComputedStyle(browser.document.querySelector('button')).minHeight;
       if (width === 390) assert.ok(parseFloat(minimum) >= 44, minimum);
       else assert.ok(!minimum || parseFloat(minimum) < 44, minimum);

@@ -389,11 +389,11 @@
   display: none;
 }
 
-.sources-view__mobile-pills :deep(.n-tabs-nav) {
+.sources-view__mobile-pills :deep(.ant-tabs-nav) {
   flex-shrink: 0;
 }
 
-.sources-view__mobile-pills :deep(.n-tabs-tab) {
+.sources-view__mobile-pills :deep(.ant-tabs-tab) {
   white-space: nowrap;
   padding: 4px 10px;
   font-size: 13px;

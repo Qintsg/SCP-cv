@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /**
- * 全局 Dialog 宿主：监听 useDialogStore 的状态，用 Naive UI 的 NModal 渲染单实例
+ * 全局 Dialog 宿主：监听 useDialogStore 的状态，用 Ant Modal 渲染单实例
  * 确认对话框。业务侧仍调用 useDialog().confirm(...) / danger(...)，保持原有 Promise
- * API 不变；本组件是 Pinia store → NUI 之间的桥接层。
+ * API 不变，保留危险操作确认与明确取消。
  *
  * 危险确认默认禁止 Esc / 遮罩点击关闭，但必须保留显式“取消”，让用户能
  * 在不误触危险动作的前提下安全退出。
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NButton, NModal } from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import AModal from 'ant-design-vue/es/modal';
 
 import { useDialogStore } from '@/composables/useDialog';
 
@@ -31,37 +32,35 @@ const isDanger = computed(() => variant.value === 'danger');
 </script>
 
 <template>
-  <n-modal
-    v-model:show="open"
-    preset="card"
+  <a-modal
+    v-model:open="open"
     :title="store.config?.title ?? ''"
     :mask-closable="dismissible"
-    :close-on-esc="dismissible"
+    :keyboard="dismissible"
     :closable="dismissible"
-    :auto-focus="true"
-    :trap-focus="true"
-    :block-scroll="true"
-    style="max-width: 480px"
-    @close="store.cancel"
+    :width="480"
+    :z-index="2200"
+    :focus-trigger-after-close="true"
+    @cancel="store.cancel"
   >
     <p v-if="store.config?.description" class="f-dialog-host__body">
       {{ store.config.description }}
     </p>
     <template #footer>
       <div class="f-dialog-host__actions">
-        <n-button :disabled="store.loading" @click="store.cancel">
+        <a-button :disabled="store.loading" @click="store.cancel">
           {{ cancelText }}
-        </n-button>
-        <n-button
-          :type="isDanger ? 'error' : 'primary'"
+        </a-button>
+        <a-button
+          type="primary" :danger="isDanger"
           :loading="store.loading"
           @click="store.accept"
         >
           {{ confirmText }}
-        </n-button>
+        </a-button>
       </div>
     </template>
-  </n-modal>
+  </a-modal>
 </template>
 
 <style scoped>

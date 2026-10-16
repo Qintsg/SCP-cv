@@ -1,7 +1,12 @@
 <!-- 预设目录与批量操作；每项结果独立显示，失败不自动重试。 -->
 <script setup lang="ts">
+import { selectAriaLabel as vSelectAriaLabel } from '@/design-system/selectAriaLabel';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
-import { NAlert, NButton, NInput, NModal, NSelect } from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import AInput from 'ant-design-vue/es/input';
+import AModal from 'ant-design-vue/es/modal';
+import ASelect from 'ant-design-vue/es/select';
 import DirectoryNavigator from '../directories/DirectoryNavigator.vue';
 import { directoryPath } from '../directories/directoryPath';
 import { scenarioDirectoryApi } from '@/services/scenarioDirectoryApi';
@@ -9,6 +14,8 @@ import { useScenarioStore } from '@/stores/scenarios';
 import { useDialog } from '@/composables/useDialog';
 import { clientConnection } from '@/platform/connection';
 import { useAuthStore } from '@/stores/auth';
+import { useBreakpoint } from '@/composables/useBreakpoint';
+import { nullableNumber } from '@/design-system/controlValue';
 
 const folderId = defineModel<number | null>('folderId', { required: true });
 const selected = defineModel<number[]>('selected', { required: true });
@@ -16,6 +23,7 @@ const search = defineModel<string>('search', { required: true });
 const props = defineProps<{ visibleIds: number[] }>();
 const emit = defineEmits<{ (event: 'update:busy', value: boolean): void }>();
 const store = useScenarioStore(), dialog = useDialog(), auth = useAuthStore();
+const { isMobile } = useBreakpoint();
 const busy = ref(false), error = ref(''), results = ref<string[]>([]), modal = ref(false);
 const editing = ref<number | null>(null), name = ref(''), parent = ref<number | null>(null), destination = ref<number>(0);
 const currentFolder = computed(() => store.folders.find(folder => folder.id === folderId.value));
@@ -87,26 +95,30 @@ async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Pr
 </script>
 <template>
   <div class="scenario-directories">
-    <DirectoryNavigator v-model:folder-id="folderId" :folders="store.folders" compact />
-    <div class="tools"><n-input v-model:value="search" clearable placeholder="在当前目录及子目录搜索预设" :input-props="{ 'aria-label': '搜索预设' }" />
-      <n-button :disabled="busy" @click="editFolder(false)">新建目录</n-button>
-      <n-button v-if="folderId !== null" :disabled="busy" @click="editFolder(true)">编辑目录</n-button>
-      <n-button v-if="folderId !== null" :disabled="busy" @click="execute('folder-delete')">删除空目录</n-button></div>
+    <DirectoryNavigator v-model:folder-id="folderId" :folders="store.folders" :compact="isMobile" />
+    <section class="scenario-library-content">
+    <div class="tools"><a-input v-model:value="search" allow-clear placeholder="在当前目录及子目录搜索预设" v-bind="{ 'aria-label': '搜索预设' }" />
+      <a-button :disabled="busy" @click="editFolder(false)">新建目录</a-button>
+      <a-button v-if="folderId !== null" :disabled="busy" @click="editFolder(true)">编辑目录</a-button>
+      <a-button v-if="folderId !== null" :disabled="busy" @click="execute('folder-delete')">删除空目录</a-button></div>
     <div v-if="selected.length" class="tools"><span>已选 {{ selected.length }} 项</span>
-      <n-select v-model:value="destination" :options="options" :disabled="busy" aria-label="预设移动目标" style="width:240px" />
-      <n-button :disabled="busy" @click="execute('move')">移动到…</n-button><n-button type="error" secondary :disabled="busy" @click="execute('delete')">删除所选</n-button>
-      <n-button quaternary :disabled="busy" @click="selected = []">取消选择</n-button></div>
+      <a-select v-select-aria-label="'预设移动目标'" v-model:value="destination" :options="options" :disabled="busy" aria-label="预设移动目标" style="width:240px" />
+      <a-button :disabled="busy" @click="execute('move')">移动到…</a-button><a-button danger  :disabled="busy" @click="execute('delete')">删除所选</a-button>
+      <a-button type="text" :disabled="busy" @click="selected = []">取消选择</a-button></div>
     <p v-if="busy" role="status">正在处理已选预设；结果将按原路径逐项显示。</p>
-    <n-alert v-if="error" type="error">{{ error }}</n-alert>
-    <n-alert v-if="results.length" type="info"><p v-for="result in results" :key="result">{{ result }}</p></n-alert>
-    <n-modal v-model:show="modal" preset="card" title="预设目录" style="width:min(440px,calc(100vw - 32px))">
-      <n-input v-model:value="name" :disabled="busy" placeholder="目录名称" :input-props="{ 'aria-label': '目录名称' }" />
-      <n-select :value="parent ?? 0" :options="options" :disabled="busy" aria-label="目录位置" @update:value="parent = $event || null" />
-      <n-alert v-if="error" type="error">{{ error }}</n-alert>
-      <n-button type="primary" :loading="busy" :disabled="busy || !name.trim()" @click="execute('save')">保存</n-button>
-    </n-modal>
+    <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert>
+    <a-alert v-if="results.length" type="info"><template #description><p v-for="result in results" :key="result">{{ result }}</p></template></a-alert>
+    <slot />
+    </section>
+    <a-modal :footer="null" v-model:open="modal"  title="预设目录" style="width:min(440px,calc(100vw - 32px))">
+      <a-input v-model:value="name" :disabled="busy" placeholder="目录名称" v-bind="{ 'aria-label': '目录名称' }" />
+      <a-select v-select-aria-label="'目录位置'" :value="parent ?? 0" :options="options" :disabled="busy" aria-label="目录位置" @update:value="parent = nullableNumber($event) || null" />
+      <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert>
+      <a-button type="primary" :loading="busy" :disabled="busy || !name.trim()" @click="execute('save')">保存</a-button>
+    </a-modal>
   </div>
 </template>
 <style scoped>
-.scenario-directories{display:grid;gap:12px}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tools>.n-input{flex:1;min-width:200px}
+.scenario-directories{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;align-items:start}.scenario-library-content{display:grid;gap:16px;min-width:0}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tools>.ant-input{flex:1;min-width:180px}
+@media(max-width:767px){.scenario-directories{grid-template-columns:minmax(0,1fr);gap:16px}.tools>.ant-input{min-width:0;flex-basis:100%}}
 </style>

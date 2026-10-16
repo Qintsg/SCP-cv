@@ -15,6 +15,8 @@ import { RouterView, useRoute, useRouter } from 'vue-router';
 
 import AppNavigation from './AppNavigation.vue';
 import AppTopBar from './AppTopBar.vue';
+import ALayout from 'ant-design-vue/es/layout';
+import { LayoutSider as ALayoutSider } from 'ant-design-vue/es/layout';
 import {
   DESKTOP_PRIMARY_NAV,
   resolveDisplayLabel,
@@ -91,16 +93,14 @@ onBeforeUnmount(() => {
 <template>
   <a class="skip-link" href="#main-content">{{ t('app.skipToMain') }}</a>
 
-  <div
-    class="app-shell flex min-h-[var(--app-height,100dvh)] flex-1 flex-col bg-surface"
+  <a-layout
+    class="app-shell console-shell"
     :data-size="sizeClass"
     :data-nav="navVariant"
   >
-    <AppTopBar :scrolled="scrolled" />
-
-    <div class="app-shell__body flex min-h-0 flex-1">
+    <a-layout-sider v-if="!isCompact" :width="228" :collapsed-width="76" :collapsed="!isLargeUp" class="console-sider" theme="dark">
+      <div class="console-brand"><span aria-hidden="true">S</span><div v-if="isLargeUp"><strong>SCP-cv</strong><small>28#108 · 现场控制台</small></div></div>
       <AppNavigation
-        v-if="!isCompact"
         v-model:more-open="moreOpen"
         :compact="false"
         :nav-variant="navVariant"
@@ -108,19 +108,19 @@ onBeforeUnmount(() => {
         :is-active="isActive"
         @bottom-click="onBottomClick"
       />
-
+      <div v-if="isLargeUp" class="console-sider__footer">上海第二工业大学<span>多媒体显示控制</span></div>
+    </a-layout-sider>
+    <a-layout class="console-shell__workspace">
+      <AppTopBar :scrolled="scrolled" />
       <main
         id="main-content"
         ref="mainRef"
-        class="app-shell__content min-w-0 flex-1 overflow-y-auto py-8 pb-12"
-        :class="navVariant === 'bottom' ? 'px-4' : 'px-8'"
+        class="app-shell__content"
         tabindex="-1"
       >
         <RouterView />
       </main>
-    </div>
-
-    <AppNavigation
+      <AppNavigation
       v-if="isCompact"
       v-model:more-open="moreOpen"
       compact
@@ -128,8 +128,9 @@ onBeforeUnmount(() => {
       :primary-items="primaryItems"
       :is-active="isActive"
       @bottom-click="onBottomClick"
-    />
-  </div>
+      />
+    </a-layout>
+  </a-layout>
 </template>
 
 <style src="./AppShell.css"></style>

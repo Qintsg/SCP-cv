@@ -1,6 +1,6 @@
 /*
  * Tailwind 4 只提供主题变量和 utilities。项目现有 base.css 继续负责受控重置，
- * 不导入 tailwindcss/preflight.css，避免改变 Naive UI 与既有组件的默认行为。
+ * 不导入tailwindcss/preflight.css，避免重置Ant Design与业务组件的默认行为。
  */
 @layer theme, utilities;
 

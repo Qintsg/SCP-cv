@@ -4,25 +4,24 @@
  *  - 桌面：480 px 右侧 Drawer（移动端自动 → 全屏 Sheet）；
  *  - 移动端可视为单页可滚动表单。
  */
+import { selectAriaLabel as vSelectAriaLabel } from '@/design-system/selectAriaLabel';
+import { Textarea as ATextarea } from 'ant-design-vue/es/input';
+
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NAlert,
-  NButton,
-  NCard,
-  NCheckbox,
-  NDrawer,
-  NDrawerContent,
-  NFormItem,
-  NInput,
-  NRadio,
-  NRadioGroup,
-  NSelect,
-  NSlider,
-  NSwitch,
-  type SelectGroupOption,
-  type SelectOption,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import ACheckbox from 'ant-design-vue/es/checkbox';
+import ControlDrawer from '@/design-system/ControlDrawer.vue';
+import { FormItem as AFormItem } from 'ant-design-vue/es/form';
+import AInput from 'ant-design-vue/es/input';
+import ARadio from 'ant-design-vue/es/radio';
+import { RadioGroup as ARadioGroup } from 'ant-design-vue/es/radio';
+import ASelect from 'ant-design-vue/es/select';
+import ASlider from 'ant-design-vue/es/slider';
+import ASwitch from 'ant-design-vue/es/switch';
+import type { SelectProps } from 'ant-design-vue';
 
 import { useToast } from '@/composables/useToast';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
@@ -40,6 +39,7 @@ import {
 import type { MediaSourceItem, ScenarioItem } from '@/services/api';
 import ScenarioAdvancedSettings from './ScenarioAdvancedSettings.vue';
 import { directoryPath, sourcePath } from '../directories/directoryPath';
+import { nullableNumber } from '@/design-system/controlValue';
 
 interface ScenarioEditDrawerProps {
   open: boolean;
@@ -86,7 +86,7 @@ watch(
   },
 );
 
-const sourceOptionsByCategory = computed<(SelectOption | SelectGroupOption)[]>(() => {
+const sourceOptionsByCategory = computed<NonNullable<SelectProps['options']>>(() => {
   const groups = new Map<string, MediaSourceItem[]>();
   for (const source of sourceStore.sources) {
     if (source.source_type === 'audio') continue;
@@ -99,13 +99,12 @@ const sourceOptionsByCategory = computed<(SelectOption | SelectGroupOption)[]>((
     if (!groups.has(groupLabel)) groups.set(groupLabel, []);
     groups.get(groupLabel)!.push(source);
   }
-  const options: (SelectOption | SelectGroupOption)[] = [];
+  const options: NonNullable<SelectProps['options']> = [];
   for (const [groupLabel, list] of groups.entries()) {
     options.push({
-      type: 'group',
       label: groupLabel,
       key: groupLabel,
-      children: list.map((item) => ({
+      options: list.map((item) => ({
         label: sourcePath(item, sourceStore.folders),
         value: item.id,
         disabled: !item.is_available,
@@ -210,60 +209,60 @@ function close(): void {
 </script>
 
 <template>
-  <n-drawer v-model:show="isOpen" width="min(520px, 100vw)" placement="right">
-    <n-drawer-content :title="scenario ? t('scenarios.edit.titleEdit') : t('scenarios.edit.titleCreate')" closable>
+  <ControlDrawer role="dialog" aria-modal="true" :aria-label="scenario ? t('scenarios.edit.titleEdit') : t('scenarios.edit.titleCreate')" :title="scenario ? t('scenarios.edit.titleEdit') : t('scenarios.edit.titleCreate')" v-model:open="isOpen" width="min(520px, 100vw)" placement="right">
+
       <p class="scenario-edit__desc">{{ t('scenarios.edit.desc') }}</p>
 
-      <n-alert v-if="draft.retiredTargets.length" type="warning" :title="t('scenarios.edit.legacyTitle')" class="scenario-edit__card">
+      <a-alert v-if="draft.retiredTargets.length" type="warning" :message="t('scenarios.edit.legacyTitle')" class="scenario-edit__card"><template #description>
         {{ t('scenarios.edit.legacyDescription', { windows: draft.retiredTargets.map((target) => target.window_id).join('、') }) }}
-        <n-checkbox v-model:checked="confirmRetiredTargetRemoval" class="scenario-edit__legacy-confirm">
+        <a-checkbox v-model:checked="confirmRetiredTargetRemoval" class="scenario-edit__legacy-confirm">
           {{ t('scenarios.edit.legacyConfirm') }}
-        </n-checkbox>
-      </n-alert>
+        </a-checkbox>
+      </template></a-alert>
 
-      <n-card size="small" :title="t('scenarios.edit.basic')" class="scenario-edit__card">
-        <n-form-item :label="t('scenarios.edit.name')" required>
-          <n-input v-model:value="draft.name" :placeholder="t('scenarios.edit.namePlaceholder')" />
-        </n-form-item>
-        <n-form-item label="预设目录"><n-select :value="draft.folderId ?? 0" :options="[{label:'/',value:0},...scenarioStore.folders.map(folder=>({label:directoryPath(folder.id,scenarioStore.folders),value:folder.id}))]"
-          aria-label="预设目录" @update:value="draft.folderId = $event || null" /></n-form-item>
-        <n-form-item :label="t('scenarios.edit.remark')" :feedback="t('scenarios.edit.remarkHint')">
-          <n-input v-model:value="draft.description" type="textarea" :rows="2" :placeholder="t('scenarios.edit.remarkPlaceholder')" />
-        </n-form-item>
-        <n-form-item :label="t('scenarios.edit.bigScreenMode')" :feedback="t('scenarios.edit.bigScreenHint')">
-          <n-radio-group v-model:value="bigScreenSegmentValue">
-            <n-radio value="unset">{{ t('scenarios.edit.keep') }}</n-radio>
-            <n-radio value="empty">{{ t('scenarios.edit.single') }}</n-radio>
-            <n-radio value="set">{{ t('scenarios.edit.double') }}</n-radio>
-          </n-radio-group>
-        </n-form-item>
-        <n-form-item :label="t('scenarios.edit.systemVolume')" :feedback="t('scenarios.edit.systemVolumeHint')">
+      <a-card size="small" :title="t('scenarios.edit.basic')" class="scenario-edit__card">
+        <a-form-item :label="t('scenarios.edit.name')" required>
+          <a-input v-model:value="draft.name" :placeholder="t('scenarios.edit.namePlaceholder')" :aria-label="t('scenarios.edit.name')" />
+        </a-form-item>
+        <a-form-item label="预设目录"><a-select v-select-aria-label="'预设目录'" :value="draft.folderId ?? 0" :options="[{label:'/',value:0},...scenarioStore.folders.map(folder=>({label:directoryPath(folder.id,scenarioStore.folders),value:folder.id}))]"
+          aria-label="预设目录" @update:value="draft.folderId = nullableNumber($event) || null" /></a-form-item>
+        <a-form-item :label="t('scenarios.edit.remark')" :extra="t('scenarios.edit.remarkHint')">
+            <a-textarea v-model:value="draft.description" :rows="2" :placeholder="t('scenarios.edit.remarkPlaceholder')" :aria-label="t('scenarios.edit.remark')" />
+        </a-form-item>
+        <a-form-item :label="t('scenarios.edit.bigScreenMode')" :extra="t('scenarios.edit.bigScreenHint')">
+          <a-radio-group v-model:value="bigScreenSegmentValue">
+            <a-radio value="unset">{{ t('scenarios.edit.keep') }}</a-radio>
+            <a-radio value="empty">{{ t('scenarios.edit.single') }}</a-radio>
+            <a-radio value="set">{{ t('scenarios.edit.double') }}</a-radio>
+          </a-radio-group>
+        </a-form-item>
+        <a-form-item :label="t('scenarios.edit.systemVolume')" :extra="t('scenarios.edit.systemVolumeHint')">
           <div class="scenario-edit__field-stack">
-            <n-radio-group v-model:value="draft.volumeState">
-              <n-radio value="unset">{{ t('scenarios.edit.keep') }}</n-radio>
-              <n-radio value="set">{{ t('scenarios.edit.set') }}</n-radio>
-            </n-radio-group>
-            <n-slider v-if="draft.volumeState === 'set'" v-slider-aria-label="t('scenarios.edit.systemVolumeAria')"
+            <a-radio-group v-model:value="draft.volumeState">
+              <a-radio value="unset">{{ t('scenarios.edit.keep') }}</a-radio>
+              <a-radio value="set">{{ t('scenarios.edit.set') }}</a-radio>
+            </a-radio-group>
+            <a-slider v-if="draft.volumeState === 'set'" v-slider-aria-label="t('scenarios.edit.systemVolumeAria')"
               v-model:value="draft.volumeLevel" :min="0" :max="100"
               :aria-label="t('scenarios.edit.systemVolumeAria')" />
           </div>
-        </n-form-item>
-      </n-card>
+        </a-form-item>
+      </a-card>
 
-      <n-card size="small" :title="t('scenarios.edit.windowsConfig')" class="scenario-edit__card">
+      <a-card size="small" :title="t('scenarios.edit.windowsConfig')" class="scenario-edit__card">
         <div class="scenario-edit__windows">
-          <n-card v-for="window in visibleWindows" :key="window.windowId" size="small" embedded>
-            <template #header>
+          <a-card v-for="window in visibleWindows" :key="window.windowId" size="small" >
+            <template #title>
               <div>
                 <span class="scenario-edit__eyebrow">{{ windowLabel(window.windowId) }}</span>
                 <h4 class="scenario-edit__window-title">{{ t('scenarios.edit.window', { id: window.windowId }) }}</h4>
               </div>
             </template>
-            <n-radio-group v-model:value="window.sourceState">
-              <n-radio value="unset">{{ t('scenarios.edit.keep') }}</n-radio>
-              <n-radio value="empty">{{ t('scenarios.edit.blackout') }}</n-radio>
-              <n-radio value="set">{{ t('scenarios.edit.switch') }}</n-radio>
-            </n-radio-group>
+            <a-radio-group v-model:value="window.sourceState">
+              <a-radio value="unset">{{ t('scenarios.edit.keep') }}</a-radio>
+              <a-radio value="empty">{{ t('scenarios.edit.blackout') }}</a-radio>
+              <a-radio value="set">{{ t('scenarios.edit.switch') }}</a-radio>
+            </a-radio-group>
             <p v-if="window.sourceState === 'unset'" class="scenario-edit__hint">
               {{ t('scenarios.edit.keepHint') }}
             </p>
@@ -271,45 +270,48 @@ function close(): void {
               {{ t('scenarios.edit.blackoutHint') }}
             </p>
             <template v-else>
-              <n-form-item :label="t('scenarios.edit.sourceSelect')" required>
-                <n-select
-                  v-model:value="window.sourceId"
+              <a-form-item :label="t('scenarios.edit.sourceSelect')" required>
+                <a-select
+                  v-select-aria-label="windowLabel(window.windowId) + t('scenarios.edit.sourceSelect')"
+                  :aria-label="windowLabel(window.windowId) + t('scenarios.edit.sourceSelect')"
+                  :value="window.sourceId ?? undefined"
+                  @update:value="window.sourceId = nullableNumber($event)"
                   :options="sourceOptionsByCategory"
                   :placeholder="t('scenarios.edit.sourcePlaceholder')"
-                  filterable
+                  show-search option-filter-prop="label"
                 />
-              </n-form-item>
+              </a-form-item>
               <div class="scenario-edit__switches">
                 <div class="scenario-edit__switch">
                   <span>{{ t('scenarios.edit.autoplay') }}</span>
-                  <n-switch v-model:value="window.autoplay" size="small" />
+                  <a-switch v-model:checked="window.autoplay" size="small" :aria-label="windowLabel(window.windowId) + t('scenarios.edit.autoplay')" />
                 </div>
                 <div v-if="showLoopToggle(window)" class="scenario-edit__switch">
                   <span>{{ t('scenarios.edit.resume') }}</span>
-                  <n-switch v-model:value="window.resume" size="small" />
+                  <a-switch v-model:checked="window.resume" size="small" :aria-label="windowLabel(window.windowId) + t('scenarios.edit.resume')" />
                 </div>
               </div>
               <p v-if="window.sourceState === 'set' && !isVolumeEditable(window)" class="scenario-edit__hint">
                 {{ t('scenarios.edit.noVolumeHint') }}
               </p>
             </template>
-          </n-card>
+          </a-card>
         </div>
-      </n-card>
+      </a-card>
 
       <ScenarioAdvancedSettings v-model="draft.advanced" />
-      <n-alert v-if="errorMessage" type="error" :title="t('scenarios.edit.cantSave')">
+      <a-alert v-if="errorMessage" type="error" :message="t('scenarios.edit.cantSave')"><template #description>
         {{ errorMessage }}
-      </n-alert>
+      </template></a-alert>
 
       <template #footer>
         <div class="scenario-edit__actions">
-          <n-button :disabled="saving" @click="close">{{ t('common.cancel') }}</n-button>
-          <n-button type="primary" :loading="saving" @click="save">{{ t('scenarios.edit.save') }}</n-button>
+          <a-button :disabled="saving" @click="close">{{ t('common.cancel') }}</a-button>
+          <a-button type="primary" :loading="saving" @click="save">{{ t('scenarios.edit.save') }}</a-button>
         </div>
       </template>
-    </n-drawer-content>
-  </n-drawer>
+
+  </ControlDrawer>
 </template>
 
 <style scoped>
@@ -386,7 +388,7 @@ function close(): void {
 }
 
 @media (max-width: 640px) {
-  .scenario-edit__actions :deep(.n-button) {
+  .scenario-edit__actions :deep(.ant-btn) {
     min-height: 44px;
     min-width: 44px;
   }

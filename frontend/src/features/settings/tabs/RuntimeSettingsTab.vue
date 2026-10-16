@@ -3,16 +3,16 @@
  * 设置中心运行态 Tab。
  * 承载紧凑大屏布局、系统音量、SSE 状态与重置全部窗口等全局运行控制。
  */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import {
-  NButton,
-  NCard,
-  NSlider,
-  NSwitch,
-  NTag,
-} from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import ASlider from 'ant-design-vue/es/slider';
+import ASwitch from 'ant-design-vue/es/switch';
+import ATag from 'ant-design-vue/es/tag';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
@@ -88,53 +88,53 @@ async function resetAll(): Promise<void> {
   <section class="settings-view__grid">
     <VideoWallMappingPanel />
 
-    <n-card :title="t('settings.systemVolume')">
+    <a-card :title="t('settings.systemVolume')">
       <div class="settings-view__volume-row">
-        <n-slider
+        <a-slider
           v-slider-aria-label="t('settings.systemVolumeAria')"
           :value="volume.value.value"
           :min="0"
           :max="100"
           :aria-label="t('settings.systemVolumeAria')"
           :disabled="runtime.systemVolume.muted"
-          @update:value="volume.handleInput"
-          @dragend="volume.handleChange(volume.value.value)"
+          @change="value => { if (typeof value === 'number') volume.handleInput(value); }"
+          @afterChange="volume.handleChange(volume.value.value)"
         />
         <span class="settings-view__volume-value">{{ runtime.systemVolume.muted ? '—' : volume.value.value + '%' }}</span>
       </div>
       <div class="settings-view__row">
         <span>{{ t('settings.enableSystemMute') }}</span>
-        <n-switch v-model:value="muteToggle" />
+        <a-switch v-model:checked="muteToggle" />
       </div>
-      <n-tag :type="runtime.systemVolume.backend === 'windows_core_audio' ? 'default' : 'warning'" size="small" round>
+      <a-tag :color="tagColor(runtime.systemVolume.backend === 'windows_core_audio' ? 'default' : 'warning')"  >
         {{ t('settings.backendTag', { backend: runtime.systemVolume.backend }) }}
-      </n-tag>
-    </n-card>
+      </a-tag>
+    </a-card>
 
-    <n-card :title="t('settings.sseStatus')">
+    <a-card :title="t('settings.sseStatus')">
       <p class="settings-view__row">
-        <n-tag :type="runtime.sseStatus === 'connected' ? 'success' : 'warning'" size="small" round>
+        <a-tag :color="tagColor(runtime.sseStatus === 'connected' ? 'success' : 'warning')"  >
           {{ sseLabel }}
-        </n-tag>
+        </a-tag>
         <span>{{ sseLastUpdateLabel }}</span>
       </p>
-      <n-button @click="refreshSse">
+      <a-button @click="refreshSse">
         <template #icon><FIcon name="arrow_clockwise_24_regular" /></template>
         {{ t('settings.reconnect') }}
-      </n-button>
-      <n-button class="settings-view__connection-button" tertiary @click="router.push('/connect')">
+      </a-button>
+      <a-button class="settings-view__connection-button"  @click="router.push('/connect')">
         {{ t('settings.changeServer') }}
-      </n-button>
-    </n-card>
+      </a-button>
+    </a-card>
   </section>
 
   <section class="settings-view__danger-zone">
-    <n-card :title="t('settings.emergencyTools')">
-      <n-button type="error" @click="resetAll">
+    <a-card :title="t('settings.emergencyTools')">
+      <a-button danger @click="resetAll">
         <template #icon><FIcon name="arrow_reset_24_regular" /></template>
         {{ t('settings.resetAll') }}
-      </n-button>
+      </a-button>
       <p class="settings-view__hint">{{ t('settings.resetAllHint') }}</p>
-    </n-card>
+    </a-card>
   </section>
 </template>

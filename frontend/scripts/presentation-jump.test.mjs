@@ -6,6 +6,8 @@
  * @Author : Qintsg
  * @Date : 2026-10-03
  */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { browser, PlaybackControl, mountPreview, flushUi, recordedRequests } from './presentation-preview/fixture.mjs';
@@ -18,7 +20,7 @@ test('跳页输入2a点击实际按钮时不发送navigate，并显示既有整�
   input.dispatchEvent(new browser.Event('input', { bubbles: true }));
   await flushUi();
   const button = [...browser.document.querySelectorAll('.playback-control__jump button')]
-    .find((candidate) => candidate.textContent.trim() === '跳转');
+    .find((candidate) => visibleText(candidate.textContent) === visibleText('跳转'));
   assert.ok(button, '应有实际跳转按钮');
   button.click();
   await flushUi();
@@ -39,7 +41,7 @@ async function submitJump(text) {
   input.dispatchEvent(new browser.Event('input', { bubbles: true }));
   await flushUi();
   const button = [...browser.document.querySelectorAll('.playback-control__jump button')]
-    .find((candidate) => candidate.textContent.trim() === '跳转');
+    .find((candidate) => visibleText(candidate.textContent) === visibleText('跳转'));
   assert.ok(button);
   button.click();
   await flushUi();

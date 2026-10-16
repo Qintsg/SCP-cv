@@ -111,7 +111,10 @@ export const useRuntimeStore = defineStore('runtime', {
     },
     /** 应用已经保存且具备控制帧的布局；未知帧会由后端明确拒绝。 */
     async applySavedVideoWallLayout(expectedRevision?: number) {
+      const generation = this.connectionGeneration;
+      const userId = useAuthStore().user?.id;
       const payload = await api.applyVideoWallDraft(expectedRevision);
+      if (generation !== this.connectionGeneration || userId !== useAuthStore().user?.id) return payload.layout;
       this.venueAudioResult = payload.audio ?? null;
       this.runtime = payload.runtime;
       useSessionStore().applyRemoteSessions(payload.sessions);

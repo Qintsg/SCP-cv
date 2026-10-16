@@ -16,9 +16,11 @@ import { registerUnauthorizedHandler } from './services/api';
 import { useAuthStore } from './stores/auth';
 import { resolveNativePlatformAdapter, setNativePlatformAdapter } from './platform/native';
 import { installClientLifecycle } from './platform/lifecycle';
+import 'ant-design-vue/dist/reset.css';
 import './styles/base.css';
 import './styles/tailwind.css';
 import './styles/experience.css';
+import './styles/console.css';
 
 const pinia = createPinia();
 const app = createApp(App).use(pinia).use(i18n).use(router);

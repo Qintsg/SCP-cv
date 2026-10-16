@@ -21,11 +21,11 @@
   display: none;
 }
 
-.source-picker__filter-scroll :deep(.n-tabs-nav) {
+.source-picker__filter-scroll :deep(.ant-tabs-nav) {
   flex-shrink: 0;
 }
 
-.source-picker__filter-scroll :deep(.n-tabs-tab) {
+.source-picker__filter-scroll :deep(.ant-tabs-tab) {
   white-space: nowrap;
   padding: 4px 10px;
   font-size: 13px;

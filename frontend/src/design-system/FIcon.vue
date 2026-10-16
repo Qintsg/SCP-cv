@@ -1,13 +1,12 @@
 <script setup lang="ts">
 /**
  * Fluent UI System Icons 图标组件（DESIGN.md §9 与生态包的关系 / §7 无障碍）。
- * 通过 @vicons/fluent + Naive UI 的 <n-icon> 渲染：
+ * 通过原生span和既有矢量图标渲染，不依赖组件库包装：
  *   - SVG 矢量图，颜色继承 currentColor，与 Fluent 2 色彩 token 自动联动；
  *   - 装饰性图标对辅助技术隐藏（aria-hidden），非装饰必须传 ariaLabel；
  *   - 尺寸通过 :size 显式或随父元素 font-size 缩放。
  */
 import { computed } from 'vue';
-import { NIcon } from 'naive-ui';
 
 import { resolveIcon, type FluentIconName } from './icons';
 
@@ -39,22 +38,26 @@ const computedSize = computed(() => {
 </script>
 
 <template>
-  <n-icon
+  <span
     class="f-icon"
-    :size="computedSize"
-    :color="color"
+    :style="{ fontSize: typeof computedSize === 'number' ? `${computedSize}px` : computedSize, color }"
     :aria-hidden="decorative ? 'true' : undefined"
     :aria-label="decorative ? undefined : ariaLabel"
     :role="decorative ? undefined : 'img'"
-    :component="iconComponent"
-  />
+  ><component :is="iconComponent" /></span>
 </template>
 
 <style scoped>
 .f-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
   flex-shrink: 0;
   color: inherit;
   line-height: 1;
   user-select: none;
 }
+.f-icon :deep(svg) { width: 1em; height: 1em; fill: currentColor; }
 </style>

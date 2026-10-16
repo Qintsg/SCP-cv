@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** 动画步与翻页分开；在真实在线文稿上才提交操作。 */
-import { NButton, NAlert } from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import AAlert from 'ant-design-vue/es/alert';
 import { onScopeDispose, ref } from 'vue';
 import { useSessionStore } from '@/stores/sessions';
 import { useToast } from '@/composables/useToast';
@@ -28,10 +29,10 @@ async function step(action: string): Promise<void> {
 <template>
   <div class="presentation-effects">
     <div class="presentation-effects__actions">
-    <n-button :disabled="disabled || pending" @click="step('previous_effect')">上一步动画</n-button>
-    <n-button :disabled="disabled || pending" @click="step('next_effect')">下一步动画</n-button>
+    <a-button :disabled="disabled || pending" @click="step('previous_effect')">上一步动画</a-button>
+    <a-button :disabled="disabled || pending" @click="step('next_effect')">下一步动画</a-button>
     </div>
-    <n-alert type="info">统一媒体暂停、恢复和定位暂不支持。</n-alert>
+    <a-alert type="info"><template #description>统一媒体暂停、恢复和定位暂不支持。</template></a-alert>
   </div>
 </template>
 <style scoped>

@@ -1,4 +1,6 @@
 /* 临时共享null源在真实Vue/Pinia控制条中的显示、条件停止和迟到SSE回归；HTTP替身不代表采集/出画。SCP-cv 2026-10-11。 */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { browser, PlaybackControl, mountPreview, flushUi, observe, recordedRequests } from './presentation-preview/fixture.mjs';
@@ -12,7 +14,7 @@ const shared = { source_id: null, source_name: '屏幕共享', source_type: 'scr
 /** :param patch: 服务端会话观测。:returns: 只经过外部HTTP的真实组件与公开store。 */
 async function mount(patch = {}) { return mountPreview(PlaybackControl, { observation: { ...shared, ...patch } }); }
 /** :param label: 用户按钮名称。:returns: 实际组件DOM，找不到就是失败。 */
-function button(label) { const node = [...browser.document.querySelectorAll('button')].find((item) => item.textContent.trim() === label); assert.ok(node, label); return node; }
+function button(label) { const node = [...browser.document.querySelectorAll('button')].find((item) => visibleText(item.textContent) === visibleText(label)); assert.ok(node, label); return node; }
 
 test('null媒体库ID的共享显示临时输出、实际帧，不显示未打开或借文件缩略图', async () => {
   await mount();
@@ -23,7 +25,7 @@ test('null媒体库ID的共享显示临时输出、实际帧，不显示未打�
   assert.doesNotMatch(browser.document.body.textContent, /未打开任何源|该窗口当前没有源/);
   assert.equal(browser.document.querySelectorAll('img').length, 0);
   assert.equal(button('停止共享').disabled, false);
-  assert.equal(browser.document.querySelector('.n-slider')?.classList.contains('n-slider--disabled'), true);
+  assert.equal(browser.document.querySelector('.ant-slider')?.classList.contains('ant-slider-disabled'), true);
   assert.equal(browser.document.querySelector('[role="switch"]')?.getAttribute('aria-disabled'), 'true');
 });
 

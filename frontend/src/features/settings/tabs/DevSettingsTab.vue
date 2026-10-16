@@ -5,7 +5,7 @@
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NCard } from 'naive-ui';
+import ACard from 'ant-design-vue/es/card';
 
 import { buildBackendUrl, getConnectionPorts } from '@/services/api';
 import PresentationSettings from './PresentationSettings.vue';
@@ -24,25 +24,25 @@ const portsCaption = computed(() =>
 <template>
   <section class="settings-view__grid">
     <PresentationSettings />
-    <n-card :title="t('settings.apiEndpoints')">
+    <a-card :title="t('settings.apiEndpoints')">
       <ul class="settings-view__api-list">
         <li v-for="endpoint in apiEndpoints" :key="endpoint">
           <a :href="endpoint" target="_blank" rel="noopener noreferrer"><code>{{ endpoint }}</code></a>
         </li>
       </ul>
-    </n-card>
+    </a-card>
 
-    <n-card :title="t('settings.portsSummary')">
+    <a-card :title="t('settings.portsSummary')">
       <p class="settings-view__hint">{{ portsCaption }}</p>
-    </n-card>
+    </a-card>
 
-    <n-card :title="t('settings.logPath')">
+    <a-card :title="t('settings.logPath')">
       <p class="settings-view__hint">{{ t('settings.logPathHint') }}</p>
-    </n-card>
+    </a-card>
 
-    <n-card :title="t('settings.envVars')">
+    <a-card :title="t('settings.envVars')">
       <p class="settings-view__hint">{{ t('settings.envVarsHint') }}</p>
-    </n-card>
+    </a-card>
 
   </section>
 </template>

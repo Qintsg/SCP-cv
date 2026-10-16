@@ -1,11 +1,13 @@
 /*
  * 文稿依赖设置真实DOM合同：逐项原因与静态检查边界必须可见。
- * 使用真实Vue/Naive UI/API，只在外部fetch边界提供诊断响应，不启动Office。
+ * 使用真实Vue/Ant Design Vue/API，只在外部fetch边界提供诊断响应，不启动Office。
  * @Project : SCP-cv
  * @File : presentation-settings.test.mjs
  * @Author : Qintsg
  * @Date : 2026-10-03
  */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import test, { after, afterEach, before } from 'node:test';
@@ -137,13 +139,13 @@ for (const failureKind of ['network', 'http']) {
         status: 503, headers: { 'Content-Type': 'application/json' },
       });
     });
-    assert.match(browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '', /静态检查通过/);
+    assert.match(browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '', /静态检查通过/);
     const refresh = [...browser.document.querySelectorAll('button')]
-      .find((button) => button.textContent.trim() === '重新检查');
+      .find((button) => visibleText(button.textContent) === visibleText('重新检查'));
     assert.ok(refresh);
     refresh.click();
     await flushUi();
-    const summary = browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '';
+    const summary = browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '';
     assert.doesNotMatch(summary, /静态检查通过/);
     assert.match(summary, /待检查|未确认/);
     assert.equal(browser.document.querySelector('[data-dependency-id="framework"]'), null);
@@ -162,7 +164,7 @@ test('声明installed但缺少必需components的响应不能显示静态检查�
   await mountSettings(() => new Response(JSON.stringify(valid), {
     headers: { 'Content-Type': 'application/json' },
   }));
-  const summary = browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '';
+  const summary = browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '';
   assert.doesNotMatch(summary, /静态检查通过/);
   assert.match(summary, /待检查|未确认/);
   assert.ok([...browser.document.querySelectorAll('[role="alert"]')]
@@ -195,7 +197,7 @@ for (const [label, corrupt] of malformedCases) {
       detail: '静态检查通过', reason_code: '' }]).json();
     corrupt(payload.settings);
     await mountSettings(() => new Response(JSON.stringify(payload), { headers: { 'Content-Type': 'application/json' } }));
-    const summary = browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '';
+    const summary = browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '';
     assert.doesNotMatch(summary, /静态检查通过/);
     assert.match(summary, /待检查|未确认/);
     assert.equal(browser.document.querySelector('[data-dependency-id="framework"]'), null);
@@ -217,7 +219,7 @@ test('公开切换主机后Alpha迟到诊断的stale错误不能污染Beta未知
   });
   assert.ok(browser.document.querySelector('[data-dependency-id="alpha_component"]'));
   const button = [...browser.document.querySelectorAll('button')]
-    .find((candidate) => candidate.textContent.trim() === '重新检查');
+    .find((candidate) => visibleText(candidate.textContent) === visibleText('重新检查'));
   button.click();
   await flushUi();
   await runtime.switchServer({ origin: 'https://beta.example.test', displayName: 'Beta' });
@@ -253,7 +255,7 @@ test('公开切换目标会清除已通过的旧本地诊断缓存，但不自�
   await runtime.switchServer({ origin: 'https://beta.example.test', displayName: 'Beta' });
   await flushUi();
   assert.equal(browser.document.querySelector('[data-dependency-id="alpha_cached"]'), null);
-  assert.doesNotMatch(browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '', /静态检查通过/);
+  assert.doesNotMatch(browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '', /静态检查通过/);
   assert.equal(checks, 1);
 });
 
@@ -266,7 +268,7 @@ test('Alpha旧HTTP错误与finally不能清除Beta新检查的pending或写入�
     ? settingsResponse(true, [{ id: 'alpha_initial', status: 'installed', detail: 'Alpha初始检查', reason_code: '' }])
     : checks === 2 ? old.promise : current.promise);
   const button = [...browser.document.querySelectorAll('button')]
-    .find((candidate) => candidate.textContent.trim() === '重新检查');
+    .find((candidate) => visibleText(candidate.textContent) === visibleText('重新检查'));
   button.click();
   await flushUi();
   await runtime.switchServer({ origin: 'https://beta.example.test', displayName: 'Beta' });
@@ -280,7 +282,7 @@ test('Alpha旧HTTP错误与finally不能清除Beta新检查的pending或写入�
   }));
   await flushUi();
   assert.equal(button.disabled, true, 'Beta新读取仍在途，旧finally不能提前结束');
-  assert.match(browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '', /检查中/);
+  assert.match(browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '', /检查中/);
   assert.doesNotMatch(browser.document.querySelector('.presentation-settings')?.textContent ?? '', /Alpha旧HTTP|响应属于已切换/);
   current.resolve(settingsResponse(true, [{ id: 'beta_current', status: 'installed', detail: 'Beta当前检查', reason_code: '' }]));
   await flushUi();
@@ -294,7 +296,7 @@ test('公开检查按钮快速重复点击只发送一个在途GET，完成后�
   await mountSettings(() => ++checks === 1 ? settingsResponse(true, [{ id: 'initial', status: 'installed',
     detail: '初始检查', reason_code: '' }]) : pending.promise);
   const button = [...browser.document.querySelectorAll('button')]
-    .find((candidate) => candidate.textContent.trim() === '重新检查');
+    .find((candidate) => visibleText(candidate.textContent) === visibleText('重新检查'));
   button.click();
   button.click();
   await flushUi();
@@ -322,7 +324,7 @@ test('卸载旧卡片后迟到响应不会改变新实例诊断或安排额外�
   assert.ok(browser.document.querySelector('[data-dependency-id="new_instance"]'));
   assert.equal(browser.document.querySelector('[data-dependency-id="old_instance"]'), null);
   assert.equal(checks, 1);
-  assert.match(browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '', /静态检查通过/);
+  assert.match(browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '', /静态检查通过/);
 });
 
 test('HTTP200但success为false的诊断envelope不能采纳其完整installed设置', async () => {
@@ -332,7 +334,7 @@ test('HTTP200但success为false的诊断envelope不能采纳其完整installed�
   await mountSettings(() => new Response(JSON.stringify(payload), {
     headers: { 'Content-Type': 'application/json' },
   }));
-  const summary = browser.document.querySelector('.presentation-settings .n-tag')?.textContent ?? '';
+  const summary = browser.document.querySelector('.presentation-settings .ant-tag')?.textContent ?? '';
   assert.doesNotMatch(summary, /静态检查通过/);
   assert.match(summary, /待检查|未确认/);
   assert.equal(browser.document.querySelector('[data-dependency-id="framework"]'), null);

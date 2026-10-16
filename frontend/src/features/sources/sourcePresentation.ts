@@ -10,7 +10,7 @@ import type { MediaSourceItem } from '@/services/api';
 import { SOURCE_TYPE_TO_CATEGORY, type SourceCategory } from '@/stores/sources';
 import { pptPreparationLabelKey } from './pptPreparationPresentation';
 
-/** NUI NTag 兼容的 type；'default' 对齐原 'subtle'。 */
+/** 业务标签语义，经设计系统映射到Ant预设色。 */
 export type SourceTagType = 'default' | 'info' | 'success' | 'warning' | 'error';
 
 /** 将后端 source_type 聚合成前端可视大类。 */

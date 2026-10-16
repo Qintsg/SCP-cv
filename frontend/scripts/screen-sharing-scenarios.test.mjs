@@ -1,4 +1,6 @@
 /* 正式预案页DOM回归：临时共享不能经“从当前状态生成”静默保存，普通新建仍可用。 */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test, { before, after, afterEach } from 'node:test';
 import { setImmediate as nextTurn } from 'node:timers/promises';
@@ -49,12 +51,12 @@ for (const windowId of [1, 2]) for (const field of ['share_id', 'actual_share_id
     toast = useToastStore(pinia);
     app = vue.createApp(View); app.use(pinia); app.use(i18n);
     const host = browser.document.createElement('div'); browser.document.body.append(host); app.mount(host); await flush();
-    const button = [...browser.document.querySelectorAll('button')].find((item) => item.textContent.trim() === '从当前状态生成');
+    const button = [...browser.document.querySelectorAll('button')].find((item) => visibleText(item.textContent) === visibleText('从当前状态生成'));
     assert.ok(button); button.click(); await flush();
     assert.equal(toast.items.length, 1);
     assert.equal(toast.items[0].level, 'warning');
     assert.match(toast.items[0].description, new RegExp(`窗口 ?${windowId}.*屏幕共享`));
-    assert.equal(browser.document.querySelector('.n-drawer'), null);
+    assert.equal(browser.document.querySelector('.ant-drawer'), null);
     assert.deepEqual(requests, []);
   });
 }

@@ -3,16 +3,17 @@
  * 显示控制视图：单窗口源切换 + 播放控制。
  * 路由参数 :target 决定逻辑窗口；移动端使用原生单选组替代左侧导航，墙面布局不隐藏目标。
  */
-import { computed, nextTick, ref, type HTMLAttributes } from 'vue';
+import { tabsKeyboard as vTabsKeyboard } from '@/design-system/tabsKeyboard';
+
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  NCard,
-  NEmpty,
-  NAlert,
-  NTabs,
-  NTabPane,
-} from 'naive-ui';
+import ACard from 'ant-design-vue/es/card';
+import AEmpty from 'ant-design-vue/es/empty';
+import AAlert from 'ant-design-vue/es/alert';
+import ATabs from 'ant-design-vue/es/tabs';
+import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
+import ASegmented from 'ant-design-vue/es/segmented';
 
 import FIcon from '@/design-system/FIcon.vue';
 import FPageHeader from '@/design-system/FPageHeader.vue';
@@ -46,28 +47,12 @@ const targetCaption = computed(() => {
 });
 
 const availableTargets = DISPLAY_TARGETS;
+const targetOptions = computed(() => availableTargets.map(target => ({ label: target.title, value: target.param })));
 const targetTitle = computed(() => availableTargets.find((target) => target.param === targetParam.value)?.title
   ?? t('display.windowUnknown'));
 
 type TabId = 'source' | 'control';
-const mobileTab = ref<TabId>('source');
-
-/** :param id: 当前移动页签。:returns: 真实Naive页签的选择、面板关系及键盘语义，不模拟点击事件。 */
-function mobileTabProps(id: TabId): HTMLAttributes {
-  return {
-    id: `display-tab-${id}`, role: 'tab', tabindex: mobileTab.value === id ? 0 : -1,
-    'aria-selected': mobileTab.value === id, 'aria-controls': `display-panel-${id}`,
-    onKeydown: (event: KeyboardEvent) => {
-      const next = event.key === 'Home' ? 'source' : event.key === 'End' ? 'control'
-        : ['ArrowLeft', 'ArrowRight'].includes(event.key) ? id === 'source' ? 'control' : 'source'
-          : ['Enter', ' '].includes(event.key) ? id : null;
-      if (!next) return;
-      event.preventDefault();
-      mobileTab.value = next;
-      void nextTick(() => document.getElementById(`display-tab-${next}`)?.focus());
-    },
-  };
-}
+const mobileTab = ref<TabId>('control');
 
 const commandObservation = computed(() => (
   targetMeta.value ? sessionStore.commandObservation(targetMeta.value.windowId) : null
@@ -87,64 +72,56 @@ function handleSourceOpened(): void {
 
 <template>
   <div class="display-view">
-    <fieldset v-if="isMobile" class="display-view__targets" :aria-label="t('display.windowSelectAria')">
-      <label v-for="target in availableTargets" :key="target.param">
-        <input type="radio" name="display-target" :value="target.param" :checked="targetParam === target.param"
-          :aria-label="target.title" @change="changeTarget(target.param)">
-        <span>{{ target.title }}</span>
-      </label>
-    </fieldset>
+    <a-segmented class="display-view__targets" :value="targetParam" :options="targetOptions" :aria-label="t('display.windowSelectAria')" @change="value => changeTarget(String(value))" />
 
     <FPageHeader :title="targetTitle + t('display.titleSuffix')" :description="targetCaption" />
 
-    <n-alert
+    <a-alert
       v-if="commandObservation && !commandObservation.playerOnline"
       type="warning"
-      :title="t('playback.playerOfflineTitle')"
-      :bordered="false"
-    >
+      :message="t('playback.playerOfflineTitle')"
+
+    ><template #description>
       {{ t('playback.playerOfflineHint') }}
-    </n-alert>
-    <n-alert
+    </template></a-alert>
+    <a-alert
       v-else-if="commandObservation?.accepted"
       type="info"
-      :title="t('playback.commandAcceptedTitle')"
-      :bordered="false"
-    >
+      :message="t('playback.commandAcceptedTitle')"
+
+    ><template #description>
       {{ t('playback.commandAcceptedHint', { state: commandObservation.actualState }) }}
-    </n-alert>
+    </template></a-alert>
 
     <ScreenSharePanel v-if="targetMeta && currentSession" :key="targetMeta.windowId" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
 
     <template v-if="!currentSession">
-      <n-card>
-        <n-empty :description="t('display.loadingDesc')">
-          <template #icon>
+      <a-card>
+        <a-empty :description="t('display.loadingDesc')">
+          <template #image>
             <FIcon name="info_24_regular" />
           </template>
-        </n-empty>
-      </n-card>
+        </a-empty>
+      </a-card>
     </template>
 
     <template v-else-if="isMobile">
-      <n-tabs v-model:value="mobileTab" type="line" role="tablist" :aria-label="t('display.viewSwitchAria')">
-        <n-tab-pane name="source" :tab="t('display.tabSource')" :tab-props="mobileTabProps('source')"
-          id="display-panel-source" role="tabpanel" aria-labelledby="display-tab-source">
+      <a-tabs v-tabs-keyboard v-model:activeKey="mobileTab" type="line" role="tablist" :aria-label="t('display.viewSwitchAria')">
+        <a-tab-pane key="source" :tab="t('display.tabSource')">
           <SourcePicker :window-id="currentSession.window_id" @opened="handleSourceOpened" />
-        </n-tab-pane>
-        <n-tab-pane name="control" :tab="t('display.tabControl')" :tab-props="mobileTabProps('control')"
-          id="display-panel-control" role="tabpanel" aria-labelledby="display-tab-control">
+        </a-tab-pane>
+        <a-tab-pane key="control" :tab="t('display.tabControl')">
           <PlaybackControl :session="currentSession" />
-        </n-tab-pane>
-      </n-tabs>
+        </a-tab-pane>
+      </a-tabs>
     </template>
 
     <template v-else>
       <div class="display-view__columns">
-        <SourcePicker :window-id="currentSession.window_id" @opened="handleSourceOpened" />
-        <n-card class="display-view__playback">
+        <a-card class="display-view__playback">
           <PlaybackControl :session="currentSession" />
-        </n-card>
+        </a-card>
+        <SourcePicker :window-id="currentSession.window_id" @opened="handleSourceOpened" />
       </div>
     </template>
   </div>
@@ -246,12 +223,12 @@ function handleSourceOpened(): void {
 }
 
 @media (max-width: 767px) {
-  .display-view :deep(.n-tabs-tab[role='tab']) {
+  .display-view :deep(.ant-tabs-tab[role='tab']) {
     min-height: var(--touch-target-min);
     align-items: center;
   }
 
-  .display-view :deep(.n-tabs-tab[role='tab']:focus-visible) {
+  .display-view :deep(.ant-tabs-tab[role='tab']:focus-visible) {
     outline: var(--strokeWidthThick) solid var(--colorBrandStroke1);
     outline-offset: 2px;
   }

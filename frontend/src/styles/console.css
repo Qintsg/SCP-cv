@@ -1,0 +1,142 @@
+/* Ant现场控制台：全局语义令牌、任务工作区几何和手机可达性。 */
+:root {
+  --console-primary:#1677ff;
+  --console-canvas:#f3f6fb;
+  --console-surface:#ffffff;
+  --console-subtle:#f8fafc;
+  --console-text:#182338;
+  --console-muted:#52627a;
+  --console-border:#e2e8f0;
+  --console-nav:#111c32;
+  --console-nav-text:#a9b8d0;
+  --console-brand-tint:#eaf3ff;
+}
+:root[data-theme='dark'] {
+  --console-canvas:#101722;
+  --console-surface:#182231;
+  --console-subtle:#1d293b;
+  --console-text:#e6edf7;
+  --console-muted:#a3b1c6;
+  --console-border:#2c3a4f;
+  --console-brand-tint:#173458;
+}
+@media(prefers-color-scheme:dark) {
+  :root:not([data-theme='light']) {
+    --console-canvas:#101722;--console-surface:#182231;--console-subtle:#1d293b;
+    --console-text:#e6edf7;--console-muted:#a3b1c6;--console-border:#2c3a4f;--console-brand-tint:#173458;
+  }
+}
+/* 旧业务样式只保留语义变量名，实际视觉由控制台/Ant令牌统一拥有。 */
+:root,:root[data-theme] {
+  --fontFamilyBase:"Segoe UI", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --colorNeutralBackground1:var(--console-surface);
+  --colorNeutralBackground2:var(--console-subtle);
+  --colorNeutralBackground3:var(--console-canvas);
+  --colorNeutralBackgroundCanvas:var(--console-canvas);
+  --colorNeutralForeground1:var(--console-text);
+  --colorNeutralForeground2:var(--console-muted);
+  --colorNeutralForeground3:var(--console-muted);
+  --colorNeutralStroke1:var(--console-border);
+  --colorNeutralStroke2:var(--console-border);
+  --colorBrandBackground:var(--console-primary);
+  --colorBrandBackground2:var(--console-brand-tint);
+  --colorBrandForeground1:var(--console-primary);
+  --colorBrandForeground2:var(--console-primary);
+  --colorBrandStroke1:var(--console-primary);
+}
+.console-shell.ant-layout { height:var(--app-height,100dvh); min-height:0; flex-direction:row; background:var(--console-canvas); }
+.console-shell__workspace.ant-layout { min-width:0; min-height:0; height:100%; background:var(--console-canvas); }
+.console-sider.ant-layout-sider { background:var(--console-nav); }
+.console-sider .ant-layout-sider-children { display:flex; flex-direction:column; height:100%; min-height:0; }
+.console-brand { display:flex; align-items:center; gap:12px; padding:24px 22px 28px; color:var(--colorNeutralForegroundInverted); min-height:96px; }
+.console-brand>span { display:grid; place-items:center; flex-shrink:0; width:32px; height:32px; border:1px solid var(--console-nav-text); border-radius:7px; font:600 21px Consolas,monospace; }
+.console-brand strong { display:block; font-size:20px; letter-spacing:.02em; }
+.console-brand small { display:block; margin-top:3px; color:var(--console-nav-text); font-size:11px; white-space:nowrap; }
+.console-navigation { flex:1; min-height:0; overflow:auto; }
+.console-navigation .ant-menu { background:var(--console-nav); border:0; font-size:14px; }
+.console-navigation .ant-menu-item-group-title { font-size:11px; letter-spacing:.08em; padding:20px 24px 8px; color:var(--console-nav-text); }
+.console-navigation .ant-menu-item { margin:3px 12px; width:calc(100% - 24px); height:44px; line-height:44px; border-radius:6px; }
+.console-navigation .ant-menu-item-selected { background:var(--console-primary); }
+.console-navigation .ant-menu-title-content>a { color:inherit; display:block; }
+.console-navigation .ant-menu-inline-collapsed .ant-menu-item-group-title { height:16px; padding:0; font-size:0; }
+.console-navigation .ant-menu-inline-collapsed .ant-menu-item { margin-inline:8px; width:60px; padding-inline:20px; }
+.console-sider__footer { padding:20px 24px; color:var(--console-nav-text); font-size:12px; line-height:1.8; }
+.console-sider__footer span { display:block; opacity:.7; font-size:11px; }
+.console-shell .app-shell__bar { min-height:64px; padding:12px 28px; background:var(--console-surface); border-bottom:1px solid var(--console-border); flex-shrink:0; box-shadow:none; }
+.console-context { display:flex; align-items:center; gap:12px; min-width:0; font-size:13px; color:var(--console-muted); }
+.console-context strong { color:var(--console-text); font-weight:600; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.console-shell .app-shell__content { flex:1; min-width:0; min-height:0; overflow-y:auto; padding:28px; scrollbar-gutter:stable; }
+.console-shell .app-shell__content>* { max-width:1600px; width:100%; margin-inline:auto; min-width:0; }
+.console-shell .page-header { margin-bottom:0; padding:0; background:none; border:0; box-shadow:none; }
+.console-shell .page-header h1 { font-size:24px; line-height:1.4; letter-spacing:-.03em; }
+.console-section-heading { display:flex; align-items:baseline; gap:16px; justify-content:space-between; }
+.console-section-heading h2 { font-size:14px; font-weight:600; margin:0; }
+.console-section-heading span { font-size:12px; color:var(--console-muted); }
+.console-shell .ant-card { box-shadow:none; border-color:var(--console-border); }
+.console-shell .ant-card { min-width:0; }
+.console-shell .ant-card-head { min-height:56px; font-size:15px; }
+.console-shell .ant-card-head-title { min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.console-shell .ant-card-head-wrapper { gap:12px; }
+.console-shell .ant-card-extra { flex-shrink:0; }
+.console-shell .ant-input,.console-shell .ant-select { max-width:100%; }
+.console-shell .ant-select { min-width:0; }
+.console-shell .ant-btn { max-width:100%; }
+.console-shell .ant-btn>span { white-space:normal; }
+.console-shell .ant-form-item { margin-bottom:20px; }
+.console-shell .ant-form-item-label>label { font-weight:500; }
+.console-shell .ant-alert-description { overflow-wrap:anywhere; }
+.console-shell .ant-alert-description p:last-child { margin-bottom:0; }
+.console-shell .display-view__columns { grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr); }
+.console-shell .display-view__playback { position:sticky; top:0; }
+.console-shell .display-view__targets { align-self:flex-start; margin-bottom:0; }
+.console-shell .console-settings-tabs .ant-tabs-nav { min-width:168px; }
+.console-shell .console-settings-tabs .ant-tabs-content-holder { min-width:0; border-left:0; }
+.console-shell .console-settings-tabs .ant-tabs-tab { justify-content:flex-start; min-height:44px; }
+.console-shell .sources-view__main { min-width:0; }
+.console-shell .sources-view__table { width:100%; }
+.console-shell .sources-view__folder-bar { padding:0 0 12px; }
+.console-shell .sources-view__filters { padding-top:0; }
+.console-shell .sources-view__search { flex:1; min-width:180px; }
+.console-shell .sources-view__batch { background:var(--console-brand-tint); border-radius:6px; padding:12px; }
+.console-shell .source-open-card__targets { gap:12px; }
+.app-shell__bottom { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); flex-shrink:0; border-top:1px solid var(--console-border); background:var(--console-surface); padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px)); z-index:100; }
+.app-shell__bottom-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:56px; color:var(--console-muted); font-size:11px; text-decoration:none; border-radius:6px; }
+.app-shell__bottom-item--active { color:var(--console-primary); background:var(--console-brand-tint); }
+.console-toast { overflow-wrap:anywhere; }
+[role='menu'] [role='menuitem']:focus-visible { outline:2px solid var(--console-primary); outline-offset:-2px; }
+/* 通知低于Modal/Drawer，菜单依照Ant自身弹层层级，持久错误不遮住新表单。 */
+.ant-notification { z-index:1900!important; }
+@media(max-width:1199px) {
+  .console-shell .app-shell__bar { padding-inline:20px; }
+  .console-shell .app-shell__content { padding:20px; }
+  .console-shell .display-view__columns { grid-template-columns:minmax(0,1fr); }
+  .console-shell .display-view__playback { position:static; }
+}
+@media(max-width:767px) {
+  .console-shell .app-shell__bar { min-height:56px; padding:8px 12px; gap:8px; }
+  .console-context { gap:8px; }
+  .console-context>span { display:none; }
+  .console-context strong { max-width:110px; font-size:13px; }
+  .console-shell .app-shell__content { padding:18px 12px 24px; }
+  .console-shell .page-header h1 { font-size:21px; }
+  .console-section-heading { align-items:flex-start; flex-direction:column; gap:4px; }
+  .console-shell .ant-card-head { padding-inline:16px; }
+  .console-shell .ant-card-body { padding:16px; }
+  :where(.console-shell,.ant-drawer,.ant-modal,.ppt-focus,.login-view,.server-connection-view) .ant-btn { min-height:44px; min-width:44px; height:auto; }
+  :where(.console-shell,.ant-drawer,.ant-modal,.login-view) :where(.ant-input,.ant-input-affix-wrapper,.ant-input-number,.ant-select-selector) { min-height:44px; font-size:16px; }
+  :where(.console-shell,.ant-drawer,.ant-modal) .ant-select-single { height:44px; }
+  :where(.console-shell,.ant-drawer,.ant-modal) .ant-select-single .ant-select-selector { align-items:center; }
+  :where(.console-shell,.ant-drawer,.ant-modal) .ant-checkbox-wrapper { min-height:44px; align-items:center; }
+  :where(.console-shell,.ant-drawer,.ant-modal) :where(.ant-radio-wrapper,.ant-segmented-item-label) { min-height:44px; align-content:center; }
+  .ant-drawer-body { padding:16px; }
+  .ant-drawer .ant-drawer-close,.ant-modal .ant-modal-close { min-height:44px; min-width:44px; display:inline-flex; align-items:center; justify-content:center; }
+  .ant-notification-notice-close { min-height:44px; min-width:44px; display:flex; align-items:center; justify-content:center; top:0; inset-inline-end:0; }
+  .ant-drawer-footer .ant-btn { min-height:44px; }
+  .ant-modal { max-width:calc(100vw - 24px); margin-inline:auto; }
+  .ant-notification { max-width:calc(100vw - 24px); inset-inline:12px!important; top:calc(64px + env(safe-area-inset-top,0px))!important; bottom:auto!important; margin:0!important; max-height:calc(100dvh - 156px - env(safe-area-inset-bottom,0px)); overflow:auto; }
+  .ant-notification .ant-notification-notice { width:auto; margin-inline:0; }
+  .console-shell .console-settings-tabs .ant-tabs-nav { min-width:0; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .console-shell *,.ant-drawer *,.ant-modal *,.ant-notification * { animation-duration:.001ms!important; transition-duration:.001ms!important; scroll-behavior:auto!important; }
+}

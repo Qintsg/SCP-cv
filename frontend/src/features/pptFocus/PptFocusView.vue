@@ -1,17 +1,18 @@
 <script setup lang="ts">
 /** 文稿专注控制页；动态动画步与静态翻页分开，不暴露未支持的媒体控制。 */
+import { selectAriaLabel as vSelectAriaLabel } from '@/design-system/selectAriaLabel';
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
-import {
-  NAlert,
-  NButton,
-  NEmpty,
-  NProgress,
-  NSelect,
-  NSpin,
-  NTag,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import AEmpty from 'ant-design-vue/es/empty';
+import AProgress from 'ant-design-vue/es/progress';
+import ASelect from 'ant-design-vue/es/select';
+import ASpin from 'ant-design-vue/es/spin';
+import ATag from 'ant-design-vue/es/tag';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useBreakpoint } from '@/composables/useBreakpoint';
@@ -47,8 +48,8 @@ const KEYBOARD_NAVIGATION_SKIP_SELECTOR = [
   '[role="combobox"]',
   '[role="listbox"]',
   '[role="option"]',
-  '.n-base-selection',
-  '.n-base-select-menu',
+  '.ant-select-selector',
+  '.ant-select-dropdown',
 ].join(',');
 
 interface PptSlideRailItem {
@@ -282,55 +283,55 @@ function exitFocus(): void {
 <template>
   <div class="ppt-focus">
     <header class="ppt-focus__topbar">
-      <n-button tertiary @click="exitFocus">
+      <a-button  @click="exitFocus">
         <template #icon><FIcon name="arrow_left_24_regular" /></template>
         {{ t('pptFocus.back') }}
-      </n-button>
+      </a-button>
       <div class="ppt-focus__topbar-center">
-        <n-tag type="info" size="small" round>{{ windowLabel }}</n-tag>
+        <a-tag color="processing"  >{{ windowLabel }}</a-tag>
         <h1 class="ppt-focus__topbar-title">{{ actualPresentationTitle }}</h1>
-        <n-tag :type="session?.playback_state === 'playing' ? 'success' : 'default'" size="small" round>
+        <a-tag :color="tagColor(session?.playback_state === 'playing' ? 'success' : 'default')"  >
           {{ session?.playback_state_label || session?.playback_state || t('pptFocus.unknown') }}
-        </n-tag>
+        </a-tag>
         <span v-if="slidesProgress.total > 0" class="ppt-focus__topbar-progress">
           {{ slidesProgress.current }} / {{ slidesProgress.total }}
         </span>
       </div>
-      <n-button tertiary @click="toggleFullscreen">
+      <a-button  @click="toggleFullscreen">
         <template #icon>
           <FIcon :name="isFullscreen ? 'full_screen_minimize_24_regular' : 'full_screen_maximize_24_regular'" />
         </template>
         {{ isFullscreen ? t('pptFocus.exitFullscreen') : t('pptFocus.fullscreen') }}
-      </n-button>
+      </a-button>
     </header>
 
     <main class="ppt-focus__stage" :data-orientation="orientationKey">
-      <n-alert v-if="session?.actual_source_id && !supportsRequestedPlaybackControls(session)" type="warning">
+      <a-alert v-if="session?.actual_source_id && !supportsRequestedPlaybackControls(session)" type="warning"><template #description>
         {{ t('playback.controlsTypeMismatch') }}
-      </n-alert>
-      <n-button v-if="previewContext" :loading="previewPending" :disabled="previewPending"
-        @click="refreshPreview">刷新预览</n-button>
-      <n-alert v-if="previewUnavailable" type="info">
+      </template></a-alert>
+      <a-button v-if="previewContext" :loading="previewPending" :disabled="previewPending"
+        @click="refreshPreview">刷新预览</a-button>
+      <a-alert v-if="previewUnavailable" type="info"><template #description>
         所选布局预览尚未准备；此提示仅指静态参考图，不表示原生播放失败。
-      </n-alert>
-      <n-alert v-if="loadError" type="error" :title="t('pptFocus.loadFailTitle')">
+      </template></a-alert>
+      <a-alert v-if="loadError" type="error" :message="t('pptFocus.loadFailTitle')"><template #description>
         {{ loadError }}
-      </n-alert>
+      </template></a-alert>
 
       <div v-if="isLoading" class="ppt-focus__loading">
-        <n-spin :size="32" />
+        <a-spin size="large" />
         <span>{{ t('pptFocus.loadingPages') }}</span>
       </div>
 
       <template v-else-if="!previewContext">
-        <n-empty description="实际文稿源或文字布局尚未确认，不能显示默认预览。">
-          <template #icon>
+        <a-empty description="实际文稿源或文字布局尚未确认，不能显示默认预览。">
+          <template #image>
             <FIcon name="document_24_regular" />
           </template>
-          <template #extra>
-            <n-button type="primary" @click="exitFocus">{{ t('pptFocus.back') }}</n-button>
+          <template #default>
+            <a-button type="primary" @click="exitFocus">{{ t('pptFocus.back') }}</a-button>
           </template>
-        </n-empty>
+        </a-empty>
       </template>
 
       <template v-else>
@@ -362,7 +363,7 @@ function exitFocus(): void {
             <div class="ppt-focus__progress">
               <p class="ppt-focus__side-eyebrow">{{ t('pptFocus.progressEyebrow') }}</p>
               <template v-if="slidesProgress.total > 0">
-                <n-progress type="line" :percentage="slidesProgressPercentage" />
+                <a-progress type="line" :percent="slidesProgressPercentage" />
                 <p class="ppt-focus__progress-page">{{ t('pptFocus.progressPage', { current: slidesProgress.current, total: slidesProgress.total }) }}</p>
               </template>
               <p v-else class="ppt-focus__progress-page">{{ t('pptFocus.progressUnknown') }}</p>
@@ -385,37 +386,37 @@ function exitFocus(): void {
           <PresentationEffectControls v-if="isLibreOffice" :window-id="windowId" :disabled="controlsDisabled || !!session?.pending_command" />
           <template v-if="!isStaticSlideMode && !isLibreOffice">
             <div class="ppt-focus__media-picker">
-              <n-select
-                v-model:value="selectedMediaKey"
+              <a-select v-select-aria-label="t('pptFocus.mediaAria')"
+                :value="selectedMediaKey ?? undefined" @update:value="selectedMediaKey = typeof $event === 'string' ? $event : null"
                 :options="currentMediaOptions"
                 :placeholder="mediaSelectPlaceholder"
                 :disabled="isMediaPickerDisabled"
-                :filterable="currentMediaOptions.length >= 10"
+                show-search option-filter-prop="label"
                 :aria-label="t('pptFocus.mediaAria')"
                 size="large"
               />
             </div>
-            <n-button :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.pauseMedia')" @click="controlSelectedMedia('pause')">
+            <a-button :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.pauseMedia')" @click="controlSelectedMedia('pause')">
               <template #icon><FIcon name="pause_24_regular" /></template>
               <span class="ppt-focus__control-label">{{ t('pptFocus.pauseMedia') }}</span>
-            </n-button>
-            <n-button type="primary" :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.playMedia')" @click="controlSelectedMedia('play')">
+            </a-button>
+            <a-button type="primary" :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.playMedia')" @click="controlSelectedMedia('play')">
               <template #icon><FIcon name="play_24_regular" /></template>
               <span class="ppt-focus__control-label">{{ t('pptFocus.playMedia') }}</span>
-            </n-button>
-            <n-button type="error" :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.stopMedia')" @click="controlSelectedMedia('stop')">
+            </a-button>
+            <a-button danger :disabled="!canControlSelectedMedia" :aria-label="t('pptFocus.stopMedia')" @click="controlSelectedMedia('stop')">
               <template #icon><FIcon name="stop_24_regular" /></template>
               <span class="ppt-focus__control-label">{{ t('pptFocus.stopMedia') }}</span>
-            </n-button>
+            </a-button>
           </template>
-          <n-button :disabled="controlsDisabled" :aria-label="t('pptFocus.prevPage')" @click="nav('prev')">
+          <a-button :disabled="controlsDisabled" :aria-label="t('pptFocus.prevPage')" @click="nav('prev')">
             <template #icon><FIcon name="previous_24_regular" /></template>
             <span class="ppt-focus__control-label">{{ t('pptFocus.prevPage') }}</span>
-          </n-button>
-          <n-button :disabled="controlsDisabled" :aria-label="t('pptFocus.nextPage')" @click="nav('next')">
+          </a-button>
+          <a-button :disabled="controlsDisabled" :aria-label="t('pptFocus.nextPage')" @click="nav('next')">
             <template #icon><FIcon name="next_24_regular" /></template>
             <span class="ppt-focus__control-label">{{ t('pptFocus.nextPage') }}</span>
-          </n-button>
+          </a-button>
         </div>
       </template>
     </main>

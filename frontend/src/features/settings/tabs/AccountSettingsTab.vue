@@ -1,9 +1,16 @@
 <script setup lang="ts">
 /** 账户密码表单：原生提交、输入名称、错误关联及请求归属隔离。 */
+import { InputPassword as AInputPassword } from 'ant-design-vue/es/input';
+
 import { computed, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { NAlert, NButton, NCard, NForm, NFormItem, NInput } from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import AForm from 'ant-design-vue/es/form';
+import { FormItem as AFormItem } from 'ant-design-vue/es/form';
+import AInput from 'ant-design-vue/es/input';
 
 import { useToast } from '@/composables/useToast';
 import { useAuthStore } from '@/stores/auth';
@@ -81,34 +88,34 @@ async function logout(): Promise<void> {
 
 <template>
   <section class="settings-view__grid">
-    <n-card :title="t('settings.accountTitle')">
+    <a-card :title="t('settings.accountTitle')">
       <p class="settings-view__hint">{{ t('settings.accountSignedIn', { username: auth.username }) }}</p>
-      <n-form @submit.prevent="save">
-        <n-form-item :label="t('settings.currentPassword')" required>
-          <n-input v-model:value="currentPassword" type="password" show-password-on="click" autocomplete="current-password"
-            :disabled="saving || loggingOut" :input-props="{ 'aria-label': t('settings.currentPassword'), 'aria-describedby': errorMessage && !mismatch ? errorId : undefined }" />
-        </n-form-item>
-        <n-form-item :label="t('settings.newPassword')" required>
-          <n-input v-model:value="newPassword" type="password" show-password-on="click" autocomplete="new-password"
-            :disabled="saving || loggingOut" :input-props="{ 'aria-label': t('settings.newPassword'), 'aria-describedby': errorMessage && !mismatch ? `${hintId} ${errorId}` : hintId }" />
-          <template #feedback><span :id="hintId">{{ t('settings.passwordHint') }}</span></template>
-        </n-form-item>
-        <n-form-item :label="t('settings.confirmPassword')" required>
-          <n-input v-model:value="confirmPassword" type="password" show-password-on="click" autocomplete="new-password"
-            :disabled="saving || loggingOut" :input-props="{ 'aria-label': t('settings.confirmPassword'), 'aria-invalid': mismatch ? 'true' : undefined, 'aria-describedby': errorMessage ? errorId : undefined }" />
-        </n-form-item>
-        <n-alert v-if="errorMessage" :id="errorId" type="error" :title="t('settings.passwordChangeFail')">{{ errorMessage }}</n-alert>
-        <n-button type="primary" attr-type="submit" :disabled="!canSave" :loading="saving">
+      <a-form layout="vertical" :model="{ currentPassword, newPassword, confirmPassword }" @finish="save">
+        <a-form-item :label="t('settings.currentPassword')" required>
+          <a-input-password v-model:value="currentPassword"   autocomplete="current-password"
+            :disabled="saving || loggingOut" v-bind="{ 'aria-label': t('settings.currentPassword'), 'aria-describedby': errorMessage && !mismatch ? errorId : undefined }" />
+        </a-form-item>
+        <a-form-item :label="t('settings.newPassword')" required>
+          <a-input-password v-model:value="newPassword"   autocomplete="new-password"
+            :disabled="saving || loggingOut" v-bind="{ 'aria-label': t('settings.newPassword'), 'aria-describedby': errorMessage && !mismatch ? `${hintId} ${errorId}` : hintId }" />
+          <template #extra><span :id="hintId">{{ t('settings.passwordHint') }}</span></template>
+        </a-form-item>
+        <a-form-item :label="t('settings.confirmPassword')" required>
+          <a-input-password v-model:value="confirmPassword"   autocomplete="new-password"
+            :disabled="saving || loggingOut" v-bind="{ 'aria-label': t('settings.confirmPassword'), 'aria-invalid': mismatch ? 'true' : undefined, 'aria-describedby': errorMessage ? errorId : undefined }" />
+        </a-form-item>
+        <a-alert v-if="errorMessage" :id="errorId" type="error" :message="t('settings.passwordChangeFail')"><template #description>{{ errorMessage }}</template></a-alert>
+        <a-button type="primary" html-type="submit" :disabled="!canSave" :loading="saving">
           {{ t('settings.changePassword') }}
-        </n-button>
-      </n-form>
-    </n-card>
+        </a-button>
+      </a-form>
+    </a-card>
 
-    <n-card :title="t('settings.sessionTitle')">
+    <a-card :title="t('settings.sessionTitle')">
       <p class="settings-view__hint">{{ t('settings.sessionHint') }}</p>
-      <n-button secondary :disabled="saving || loggingOut" :loading="loggingOut" @click="logout">
+      <a-button  :disabled="saving || loggingOut" :loading="loggingOut" @click="logout">
         {{ t('auth.logoutAction') }}
-      </n-button>
-    </n-card>
+      </a-button>
+    </a-card>
   </section>
 </template>

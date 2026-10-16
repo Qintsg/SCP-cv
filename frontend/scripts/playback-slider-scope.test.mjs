@@ -5,6 +5,9 @@
  * @Author : Qintsg
  * @Date : 2026-10-04
  */
+import { prepareSliderGeometry } from './dom-test-server.mjs';
+import { browserKeyCode } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { browser, PlaybackControl, mountPreview, flushUi, observe, responseGate } from './presentation-preview/fixture.mjs';
@@ -40,10 +43,10 @@ function slider(label) {
 
 /** :param element: 真实滑块。:returns: 用户左方向键输入及keyup最终提交已经触发。 */
 async function decrease(element) {
-  element.focus();
-  element.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+  prepareSliderGeometry(element); element.focus();
+  element.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowLeft'), which: browserKeyCode('ArrowLeft'),  key: 'ArrowLeft', bubbles: true, cancelable: true }));
   await flushUi();
-  element.dispatchEvent(new browser.KeyboardEvent('keyup', { key: 'ArrowLeft', bubbles: true }));
+  element.dispatchEvent(new browser.KeyboardEvent('keyup', { keyCode: browserKeyCode('ArrowLeft'), which: browserKeyCode('ArrowLeft'),  key: 'ArrowLeft', bubbles: true }));
   await flushUi();
 }
 

@@ -1,7 +1,8 @@
 <!-- 首页双窗口入口，只读取已同步的会话；导航不会切换播放内容。 -->
 <script setup lang="ts">
+import { tagColor } from '@/design-system/tagColor';
 import { RouterLink } from 'vue-router';
-import { NTag } from 'naive-ui';
+import ATag from 'ant-design-vue/es/tag';
 import { useSessionStore } from '@/stores/sessions';
 import FIcon from '@/design-system/FIcon.vue';
 import { windowPresentation } from './windowPresentation';
@@ -12,9 +13,9 @@ const targets = [{ id: 1, path: '/display/big-left' }, { id: 2, path: '/display/
   <section class="dashboard-windows" aria-label="两个播放窗口">
     <RouterLink v-for="target in targets" :key="target.id" :to="target.path" class="dashboard-window">
       <div class="dashboard-window__heading"><span class="dashboard-window__number" aria-hidden="true">{{ target.id }}</span><strong>窗口{{ target.id }}</strong>
-        <n-tag :type="windowPresentation(sessions.byWindowId(target.id)).tone" size="small">{{ windowPresentation(sessions.byWindowId(target.id)).label }}</n-tag></div>
+        <a-tag :color="tagColor(windowPresentation(sessions.byWindowId(target.id)).tone)" >{{ windowPresentation(sessions.byWindowId(target.id)).label }}</a-tag></div>
       <p>{{ sessions.byWindowId(target.id)?.source_name || (sessions.byWindowId(target.id)?.source_type === 'screen_share' ? '屏幕共享' : '未选择媒体') }}</p>
-      <span class="dashboard-window__action">选择媒体与控制播放 <FIcon name="open_24_regular" /></span>
+      <span class="dashboard-window__action">进入控制 <FIcon name="open_24_regular" /></span>
     </RouterLink>
   </section>
 </template>

@@ -1,7 +1,9 @@
 /*
- * 文件夹对话框行为回归：挂载真实 Vue/Naive UI，验证原生输入与异步保持状态。
+ * 文件夹对话框行为回归：挂载真实 Vue/Ant Design Vue，验证原生输入与异步保持状态。
  * HTTP 仅在 fetch 边界替换，测试不会连接或控制播放主机。
  */
+import { browserKeyCode, visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import test, { after, afterEach, before } from 'node:test';
@@ -46,7 +48,10 @@ before(async () => {
 });
 
 afterEach(async () => {
+  // Vue过渡包含原生定时器；等公开动画状态结束后才卸载并释放浏览器全局。
+  await waitForUi(() => !browser.document.querySelector('[class*="-enter-active"], [class*="-leave-active"]'));
   app?.unmount();
+  await vue.nextTick();
   app = undefined;
   browser.document.body.replaceChildren();
   await browser.happyDOM.abort();
@@ -137,7 +142,7 @@ async function openCreateDialog() {
  */
 function dialogButton(label) {
   const button = [...browser.document.querySelectorAll('[role="dialog"] button')]
-    .find((candidate) => candidate.textContent.trim() === label);
+    .find((candidate) => visibleText(candidate.textContent) === visibleText(label));
   assert.ok(button, `对话框应包含「${label}」按钮`);
   return button;
 }
@@ -211,7 +216,7 @@ test('创建等待期间阻止重复提交，成功后关闭弹窗并展示目�
   button.click();
   await flushUi();
   assert.equal(button.disabled, true, '等待期间创建按钮应禁用');
-  input.dispatchEvent(new browser.KeyboardEvent('keyup', { key: 'Enter', bubbles: true }));
+  input.dispatchEvent(new browser.KeyboardEvent('keyup', { keyCode: browserKeyCode('Enter'), which: browserKeyCode('Enter'),  key: 'Enter', bubbles: true }));
   await flushUi();
   assert.equal(requests.length, 1, '等待中的回车不能再创建一次');
   assert.equal(input.disabled, true, '等待期间输入框应禁用以防回车重复提交');
@@ -221,7 +226,14 @@ test('创建等待期间阻止重复提交，成功后关闭弹窗并展示目�
   }), { headers: { 'Content-Type': 'application/json' } }));
   await flushUi();
   assert.ok(browser.document.querySelector('.sources-view__folder-name')?.textContent.includes('早会资料'));
-  await waitForUi(() => !browser.document.querySelector('input[aria-label="文件夹名称"]'));
+  await waitForUi(() => {
+    const input=browser.document.querySelector('input[aria-label="文件夹名称"]');
+    if (!input) return true;
+    for(let element=input;element;element=element.parentElement){
+      if(element.getAttribute('aria-hidden')==='true'||browser.getComputedStyle(element).display==='none')return true;
+    }
+    return false;
+  });
 });
 
 test('重名创建失败保持名称和弹窗，解除等待并呈现后端错误', async () => {
@@ -247,6 +259,6 @@ test('删除失败保持确认框和已勾选的删除范围', async () => {
   const state = await mountDeleteConfirmation();
   dialogButton('删除').click();
   await flushUi();
-  assert.equal(state.open, true, '操作回调未关闭时，Naive UI 不能误关闭失败弹窗');
-  assert.equal(browser.document.querySelector('[role="checkbox"]')?.getAttribute('aria-checked'), 'true');
+  assert.equal(state.open, true, '操作回调未关闭时，Ant不能误关闭失败弹窗');
+  assert.equal(browser.document.querySelector('input[type="checkbox"]')?.checked, true);
 });

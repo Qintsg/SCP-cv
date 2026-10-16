@@ -1,4 +1,6 @@
 /* 真实设备页DOM与HTTP边界回归：不替换组件/store，不发送现场流量。 */
+import { browserKeyCode, visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import test, { before, after, afterEach } from 'node:test';
@@ -53,13 +55,18 @@ async function mount(audio = {}, capabilities = {}) {
   return { root, runtime: useRuntimeStore(pinia), auth: useAuthStore(pinia) };
 }
 /** :param text: 唯一按钮文案。:returns: 真实DOM按钮。 */
-function button(text) { const matches = [...browser.document.querySelectorAll('button')].filter(node => node.textContent.trim() === text); assert.equal(matches.length, 1, text); return matches[0]; }
+function button(text) { const matches = [...browser.document.querySelectorAll('button')].filter(node => visibleText(node.textContent) === visibleText(text)); assert.equal(matches.length, 1, text); return matches[0]; }
+/** :returns: 通过真实Ant页签进入声音工作区，不直接改组件内部选择。 */
+async function showAudio() {
+  const tab=[...browser.document.querySelectorAll('[role="tab"]')].find(node=>node.textContent.trim()==='音量与来源');
+  assert.ok(tab); tab.click(); await flush();
+}
 
 test('设备页仅有一个手控块；键盘按住和释放发送相同令牌', async () => {
   await mount(); assert.equal(browser.document.querySelectorAll('.camera-pad').length, 1);
   const up = browser.document.querySelector('[aria-label="中摄像机1向上"]'); assert.ok(up);
-  up.dispatchEvent(new browser.KeyboardEvent('keydown', { key: ' ', bubbles: true })); await flush();
-  up.dispatchEvent(new browser.KeyboardEvent('keyup', { key: ' ', bubbles: true })); await flush();
+  up.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode(' '), which: browserKeyCode(' '),  key: ' ', bubbles: true })); await flush();
+  up.dispatchEvent(new browser.KeyboardEvent('keyup', { keyCode: browserKeyCode(' '), which: browserKeyCode(' '),  key: ' ', bubbles: true })); await flush();
   const motion = requests.filter(item => /\/motion\//.test(item.path));
   assert.deepEqual(motion.map(item => item.body.phase), ['start','stop']);
   assert.equal(motion[0].body.motion_id, motion[1].body.motion_id);
@@ -68,16 +75,16 @@ test('设备页仅有一个手控块；键盘按住和释放发送相同令牌',
 
 test('失焦释放一次；切换主机不把旧停止发往新主机', async () => {
   const mounted = await mount(); const up = browser.document.querySelector('[aria-label="中摄像机1向上"]');
-  up.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await flush();
+  up.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('Enter'), which: browserKeyCode('Enter'),  key: 'Enter', bubbles: true })); await flush();
   browser.dispatchEvent(new browser.Event('blur')); await flush();
   assert.deepEqual(requests.filter(item => /\/motion\//.test(item.path)).map(item => item.body.phase), ['start','stop']);
-  up.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Enter', bubbles: true })); await flush();
+  up.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('Enter'), which: browserKeyCode('Enter'),  key: 'Enter', bubbles: true })); await flush();
   mounted.runtime.connectionGeneration++; await flush();
   const motion = requests.filter(item => /\/motion\//.test(item.path)); assert.deepEqual(motion.map(item => item.body.phase), ['start','stop','start']);
 });
 
 test('一张卡片只写对应音量，保留别路未应用草稿；来源仍禁用', async () => {
-  await mount(); const handheld = browser.document.querySelector('input[aria-label="手持话筒"]'); assert.ok(handheld);
+  await mount(); await showAudio(); const handheld = browser.document.querySelector('input[aria-label="手持话筒"]'); assert.ok(handheld);
   handheld.value = '72'; handheld.dispatchEvent(new browser.Event('input', { bubbles: true })); await flush();
   button('应用大屏音量').click(); await flush();
   const writes = requests.filter(item => item.path === '/api/venue/audio/' && item.method === 'PUT');
@@ -89,6 +96,7 @@ test('一张卡片只写对应音量，保留别路未应用草稿；来源仍�
 
 test('来源选择只是草稿，明确应用才发送一次且保留其它音量草稿', async () => {
   await mount({ source: 'ip81' }, { source: true, source_ip81: true, source_scp_cv: true, reason: '' });
+  await showAudio();
   const radio = browser.document.querySelector('input[type="radio"][value="scp_cv"]');
   assert.ok(radio); assert.equal(radio.disabled, false);
   const handheld = browser.document.querySelector('input[aria-label="手持话筒"]');
@@ -103,6 +111,7 @@ test('来源选择只是草稿，明确应用才发送一次且保留其它音�
 
 test('软件未就绪时仍可独立选择IP81，SCP-cv明确禁用', async () => {
   await mount({}, { source: true, source_ip81: true, source_scp_cv: false, reason: '软件输出未就绪' });
+  await showAudio();
   const ip81 = browser.document.querySelector('input[type="radio"][value="ip81"]');
   const software = browser.document.querySelector('input[type="radio"][value="scp_cv"]');
   assert.equal(ip81.disabled, false); assert.equal(software.disabled, true);
@@ -122,16 +131,18 @@ test('位置调用明确发一次；保存当前位置必须先确认', async ()
 
 test('数字字段保留键盘输入，不暴露小于触控尺寸的微型加减按钮', async () => {
   await mount();
-  assert.equal(browser.document.querySelectorAll('.n-input-number button').length, 0);
+  assert.equal(browser.document.querySelectorAll('.ant-input-number button').length, 0);
   assert.equal(browser.document.querySelector('input[aria-label="中摄像机1位置"]').value, '1');
+  await showAudio();
   assert.equal(browser.document.querySelector('input[aria-label="手持话筒"]').value, '35');
 });
 
 test('悬挂与头戴只显示一张音量卡；旧别名可读并按同一通道提交', async () => {
   await mount({ headset_volume: null, hanging_volume: 55 });
+  await showAudio();
   const input = browser.document.querySelector('input[aria-label="悬挂（头戴）话筒"]');
   assert.ok(input); assert.equal(input.value, '55');
-  assert.equal(browser.document.querySelectorAll('.audio-grid .n-card').length, 3);
+  assert.equal(browser.document.querySelectorAll('.audio-grid .ant-card').length, 3);
   button('应用悬挂（头戴）话筒').click(); await flush();
   assert.deepEqual(requests.filter(item => item.method === 'PUT').map(item => item.body), [{ headset_volume: 55 }]);
 });
@@ -152,7 +163,7 @@ test('旧悬挂预设只有一个编辑项；修改和清空同时清除旧别�
   const input = browser.document.querySelector('input[aria-label="预设悬挂（头戴）话筒音量"]');
   assert.ok(input); assert.equal(input.value, '60');
   assert.equal(browser.document.querySelectorAll('input[aria-label*="头戴"]').length, 1);
-  assert.equal(browser.document.querySelectorAll('.advanced-settings .n-input-number button').length, 0);
+  assert.equal(browser.document.querySelectorAll('.advanced-settings .ant-input-number button').length, 0);
   assert.doesNotMatch(browser.document.body.textContent, /设备未核对|尚未绑定的设备配置/);
   input.value = '75'; input.dispatchEvent(new browser.Event('input', { bubbles: true }));
   input.dispatchEvent(new browser.FocusEvent('blur')); await flush();

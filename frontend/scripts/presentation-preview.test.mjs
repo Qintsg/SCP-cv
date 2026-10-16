@@ -6,6 +6,8 @@
  * @Author : Qintsg
  * @Date : 2026-10-03
  */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { browser, PlaybackControl, PptFocusView, flushUi, resourceRows, mountPreview,
@@ -204,7 +206,7 @@ for (const componentName of ['control', 'focus']) {
       assert.equal(resourceRequests().length, 9, '初始读取加八次自动补齐');
     }
     const button = [...browser.document.querySelectorAll('button')]
-      .find((element) => element.textContent.trim() === '刷新预览');
+      .find((element) => visibleText(element.textContent) === visibleText('刷新预览'));
     assert.ok(button, '预览不可用时应有独立只读刷新入口');
     assert.equal(button.disabled, false);
     if (clock) {

@@ -14,15 +14,12 @@
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NAlert,
-  NButton,
-  NDrawer,
-  NDrawerContent,
-  NFormItem,
-  NInput,
-  NSwitch,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ControlDrawer from '@/design-system/ControlDrawer.vue';
+import { FormItem as AFormItem } from 'ant-design-vue/es/form';
+import AInput from 'ant-design-vue/es/input';
+import ASwitch from 'ant-design-vue/es/switch';
 
 import { useToast } from '@/composables/useToast';
 import { useSourceStore } from '@/stores/sources';
@@ -176,59 +173,59 @@ function close(): void {
 </script>
 
 <template>
-  <n-drawer v-model:show="isOpen" width="min(480px, 100vw)" placement="right">
-    <n-drawer-content :title="t('sources.editDrawer.title')" closable>
+  <ControlDrawer role="dialog" aria-modal="true" :aria-label="t('sources.editDrawer.title')" :title="t('sources.editDrawer.title')" v-model:open="isOpen" width="min(480px, 100vw)" placement="right">
+
       <p v-if="source" class="edit-source__desc">{{ t('sources.editDrawer.desc', { name: source.name }) }}</p>
 
       <template v-if="source">
-        <n-alert v-if="isPptWithImages" :type="previewState === 'ready' ? 'success' : previewState === 'failed' || previewState === 'uncertain' ? 'warning' : 'info'"
-          class="edit-source__preparation">
-          <n-form-item label="静态制品文字适配（不修改原件）">
-            <n-switch v-model:value="fitText" aria-label="静态制品文字适配（不修改原件）" :disabled="retrying" />
-          </n-form-item>
+        <a-alert v-if="isPptWithImages" :type="previewState === 'ready' ? 'success' : previewState === 'failed' || previewState === 'uncertain' ? 'warning' : 'info'"
+          class="edit-source__preparation"><template #description>
+          <a-form-item label="静态制品文字适配（不修改原件）">
+            <a-switch v-model:checked="fitText" aria-label="静态制品文字适配（不修改原件）" :disabled="retrying" />
+          </a-form-item>
           {{ t('sources.editDrawer.pptStatus', { status: pptPreparationStateLabel(previewState), pages: previewSummary.pageCount }) }}
-          <n-button v-if="canRetryPpt" size="small" :disabled="retrying" :loading="retrying" @click="retryPptImages">
+          <a-button v-if="canRetryPpt" size="small" :disabled="retrying" :loading="retrying" @click="retryPptImages">
             {{ t('sources.editDrawer.pptRetry') }}
-          </n-button>
-        </n-alert>
-        <n-form-item :label="t('sources.editDrawer.displayName')" required :feedback="t('sources.editDrawer.displayNameHint')">
-          <n-input v-model:value="draftName" :placeholder="t('sources.editDrawer.displayNamePlaceholder')" :disabled="saving" :input-props="{ 'aria-label': t('sources.editDrawer.displayName') }" />
-        </n-form-item>
+          </a-button>
+        </template></a-alert>
+        <a-form-item :label="t('sources.editDrawer.displayName')" required :extra="t('sources.editDrawer.displayNameHint')">
+          <a-input v-model:value="draftName" :placeholder="t('sources.editDrawer.displayNamePlaceholder')" :disabled="saving" v-bind="{ 'aria-label': t('sources.editDrawer.displayName') }" />
+        </a-form-item>
 
         <template v-if="isUrlSource">
-          <n-form-item :label="isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url')" required
-            :feedback="isStreamSource ? t('sources.editDrawer.streamUrlHint') : t('sources.editDrawer.urlHint')">
-            <n-input v-model:value="draftUri" :placeholder="isStreamSource ? 'rtsp:// 或 srt://' : 'https://'"
-              :disabled="saving" :input-props="{ 'aria-label': isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url') }" />
-          </n-form-item>
+          <a-form-item :label="isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url')" required
+            :extra="isStreamSource ? t('sources.editDrawer.streamUrlHint') : t('sources.editDrawer.urlHint')">
+            <a-input v-model:value="draftUri" :placeholder="isStreamSource ? 'rtsp:// 或 srt://' : 'https://'"
+              :disabled="saving" v-bind="{ 'aria-label': isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url') }" />
+          </a-form-item>
         </template>
 
-        <n-form-item :label="t('sources.editDrawer.preheat')" :feedback="t('sources.editDrawer.preheatHint')">
-          <n-switch v-model:value="draftPreheatEnabled" :disabled="saving" :aria-label="t('sources.editDrawer.preheat')">
-            <template #checked>{{ t('sources.editDrawer.preheatSwitch') }}</template>
-            <template #unchecked>{{ t('sources.editDrawer.preheatSwitchOff') }}</template>
-          </n-switch>
-        </n-form-item>
+        <a-form-item :label="t('sources.editDrawer.preheat')" :extra="t('sources.editDrawer.preheatHint')">
+          <a-switch v-model:checked="draftPreheatEnabled" :disabled="saving" :aria-label="t('sources.editDrawer.preheat')">
+            <template #checkedChildren>{{ t('sources.editDrawer.preheatSwitch') }}</template>
+            <template #unCheckedChildren>{{ t('sources.editDrawer.preheatSwitchOff') }}</template>
+          </a-switch>
+        </a-form-item>
 
-        <n-alert v-if="!isUrlSource" type="info" :closable="false">
+        <a-alert v-if="!isUrlSource" type="info" :closable="false"><template #description>
           {{ t('sources.editDrawer.nonWebInfo') }}
-        </n-alert>
+        </template></a-alert>
       </template>
 
-      <n-alert v-if="errorMessage" type="error" :title="t('sources.editDrawer.cantSave')">
+      <a-alert v-if="errorMessage" type="error" :message="t('sources.editDrawer.cantSave')"><template #description>
         {{ errorMessage }}
-      </n-alert>
+      </template></a-alert>
 
       <template #footer>
         <div class="edit-source__actions">
-          <n-button :disabled="saving" @click="close">{{ t('common.cancel') }}</n-button>
-          <n-button type="primary" :loading="saving" :disabled="!source || saving" @click="save">
+          <a-button :disabled="saving" @click="close">{{ t('common.cancel') }}</a-button>
+          <a-button type="primary" :loading="saving" :disabled="!source || saving" @click="save">
             {{ t('sources.editDrawer.saveChanges') }}
-          </n-button>
+          </a-button>
         </div>
       </template>
-    </n-drawer-content>
-  </n-drawer>
+
+  </ControlDrawer>
 </template>
 
 <style scoped>

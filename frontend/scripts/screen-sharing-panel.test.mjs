@@ -1,4 +1,6 @@
 /* 实际Vue共享面板的许可/反馈DOM合同；不含实际采集或媒体传输。SCP-cv 2026-10-11。 */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test, { before, after, afterEach } from 'node:test';
 import { setImmediate as nextTurn } from 'node:timers/promises';
@@ -49,7 +51,7 @@ async function mount(windowId = 1, online = true) {
   app = vue.createApp(Component, { windowId, playerOnline: online }); app.use(pinia); app.use(i18n); app.mount(host); await flush();
 }
 /** :param label: 稳定按钮文案。:returns: 真实渲染的按钮。 */
-function button(label) { return [...browser.document.querySelectorAll('button')].find((item) => item.textContent.trim() === label); }
+function button(label) { return [...browser.document.querySelectorAll('button')].find((item) => visibleText(item.textContent) === visibleText(label)); }
 for (const windowId of [1, 2]) test(`面板目标${windowId}点击先打开选择器，支持停止选择且不会OPEN`, async () => {
   await mount(windowId); assert.match(browser.document.body.textContent, new RegExp(`窗口 ${windowId}`));
   assert.ok(button('选择共享内容')); button('选择共享内容').click();

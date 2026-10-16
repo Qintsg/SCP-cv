@@ -1,2 +1,5 @@
+# 前端独立工作区；只显式拒绝已核对的广告脚本，不放宽其他依赖的构建权限。
+packages:
+  - .
 allowBuilds:
-  electron-winstaller: false
+  core-js: false

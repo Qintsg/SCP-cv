@@ -5,12 +5,10 @@
  */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NButton,
-  NCard,
-  NRadio,
-  NRadioGroup,
-} from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import ARadio from 'ant-design-vue/es/radio';
+import { RadioGroup as ARadioGroup } from 'ant-design-vue/es/radio';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
@@ -83,14 +81,14 @@ async function applyDisplay(): Promise<void> {
 
 <template>
   <section class="settings-view__display">
-    <n-card :title="t('settings.windowSelect')">
-      <n-radio-group v-model:value="targetWindowId" :disabled="pending" :aria-label="t('settings.windowSelect')">
-        <n-radio :value="1">{{ t('settings.window', { id: 1 }) }}</n-radio>
-        <n-radio :value="2">{{ t('settings.window', { id: 2 }) }}</n-radio>
-      </n-radio-group>
-    </n-card>
+    <a-card :title="t('settings.windowSelect')">
+      <a-radio-group v-model:value="targetWindowId" :disabled="pending" :aria-label="t('settings.windowSelect')">
+        <a-radio :value="1">{{ t('settings.window', { id: 1 }) }}</a-radio>
+        <a-radio :value="2">{{ t('settings.window', { id: 2 }) }}</a-radio>
+      </a-radio-group>
+    </a-card>
 
-    <n-card :title="t('settings.availableDisplays')">
+    <a-card :title="t('settings.availableDisplays')">
       <div class="settings-view__display-grid">
         <button v-for="target in selectableTargets" :key="target.index" type="button"
           class="settings-view__display-tile"
@@ -104,11 +102,11 @@ async function applyDisplay(): Promise<void> {
           <FIcon v-if="target.is_primary" class="settings-view__display-primary" name="star_24_filled" />
         </button>
       </div>
-    </n-card>
+    </a-card>
 
-    <n-button type="primary" :disabled="pending || !displaySelection.label" :loading="pending" @click="applyDisplay">
+    <a-button type="primary" :disabled="pending || !displaySelection.label" :loading="pending" @click="applyDisplay">
       <template #icon><FIcon name="checkmark_24_regular" /></template>
       {{ t('settings.applyToWindow', { id: targetWindowId }) }}
-    </n-button>
+    </a-button>
   </section>
 </template>

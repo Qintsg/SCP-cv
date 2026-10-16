@@ -7,13 +7,11 @@
  */
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NAlert,
-  NButton,
-  NCard,
-  NSlider,
-  NSwitch,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import ASlider from 'ant-design-vue/es/slider';
+import ASwitch from 'ant-design-vue/es/switch';
 
 import FIcon from '@/design-system/FIcon.vue';
 import FPageHeader from '@/design-system/FPageHeader.vue';
@@ -57,7 +55,6 @@ const heroSubtitle = computed(() => {
   return t('dashboard.heroCaption');
 });
 
-
 async function powerOnSplice(): Promise<void> {
   try {
     await device.power('splice_screen', 'on');
@@ -68,13 +65,14 @@ async function powerOnSplice(): Promise<void> {
 }
 
 async function powerOffSplice(): Promise<void> {
+  const current = dialog.captureContext();
   const confirmed = await dialog.danger({
     title: t('dashboard.spliceOffTitle'),
     description: t('dashboard.spliceOffDesc'),
     confirmLabel: t('dashboard.spliceOffConfirm'),
     cancelLabel: t('common.cancel'),
   });
-  if (!confirmed) return;
+  if (!confirmed || !current()) return;
   try {
     await device.power('splice_screen', 'off');
     toast.warning(t('dashboard.spliceOffOk'), t('dashboard.spliceOffOkDetail'));
@@ -101,64 +99,68 @@ const hasDeviceError = computed(() =>
   <div class="dashboard">
     <FPageHeader :title="t('nav.dashboard')" :description="heroSubtitle" />
 
-    <DashboardWindows />
-
-    <n-alert v-if="hasDeviceError" type="error" :title="t('dashboard.deviceErrorTitle')">
+    <a-alert v-if="hasDeviceError" type="error" :message="t('dashboard.deviceErrorTitle')"><template #description>
       {{ t('dashboard.deviceErrorBody') }}
-    </n-alert>
+    </template></a-alert>
 
     <section class="dashboard__grid" :aria-label="t('dashboard.topCommands')">
-      <VideoWallMappingPanel class="dashboard__card" />
+      <div class="dashboard__main">
+        <div class="console-section-heading"><h2>播放输出</h2><span>选择窗口，管理当前媒体与播放</span></div>
+        <DashboardWindows />
+        <VideoWallMappingPanel class="dashboard__card" />
+      </div>
+      <aside class="dashboard__side" aria-label="声音与设备">
 
-      <n-card class="dashboard__card" :title="t('dashboard.volumeTitle')">
-        <template #header-extra>
+      <a-card class="dashboard__card" :title="t('dashboard.volumeTitle')">
+        <template #extra>
           <span class="dashboard__eyebrow">{{ t('dashboard.volumeEyebrow') }}</span>
         </template>
-        <n-slider
+        <a-slider
           v-slider-aria-label="t('dashboard.volumeAria')"
           :value="volume.value.value"
           :min="0"
           :max="100"
           :aria-label="t('dashboard.volumeAria')"
-          @update:value="volume.handleInput"
-          @dragend="volume.handleChange(volume.value.value)"
+          @change="value => { if (typeof value === 'number') volume.handleInput(value); }"
+          @afterChange="volume.handleChange(volume.value.value)"
         />
         <div class="dashboard__mute-row">
           <span>{{ t('dashboard.enableSystemMute') }}</span>
-          <n-switch v-model:value="muteToggle" :aria-label="t('dashboard.enableSystemMute')" />
+          <a-switch v-model:checked="muteToggle" :aria-label="t('dashboard.enableSystemMute')" />
         </div>
-      </n-card>
+      </a-card>
 
-      <n-card class="dashboard__card" :title="t('dashboard.powerTitle')">
-        <template #header-extra>
+      <a-card class="dashboard__card" :title="t('dashboard.powerTitle')">
+        <template #extra>
           <span class="dashboard__eyebrow">{{ t('dashboard.powerEyebrow') }}</span>
         </template>
         <div class="dashboard__power-row">
           <span class="dashboard__power-label">{{ t('dashboard.splice') }}</span>
-          <n-button type="primary" @click="powerOnSplice">
+          <a-button type="primary" @click="powerOnSplice">
             <template #icon><FIcon name="power_24_regular" /></template>
             {{ t('dashboard.powerOn') }}
-          </n-button>
-          <n-button type="error" @click="powerOffSplice">
+          </a-button>
+          <a-button danger @click="powerOffSplice">
             <template #icon><FIcon name="plug_disconnected_24_regular" /></template>
             {{ t('dashboard.powerOff') }}
-          </n-button>
+          </a-button>
         </div>
         <div class="dashboard__power-row">
           <span class="dashboard__power-label">{{ t('dashboard.tvLeft') }}</span>
-          <n-button @click="toggleTv('tv_left', t('dashboard.tvLeft'))">
+          <a-button @click="toggleTv('tv_left', t('dashboard.tvLeft'))">
             <template #icon><FIcon name="arrow_swap_24_regular" /></template>
             {{ t('dashboard.toggleState') }}
-          </n-button>
+          </a-button>
         </div>
         <div class="dashboard__power-row">
           <span class="dashboard__power-label">{{ t('dashboard.tvRight') }}</span>
-          <n-button @click="toggleTv('tv_right', t('dashboard.tvRight'))">
+          <a-button @click="toggleTv('tv_right', t('dashboard.tvRight'))">
             <template #icon><FIcon name="arrow_swap_24_regular" /></template>
             {{ t('dashboard.toggleState') }}
-          </n-button>
+          </a-button>
         </div>
-      </n-card>
+      </a-card>
+      </aside>
     </section>
   </div>
 </template>
@@ -239,13 +241,15 @@ const hasDeviceError = computed(() =>
 
 .dashboard__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: minmax(0, 1fr) 300px;
   gap: var(--spacingHorizontalL);
 }
 
 .dashboard__card {
-  min-height: 220px;
+  min-height: 0;
 }
+.dashboard__main,.dashboard__side { display:grid; align-content:start; gap:20px; min-width:0; }
+.dashboard__main { gap:16px; }
 
 .dashboard__eyebrow {
   font-size: var(--fontSizeBase200);
@@ -262,19 +266,26 @@ const hasDeviceError = computed(() =>
 }
 
 .dashboard__power-row {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto auto;
   align-items: center;
   gap: var(--spacingHorizontalS);
   margin-bottom: var(--spacingVerticalS);
 }
+.dashboard__power-row:not(:first-child) .ant-btn { grid-column:2/4; justify-self:end; }
 
 .dashboard__power-label {
   flex: 1 1 100px;
   font-weight: 600;
 }
 
+@media (max-width: 1199px) {
+  .dashboard__grid { grid-template-columns:minmax(0,1fr); }
+  .dashboard__side { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
 @media (max-width: 767px) {
+  .dashboard__main > .wall-map { order:-1; }
+  .dashboard__side { grid-template-columns:minmax(0,1fr); }
   .dashboard__hero {
     padding: var(--spacingVerticalL) var(--spacingHorizontalL) var(--spacingVerticalXL);
   }

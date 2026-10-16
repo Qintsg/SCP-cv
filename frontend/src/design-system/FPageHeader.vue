@@ -19,5 +19,5 @@ defineProps<{ title: string; description?: string; meta?: string }>();
 .page-header__description{margin:var(--spacingVerticalS) 0 0;color:var(--colorNeutralForeground2);max-width:72ch;overflow-wrap:anywhere}
 .page-header__meta{margin:0 0 var(--spacingVerticalXS);font-size:var(--fontSizeBase200);color:var(--colorBrandForeground1)}
 .page-header__context,.page-header__actions{display:flex;align-items:center;flex-wrap:wrap;gap:var(--spacingHorizontalS)}.page-header__context{margin-top:var(--spacingVerticalM)}.page-header__actions{max-width:100%;min-width:0}
-@media(max-width:767px){.page-header{align-items:stretch;flex-direction:column;gap:var(--spacingVerticalM)}.page-header__actions{width:100%}.page-header__actions :deep(.n-input){flex:1;min-width:0}.page-header__title{font-size:var(--fontSizeBase500)}}
+@media(max-width:767px){.page-header{align-items:stretch;flex-direction:column;gap:var(--spacingVerticalM)}.page-header__actions{width:100%}.page-header__actions :deep(.ant-input){flex:1;min-width:0}.page-header__title{font-size:var(--fontSizeBase500)}}
 </style>

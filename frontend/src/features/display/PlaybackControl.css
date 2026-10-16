@@ -142,7 +142,7 @@
   flex: 0 0 auto;
 }
 
-.playback-control__jump :deep(.n-input) {
+.playback-control__jump :deep(.ant-input) {
   width: 96px;
 }
 
@@ -224,7 +224,7 @@
 
 @media (max-width: 767px) {
   /* 关闭/停止等主要动作也要保留完整触控高度，不只扩大错误恢复按钮。 */
-  .playback-control :deep(.n-button) {
+  .playback-control :deep(.ant-btn) {
     min-height: 44px;
   }
 

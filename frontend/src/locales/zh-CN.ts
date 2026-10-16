@@ -24,8 +24,6 @@ import designSystem from './zh-CN/design-system';
 import videoWall from './zh-CN/videoWall';
 import screenShare from './zh-CN/screenShare';
 
-
-
 export default {
 
   ...core,

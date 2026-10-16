@@ -1,4 +1,6 @@
 /* 真实应用外壳与显示页回归：两逻辑窗口不按墙面模式隐藏，路由选择没有物理写操作。SCP-cv 2026-10-11。 */
+import { browserKeyCode } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test, { before, after, afterEach } from 'node:test';
 import { setImmediate as nextTurn } from 'node:timers/promises';
@@ -54,10 +56,14 @@ for (const mode of ['single', 'double', 'custom']) for (const width of [1440, 39
       const nav = browser.document.querySelector('a[href="/display/big-right"]');
       assert.ok(nav, '窗口2导航必须存在'); assert.match(nav.textContent, /窗口 2/);
     } else {
-      assert.ok(browser.document.querySelector('input[type="radio"][value="big-right"]'), '窄屏保留窗口2');
-      const sourceTab = browser.document.querySelector('[role="tab"][aria-selected="true"]');
+      const radio=[...browser.document.querySelectorAll('label')].find(node=>node.textContent.replace(/\s/g,'')==='窗口2')?.querySelector('input[type="radio"]');
+      assert.ok(radio?.checked, '窄屏保留并选中窗口2');
+      const sourceTab = [...browser.document.querySelectorAll('.display-view [role="tab"]')]
+        .find(node=>node.textContent.trim()===i18n.global.t('display.tabSource'));
       assert.ok(sourceTab, '窄屏页签必须可被辅助技术识别和键盘操作');
-      sourceTab.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true })); await flush();
+      sourceTab.click(); await flush(); sourceTab.focus();
+      sourceTab.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true })); await flush();
+      browser.document.activeElement.dispatchEvent(new browser.KeyboardEvent('keydown', { key:'Enter', keyCode:13, which:13, bubbles:true })); await flush();
       assert.equal(browser.document.activeElement?.textContent.trim(), '播放控制');
       assert.equal(browser.document.activeElement?.getAttribute('aria-selected'), 'true');
     }

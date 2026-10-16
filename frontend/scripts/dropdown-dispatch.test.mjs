@@ -1,12 +1,14 @@
 /*
- * 下拉菜单动作回归：挂载真实 Vue/Naive UI，以受控 HTTP 验证派发次数与禁用门禁。
+ * 下拉菜单动作回归：挂载真实 Vue/Ant Design Vue，以受控 HTTP 验证派发次数与禁用门禁。
  * 所有请求均在 fetch 边界截断，不连接播放主机或执行应急物理动作。
  */
+import { browserKeyCode, visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import test, { after, afterEach, before } from 'node:test';
 import { Window } from 'happy-dom';
-import { createDomTestServer } from './dom-test-server.mjs';
+import { createDomTestServer, waitForDom } from './dom-test-server.mjs';
 
 const browser = new Window({ url: 'http://localhost:5173/sources' });
 const globalNames = ['window', 'document', 'navigator', 'HTMLElement', 'HTMLInputElement',
@@ -123,12 +125,12 @@ test('内置目录和源不可批量选择，原生角色同时提供禁用语�
   const store = useSourceStore(pinia);
   store.sources = [{ ...source, is_protected: true }];
   await flushUi();
-  const item = browser.document.querySelector('[role="checkbox"][aria-label="选择 '+source.name+'"]');
+  const item = browser.document.querySelector('input[type="checkbox"][aria-label="选择 '+source.name+'"]');
   assert.ok(item);
-  assert.equal(item.getAttribute('aria-disabled'), 'true');
+  assert.equal(item.disabled, true);
   item.click(); await flushUi();
   assert.equal(browser.document.querySelector('[aria-label="批量操作"]'), null);
-  assert.equal(browser.document.querySelector('[role="checkbox"][aria-label="全选当前普通媒体"]').getAttribute('aria-disabled'), 'true');
+  assert.equal(browser.document.querySelector('input[type="checkbox"][aria-label="全选当前普通媒体"]').disabled, true);
   assert.deepEqual(requests, []);
 });
 
@@ -138,8 +140,8 @@ test('内置目录和源不可批量选择，原生角色同时提供禁用语�
  * :returns: 菜单项原生 DOM。
  */
 function menuItem(label) {
-  const item = [...browser.document.querySelectorAll('.n-dropdown-option-body')]
-    .find((candidate) => candidate.textContent.trim() === label);
+  const item = [...browser.document.querySelectorAll('[role="menuitem"]')]
+    .find((candidate) => visibleText(candidate.textContent) === visibleText(label));
   assert.ok(item, `应渲染「${label}」菜单项`);
   return item;
 }
@@ -151,8 +153,10 @@ function menuItem(label) {
 async function openSourceMove() {
   browser.document.querySelector('button[aria-label="媒体 受控图卡 的操作"]').click();
   await flushUi();
+  await waitForDom(()=>[...browser.document.querySelectorAll('[role="menuitem"]')].some(item=>visibleText(item.textContent)==='移动到…'));
   menuItem('移动到…').dispatchEvent(new browser.MouseEvent('mouseenter', { bubbles: true }));
   await flushUi();
+  await waitForDom(()=>[...browser.document.querySelectorAll('[role="menuitem"]')].some(item=>visibleText(item.textContent)==='移动到根目录'));
   return menuItem('移动到根目录');
 }
 
@@ -163,8 +167,10 @@ async function openSourceMove() {
 async function openFolderMove() {
   browser.document.querySelector('.sources-view__folder-card button[aria-label]').click();
   await flushUi();
+  await waitForDom(()=>[...browser.document.querySelectorAll('[role="menuitem"]')].some(item=>visibleText(item.textContent)==='移动文件夹到…'));
   menuItem('移动文件夹到…').dispatchEvent(new browser.MouseEvent('mouseenter', { bubbles: true }));
   await flushUi();
+  await waitForDom(()=>[...browser.document.querySelectorAll('[role="menuitem"]')].some(item=>visibleText(item.textContent)==='移动到根目录'));
   return menuItem('移动到根目录');
 }
 
@@ -174,7 +180,7 @@ async function openFolderMove() {
  * :returns: 键盘事件处理完成。
  */
 async function pressKey(key) {
-  browser.document.dispatchEvent(new browser.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+  browser.document.activeElement.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode(key), which: browserKeyCode(key), key, bubbles: true, cancelable: true }));
   await flushUi();
 }
 
@@ -185,6 +191,7 @@ async function pressKey(key) {
 async function openEmergency() {
   browser.document.querySelector('button[aria-label="应急控制"]').click();
   await flushUi();
+  await waitForDom(()=>[...browser.document.querySelectorAll('[role="menuitem"]')].some(item=>visibleText(item.textContent)==='重置全部窗口'));
 }
 
 test('鼠标从源菜单移动一次只发送一条命令', async () => {
@@ -207,7 +214,7 @@ test('媒体库打开受理不冒称已在窗口出画', async () => {
   };
   browser.document.querySelector('button[aria-label="媒体 受控图卡 的操作"]').click(); await flushUi();
   menuItem('打开到…').click(); await flushUi();
-  const target = [...browser.document.querySelectorAll('.source-open-card button')].find(button => button.textContent.trim() === '窗口 1');
+  const target = [...browser.document.querySelectorAll('.source-open-card button')].find(button => visibleText(button.textContent) === visibleText('窗口 1'));
   assert.ok(target, '打开到小卡片应提供窗口1');
   target.click(); await flushUi();
   assert.match(browser.document.querySelector('.source-open-card').textContent, /请求已受理，等待实际输出/);
@@ -232,7 +239,7 @@ test('键盘从源菜单移动一次只发送一条命令', async () => {
   await mountMenu();
   await openSourceMove();
   await pressKey('ArrowRight');
-  assert.ok(menuItem('移动到根目录').classList.contains('n-dropdown-option-body--pending'));
+  assert.equal(visibleText(browser.document.activeElement.textContent), '移动到根目录');
   await pressKey('Enter');
   assert.equal(requests.filter((request) => request.pathname === '/api/sources/1/move/').length, 1);
 });
@@ -240,7 +247,7 @@ test('键盘从源菜单移动一次只发送一条命令', async () => {
 test('已在根目录的源点击禁用目标不会发送移动命令', async () => {
   await mountMenu(SourcesView, null);
   const target = await openSourceMove();
-  assert.ok(target.classList.contains('n-dropdown-option-body--disabled'));
+  assert.equal(target.getAttribute('aria-disabled'), 'true');
   target.click();
   await flushUi();
   assert.equal(requests.filter((request) => request.pathname === '/api/sources/1/move/').length, 0);
@@ -260,7 +267,7 @@ test('鼠标从目录菜单移动一次只发送一条命令', async () => {
 test('已在根目录的文件夹点击禁用目标不会发送移动命令', async () => {
   await mountMenu(SourcesView, null);
   const target = await openFolderMove();
-  assert.ok(target.classList.contains('n-dropdown-option-body--disabled'));
+  assert.equal(target.getAttribute('aria-disabled'), 'true');
   target.click();
   await flushUi();
   assert.equal(requests.filter((request) => request.method === 'PATCH').length, 0);
@@ -278,7 +285,7 @@ test('键盘应急动作只发送一条受控命令', async () => {
   await mountMenu(EmergencyMenu);
   await openEmergency();
   await pressKey('ArrowDown');
-  assert.ok(menuItem('重置全部窗口').classList.contains('n-dropdown-option-body--pending'));
+  assert.equal(visibleText(browser.document.activeElement.textContent), '重置全部窗口');
   await pressKey('Enter');
   assert.equal(requests.filter((request) => request.pathname === '/api/playback/reset-all/').length, 1);
 });
@@ -286,6 +293,6 @@ test('键盘应急动作只发送一条受控命令', async () => {
 test('动作字段拆分后危险项仍保留 DOM 展示样式', async () => {
   await mountMenu(EmergencyMenu);
   await openEmergency();
-  assert.ok(menuItem('关闭播放器服务').getAttribute('style').includes('var(--colorStatusDangerForeground1)'));
+  assert.ok(menuItem('关闭播放器服务').className.includes('-item-danger'));
   assert.equal(requests.length, 0, '只查看菜单样式不应发送任何命令');
 });

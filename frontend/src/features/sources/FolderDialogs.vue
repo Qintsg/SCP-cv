@@ -4,7 +4,10 @@
  * 输入属性传给原生控件，保持文件夹错误的可访问语义。
  */
 import { useI18n } from 'vue-i18n';
-import { NAlert, NCheckbox, NInput, NModal } from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import ACheckbox from 'ant-design-vue/es/checkbox';
+import AInput from 'ant-design-vue/es/input';
+import AModal from 'ant-design-vue/es/modal';
 import type { MediaFolderItem } from '@/services/api';
 
 const props = defineProps<{
@@ -29,7 +32,9 @@ const { t } = useI18n();
  */
 async function submitCreate(): Promise<boolean> {
   if (props.creating) return false;
-  return props.createFolder();
+  const created = await props.createFolder();
+  if (created) createOpen.value = false;
+  return created;
 }
 
 /**
@@ -41,38 +46,41 @@ async function submitDelete(): Promise<boolean> {
   await props.deleteFolder();
   return false;
 }
+
+/** :param value: 原生输入值。:returns: 更新名称并清除旧校验，不重复绑定Ant更新事件。 */
+function updateName(value: string): void { name.value = value; nameError.value = false; }
 </script>
 
 <template>
-  <n-modal v-model:show="deleteOpen" preset="dialog"
+  <a-modal v-model:open="deleteOpen"
     :title="t('sources.deleteFolderTitle', { name: deleteTarget?.name ?? '' })"
-    :positive-text="t('sources.deleteFolderOk')"
-    :negative-text="t('common.cancel')"
-    :positive-button-props="{ type: 'error', loading: deleting }"
-    @positive-click="submitDelete"
-    @negative-click="emit('delete-cancelled')">
+    :ok-text="t('sources.deleteFolderOk')"
+    :cancel-text="t('common.cancel')"
+    :ok-button-props="{ danger: true, loading: deleting, disabled: deleting }"
+    @ok="submitDelete"
+    @cancel="emit('delete-cancelled')">
     <p style="margin: 0 0 var(--spacingVerticalS); color: var(--colorNeutralForeground2);">
       {{ t('sources.deleteFolderDesc') }}
     </p>
-    <n-checkbox v-model:checked="deleteContents">
+    <a-checkbox v-model:checked="deleteContents">
       {{ t('sources.deleteFolderContentsCheckbox') }}
-    </n-checkbox>
-    <n-alert v-if="deleteContents" type="warning" :closable="false" style="margin-top: var(--spacingVerticalS);">
+    </a-checkbox>
+    <a-alert v-if="deleteContents" type="warning" :closable="false" style="margin-top: var(--spacingVerticalS);"><template #description>
       {{ t('sources.deleteFolderContentsWarn') }}
-    </n-alert>
-  </n-modal>
+    </template></a-alert>
+  </a-modal>
 
-  <n-modal v-model:show="createOpen" preset="dialog" :title="t('sources.newFolder')"
-    :positive-text="t('sources.newFolderOk')" :negative-text="t('common.cancel')"
-    :loading="creating" @positive-click="submitCreate">
-    <n-input v-model:value="name" :placeholder="t('sources.newFolderPlaceholder')"
-      :input-props="{ 'aria-label': t('sources.newFolderName'), 'aria-invalid': nameError }"
+  <a-modal v-model:open="createOpen"  :title="t('sources.newFolder')"
+    :ok-text="t('sources.newFolderOk')" :cancel-text="t('common.cancel')"
+    :confirm-loading="creating" :ok-button-props="{ disabled: creating }" @ok="submitCreate">
+    <a-input :value="name" :placeholder="t('sources.newFolderPlaceholder')"
+      v-bind="{ 'aria-label': t('sources.newFolderName'), 'aria-invalid': nameError }"
       :disabled="creating" :status="nameError ? 'error' : undefined"
-      @update:value="nameError = false" @keyup.enter="submitCreate" />
+      @update:value="updateName" @keyup.enter="submitCreate" />
     <div v-if="nameError" class="folder-name-error" role="alert">
       {{ t('sources.newFolderNameRequired') }}
     </div>
-  </n-modal>
+  </a-modal>
 </template>
 
 <style scoped>

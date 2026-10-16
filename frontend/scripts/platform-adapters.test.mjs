@@ -1,5 +1,7 @@
+/** 共享平台适配器：路由、原生返回键与受限文件操作合同，不连接实际设备。 */
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { Window } from 'happy-dom';
 
 import {
   getClientHistoryKind,
@@ -34,17 +36,27 @@ test('返回键先关闭浮层，再回退路由，根页面才请求退出客�
 });
 
 test('原生返回键通过浮层的关闭控件结束最上层交互', () => {
+  const browser = new Window();
   let closeCount = 0;
-  const closeControl = { click: () => { closeCount += 1; } };
-  const layer = {
-    querySelector: (selector) => selector === 'button[aria-label="close"]' ? closeControl : null,
-  };
-  const root = {
-    querySelectorAll: () => [layer],
-  };
-
-  assert.equal(dismissTopLayer(root), true);
+  browser.document.body.innerHTML = '<div role="dialog"><button aria-label="Close">关闭</button></div>';
+  browser.document.querySelector('button').onclick = () => { closeCount += 1; };
+  assert.equal(dismissTopLayer(browser.document), true);
   assert.equal(closeCount, 1);
+});
+
+test('返回键忽略关闭缓存，按弹层层级关闭且不穿透不可关闭确认', () => {
+  const browser = new Window();
+  const doc = browser.document;
+  doc.body.innerHTML = '<div style="z-index:2200"><div role="dialog" id="confirm"></div></div><div role="dialog" style="z-index:2000"><button aria-label="Close"></button></div><div role="dialog" style="display:none"><button aria-label="Close"></button></div>';
+  let calls = 0;
+  doc.querySelectorAll('button').forEach(button => { button.onclick = () => { calls++; }; });
+  assert.equal(dismissTopLayer(doc), true);
+  assert.equal(calls, 0, '不可关闭确认应消费返回键，不能操作后面的抽屉');
+  doc.querySelector('#confirm').parentElement.remove();
+  assert.equal(dismissTopLayer(doc), true);
+  assert.equal(calls, 1);
+  doc.querySelector('[role="dialog"]').setAttribute('data-scp-dialog-open', 'false');
+  assert.equal(dismissTopLayer(doc), false);
 });
 
 test('上传只消费平台选择器返回的 Blob，不把客户端路径注册成主机路径', async () => {

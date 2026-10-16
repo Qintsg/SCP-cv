@@ -2,7 +2,7 @@
 /** 共享声音操作区：实际属性与设置草稿分离，未知时不能猜成已开启。SCP-cv 2026-10-11。 */
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NButton } from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
 import type { ScreenShareSnapshot } from '@/services/screenSharing';
 import type { ScreenShareAudioView } from './ScreenShareAudioController';
 
@@ -51,8 +51,8 @@ function toggleMute(): void {
         <input v-model.number="draft" type="number" min="0" max="100" step="1" :disabled="disabled"
           :aria-label="t('screenShare.audio.volumeLabel')" @input="markEdited" />
       </label>
-      <n-button attr-type="submit" secondary :disabled="disabled || !validDraft">{{ t('screenShare.audio.apply') }}</n-button>
-      <n-button attr-type="button" secondary :disabled="disabled" @click="toggleMute">{{ toggleLabel }}</n-button>
+      <a-button html-type="submit"  :disabled="disabled || !validDraft">{{ t('screenShare.audio.apply') }}</a-button>
+      <a-button html-type="button"  :disabled="disabled" @click="toggleMute">{{ toggleLabel }}</a-button>
     </form>
     <p v-if="feedback" class="share-audio__feedback" role="status" aria-live="polite" aria-atomic="true">{{ feedback }}</p>
   </div>

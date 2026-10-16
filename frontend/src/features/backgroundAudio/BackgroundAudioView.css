@@ -79,9 +79,9 @@
   align-items: stretch;
 }
 
-.background-audio__player :deep(.n-card__content),
-.background-audio__sources :deep(.n-card__content),
-.background-audio__playlist :deep(.n-card__content) {
+.background-audio__player :deep(.ant-card-body),
+.background-audio__sources :deep(.ant-card-body),
+.background-audio__playlist :deep(.ant-card-body) {
   min-height: 100%;
 }
 
@@ -119,7 +119,7 @@
   animation: background-audio-spin 6s linear infinite;
 }
 
-.background-audio__disc :deep(.n-icon) {
+.background-audio__disc :deep(.f-icon) {
   padding: var(--spacing-s);
   border-radius: 50%;
   background: var(--colorNeutralBackground1);
@@ -190,10 +190,10 @@
 }
 
 /* 进度条保留可见时钟，并提供手机端44px操作高度。 */
-.background-audio__progress-row :deep(.n-slider) {
+.background-audio__progress-row :deep(.ant-slider) {
   height: 44px;
   box-sizing: border-box;
-  padding-block: calc((44px - var(--n-rail-height)) / 2);
+  padding-block: 20px;
 }
 
 .background-audio__controls,
@@ -356,9 +356,9 @@
     grid-template-columns: auto minmax(0, 1fr);
   }
 
-  .background-audio__source-item :deep(.n-button),
-  .background-audio__playlist-item :deep(.n-button),
-  .background-audio__playlist-item :deep(.n-tag) {
+  .background-audio__source-item :deep(.ant-btn),
+  .background-audio__playlist-item :deep(.ant-btn),
+  .background-audio__playlist-item :deep(.ant-tag) {
     grid-column: span 2;
     justify-self: stretch;
   }
@@ -427,9 +427,9 @@
     justify-self: start;
   }
 
-  .background-audio__source-item :deep(.n-button),
-  .background-audio__playlist-item :deep(.n-button),
-  .background-audio__playlist-item :deep(.n-tag) {
+  .background-audio__source-item :deep(.ant-btn),
+  .background-audio__playlist-item :deep(.ant-btn),
+  .background-audio__playlist-item :deep(.ant-tag) {
     grid-column: auto;
   }
 }

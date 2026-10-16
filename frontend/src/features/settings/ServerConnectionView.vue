@@ -1,18 +1,18 @@
 <script setup lang="ts">
 /** 主机地址协议选择；网页默认HTTP，封装端保留原HTTPS认证限制。SCP-cv 2026-10-12。 */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import {
-  NAlert,
-  NButton,
-  NCard,
-  NForm,
-  NFormItem,
-  NInput,
-  NSwitch,
-  NTag,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import AForm from 'ant-design-vue/es/form';
+import { FormItem as AFormItem } from 'ant-design-vue/es/form';
+import AInput from 'ant-design-vue/es/input';
+import ASwitch from 'ant-design-vue/es/switch';
+import ATag from 'ant-design-vue/es/tag';
 
 import FPageHeader from '@/design-system/FPageHeader.vue';
 import { getClientBuildTarget } from '@/platform';
@@ -103,70 +103,70 @@ function openLogin(): void {
       <FPageHeader :title="t('serverConnection.title')" :description="t('serverConnection.subtitle')" meta="SCP-cv" />
 
       <section class="grid gap-3 sm:grid-cols-2" :aria-label="t('serverConnection.layerStatus')">
-        <n-card size="small" :title="t('serverConnection.controlLayer')">
-          <n-tag :type="controlTagType" round>{{ controlLabel }}</n-tag>
+        <a-card size="small" :title="t('serverConnection.controlLayer')">
+          <a-tag :color="tagColor(controlTagType)" >{{ controlLabel }}</a-tag>
           <p class="mb-0 mt-3 text-sm text-foreground-muted">{{ t('serverConnection.controlHint') }}</p>
-        </n-card>
-        <n-card size="small" :title="t('serverConnection.playerLayer')">
-          <n-tag :type="layerSummary.player === 'online' ? 'success' : 'error'" round>{{ playerLabel }}</n-tag>
+        </a-card>
+        <a-card size="small" :title="t('serverConnection.playerLayer')">
+          <a-tag :color="tagColor(layerSummary.player === 'online' ? 'success' : 'error')" >{{ playerLabel }}</a-tag>
           <p class="mb-0 mt-3 text-sm text-foreground-muted">{{ t('serverConnection.playerHint') }}</p>
-        </n-card>
+        </a-card>
       </section>
 
-      <n-card :title="t('serverConnection.formTitle')">
+      <a-card :title="t('serverConnection.formTitle')">
         <p class="mt-0 text-sm text-foreground-muted">
           {{ t('serverConnection.currentProfile', { profile: currentProfileLabel }) }}
         </p>
-        <n-form @submit.prevent="connect">
-          <n-form-item :label="t('serverConnection.origin')" required>
-            <n-input
+        <a-form layout="vertical" :model="{ origin, displayName, allowInsecureDevelopment }" @finish="connect">
+          <a-form-item :label="t('serverConnection.origin')" required>
+            <a-input
               v-model:value="origin"
               inputmode="url"
-              :input-props="{ 'aria-label': t('serverConnection.origin') }"
+              v-bind="{ 'aria-label': t('serverConnection.origin') }"
               autocomplete="url"
               :disabled="probeState === 'checking'"
               :placeholder="t('serverConnection.originPlaceholder')"
             />
-          </n-form-item>
-          <n-form-item :label="t('serverConnection.displayName')">
-            <n-input
+          </a-form-item>
+          <a-form-item :label="t('serverConnection.displayName')">
+            <a-input
               v-model:value="displayName"
-              :input-props="{ 'aria-label': t('serverConnection.displayName') }"
+              v-bind="{ 'aria-label': t('serverConnection.displayName') }"
               :disabled="probeState === 'checking'"
               :placeholder="t('serverConnection.displayNamePlaceholder')"
             />
-          </n-form-item>
+          </a-form-item>
           <p class="mb-4 text-sm text-foreground-muted">{{ t(isWeb ? 'serverConnection.protocolHint' : 'serverConnection.packagedHttpsRequired') }}</p>
           <div v-if="!isWeb" class="mb-4 flex min-h-11 items-center justify-between gap-4 rounded-lg border border-stroke px-3 py-2">
             <div>
               <p class="m-0 font-medium">{{ t('serverConnection.insecureDevelopment') }}</p>
               <p class="m-0 text-sm text-foreground-muted">{{ t('serverConnection.insecureDevelopmentHint') }}</p>
             </div>
-            <n-switch v-model:value="allowInsecureDevelopment" :disabled="probeState === 'checking'" />
+            <a-switch v-model:checked="allowInsecureDevelopment" :disabled="probeState === 'checking'" />
           </div>
-          <n-alert v-if="errorMessage" type="error" :title="t('serverConnection.connectFailed')">
+          <a-alert v-if="errorMessage" type="error" :message="t('serverConnection.connectFailed')"><template #description>
             {{ errorMessage }}
-          </n-alert>
-          <n-alert v-else-if="probeState === 'reachable' && !auth.isAuthenticated" type="success" :title="t('serverConnection.hostReachable')">
+          </template></a-alert>
+          <a-alert v-else-if="probeState === 'reachable' && !auth.isAuthenticated" type="success" :message="t('serverConnection.hostReachable')"><template #description>
             {{ t('serverConnection.loginRequired') }}
-          </n-alert>
+          </template></a-alert>
           <div class="mt-5 flex flex-col gap-3 sm:flex-row">
-            <n-button type="primary" attr-type="submit" :loading="probeState === 'checking'">
+            <a-button type="primary" html-type="submit" :loading="probeState === 'checking'">
               {{ t('serverConnection.connect') }}
-            </n-button>
-            <n-button v-if="probeState === 'reachable' && !auth.isAuthenticated" @click="openLogin">
+            </a-button>
+            <a-button v-if="probeState === 'reachable' && !auth.isAuthenticated" @click="openLogin">
               {{ t('serverConnection.openLogin') }}
-            </n-button>
-            <n-button v-if="auth.isAuthenticated" tertiary @click="router.push('/dashboard')">
+            </a-button>
+            <a-button v-if="auth.isAuthenticated"  @click="router.push('/dashboard')">
               {{ t('serverConnection.backToConsole') }}
-            </n-button>
+            </a-button>
           </div>
-        </n-form>
-      </n-card>
+        </a-form>
+      </a-card>
 
-      <n-alert type="info" :title="t('serverConnection.securityTitle')">
+      <a-alert type="info" :message="t('serverConnection.securityTitle')"><template #description>
         {{ t('serverConnection.securityHint') }}
-      </n-alert>
+      </template></a-alert>
     </div>
   </main>
 </template>

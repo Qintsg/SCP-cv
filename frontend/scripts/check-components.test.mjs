@@ -1,4 +1,5 @@
 // 使用与 Vite 相同的 Vue 编译器捕获模板中遗漏导入的组件。
+/** 组件显式注册与模板静态合同回归，真实事件另由DOM及浏览器验证。 */
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -15,7 +16,7 @@ function vueFiles(directory) {
   });
 }
 
-test('所有 Naive UI 模板组件必须显式注册', () => {
+test('所有 Ant Design Vue 模板组件必须显式注册，不能遗留旧组件库', () => {
   const unresolved = [];
   for (const filename of vueFiles(sourceRoot)) {
     const { descriptor, errors } = parse(readFileSync(filename, 'utf8'), { filename });
@@ -29,7 +30,8 @@ test('所有 Naive UI 模板组件必须显式注册', () => {
       compilerOptions: { bindingMetadata: script.bindings },
     });
     assert.deepEqual(result.errors, [], filename);
-    for (const match of result.code.matchAll(/_resolveComponent\("(n-[^"]+|N[A-Z][^"]*)"\)/g)) {
+    assert.doesNotMatch(readFileSync(filename, 'utf8'), /from ['"]naive-ui['"]|<n-[a-z]/, filename);
+    for (const match of result.code.matchAll(/_resolveComponent\("(a-[^"]+|A[A-Z][^"]*|ActionMenu)"\)/g)) {
       unresolved.push(`${relative(sourceRoot, filename)}: ${match[1]}`);
     }
   }
@@ -39,7 +41,7 @@ test('所有 Naive UI 模板组件必须显式注册', () => {
 test('移动底栏在路由动作之前阻止原生导航，更多只打开抽屉', () => {
   const filename = join(sourceRoot, 'layouts/AppNavigation.vue');
   const { descriptor } = parse(readFileSync(filename, 'utf8'), { filename });
-  const bottom = descriptor.template.content.match(/<nav\s+v-if="compact"[\s\S]*?<\/nav>/)?.[0];
+  const bottom = descriptor.template.content.match(/<nav\s+v-else\s+class="app-shell__bottom"[\s\S]*?<\/nav>/)?.[0];
   assert.ok(bottom, '必须存在移动底栏');
   assert.doesNotMatch(bottom, /<RouterLink\b/, '自动导航的 RouterLink 会先访问不存在的 /more');
   assert.match(bottom, /@click\.prevent=/, '导航必须由底栏 handler 显式负责');
@@ -48,7 +50,7 @@ test('移动底栏在路由动作之前阻止原生导航，更多只打开抽�
 test('侧边抽屉宽度不能大于手机视口', () => {
   for (const name of ['sources/AddSourceDrawer', 'sources/EditSourceDrawer', 'scenarios/ScenarioEditDrawer', 'scenarios/ScenarioPreviewDrawer']) {
     const source = readFileSync(join(sourceRoot, `features/${name}.vue`), 'utf8');
-    const drawer = source.match(/<n-drawer\s[\s\S]*?>/)?.[0];
+    const drawer = source.match(/<ControlDrawer\s[\s\S]*?>/)?.[0];
     assert.match(drawer, /width="min\(\d+px, 100vw\)"/, name);
   }
 });
@@ -61,25 +63,28 @@ test('空闲窗口只展示一次操作提示', () => {
 
 test('媒体列表溢出时可横向滚动，导航不会被表格挤窄', () => {
   const sources = readFileSync(join(sourceRoot, 'features/sources/SourcesView.vue'), 'utf8');
-  assert.match(sources, /content-style="padding:0; overflow-x:auto"/);
-  const navigation = readFileSync(join(sourceRoot, 'layouts/AppNavigation.vue'), 'utf8');
-  assert.match(navigation, /app-shell__nav[^"\n]*[\s\S]*?shrink-0/);
+  assert.match(sources, /overflowX: 'auto'/);
+  assert.match(sources, /<a-table[\s\S]*?:scroll="\{ x: 760 \}"/);
+  const shell = readFileSync(join(sourceRoot, 'layouts/AppShell.vue'), 'utf8');
+  assert.match(shell, /<a-layout-sider[\s\S]*?:width="228"/);
 });
 
-test('共享壳层使用 Tailwind utilities 表达响应式几何并保留 Fluent 状态层', () => {
+test('共享壳层使用Ant分组侧栏和任务工作区，手机保留安全底栏', () => {
   const shell = readFileSync(join(sourceRoot, 'layouts/AppShell.vue'), 'utf8');
   const navigation = readFileSync(join(sourceRoot, 'layouts/AppNavigation.vue'), 'utf8');
   const topBar = readFileSync(join(sourceRoot, 'layouts/AppTopBar.vue'), 'utf8');
-  const stateCss = readFileSync(join(sourceRoot, 'layouts/AppShell.css'), 'utf8');
+  const stateCss = readFileSync(join(sourceRoot, 'styles/console.css'), 'utf8');
 
-  assert.match(shell, /flex min-h-\[var\(--app-height,100dvh\)\] flex-1 flex-col/);
-  assert.match(shell, /navVariant === 'bottom' \? 'px-4' : 'px-8'/);
-  assert.match(navigation, /grid grid-cols-5/);
-  assert.match(navigation, /pb-\[calc\(0\.5rem\+env\(safe-area-inset-bottom,0px\)\)\]/);
-  assert.match(topBar, /hidden min-w-0 flex-col leading-none sm:flex/);
+  assert.match(shell, /<a-layout[\s\S]*?console-shell/);
+  assert.match(navigation, /现场操作/);
+  assert.match(navigation, /内容资源/);
+  assert.match(navigation, /<a-menu/);
+  assert.match(stateCss, /grid-template-columns:repeat\(5/);
+  assert.match(stateCss, /safe-area-inset-bottom/);
+  assert.match(topBar, /console-context/);
   assert.match(topBar, /app-shell__bar-meta[^"\n]*flex-wrap/, '窄屏状态标签不能把主题及应急入口挤出视口');
-  assert.match(stateCss, /colorNeutralBackground3/);
-  assert.doesNotMatch(stateCss, /\.app-shell\s*\{[\s\S]*?display:\s*flex/);
+  assert.match(stateCss, /console-surface/);
+  assert.match(stateCss, /prefers-reduced-motion/);
 });
 
 test('窗口音量与静音只对后端声明支持的源类型开放', async () => {

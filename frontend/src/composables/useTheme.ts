@@ -28,12 +28,16 @@ function readInitialMode(): ThemeMode {
 const mode = ref<ThemeMode>(readInitialMode());
 const override = ref<ThemeMode | null>(null);
 const effectiveMode = computed<ThemeMode>(() => override.value ?? mode.value);
+const systemQuery = typeof window === 'undefined' ? null : window.matchMedia('(prefers-color-scheme: dark)');
+const systemDark = ref(systemQuery?.matches ?? false);
+const resolvedDark = computed(() => effectiveMode.value === 'dark' || (effectiveMode.value === 'system' && systemDark.value));
 
 // 仅初始化一次的全局副作用：data-theme 与 localStorage 同步。
 let installed = false;
 function installEffect(): void {
   if (installed || typeof document === 'undefined') return;
   installed = true;
+  systemQuery?.addEventListener('change', event => { systemDark.value = event.matches; });
   watchEffect(() => {
     const root = document.documentElement;
     if (effectiveMode.value === 'system') {
@@ -54,6 +58,7 @@ interface UseThemeApi {
   mode: Ref<ThemeMode>;
   /** 当前实际生效的主题（mode 与 override 的合成）。 */
   effective: ComputedRef<ThemeMode>;
+  dark: ComputedRef<boolean>;
   /**
    * 临时锁定主题（如进入 PPT 专注页）。
    * 不写 localStorage，调用 popOverride 后立刻恢复用户偏好。
@@ -76,5 +81,5 @@ export function useTheme(): UseThemeApi {
   function popOverride(): void {
     override.value = null;
   }
-  return { mode, effective: effectiveMode, pushOverride, popOverride };
+  return { mode, effective: effectiveMode, dark: resolvedDark, pushOverride, popOverride };
 }

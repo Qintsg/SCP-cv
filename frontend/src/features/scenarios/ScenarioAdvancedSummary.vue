@@ -1,7 +1,7 @@
 <!-- 预设高级意图的只读摘要，未知绑定不当作已执行，空项明确保持。 -->
 <script setup lang="ts">
 import { computed } from 'vue';
-import { NAlert } from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
 import type { ScenarioAdvanced } from '@/services/apiTypes';
 import { microphoneAliasesConflict, microphoneVolume } from '@/services/venueApi';
 const props = defineProps<{ advanced?: ScenarioAdvanced }>();
@@ -21,8 +21,8 @@ const unbound = computed(() => positions.value.some(([, value]) => value! > 6));
     <p>声音来源：{{ audio?.source == null ? '保持' : audio.source === 'ip81' ? 'IP81' : 'SCP-cv' }}</p>
     <p v-if="audio?.source === 'scp_cv'">SCP-cv要求调用时软件输出就绪；不满足时在任何动作前拒绝。</p>
     <p>手持话筒：{{ audio?.handheld_volume == null ? '保持' : audio.handheld_volume + '%' }} · 悬挂（头戴）话筒：{{ microphoneConflict ? '配置冲突' : microphone == null ? '保持' : microphone + '%' }}</p>
-    <n-alert v-if="microphoneConflict" type="error">同一话筒配置冲突：头戴 {{ audio?.headset_volume }}% / 旧悬挂 {{ audio?.hanging_volume }}%；请编辑后再调用，任何设备动作前会拒绝。</n-alert>
-    <n-alert v-if="unbound" type="warning">包含尚未绑定的设备配置，调用时会在任何设备动作前拒绝。请先改为保持，或完成现场绑定。</n-alert>
+    <a-alert v-if="microphoneConflict" type="error"><template #description>同一话筒配置冲突：头戴 {{ audio?.headset_volume }}% / 旧悬挂 {{ audio?.hanging_volume }}%；请编辑后再调用，任何设备动作前会拒绝。</template></a-alert>
+    <a-alert v-if="unbound" type="warning"><template #description>包含尚未绑定的设备配置，调用时会在任何设备动作前拒绝。请先改为保持，或完成现场绑定。</template></a-alert>
   </section>
 </template>
 <style scoped>

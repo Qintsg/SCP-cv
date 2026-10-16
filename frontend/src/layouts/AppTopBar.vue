@@ -3,14 +3,17 @@
  * 应用顶栏：品牌、运行态标签、主题切换与应急菜单。
  * 从 AppShell 拆出以降低外壳组件复杂度。
  */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NTag } from 'naive-ui';
+import ATag from 'ant-design-vue/es/tag';
 
 import EmergencyMenu from './EmergencyMenu.vue';
 import ThemeToggle from './ThemeToggle.vue';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useSessionStore } from '@/stores/sessions';
+import { useRoute } from 'vue-router';
 
 interface AppTopBarProps {
   scrolled: boolean;
@@ -21,10 +24,12 @@ defineProps<AppTopBarProps>();
 const { t } = useI18n();
 const runtime = useRuntimeStore();
 const sessions = useSessionStore();
+const route = useRoute();
+const pageTitle = computed(() => route.meta.titleKey ? t(String(route.meta.titleKey)) : '现场控制台');
 
-type NTagType = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
+type StatusTone = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
 
-const sseType = computed<NTagType>(() => {
+const sseType = computed<StatusTone>(() => {
   switch (runtime.sseStatus) {
     case 'connected':
       return 'success';
@@ -50,7 +55,7 @@ const sseLabel = computed(() => {
   }
 });
 
-const playerType = computed<NTagType>(() => sessions.onlinePlayerCount === 2 ? 'success' : sessions.hasOnlinePlayer ? 'warning' : 'error');
+const playerType = computed<StatusTone>(() => sessions.onlinePlayerCount === 2 ? 'success' : sessions.hasOnlinePlayer ? 'warning' : 'error');
 const playerLabel = computed(() => (sessions.hasOnlinePlayer
   ? t('app.player.online', { count: sessions.onlinePlayerCount })
   : t('app.player.offline')));
@@ -62,25 +67,16 @@ const playerLabel = computed(() => (sessions.hasOnlinePlayer
     :class="{ 'app-shell__bar--scrolled': scrolled }"
     role="banner"
   >
-    <div class="app-shell__brand inline-flex min-w-0 shrink-0 items-center gap-2">
-      <span class="app-shell__brand-mark grid size-7 place-items-center rounded-md bg-brand font-semibold text-white sm:size-8" aria-hidden="true">S</span>
-      <div class="app-shell__brand-meta hidden min-w-0 flex-col leading-none sm:flex">
-        <p class="app-shell__brand-eyebrow m-0 text-xs tracking-[0.08em] text-foreground-muted uppercase">{{ t('app.brandEyebrow') }}</p>
-        <p class="app-shell__brand-title m-0 text-base font-semibold text-foreground">{{ t('app.brandTitle') }}</p>
-      </div>
-    </div>
+    <div class="console-context"><span>28#108</span><span aria-hidden="true">/</span><strong>{{ pageTitle }}</strong></div>
 
     <div class="app-shell__bar-meta inline-flex min-w-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
-      <n-tag class="app-shell__layout-tag" :type="runtime.isDoubleScreen ? 'info' : 'default'" round size="small">
-        {{ runtime.bigScreenLabel }}
-      </n-tag>
-      <n-tag :type="sseType" round size="small" :title="sseLabel">
+      <a-tag :color="tagColor(sseType)"   :title="sseLabel">
         <span class="hidden sm:inline">{{ sseLabel }}</span>
         <span class="sm:hidden">{{ runtime.sseStatus === 'connected' ? '已连接' : runtime.sseStatus === 'closed' ? '未连接' : '连接中' }}</span>
-      </n-tag>
-      <n-tag :type="playerType" round size="small" :title="playerLabel">
+      </a-tag>
+      <a-tag :color="tagColor(playerType)"   :title="playerLabel">
         <span class="hidden sm:inline">{{ playerLabel }}</span><span class="sm:hidden">{{ sessions.onlinePlayerCount }}/2 在线</span>
-      </n-tag>
+      </a-tag>
       <span
         v-if="runtime.systemVolume.muted"
         class="app-shell__mute inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-[var(--colorStatusWarningBackground1)] px-2 py-0.5 text-xs font-semibold text-warning"

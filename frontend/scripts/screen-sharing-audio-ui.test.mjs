@@ -1,4 +1,6 @@
-/* 真实Vue/Naive UI音频操作与实际/设置分离；不模拟声音或原生采集。SCP-cv 2026-10-11。 */
+/* 真实Vue/Ant Design Vue音频操作与实际/设置分离；不模拟声音或原生采集。SCP-cv 2026-10-11。 */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test, { before, after, afterEach } from 'node:test';
 import { setImmediate as nextTurn } from 'node:timers/promises';
@@ -25,7 +27,7 @@ after(async () => {
 /** :returns: 当前真实组件更新已完成。 */
 async function flush() { await vue.nextTick(); await nextTurn(); await vue.nextTick(); }
 /** :param name: 实际按钮名称。:returns: 已渲染按钮，不依赖内部组件实例。 */
-function button(name) { const found = [...document.querySelectorAll('button')].find((node) => node.textContent.trim() === name); assert.ok(found, name); return found; }
+function button(name) { const found = [...document.querySelectorAll('button')].find((node) => visibleText(node.textContent) === visibleText(name)); assert.ok(found, name); return found; }
 /** :param patch: 外部实际状态。:returns: 可修改props及收到的明确用户意图。 */
 async function mount(patch = {}) {
   const actions = [];

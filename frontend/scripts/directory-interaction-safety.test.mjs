@@ -1,4 +1,6 @@
 /** 目录选择、确认快照、预设失败和键盘预览回归；全部请求使用内存替身。 */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test, { after, afterEach, before } from 'node:test';
 import { setImmediate as nextTurn } from 'node:timers/promises';
@@ -57,7 +59,7 @@ function scenario(id) { return { id, name: id === 1 ? '迎宾' : '散场', path:
   big_screen_mode_state: 'unset', big_screen_mode_label: '', volume_state: 'unset', volume_level: 50,
   updated_at: '2026-10-15T01:00:00Z' }; }
 /** :param text: 可见按钮名称。:returns: 当前真实按钮。 */
-function button(text) { return [...browser.document.querySelectorAll('button')].find(item => item.textContent.trim() === text); }
+function button(text) { return [...browser.document.querySelectorAll('button')].find(item => visibleText(item.textContent) === visibleText(text)); }
 /** :returns: 两个普通源和可直接操作的选择器。 */
 async function mountSelection() {
   let selection;
@@ -169,7 +171,7 @@ test('预设预览通过原生按钮进入，关闭还焦点且不激活', async
   await mount(Scenarios); const store = useScenarios(pinia); store.scenarios = [scenario(1)];
   let activations = 0; store.activate = async () => { activations++; }; await flush();
   const trigger = root.querySelector('button[aria-label="查看预设 迎宾"]'); assert.ok(trigger);
-  trigger.focus(); trigger.click(); await flush(); assert.deepEqual(renderErrors, []); assert.ok(browser.document.querySelector('.n-drawer'));
+  trigger.focus(); trigger.click(); await flush(); assert.deepEqual(renderErrors, []); assert.ok(browser.document.querySelector('.ant-drawer'));
   button('关闭').click(); await flush(); await flush();
   assert.equal(browser.document.activeElement, trigger); assert.equal(activations, 0);
 });

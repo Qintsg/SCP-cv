@@ -5,6 +5,8 @@
  * @Author : Qintsg
  * @Date : 2026-10-04
  */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { browser, PlaybackControl, mountPreview, observe, recordedRequests } from './presentation-preview/fixture.mjs';
@@ -90,10 +92,10 @@ test('请求PPT而实际仍为视频时禁用错误类型的翻页和动画，�
     ? { ...row, source_type: 'video', playback_mode: '', name: '实际旧视频' } : row),
   observation: { actual_source_id: 40, actual_adapter_kind: 'vlc', actual_fit_text: null } });
   for (const label of ['上一页', '下一页', '跳转', '上一步动画', '下一步动画']) {
-    const button = [...browser.document.querySelectorAll('button')].find((item) => item.textContent.trim() === label);
+    const button = [...browser.document.querySelectorAll('button')].find((item) => visibleText(item.textContent) === visibleText(label));
     assert.equal(button?.disabled, true, label);
   }
-  const close = [...browser.document.querySelectorAll('button')].find((item) => item.textContent.trim() === '关闭显示');
+  const close = [...browser.document.querySelectorAll('button')].find((item) => visibleText(item.textContent) === visibleText('关闭显示'));
   assert.equal(close?.disabled, false);
   assert.match(browser.document.body.textContent, /实际输出类型.*请求源.*不同/);
   assert.equal(recordedRequests().some((request) => request.method !== 'GET'), false);
@@ -106,7 +108,7 @@ test('视频空输出或实际图片时禁用播放停止循环和进度，确�
   for (const patch of [{}, { actual_source_id: 40, actual_adapter_kind: 'image' }]) {
     await observe(sessions, patch);
     assert.equal(controls().every((item) => item.disabled), true);
-    assert.equal(browser.document.querySelector('.playback-control__row--seek .n-slider')?.classList.contains('n-slider--disabled'), true);
+    assert.equal(browser.document.querySelector('.playback-control__row--seek .ant-slider')?.classList.contains('ant-slider-disabled'), true);
   }
   await observe(sessions, { actual_source_id: 41, actual_adapter_kind: 'vlc', pending_command: '', playback_state: 'paused' });
   assert.equal(controls().every((item) => !item.disabled), true);

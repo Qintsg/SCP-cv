@@ -2,7 +2,8 @@
 /** 紧凑网页共享入口：逻辑目标、真实接收与停止确认分层，不自播预览。SCP-cv 2026-10-11。 */
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NButton, NCheckbox } from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import ACheckbox from 'ant-design-vue/es/checkbox';
 import FIcon from '@/design-system/FIcon.vue';
 import { useDialogStore } from '@/composables/useDialog';
 import { clientConnection } from '@/platform/connection';
@@ -90,10 +91,10 @@ async function upgrade(trigger: HTMLElement): Promise<void> {
         参数：{{ view.quality?.parameters === 'configured' ? '已接受' : view.quality?.parameters === 'compatible' ? '兼容模式' : '浏览器默认/待协商' }}。接收清晰度仍需以大屏画面核对。</p>
     </details>
     <div class="screen-share__actions">
-      <n-checkbox v-model:checked="audio" :disabled="active">{{ t('screenShare.includeAudio') }}</n-checkbox>
-      <n-button type="primary" :loading="upgrading" :disabled="active || upgrading || (Boolean(availability) && !upgradeAvailable)" @click="startSharing">{{ t('screenShare.start') }}</n-button>
-      <n-button v-if="canStop" type="error" secondary @click="stop">{{ t('screenShare.stop') }}</n-button>
-      <n-button v-if="view.phase === 'stopping'" secondary @click="refreshStop">{{ t('screenShare.refreshStop') }}</n-button>
+      <a-checkbox v-model:checked="audio" :disabled="active">{{ t('screenShare.includeAudio') }}</a-checkbox>
+      <a-button type="primary" :loading="upgrading" :disabled="active || upgrading || (Boolean(availability) && !upgradeAvailable)" @click="startSharing">{{ t('screenShare.start') }}</a-button>
+      <a-button v-if="canStop" danger  @click="stop">{{ t('screenShare.stop') }}</a-button>
+      <a-button v-if="view.phase === 'stopping'"  @click="refreshStop">{{ t('screenShare.refreshStop') }}</a-button>
     </div>
     <ScreenShareAudioPanel v-if="view.captureActive" :snapshot="view.snapshot" :sharing="view.phase === 'sharing'"
       :local-has-audio="view.localHasAudio" :audio="view.audio" @set-audio="setAudio" />

@@ -1,7 +1,11 @@
 <!-- 一个真实云台手控块：方向与变焦按住，位置调用显式，保存需二次确认。 -->
 <script setup lang="ts">
+import { nullableNumber } from '@/design-system/controlValue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { NAlert, NButton, NInputNumber, NPopconfirm } from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import AInputNumber from 'ant-design-vue/es/input-number';
+import APopconfirm from 'ant-design-vue/es/popconfirm';
 import { venueApi, type CameraDirection, type VenueCamera } from '@/services/venueApi';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useAuthStore } from '@/stores/auth';
@@ -67,25 +71,25 @@ onBeforeUnmount(() => { stop(); alive = false; window.removeEventListener('blur'
         @keydown="keyStart($event, direction.value)" @keyup="keyStop" @blur="stop">{{ direction.symbol }}</button>
       <button class="stop" type="button" :disabled="!camera.control_available" @click="stop" aria-label="停止当前云台运动">停止</button>
     </div>
-    <div class="positions"><label>位置<n-input-number v-model:value="position" :min="1" :max="camera.position_count ?? 6" :precision="0" :disabled="disabled" :show-button="false"
-      :input-props="{ 'aria-label': camera.name + '位置' }" /></label>
-      <n-button :disabled="disabled || position === null" :loading="busy" @click="applyPosition('call')">调用位置</n-button>
-      <n-popconfirm :disabled="disabled || position === null" :positive-button-props="{ size: 'medium', themeOverrides: { heightMedium: '44px' } }" :negative-button-props="{ size: 'medium', themeOverrides: { heightMedium: '44px' } }" @positive-click="applyPosition('save')">
-        <template #trigger><n-button :disabled="disabled || position === null">保存当前位置…</n-button></template>
-        将覆盖{{ camera.name }}的位置{{ position }}，确认保存？
-      </n-popconfirm><small>位置1–{{ camera.position_count ?? 6 }} · 操作后不自动重试</small>
+    <div class="positions"><label>位置<a-input-number :value="position ?? undefined" @update:value="position = nullableNumber($event)" :min="1" :max="camera.position_count ?? 6" :precision="0" :disabled="disabled" :controls="false"
+      v-bind="{ 'aria-label': camera.name + '位置' }" /></label>
+      <a-button :disabled="disabled || position === null" :loading="busy" @click="applyPosition('call')">调用位置</a-button>
+      <a-popconfirm :disabled="disabled || position === null" :ok-button-props="{ style: { minHeight: '44px' } }" :cancel-button-props="{ style: { minHeight: '44px' } }" @confirm="applyPosition('save')">
+        <a-button :disabled="disabled || position === null">保存当前位置…</a-button>
+        <template #title>将覆盖{{ camera.name }}的位置{{ position }}，确认保存？</template>
+      </a-popconfirm><small>位置1–{{ camera.position_count ?? 6 }} · 操作后不自动重试</small>
     </div>
-    <n-alert v-if="error" type="error">{{ error }}</n-alert><n-alert v-if="feedback" type="info">{{ feedback }}</n-alert>
+    <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert><a-alert v-if="feedback" type="info"><template #description>{{ feedback }}</template></a-alert>
   </div>
 </template>
 <style scoped>
-.camera-pad{display:grid;grid-template-columns:minmax(140px,1fr) 224px minmax(180px,1fr);gap:24px;align-items:center}
+.camera-pad{display:grid;grid-template-columns:minmax(0,1fr);gap:20px;align-items:start;min-width:0}
 h3{margin:0 0 8px;font-size:var(--fontSizeBase500)}p,small{color:var(--colorNeutralForeground3);line-height:1.6}
-.pad-buttons{display:grid;grid-template-columns:repeat(3,48px) 48px;grid-template-rows:repeat(3,48px);gap:6px}
+.pad-buttons{display:grid;grid-template-columns:repeat(3,48px) 48px;grid-template-rows:repeat(3,48px);gap:6px;justify-self:center}
 .pad-buttons button{border:1px solid var(--colorNeutralStroke1);border-radius:var(--borderRadiusMedium);background:var(--colorNeutralBackground1);color:var(--colorNeutralForeground1);font:inherit;font-size:24px;touch-action:none;user-select:none;cursor:pointer}
 .pad-buttons button:hover:not(:disabled),.pad-buttons button.held{background:var(--colorBrandBackground2);border-color:var(--colorBrandStroke1);color:var(--colorBrandForeground1)}
 .pad-buttons button:focus-visible{outline:2px solid var(--colorBrandStroke1);outline-offset:2px}.pad-buttons button:disabled{opacity:.4;cursor:not-allowed}
 .up{grid-area:1/2}.left{grid-area:2/1}.right{grid-area:2/3}.down{grid-area:3/2}.zoom_in{grid-area:1/4}.zoom_out{grid-area:3/4}.pad-buttons .stop{grid-area:2/2;font-size:12px;font-weight:600}
-.positions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.positions label{display:flex;align-items:center;gap:12px;width:100%;margin-bottom:4px}.positions .n-input-number{width:100px}.positions small{width:100%}
-.camera-pad>.n-alert{grid-column:1/-1}@media(max-width:800px){.camera-pad{grid-template-columns:224px 1fr}.pad-copy{grid-column:1/-1}}@media(max-width:480px){.camera-pad{grid-template-columns:1fr;justify-items:start}.pad-copy{grid-column:auto}}
+.positions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.positions label{display:flex;align-items:center;gap:12px;width:100%;margin-bottom:4px}.positions .ant-input-number{width:100px}.positions small{width:100%}
+.camera-pad>.ant-alert{grid-column:1/-1}.pad-copy{min-width:0}.positions{min-width:0}
 </style>

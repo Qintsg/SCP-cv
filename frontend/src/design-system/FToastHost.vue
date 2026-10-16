@@ -1,121 +1,42 @@
+<!-- Ant通知宿主：保持业务store、持久错误与重试动作，沿用当前ConfigProvider主题。 -->
 <script setup lang="ts">
-/**
- * 全局 Toast 宿主：把 useToastStore 的 items 桥接到 Naive UI 的 useNotification。
- * 业务侧 useToast().success/error/... API 保持不变；本组件负责把 store 数据流
- * 渲染为 NUI 通知（title + content + action 三段，与原数据结构一一对应）。
- *
- * 错误通知不自动消失（duration=0），与 DESIGN.md §7 / 设计稿 §5.11 一致。
- */
-import { watch } from 'vue';
-import { useNotification, type NotificationType } from 'naive-ui';
-
-import { useToastStore, type ToastItem, type ToastLevel } from '@/composables/useToast';
+import { h, onBeforeUnmount, onMounted, watch } from 'vue';
+import notification from 'ant-design-vue/es/notification';
+import Button from 'ant-design-vue/es/button';
+import { useToastStore, type ToastItem } from '@/composables/useToast';
+import { useWindowSizeClass } from '@/composables/useWindowSizeClass';
 
 const store = useToastStore();
-const notification = useNotification();
+const { isCompact } = useWindowSizeClass();
+const [notices, ContextHolder] = notification.useNotification({ maxCount: 3 });
+const active = new Set<number>();
+let mounted = false;
 
-const activeHandles = new Map<number, ReturnType<typeof notification.create>>();
-
-function mapLevel(level: ToastLevel): NotificationType {
-  switch (level) {
-    case 'success':
-      return 'success';
-    case 'warning':
-      return 'warning';
-    case 'error':
-      return 'error';
-    default:
-      return 'info';
-  }
-}
-
+/** :param item: 业务通知，duration单位毫秒。:returns: 一次创建真实Ant通知。 */
 function open(item: ToastItem): void {
-  if (activeHandles.has(item.id)) return;
-  const handle = notification.create({
-    type: mapLevel(item.level),
-    title: item.message,
-    content: item.description,
-    duration: item.duration > 0 ? item.duration : undefined,
-    closable: true,
-    meta: item.action?.label,
-    onAfterLeave: () => {
-      activeHandles.delete(item.id);
-      store.dismiss(item.id);
-    },
-    action: item.action
-      ? () => {
-          const label = item.action!.label;
-          const handler = item.action!.onTrigger;
-          return h('button', {
-            class: 'f-toast-host__action',
-            type: 'button',
-            onClick: async () => {
-              try {
-                await handler();
-              } finally {
-                handle.destroy();
-              }
-            },
-          }, label);
-        }
-      : undefined,
+  if (active.has(item.id)) return;
+  active.add(item.id);
+  notices.open({
+    key: item.id, type: item.level, message: item.message, description: item.description,
+    duration: item.duration / 1000, placement: isCompact.value ? 'topRight' : 'bottomRight',
+    class: 'console-toast',
+    onClose: () => { active.delete(item.id); store.dismiss(item.id); },
+    btn: item.action ? () => h(Button, { size: 'small', type: 'link', onClick: async () => {
+      try { await item.action!.onTrigger(); } finally { store.dismiss(item.id); }
+    } }, () => item.action!.label) : undefined,
   });
-  activeHandles.set(item.id, handle);
 }
 
-function close(id: number): void {
-  const handle = activeHandles.get(id);
-  if (handle) {
-    handle.destroy();
-    activeHandles.delete(id);
+/** :returns: store与真实通知保持一致，手动关闭不留下隐藏通知。 */
+function sync(): void {
+  if (!mounted) return;
+  for (const item of store.items) open(item);
+  for (const key of active) {
+    if (!store.items.some(item => item.id === key)) { active.delete(key); notices.destroy(key); }
   }
 }
-
-// 跟随 store.items 增量同步：新增项目→打开；删除项目→关闭。
-watch(
-  () => store.items.map((item) => item.id),
-  (currentIds, previousIds) => {
-    const prev = new Set(previousIds ?? []);
-    const next = new Set(currentIds);
-    for (const id of currentIds) {
-      if (!prev.has(id)) {
-        const item = store.items.find((i) => i.id === id);
-        if (item) open(item);
-      }
-    }
-    for (const id of prev) {
-      if (!next.has(id)) close(id);
-    }
-  },
-  { immediate: true },
-);
+watch(() => store.items.map(item => item.id), sync);
+onMounted(() => { mounted = true; sync(); });
+onBeforeUnmount(() => { mounted = false; notices.destroy(); active.clear(); });
 </script>
-
-<script lang="ts">
-import { h } from 'vue';
-</script>
-
-<template>
-  <span aria-hidden="true" style="display: none" />
-</template>
-
-<style>
-.f-toast-host__action {
-  appearance: none;
-  border: none;
-  background: transparent;
-  color: var(--colorBrandForeground1);
-  font: inherit;
-  font-weight: var(--fontWeightSemibold);
-  cursor: pointer;
-  padding: var(--spacingVerticalXS) var(--spacingHorizontalS);
-  border-radius: var(--borderRadiusMedium);
-}
-.f-toast-host__action:hover {
-  background: var(--colorSubtleBackgroundHover);
-}
-.f-toast-host__action:focus-visible {
-  outline: var(--strokeWidthThick) solid var(--colorBrandStroke1);
-  outline-offset: 1px;
-}
-</style>
+<template><ContextHolder /></template>

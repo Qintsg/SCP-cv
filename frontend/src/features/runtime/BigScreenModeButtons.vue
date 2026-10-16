@@ -3,7 +3,7 @@
  * 两个已抓包验证的大屏预设；点击当前预设仍可重新下发控制命令。
  */
 import { computed } from 'vue';
-import { NButton } from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { t } from '@/locales';
@@ -54,9 +54,9 @@ function selectMode(mode: BigScreenMode): void {
     role="group"
     :aria-label="t('dashboard.screenSelectAria')"
   >
-    <n-button
+    <a-button
       :type="currentMode === 'single' ? 'primary' : 'default'"
-      :secondary="currentMode === 'single'"
+
       :loading="pendingMode === 'single'"
       :disabled="isButtonDisabled('single')"
       :aria-pressed="currentMode === 'single'"
@@ -64,10 +64,10 @@ function selectMode(mode: BigScreenMode): void {
     >
       <template #icon><FIcon name="tv_24_filled" /></template>
       {{ t('screen.single') }}
-    </n-button>
-    <n-button
+    </a-button>
+    <a-button
       :type="currentMode === 'double' ? 'primary' : 'default'"
-      :secondary="currentMode === 'double'"
+
       :loading="pendingMode === 'double'"
       :disabled="isButtonDisabled('double')"
       :aria-pressed="currentMode === 'double'"
@@ -75,7 +75,7 @@ function selectMode(mode: BigScreenMode): void {
     >
       <template #icon><FIcon name="layer_24_regular" /></template>
       {{ t('screen.double') }}
-    </n-button>
+    </a-button>
   </div>
 </template>
 
@@ -86,12 +86,12 @@ function selectMode(mode: BigScreenMode): void {
   gap: var(--spacingHorizontalS);
 }
 
-.big-screen-mode-buttons--block :deep(.n-button) {
+.big-screen-mode-buttons--block :deep(.ant-btn) {
   flex: 1 1 140px;
 }
 
 @media (max-width: 480px) {
-  .big-screen-mode-buttons :deep(.n-button) {
+  .big-screen-mode-buttons :deep(.ant-btn) {
     flex: 1 1 100%;
   }
 }

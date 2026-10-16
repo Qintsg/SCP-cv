@@ -1,6 +1,6 @@
 /*
  * 设置页连接摘要回归：当前公开连接配置应与实际 REST 请求使用同一目标。
- * 挂载真实 Vue/Naive UI，只在 HTTP 边界返回测试数据，不连接播放主机。
+ * 挂载真实 Vue/Ant Design Vue，只在 HTTP 边界返回测试数据，不连接播放主机。
  * @Project : SCP-cv
  * @File : connection-ports.test.mjs
  * @Author : Qintsg

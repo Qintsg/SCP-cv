@@ -3,21 +3,21 @@
  * 添加源 Drawer / Sheet：上传文件、网页与直播流采用同一文件夹语义。
  * 文件上传统一保存为可管理媒体源；临时上传只在显示控制页“上传并打开”使用。
  */
+import { tabsKeyboard as vTabsKeyboard } from '@/design-system/tabsKeyboard';
+import { selectAriaLabel as vSelectAriaLabel } from '@/design-system/selectAriaLabel';
+
 import { computed, ref, type CSSProperties } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NAlert,
-  NButton,
-  NDrawer,
-  NDrawerContent,
-  NFormItem,
-  NInput,
-  NProgress,
-  NSelect,
-  NSwitch,
-  NTabs,
-  NTabPane,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ControlDrawer from '@/design-system/ControlDrawer.vue';
+import { FormItem as AFormItem } from 'ant-design-vue/es/form';
+import AInput from 'ant-design-vue/es/input';
+import AProgress from 'ant-design-vue/es/progress';
+import ASelect from 'ant-design-vue/es/select';
+import ASwitch from 'ant-design-vue/es/switch';
+import ATabs from 'ant-design-vue/es/tabs';
+import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
@@ -235,15 +235,15 @@ async function addStreamSource(): Promise<void> {
 </script>
 
 <template>
-  <!-- 使用既有--f-z-drawer层级；旧持久通知留在后面，上传失败仍由抽屉内Alert反馈。 -->
-  <n-drawer v-model:show="isOpen" :z-index="7500" width="min(480px, 100vw)" placement="right">
-    <n-drawer-content :title="t('sources.add.title')" closable>
+  <!-- 使用统一Ant弹层层级，避免Select下拉层被过高的抽屉遮挡。 -->
+  <ControlDrawer role="dialog" aria-modal="true" :aria-label="t('sources.add.title')" :title="t('sources.add.title')" v-model:open="isOpen" width="min(480px, 100vw)" placement="right">
+
       <p class="source-add-destination">保存位置：<strong>{{ destinationPath }}</strong></p>
       <p class="add-source__desc">{{ t('sources.add.desc') }}</p>
 
-      <n-tabs v-model:value="activeTab" type="line" :aria-label="t('sources.add.typeAria')">
-        <n-tab-pane name="file" :tab="t('sources.add.tabFile')">
-          <n-form-item :label="t('sources.add.file')" required>
+      <a-tabs v-tabs-keyboard v-model:activeKey="activeTab" type="line" :aria-label="t('sources.add.typeAria')">
+        <a-tab-pane key="file" :tab="t('sources.add.tabFile')">
+          <a-form-item :label="t('sources.add.file')" required>
             <div class="add-source__file-row">
               <label class="add-source__file">
                 <input ref="fileInputEl" type="file" class="visually-hidden" :disabled="uploading"
@@ -254,85 +254,85 @@ async function addStreamSource(): Promise<void> {
                   <span>{{ fileLabel }}</span>
                   <span v-if="fileSize" class="add-source__file-size">{{ fileSize }}</span>
                 </span>
-                <n-button @click.stop="triggerFilePicker">{{ t('sources.add.chooseFile') }}</n-button>
+                <a-button @click.stop="triggerFilePicker">{{ t('sources.add.chooseFile') }}</a-button>
               </label>
               <p class="add-source__pdf-hint">{{ t('sources.add.pdfSuggestion') }}</p>
             </div>
-          </n-form-item>
-          <n-form-item :label="t('sources.add.displayName')">
-            <n-input v-model:value="fileDisplayName" :placeholder="t('sources.add.displayNamePlaceholder')" :input-props="{ 'aria-label': t('sources.add.displayName') }" />
-          </n-form-item>
-          <n-form-item :label="t('sources.add.preheat')">
-            <n-switch v-model:value="filePreheatEnabled" :aria-label="t('sources.add.preheat')">
-              <template #checked>{{ t('sources.add.preheatSwitch') }}</template>
-              <template #unchecked>{{ t('sources.add.preheatSwitchOff') }}</template>
-            </n-switch>
-          </n-form-item>
+          </a-form-item>
+          <a-form-item :label="t('sources.add.displayName')">
+            <a-input v-model:value="fileDisplayName" :placeholder="t('sources.add.displayNamePlaceholder')" v-bind="{ 'aria-label': t('sources.add.displayName') }" />
+          </a-form-item>
+          <a-form-item :label="t('sources.add.preheat')">
+            <a-switch v-model:checked="filePreheatEnabled" :aria-label="t('sources.add.preheat')">
+              <template #checkedChildren>{{ t('sources.add.preheatSwitch') }}</template>
+              <template #unCheckedChildren>{{ t('sources.add.preheatSwitchOff') }}</template>
+            </a-switch>
+          </a-form-item>
 
           <template v-if="uploading">
-            <n-progress type="line" :percentage="uploadProgress" :show-indicator="false" />
+            <a-progress type="line" :percent="uploadProgress" :show-info="false" />
             <p class="add-source__upload-state">{{ uploadStatusText }}</p>
           </template>
-        </n-tab-pane>
+        </a-tab-pane>
 
-        <n-tab-pane name="web" :tab="t('sources.add.tabWeb')">
-          <n-form-item :label="t('sources.add.url')" required>
-            <n-input v-model:value="webUrl" placeholder="https://" :input-props="{ 'aria-label': t('sources.add.url') }" />
-          </n-form-item>
-          <n-form-item :label="t('sources.add.webName')">
-            <n-input v-model:value="webName" :placeholder="t('sources.add.webNamePlaceholder')" :input-props="{ 'aria-label': t('sources.add.webName') }" />
-          </n-form-item>
-          <n-form-item :label="t('sources.add.preheat')">
-            <n-switch v-model:value="webPreheatEnabled" :aria-label="t('sources.add.preheat')">
-              <template #checked>{{ t('sources.add.preheatSwitch') }}</template>
-              <template #unchecked>{{ t('sources.add.preheatSwitchOff') }}</template>
-            </n-switch>
-          </n-form-item>
-        </n-tab-pane>
+        <a-tab-pane key="web" :tab="t('sources.add.tabWeb')">
+          <a-form-item :label="t('sources.add.url')" required>
+            <a-input v-model:value="webUrl" placeholder="https://" v-bind="{ 'aria-label': t('sources.add.url') }" />
+          </a-form-item>
+          <a-form-item :label="t('sources.add.webName')">
+            <a-input v-model:value="webName" :placeholder="t('sources.add.webNamePlaceholder')" v-bind="{ 'aria-label': t('sources.add.webName') }" />
+          </a-form-item>
+          <a-form-item :label="t('sources.add.preheat')">
+            <a-switch v-model:checked="webPreheatEnabled" :aria-label="t('sources.add.preheat')">
+              <template #checkedChildren>{{ t('sources.add.preheatSwitch') }}</template>
+              <template #unCheckedChildren>{{ t('sources.add.preheatSwitchOff') }}</template>
+            </a-switch>
+          </a-form-item>
+        </a-tab-pane>
 
-        <n-tab-pane name="stream" :tab="t('sources.add.tabStream')">
-          <n-form-item :label="t('sources.add.streamProtocol')" required>
-            <n-select v-model:value="streamType" :options="streamProtocolOptions"
+        <a-tab-pane key="stream" :tab="t('sources.add.tabStream')">
+          <a-form-item :label="t('sources.add.streamProtocol')" required>
+            <a-select v-select-aria-label="t('sources.add.streamProtocol')" v-model:value="streamType" :options="streamProtocolOptions"
               :aria-label="t('sources.add.streamProtocol')" :disabled="uploading" />
-          </n-form-item>
-          <n-form-item :label="t('sources.add.streamUrl')" required>
-            <n-input v-model:value="streamUrl" :placeholder="streamUrlPlaceholder"
-              :input-props="{ 'aria-label': t('sources.add.streamUrl') }" :disabled="uploading" />
-          </n-form-item>
-          <n-form-item :label="t('sources.add.displayName')">
-            <n-input v-model:value="streamName" :placeholder="t('sources.add.streamNamePlaceholder')"
-              :input-props="{ 'aria-label': t('sources.add.displayName') }" :disabled="uploading" />
-          </n-form-item>
-          <n-form-item :label="t('sources.add.preheat')">
-            <n-switch v-model:value="streamPreheatEnabled" :disabled="uploading" aria-label="直播流预热" />
-          </n-form-item>
-          <n-alert type="info" :show-icon="true">{{ t('sources.add.streamHint') }}</n-alert>
-        </n-tab-pane>
-      </n-tabs>
+          </a-form-item>
+          <a-form-item :label="t('sources.add.streamUrl')" required>
+            <a-input v-model:value="streamUrl" :placeholder="streamUrlPlaceholder"
+              v-bind="{ 'aria-label': t('sources.add.streamUrl') }" :disabled="uploading" />
+          </a-form-item>
+          <a-form-item :label="t('sources.add.displayName')">
+            <a-input v-model:value="streamName" :placeholder="t('sources.add.streamNamePlaceholder')"
+              v-bind="{ 'aria-label': t('sources.add.displayName') }" :disabled="uploading" />
+          </a-form-item>
+          <a-form-item :label="t('sources.add.preheat')">
+            <a-switch v-model:checked="streamPreheatEnabled" :disabled="uploading" aria-label="直播流预热" />
+          </a-form-item>
+          <a-alert type="info" :show-icon="true"><template #description>{{ t('sources.add.streamHint') }}</template></a-alert>
+        </a-tab-pane>
+      </a-tabs>
 
-      <n-alert v-if="errorMessage" type="error" :title="t('sources.add.cantComplete')">
+      <a-alert v-if="errorMessage" type="error" :message="t('sources.add.cantComplete')"><template #description>
         {{ errorMessage }}
-      </n-alert>
+      </template></a-alert>
 
       <template #footer>
         <div class="add-source__actions">
-          <n-button :style="footerButtonStyle" :disabled="uploading" @click="close">{{ t('common.cancel') }}</n-button>
+          <a-button :style="footerButtonStyle" :disabled="uploading" @click="close">{{ t('common.cancel') }}</a-button>
           <template v-if="activeTab === 'file'">
-            <n-button :style="footerButtonStyle" type="primary" :disabled="uploading || !fileToUpload" :loading="uploading"
+            <a-button :style="footerButtonStyle" type="primary" :disabled="uploading || !fileToUpload" :loading="uploading"
               @click="uploadFile">
               {{ t('sources.add.uploadSave') }}
-            </n-button>
+            </a-button>
           </template>
-          <n-button v-else-if="activeTab === 'web'" :style="footerButtonStyle" type="primary" :disabled="uploading" :loading="uploading" @click="addWebSource">
+          <a-button v-else-if="activeTab === 'web'" :style="footerButtonStyle" type="primary" :disabled="uploading" :loading="uploading" @click="addWebSource">
             {{ t('sources.add.addWeb') }}
-          </n-button>
-          <n-button v-else :style="footerButtonStyle" type="primary" :disabled="uploading" :loading="uploading" @click="addStreamSource">
+          </a-button>
+          <a-button v-else :style="footerButtonStyle" type="primary" :disabled="uploading" :loading="uploading" @click="addStreamSource">
             {{ t('sources.add.addStream') }}
-          </n-button>
+          </a-button>
         </div>
       </template>
-    </n-drawer-content>
-  </n-drawer>
+
+  </ControlDrawer>
 </template>
 
 <style scoped>

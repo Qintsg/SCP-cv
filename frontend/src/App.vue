@@ -2,33 +2,20 @@
 /**
  * 应用根组件。
  *  - meta.focus = true：全屏专注内容（PPT 专注模式），替换整个外壳；
- *  - 其余路由：单一 Fluent 2 自适应外壳 AppShell（按窗口尺寸类自切换导航形态）；
+ *  - 其余路由：Ant Design现场工作台外壳；
  *  - 初始化主题（system/light/dark）、应用高度变量、全局 Toast / Dialog 宿主；
- *  - 顶层注入 NConfigProvider，将 @fluentui/tokens 派生的 themeOverrides 应用到
- *    Naive UI 全量组件（DESIGN.md §4.3 主题落地路径 + §5 明暗主题）。
+ *  - Ant ConfigProvider统一中文、明暗算法与全局反馈主题。
  */
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterView, useRoute } from 'vue-router';
-import {
-  NConfigProvider,
-  NDialogProvider,
-  NLoadingBarProvider,
-  NMessageProvider,
-  darkTheme,
-  dateZhCN,
-  zhCN,
-  type GlobalThemeOverrides,
-} from 'naive-ui';
+import AConfigProvider from 'ant-design-vue/es/config-provider';
+import zhCN from 'ant-design-vue/es/locale/zh_CN';
 
 import AppShell from '@/layouts/AppShell.vue';
 import FDialogHost from '@/design-system/FDialogHost.vue';
 import FToastHost from '@/design-system/FToastHost.vue';
-import FNotificationProvider from '@/design-system/FNotificationProvider.vue';
-import {
-  fluentDarkOverrides,
-  fluentLightOverrides,
-} from '@/design-system/theme/naive-overrides';
+import { consoleTheme } from '@/design-system/theme/ant-theme';
 import { useReducedMotion } from '@/composables/useReducedMotion';
 import { useTheme } from '@/composables/useTheme';
 import { bindAppHeight } from '@/composables/useAppHeight';
@@ -44,23 +31,12 @@ const toast = useToast();
 const auth = useAuthStore();
 const runtime = useRuntimeStore();
 
-const { effective } = useTheme();
+const { dark: isDarkResolved } = useTheme();
 useReducedMotion();
 
 const isFocusMode = computed(() => route.meta?.focus === true);
 
-// effective 是三态（system/light/dark）；system 时按 prefers-color-scheme 解析为二值。
-const isDarkResolved = computed<boolean>(() => {
-  if (effective.value === 'dark') return true;
-  if (effective.value === 'light') return false;
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
-});
-
-const naiveTheme = computed(() => (isDarkResolved.value ? darkTheme : null));
-const naiveThemeOverrides = computed<GlobalThemeOverrides>(() =>
-  isDarkResolved.value ? fluentDarkOverrides : fluentLightOverrides,
-);
+const antTheme = computed(() => consoleTheme(isDarkResolved.value));
 
 let unbindHeight: (() => void) | null = null;
 let bootstrapped = false;
@@ -101,24 +77,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <n-config-provider
-    :theme="naiveTheme"
-    :theme-overrides="naiveThemeOverrides"
-    :locale="zhCN"
-    :date-locale="dateZhCN"
-    inline-theme-disabled
-  >
-    <n-loading-bar-provider>
-      <n-message-provider>
-        <FNotificationProvider>
-          <n-dialog-provider>
-            <RouterView v-if="isFocusMode" />
-            <AppShell v-else />
-            <FDialogHost />
-            <FToastHost />
-          </n-dialog-provider>
-        </FNotificationProvider>
-      </n-message-provider>
-    </n-loading-bar-provider>
-  </n-config-provider>
+  <a-config-provider :theme="antTheme" :locale="zhCN">
+    <RouterView v-if="isFocusMode" />
+    <AppShell v-else />
+    <FDialogHost />
+    <FToastHost />
+  </a-config-provider>
 </template>

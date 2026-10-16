@@ -4,7 +4,7 @@
  * 优先使用后端返回的真实预览；缺失或加载失败时回退到源类型图标。
  */
 import { computed, ref, watch } from 'vue';
-import { NTooltip } from 'naive-ui';
+import ATooltip from 'ant-design-vue/es/tooltip';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { buildBackendUrl, type MediaSourceItem } from '@/services/api';
@@ -39,8 +39,7 @@ function markFailed(): void {
 </script>
 
 <template>
-  <n-tooltip placement="top">
-    <template #trigger>
+  <a-tooltip placement="top">
       <span class="source-thumbnail" :class="[
         `source-thumbnail--${size}`,
         { 'source-thumbnail--media': canRenderPreview },
@@ -51,9 +50,8 @@ function markFailed(): void {
           preload="metadata" aria-hidden="true" @error="markFailed" />
         <FIcon v-else class="source-thumbnail__icon" :name="fallbackIcon" />
       </span>
-    </template>
-    {{ source.preview_label || source.name }}
-  </n-tooltip>
+    <template #title>{{ source.preview_label || source.name }}</template>
+  </a-tooltip>
 </template>
 
 <style scoped>

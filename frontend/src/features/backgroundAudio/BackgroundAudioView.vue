@@ -2,16 +2,16 @@
 /**
  * 背景音乐控制台：展示全局音频状态、播放列表和可加入的音频源。
  */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, onMounted, onScopeDispose, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NButton,
-  NCard,
-  NEmpty,
-  NSlider,
-  NSwitch,
-  NTag,
-} from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import AEmpty from 'ant-design-vue/es/empty';
+import ASlider from 'ant-design-vue/es/slider';
+import ASwitch from 'ant-design-vue/es/switch';
+import ATag from 'ant-design-vue/es/tag';
 
 import AddSourceDrawer from '@/features/sources/AddSourceDrawer.vue';
 import SourceThumbnail from '@/features/sources/SourceThumbnail.vue';
@@ -148,12 +148,13 @@ function removeItem(item: BackgroundAudioPlaylistItem): Promise<void> {
 }
 
 async function clearPlaylist(): Promise<void> {
+  const current = dialog.captureContext();
   const confirmed = await dialog.danger({
     title: t('backgroundAudio.clearTitle'),
     description: t('backgroundAudio.clearDesc'),
     confirmLabel: t('backgroundAudio.clearPlaylist'),
   });
-  if (!confirmed) return;
+  if (!confirmed || !current()) return;
   await runAction('clear', () => audioStore.clearPlaylist(), t('backgroundAudio.clearedOk'));
 }
 
@@ -171,19 +172,19 @@ function setMute(muted: boolean): Promise<void> {
   <div class="background-audio">
     <FPageHeader :title="t('backgroundAudio.title')" :description="t('backgroundAudio.subtitle')">
       <template #actions>
-        <n-button :loading="busyAction === 'refresh'" @click="refreshAll">
+        <a-button :loading="busyAction === 'refresh'" @click="refreshAll">
           <template #icon><FIcon name="arrow_clockwise_20_regular" /></template>
           {{ t('backgroundAudio.refresh') }}
-        </n-button>
-        <n-button type="primary" @click="drawerOpen = true">
+        </a-button>
+        <a-button type="primary" @click="drawerOpen = true">
           <template #icon><FIcon name="add_24_regular" /></template>
           {{ t('backgroundAudio.addAudio') }}
-        </n-button>
+        </a-button>
       </template>
     </FPageHeader>
 
     <section class="background-audio__deck">
-      <n-card class="background-audio__player" content-style="padding:0">
+      <a-card class="background-audio__player" :body-style="{ padding: '0' }">
         <div class="background-audio__player-surface">
           <div class="background-audio__disc" :class="{ 'background-audio__disc--playing': audioStore.isPlaying }">
             <FIcon name="music_note_2_24_regular" />
@@ -192,60 +193,60 @@ function setMute(muted: boolean): Promise<void> {
             <span v-for="bar in 18" :key="bar" />
           </div>
           <div class="background-audio__now">
-            <n-tag round :type="currentState?.playback_state === 'error' ? 'error' : 'info'">{{ statusLabel }}</n-tag>
+            <a-tag  :color="tagColor(currentState?.playback_state === 'error' ? 'error' : 'info')">{{ statusLabel }}</a-tag>
             <h3>{{ currentSource?.name || t('backgroundAudio.standbyTitle') }}</h3>
             <p>{{ currentSource?.path || currentSource?.uri || t('backgroundAudio.standbyHint') }}</p>
           </div>
           <div class="background-audio__progress-row">
             <span>{{ formatDuration(currentState?.position_ms ?? 0) }}</span>
-            <n-slider v-slider-aria-label="t('backgroundAudio.progress')"
-              :value="backgroundProgress.value.value" :min="0" :max="currentState?.duration_ms || 1" :step="1000"
+            <a-slider v-slider-aria-label="t('backgroundAudio.progress')"
+              :value="backgroundProgress.value.value" :min="0" :max="currentState?.duration_ms || 1000" :step="1000"
               :disabled="!canSeek" :aria-label="t('backgroundAudio.progress')"
-              @update:value="backgroundProgress.handleInput"
-              @dragend="backgroundProgress.handleChange(backgroundProgress.value.value)"
-              @keyup="backgroundProgress.handleChange(backgroundProgress.value.value)" />
+              @change="value => { if (typeof value === 'number') backgroundProgress.handleInput(value); }"
+              @afterChange="backgroundProgress.handleChange(backgroundProgress.value.value)"
+               />
             <span>{{ formatDuration(currentState?.duration_ms ?? 0) }}</span>
           </div>
           <p v-if="currentState?.error_message" class="background-audio__error">{{ currentState.error_message }}</p>
         </div>
 
         <div class="background-audio__controls">
-          <n-button circle secondary :aria-label="t('backgroundAudio.previous')"
+          <a-button shape="circle"  :aria-label="t('backgroundAudio.previous')"
             :disabled="playlist.length === 0 || !!busyAction"
             @click="() => runAction('prev', () => audioStore.control('prev'))">
             <template #icon><FIcon name="previous_24_regular" /></template>
-          </n-button>
-          <n-button circle type="primary" size="large" :aria-label="playPauseAria"
+          </a-button>
+          <a-button shape="circle" type="primary" size="large" :aria-label="playPauseAria"
             :disabled="playlist.length === 0"
             :loading="busyAction === 'play-toggle'" @click="playOrPause">
             <template #icon><FIcon :name="audioStore.isPlaying ? 'pause_24_filled' : 'play_24_filled'" /></template>
-          </n-button>
-          <n-button circle secondary :aria-label="t('backgroundAudio.next')"
+          </a-button>
+          <a-button shape="circle"  :aria-label="t('backgroundAudio.next')"
             :disabled="playlist.length === 0 || !!busyAction"
             @click="() => runAction('next', () => audioStore.control('next'))">
             <template #icon><FIcon name="next_24_regular" /></template>
-          </n-button>
-          <n-button secondary :disabled="playlist.length === 0 || !!busyAction"
+          </a-button>
+          <a-button  :disabled="playlist.length === 0 || !!busyAction"
             @click="() => runAction('stop', () => audioStore.control('stop'))">
             <template #icon><FIcon name="stop_24_regular" /></template>
             {{ t('backgroundAudio.stop') }}
-          </n-button>
+          </a-button>
         </div>
 
         <div class="background-audio__mix-row">
           <label>
             <span>{{ t('backgroundAudio.loop') }}</span>
-            <n-switch :value="currentState?.loop_enabled ?? true" :aria-label="t('backgroundAudio.loop')"
-              @update:value="setLoop" />
+            <a-switch :checked="currentState?.loop_enabled ?? true" :aria-label="t('backgroundAudio.loop')"
+              @update:checked="value => setLoop(value === true)" />
           </label>
           <label>
             <span>{{ t('backgroundAudio.mute') }}</span>
-            <n-switch :value="currentState?.is_muted ?? false" :aria-label="t('backgroundAudio.mute')"
-              @update:value="setMute" />
+            <a-switch :checked="currentState?.is_muted ?? false" :aria-label="t('backgroundAudio.mute')"
+              @update:checked="value => setMute(value === true)" />
           </label>
           <div class="background-audio__volume">
             <span>{{ t('backgroundAudio.volume') }}</span>
-            <n-slider
+            <a-slider
               v-slider-aria-label="t('backgroundAudio.volume')"
               :disabled="!currentState"
               :value="backgroundVolume.value.value"
@@ -253,27 +254,27 @@ function setMute(muted: boolean): Promise<void> {
               :max="100"
               :step="1"
               :aria-label="t('backgroundAudio.volume')"
-              @update:value="backgroundVolume.handleInput"
-              @dragend="backgroundVolume.handleChange(backgroundVolume.value.value)"
-              @keyup="backgroundVolume.handleChange(backgroundVolume.value.value)"
+              @change="value => { if (typeof value === 'number') backgroundVolume.handleInput(value); }"
+              @afterChange="backgroundVolume.handleChange(backgroundVolume.value.value)"
+
             />
           </div>
         </div>
-      </n-card>
+      </a-card>
 
-      <n-card class="background-audio__sources" content-style="padding:0">
-        <template #header>
+      <a-card class="background-audio__sources" :body-style="{ padding: '0' }">
+        <template #title>
           <div class="background-audio__section-title">
             <span>{{ t('backgroundAudio.audioSources') }}</span>
             <small>{{ sourceCaption }}</small>
           </div>
         </template>
-        <n-empty v-if="audioSources.length === 0" :description="t('backgroundAudio.emptyAudioHint')">
-          <template #icon><FIcon name="music_note_2_24_regular" /></template>
-          <template #extra>
-            <n-button type="primary" @click="drawerOpen = true">{{ t('backgroundAudio.addAudio') }}</n-button>
+        <a-empty v-if="audioSources.length === 0" :description="t('backgroundAudio.emptyAudioHint')">
+          <template #image><FIcon name="music_note_2_24_regular" /></template>
+          <template #default>
+            <a-button type="primary" @click="drawerOpen = true">{{ t('backgroundAudio.addAudio') }}</a-button>
           </template>
-        </n-empty>
+        </a-empty>
         <div v-else class="background-audio__source-list">
           <article v-for="source in audioSources" :key="source.id" class="background-audio__source-item">
             <SourceThumbnail :source="source" />
@@ -281,28 +282,28 @@ function setMute(muted: boolean): Promise<void> {
               <strong>{{ source.name }}</strong>
               <span>{{ source.file_size ? formatBytes(source.file_size) : source.uri }}</span>
             </div>
-            <n-button size="small" secondary @click="() => addSource(source)">{{ t('backgroundAudio.addToPlaylist') }}</n-button>
-            <n-button size="small" type="primary" @click="() => playSource(source)">{{ t('backgroundAudio.playNow') }}</n-button>
+            <a-button size="small"  @click="() => addSource(source)">{{ t('backgroundAudio.addToPlaylist') }}</a-button>
+            <a-button size="small" type="primary" @click="() => playSource(source)">{{ t('backgroundAudio.playNow') }}</a-button>
           </article>
         </div>
-      </n-card>
+      </a-card>
     </section>
 
-    <n-card class="background-audio__playlist" content-style="padding:0">
-      <template #header>
+    <a-card class="background-audio__playlist" :body-style="{ padding: '0' }">
+      <template #title>
         <div class="background-audio__section-title">
           <span>{{ t('backgroundAudio.playlist') }}</span>
           <small>{{ playlistCaption }}</small>
         </div>
       </template>
-      <template #header-extra>
-        <n-button quaternary size="small" :disabled="playlist.length === 0" @click="clearPlaylist">
+      <template #extra>
+        <a-button type="text" size="small" :disabled="playlist.length === 0" @click="clearPlaylist">
           {{ t('backgroundAudio.clearPlaylist') }}
-        </n-button>
+        </a-button>
       </template>
-      <n-empty v-if="playlist.length === 0" :description="t('backgroundAudio.emptyPlaylist')">
-        <template #icon><FIcon name="music_note_2_24_regular" /></template>
-      </n-empty>
+      <a-empty v-if="playlist.length === 0" :description="t('backgroundAudio.emptyPlaylist')">
+        <template #image><FIcon name="music_note_2_24_regular" /></template>
+      </a-empty>
       <div v-else class="background-audio__playlist-grid">
         <article v-for="item in playlist" :key="item.id" class="background-audio__playlist-item"
           :class="{ 'background-audio__playlist-item--active': item.id === currentState?.current_item_id }">
@@ -311,12 +312,12 @@ function setMute(muted: boolean): Promise<void> {
             <strong>{{ item.source_name }}</strong>
             <span>{{ item.source.path || item.source.uri }}</span>
           </div>
-          <n-tag v-if="item.id === currentState?.current_item_id" round type="success">{{ t('backgroundAudio.currentBadge') }}</n-tag>
-          <n-button size="small" secondary @click="() => playItem(item)">{{ t('backgroundAudio.play') }}</n-button>
-          <n-button size="small" quaternary @click="() => removeItem(item)">{{ t('backgroundAudio.remove') }}</n-button>
+          <a-tag v-if="item.id === currentState?.current_item_id"  color="success">{{ t('backgroundAudio.currentBadge') }}</a-tag>
+          <a-button size="small"  @click="() => playItem(item)">{{ t('backgroundAudio.play') }}</a-button>
+          <a-button size="small" type="text" @click="() => removeItem(item)">{{ t('backgroundAudio.remove') }}</a-button>
         </article>
       </div>
-    </n-card>
+    </a-card>
 
     <AddSourceDrawer v-model:open="drawerOpen" @added="refreshAll" />
   </div>

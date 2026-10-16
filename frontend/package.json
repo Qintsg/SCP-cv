@@ -19,8 +19,7 @@
     "cap:sync": "pnpm run build:app && cap sync android",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "test": "node --test scripts/*.test.mjs",
-    "preview": "vite preview --host 0.0.0.0 --port 4173",
-    "gen:fluent-tokens": "node scripts/generate-fluent-tokens.mjs"
+    "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
   "dependencies": {},
   "devDependencies": {
@@ -29,7 +28,6 @@
     "@capacitor/cli": "8.5.1",
     "@capacitor/core": "8.5.1",
     "@capacitor/filesystem": "8.1.3",
-    "@fluentui/tokens": "1.0.0-alpha.23",
     "@tailwindcss/vite": "4.3.3",
     "@types/node": "26.1.2",
     "@vicons/fluent": "0.13.0",
@@ -37,7 +35,7 @@
     "electron": "44.2.0",
     "electron-builder": "26.15.3",
     "happy-dom": "20.14.5",
-    "naive-ui": "2.44.1",
+    "ant-design-vue": "4.2.6",
     "pinia": "4.0.2",
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",

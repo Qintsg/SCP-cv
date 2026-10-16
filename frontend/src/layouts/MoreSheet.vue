@@ -6,13 +6,10 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import {
-  NButton,
-  NCard,
-  NDrawer,
-  NDrawerContent,
-  NSwitch,
-} from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import ControlDrawer from '@/design-system/ControlDrawer.vue';
+import ASwitch from 'ant-design-vue/es/switch';
 
 import EmergencyMenu from './EmergencyMenu.vue';
 import FIcon from '@/design-system/FIcon.vue';
@@ -81,11 +78,11 @@ void dialog;
 </script>
 
 <template>
-  <n-drawer v-model:show="isOpen" :width="360" placement="bottom" :height="480">
-    <n-drawer-content :title="t('more.title')" closable>
+  <ControlDrawer role="dialog" aria-modal="true" :aria-label="t('more.title')" :title="t('more.title')" v-model:open="isOpen" :width="360" placement="bottom" :height="480">
+
       <p class="more-sheet__desc">{{ t('more.desc') }}</p>
 
-      <n-card size="small" :title="t('more.screenMode')" class="more-sheet__card">
+      <a-card size="small" :title="t('more.screenMode')" class="more-sheet__card">
         <BigScreenModeButtons
           :current-mode="currentScreenMode"
           :pending-mode="pendingMode"
@@ -93,35 +90,35 @@ void dialog;
           @select="switchScreenMode"
         />
         <p class="more-sheet__hint">{{ t('more.screenHint') }}</p>
-      </n-card>
+      </a-card>
 
-      <n-card size="small" :title="t('more.systemMute')" class="more-sheet__card">
-        <n-switch v-model:value="muteToggle">
-          <template #checked>{{ t('more.enableSystemMute') }}</template>
-          <template #unchecked>{{ t('more.enableSystemMute') }}</template>
-        </n-switch>
-      </n-card>
+      <a-card size="small" :title="t('more.systemMute')" class="more-sheet__card">
+        <a-switch v-model:checked="muteToggle">
+          <template #checkedChildren>{{ t('more.enableSystemMute') }}</template>
+          <template #unCheckedChildren>{{ t('more.enableSystemMute') }}</template>
+        </a-switch>
+      </a-card>
 
-      <n-card size="small" :title="t('more.settings')" class="more-sheet__card">
-        <n-button quaternary block @click="navigate('/background-audio')">
+      <a-card size="small" :title="t('more.settings')" class="more-sheet__card">
+        <a-button type="text" block @click="navigate('/background-audio')">
           <template #icon><FIcon name="music_note_2_24_regular" /></template>
           {{ t('more.openBackgroundAudio') }}
-        </n-button>
-        <n-button quaternary block @click="navigate('/settings')">
+        </a-button>
+        <a-button type="text" block @click="navigate('/settings')">
           <template #icon><FIcon name="settings_24_regular" /></template>
           {{ t('more.openSettings') }}
-        </n-button>
-        <n-button quaternary block @click="navigate('/devices')">
+        </a-button>
+        <a-button type="text" block @click="navigate('/devices')">
           <template #icon><FIcon name="camera_24_regular" /></template>
           {{ t('nav.devices') }}
-        </n-button>
-        <n-button quaternary block @click="onAboutHelp">
+        </a-button>
+        <a-button type="text" block @click="onAboutHelp">
           <template #icon><FIcon name="info_24_regular" /></template>
           {{ t('more.aboutHelp') }}
-        </n-button>
-      </n-card>
-    </n-drawer-content>
-  </n-drawer>
+        </a-button>
+      </a-card>
+
+  </ControlDrawer>
 </template>
 
 <style scoped>

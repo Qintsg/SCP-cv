@@ -6,6 +6,8 @@
  * @Author : Qintsg
  * @Date : 2026-10-03
  */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { browser, PlaybackControl, PptFocusView, mountPreview, flushUi,
@@ -39,7 +41,7 @@ async function mountEffects(component, respondControl, reuseStoreScope = false) 
 /** :param label: 公开按钮名称。:returns: 当前真实Naive UI动画按钮。 */
 function effectButton(label) {
   const button = [...browser.document.querySelectorAll('.presentation-effects button')]
-    .find((candidate) => candidate.textContent.trim() === label);
+    .find((candidate) => visibleText(candidate.textContent) === visibleText(label));
   assert.ok(button, `应有真实动画按钮：${label}`);
   return button;
 }
@@ -156,7 +158,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
       } }), { headers: { 'Content-Type': 'application/json' } }));
       return fallback(url, options);
     };
-    const next = [...browser.document.querySelectorAll('button')].find(button => button.textContent.trim() === '下一页');
+    const next = [...browser.document.querySelectorAll('button')].find(button => visibleText(button.textContent) === visibleText('下一页'));
     assert.ok(next);
     next.click();
     await flushUi();
@@ -295,7 +297,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
     assert.equal(sessions.byWindowId(1).pending_command, 'NEXT_EFFECT');
     assert.equal(sessions.byWindowId(1).current_slide, 1);
     assert.equal(currentImage(view), fittedImageUrl(1));
-    assert.equal(browser.document.querySelectorAll('.n-notification--success').length, 0);
+    assert.equal(browser.document.querySelectorAll('.ant-notification-notice-success').length, 0);
     assert.doesNotMatch(browser.document.body.textContent, /动画(?:已)?完成|动画(?:已)?结束/);
     // 当前两页面对pending禁用的差异不是本项合同，不决定动画播放中是否允许继续推进。
   });

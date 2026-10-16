@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /** 打开到小卡片；请求受理与实际播放分开，旧主机/源结果不能覆盖新选择。SCP-cv 2026-10-12。 */
 import { computed, ref, watch } from 'vue';
-import { NButton, NModal } from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import AModal from 'ant-design-vue/es/modal';
 import { useSessionStore } from '@/stores/sessions';
 import { useAuthStore } from '@/stores/auth';
 import { clientConnection } from '@/platform/connection';
@@ -42,17 +43,17 @@ const statuses = computed(() => Object.fromEntries([1, 2].map(id => {
 })));
 </script>
 <template>
-  <n-modal v-model:show="open" preset="card" title="打开到…" class="source-open-card" style="width:min(440px,calc(100vw - 32px))">
+  <a-modal :footer="null" v-model:open="open"  title="打开到…" class="source-open-card" style="width:min(440px,calc(100vw - 32px))">
     <p class="source-open-card__name">{{ source?.name }}</p>
     <p class="source-open-card__hint">{{ source?.path }} · 打开会替换目标窗口的当前内容。</p>
     <div class="source-open-card__targets">
       <div v-for="id in [1,2]" :key="id">
-        <n-button block type="primary" secondary :loading="pending === id"
-          :disabled="pending !== null || !source?.is_available || !sessions.byWindowId(id)?.player_online" @click="openTo(id)">窗口 {{ id }}</n-button>
+        <a-button block type="primary"  :loading="pending === id"
+          :disabled="pending !== null || !source?.is_available || !sessions.byWindowId(id)?.player_online" @click="openTo(id)">窗口 {{ id }}</a-button>
         <p role="status">{{ statuses[id] }}</p>
       </div>
     </div>
-  </n-modal>
+  </a-modal>
 </template>
 <style scoped>
 .source-open-card__name{font-weight:600;margin:0 0 6px}.source-open-card__hint{font-size:12px;color:var(--colorNeutralForeground3);overflow-wrap:anywhere}

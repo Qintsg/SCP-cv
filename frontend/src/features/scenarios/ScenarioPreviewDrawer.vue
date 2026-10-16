@@ -3,16 +3,15 @@
  * 预案预览抽屉：只列出两块大屏窗口，并提示旧电视目标。
  * 桌面 480 px 右侧 Drawer，移动端自动改全屏 Sheet。
  */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NAlert,
-  NButton,
-  NCard,
-  NDrawer,
-  NDrawerContent,
-  NTag,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import ControlDrawer from '@/design-system/ControlDrawer.vue';
+import ATag from 'ant-design-vue/es/tag';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useDialog } from '@/composables/useDialog';
@@ -47,7 +46,7 @@ const isActivating = ref(false);
 const isPinning = ref(false);
 const hasLegacyTargets = computed(() => Boolean(props.scenario && hasRetiredActiveTargets(props.scenario)));
 
-type NTagType = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
+type StatusTone = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
 
 const isOpen = computed({
   get: () => props.open,
@@ -93,7 +92,7 @@ function windowLabel(windowId: number, isSingle: boolean): string {
   }
 }
 
-function targetTone(target: ScenarioTargetItem): NTagType {
+function targetTone(target: ScenarioTargetItem): StatusTone {
   if (target.source_state === 'unset') return 'default';
   if (target.source_state === 'empty') return 'default';
   return 'success';
@@ -158,14 +157,17 @@ async function pinToggle(): Promise<void> {
 
 async function remove(): Promise<void> {
   if (!props.scenario) return;
+  const id = props.scenario.id;
+  const current = dialog.captureContext();
   const confirmed = await dialog.danger({
     title: t('scenarios.preview.deleteTitle', { name: props.scenario.name }),
     description: t('scenarios.preview.deleteDesc'),
     confirmLabel: t('scenarios.preview.deleteConfirm'),
   });
-  if (!confirmed) return;
+  if (!confirmed || !current() || !props.open || props.scenario?.id !== id) return;
   try {
-    await scenarioStore.remove(props.scenario.id);
+    await scenarioStore.remove(id);
+    if (!current() || !props.open || props.scenario?.id !== id) return;
     toast.success(t('scenarios.preview.deletedOk'));
     emit('after-delete');
     emit('update:open', false);
@@ -190,25 +192,25 @@ void runtime;
 </script>
 
 <template>
-  <n-drawer v-model:show="isOpen" width="min(520px, 100vw)" placement="right">
-    <n-drawer-content :title="scenario?.name ?? t('scenarios.preview.title')" closable>
+  <ControlDrawer role="dialog" aria-modal="true" :aria-label="scenario?.name ?? t('scenarios.preview.title')" :title="scenario?.name ?? t('scenarios.preview.title')" v-model:open="isOpen" width="min(520px, 100vw)" placement="right">
+
       <p class="scenario-preview__meta">{{ meta }}</p>
-      <n-alert v-if="hasLegacyTargets" type="warning" :title="t('scenarios.preview.legacyTitle')">
+      <a-alert v-if="hasLegacyTargets" type="warning" :message="t('scenarios.preview.legacyTitle')"><template #description>
         {{ t('scenarios.preview.legacyDescription') }}
-      </n-alert>
+      </template></a-alert>
 
       <div class="scenario-preview__matrix" :class="{ 'scenario-preview__matrix--single': isSingleScreenMode }">
-        <n-card v-for="target in orderedTargets" :key="target.window_id" size="small">
-          <template #header>
+        <a-card v-for="target in orderedTargets" :key="target.window_id" size="small">
+          <template #title>
             <div>
               <span class="scenario-preview__eyebrow">{{ windowLabel(target.window_id, isSingleScreenMode) }}</span>
               <div class="scenario-preview__target-tag">
-                <n-tag :type="targetTone(target)" size="small" round>
+                <a-tag :color="tagColor(targetTone(target))"  >
                   <template #icon>
                     <FIcon :name="targetIcon(target)" />
                   </template>
                   {{ targetLabel(target) }}
-                </n-tag>
+                </a-tag>
               </div>
             </div>
           </template>
@@ -224,35 +226,35 @@ void runtime;
           <p v-if="target.source_state === 'set'" class="scenario-preview__settings">
             {{ t('scenarios.preview.sourceLine', { autoplay: target.autoplay ? t('scenarios.preview.on') : t('scenarios.preview.off'), resume: target.resume ? t('scenarios.preview.yes') : t('scenarios.preview.no') }) }}
           </p>
-        </n-card>
+        </a-card>
       </div>
 
       <ScenarioAdvancedSummary :advanced="scenario?.advanced" />
       <template #footer>
         <div class="scenario-preview__actions">
-          <n-button @click="close">{{ t('common.close') }}</n-button>
-          <n-button tertiary :loading="isPinning" @click="pinToggle">
+          <a-button @click="close">{{ t('common.close') }}</a-button>
+          <a-button  :loading="isPinning" @click="pinToggle">
             <template #icon>
               <FIcon :name="isPinned ? 'pin_off_24_regular' : 'pin_24_regular'" />
             </template>
             {{ isPinned ? t('scenarios.preview.unpin') : t('scenarios.preview.pin') }}
-          </n-button>
-          <n-button type="error" @click="remove">
+          </a-button>
+          <a-button danger @click="remove">
             <template #icon><FIcon name="delete_24_regular" /></template>
             {{ t('common.delete') }}
-          </n-button>
-          <n-button @click="edit">
+          </a-button>
+          <a-button @click="edit">
             <template #icon><FIcon name="edit_24_regular" /></template>
             {{ t('common.edit') }}
-          </n-button>
-          <n-button type="primary" :loading="isActivating" :disabled="hasLegacyTargets" @click="activate">
+          </a-button>
+          <a-button type="primary" :loading="isActivating" :disabled="hasLegacyTargets" @click="activate">
             <template #icon><FIcon name="play_24_regular" /></template>
             {{ t('scenarios.preview.activate') }}
-          </n-button>
+          </a-button>
         </div>
       </template>
-    </n-drawer-content>
-  </n-drawer>
+
+  </ControlDrawer>
 </template>
 
 <style scoped>

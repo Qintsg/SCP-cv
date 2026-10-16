@@ -6,8 +6,13 @@
  * @Author : Qintsg
  * @Date : 2026-10-03
  */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { NAlert, NCard, NTag, NButton } from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import ACard from 'ant-design-vue/es/card';
+import ATag from 'ant-design-vue/es/tag';
+import AButton from 'ant-design-vue/es/button';
 import { api, type PresentationSettingsItem } from '@/services/api';
 import { clientConnection } from '@/platform/connection';
 import { useRuntimeStore } from '@/stores/runtime';
@@ -93,29 +98,29 @@ async function refresh(): Promise<void> {
 onMounted(refresh);
 </script>
 <template>
-  <n-card title="演示文稿播放" class="presentation-settings">
-    <n-tag :type="passed ? 'success' : 'warning'">LibreOffice · {{ summary }}</n-tag>
+  <a-card title="演示文稿播放" class="presentation-settings">
+    <a-tag :color="tagColor(passed ? 'success' : 'warning')">LibreOffice · {{ summary }}</a-tag>
     <p>{{ snapshot?.detail }}</p>
     <ul v-if="snapshot?.components?.length" class="presentation-settings__components" aria-label="运行依赖检查项目">
       <li v-for="component in snapshot.components" :key="component.id" :data-dependency-id="component.id">
         <div class="presentation-settings__component-heading">
           <strong>{{ component.id }}</strong>
-          <n-tag :type="component.status === 'installed' ? 'success' : 'warning'" size="small">
+          <a-tag :color="tagColor(component.status === 'installed' ? 'success' : 'warning')" >
             {{ component.status === 'installed' ? '静态检查通过' : '缺失或不兼容' }}
-          </n-tag>
+          </a-tag>
         </div>
         <p>{{ component.detail }}</p>
         <code v-if="component.reason_code">原因码：{{ component.reason_code }}</code>
       </li>
     </ul>
-    <n-alert v-if="error" type="error">{{ error }}</n-alert>
-    <n-alert type="info">仅进行静态检查，不证明原生引擎启动、文稿兼容或实际播放成功。统一媒体暂停、恢复、定位及窗口音量暂不可用。</n-alert>
-    <n-button :loading="pending" :disabled="pending" @click="refresh">重新检查</n-button>
-  </n-card>
+    <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert>
+    <a-alert type="info"><template #description>仅进行静态检查，不证明原生引擎启动、文稿兼容或实际播放成功。统一媒体暂停、恢复、定位及窗口音量暂不可用。</template></a-alert>
+    <a-button :loading="pending" :disabled="pending" @click="refresh">重新检查</a-button>
+  </a-card>
 </template>
 <style scoped>
 /** 能力说明和重新检查动作留出明确间距。 */
-.presentation-settings :deep(.n-alert) { margin-bottom: 12px; }
+.presentation-settings :deep(.ant-alert) { margin-bottom: 12px; }
 .presentation-settings__components {
   display: grid; gap: var(--spacingVerticalM); padding: 0;
   margin-bottom: var(--spacingVerticalL); list-style: none;

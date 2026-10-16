@@ -5,16 +5,16 @@
  *   - 卡片整体可点开预览；
  *   - 新建 / 编辑 / 从当前状态生成 共用同一编辑表单。
  */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NAlert,
-  NButton,
-  NCheckbox,
-  NCard,
-  NSkeleton,
-  NTag,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ACheckbox from 'ant-design-vue/es/checkbox';
+import ACard from 'ant-design-vue/es/card';
+import ASkeleton from 'ant-design-vue/es/skeleton';
+import ATag from 'ant-design-vue/es/tag';
 
 import FIcon from '@/design-system/FIcon.vue';
 import FPageHeader from '@/design-system/FPageHeader.vue';
@@ -155,53 +155,53 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
   <div class="scenarios-view">
     <FPageHeader :title="t('scenarios.title')" :description="t('scenarios.caption')">
       <template #actions>
-        <n-button :loading="isLoading" :aria-label="t('scenarios.refreshAria')" @click="refresh">
+        <a-button :loading="isLoading" :aria-label="t('scenarios.refreshAria')" @click="refresh">
           <template #icon><FIcon name="arrow_clockwise_20_regular" /></template>
-        </n-button>
-        <n-button @click="captureFromCurrent">
+        </a-button>
+        <a-button @click="captureFromCurrent">
           <template #icon><FIcon name="document_24_regular" /></template>
           {{ t('scenarios.captureFromState') }}
-        </n-button>
-        <n-button type="primary" @click="openCreate">
+        </a-button>
+        <a-button type="primary" @click="openCreate">
           <template #icon><FIcon name="add_24_regular" /></template>
           {{ t('scenarios.create') }}
-        </n-button>
+        </a-button>
       </template>
     </FPageHeader>
 
     <ScenarioDirectoryTools v-model:folder-id="folderId" v-model:search="search" v-model:selected="selected"
-      v-model:busy="batchBusy" :visible-ids="visibleIds" />
-    <n-alert v-if="scenarioStore.loadError" type="error" title="预设列表读取失败" role="alert">
+      v-model:busy="batchBusy" :visible-ids="visibleIds">
+    <a-alert v-if="scenarioStore.loadError" type="error" message="预设列表读取失败" role="alert"><template #description>
       <p>{{ scenarioStore.loadError }}<template v-if="scenarioStore.scenarios.length"> · 下方保留上次读取的内容。</template></p>
-      <n-button :loading="isLoading" @click="refresh">重新读取</n-button>
-    </n-alert>
+      <a-button :loading="isLoading" @click="refresh">重新读取</a-button>
+    </template></a-alert>
     <section class="scenarios-view__grid" :aria-busy="isLoading || batchBusy">
       <template v-if="isLoading && sortedScenarios.length === 0">
-        <n-card v-for="i in 4" :key="i" size="small">
-          <n-skeleton text width="50%" />
-          <n-skeleton text width="80%" />
-          <n-skeleton text width="35%" />
-        </n-card>
+        <a-card v-for="i in 4" :key="i" size="small">
+          <a-skeleton text width="50%" />
+          <a-skeleton text width="80%" />
+          <a-skeleton text width="35%" />
+        </a-card>
       </template>
 
       <template v-else-if="sortedScenarios.length === 0 && !scenarioStore.loadError">
         <FEmptyState :title="search.trim() ? '没有匹配的预设' : '当前目录没有预设'" :description="search.trim() ? '试试其他名称，或清除搜索条件。' : t('scenarios.emptyDesc')">
-          <n-button v-if="search.trim()" @click="search = ''">清除搜索</n-button>
+          <a-button v-if="search.trim()" @click="search = ''">清除搜索</a-button>
           <template v-else>
-            <n-button type="primary" @click="openCreate">
+            <a-button type="primary" @click="openCreate">
               <template #icon><FIcon name="add_24_regular" /></template>
               {{ t('scenarios.create') }}
-            </n-button>
-            <n-button tertiary @click="captureFromCurrent">
+            </a-button>
+            <a-button  @click="captureFromCurrent">
               <template #icon><FIcon name="document_24_regular" /></template>
               {{ t('scenarios.captureFromState') }}
-            </n-button>
+            </a-button>
           </template>
         </FEmptyState>
       </template>
 
       <template v-else-if="sortedScenarios.length">
-        <n-card
+        <a-card
           v-for="scenario in sortedScenarios"
           :key="scenario.id"
           size="small"
@@ -209,7 +209,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
           :class="{ 'scenarios-view__card--pinned': scenario.sort_order > 0 }"
           @click="openPreview(scenario, $event)"
         >
-          <template #header>
+          <template #title>
             <div class="scenarios-view__card-header">
               <span v-if="scenario.sort_order > 0" class="scenarios-view__pinned">
                 <FIcon name="pin_24_filled" /> {{ t('scenarios.pinned') }}
@@ -219,12 +219,12 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
                 :aria-label="`查看预设 ${scenario.name}`" @click.stop="openPreview(scenario, $event)">{{ scenario.name }}</button></h3>
             </div>
           </template>
-          <template #header-extra>
+          <template #extra>
             <div class="scenarios-view__card-actions" @click.stop>
-              <n-checkbox :checked="selected.includes(scenario.id)" :disabled="batchBusy" :aria-label="'选择'+scenario.name"
+              <a-checkbox :checked="selected.includes(scenario.id)" :disabled="batchBusy" :aria-label="'选择'+scenario.name"
                 @update:checked="selected = $event ? [...selected,scenario.id] : selected.filter(id=>id!==scenario.id)" />
-              <n-button
-                quaternary
+              <a-button
+                type="text"
                 size="small"
                 :aria-label="scenario.sort_order > 0 ? t('scenarios.unpinAria') : t('scenarios.pinAria')"
                 :loading="pendingPinId === scenario.id"
@@ -233,8 +233,8 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
                 <template #icon>
                   <FIcon :name="scenario.sort_order > 0 ? 'pin_off_24_regular' : 'pin_24_regular'" />
                 </template>
-              </n-button>
-              <n-button
+              </a-button>
+              <a-button
                 type="primary"
                 size="small"
                 :loading="pendingActivateId === scenario.id"
@@ -242,25 +242,26 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
               >
                 <template #icon><FIcon name="play_24_regular" /></template>
                 {{ t('scenarios.activate') }}
-              </n-button>
+              </a-button>
             </div>
           </template>
 
           <p class="scenarios-view__meta">
-            <n-tag :type="scenario.big_screen_mode_state === 'unset' ? 'default' : 'info'" size="small" round>
+            <a-tag :color="tagColor(scenario.big_screen_mode_state === 'unset' ? 'default' : 'info')"  >
               {{ scenario.big_screen_mode_state === 'unset' ? t('scenarios.keepScreenMode') : scenario.big_screen_mode_label }}
-            </n-tag>
-            <n-tag :type="scenario.volume_state === 'unset' ? 'default' : 'info'" size="small" round>
+            </a-tag>
+            <a-tag :color="tagColor(scenario.volume_state === 'unset' ? 'default' : 'info')"  >
               {{ scenario.volume_state === 'unset' ? t('scenarios.keepVolume') : t('scenarios.volumeValue', { n: scenario.volume_level }) }}
-            </n-tag>
+            </a-tag>
           </p>
           <p v-if="scenario.description" class="scenarios-view__desc">{{ scenario.description }}</p>
           <p class="scenarios-view__desc">{{ scenario.path ?? '/'+scenario.name }}</p>
           <p class="scenarios-view__updated">{{ t('scenarios.updatedAt', { time: formatRelativeTime(scenario.updated_at) }) }}</p>
-        </n-card>
+        </a-card>
       </template>
     </section>
 
+    </ScenarioDirectoryTools>
     <ScenarioPreviewDrawer v-model:open="previewOpen" :scenario="previewScenario" @edit="openEdit"
       @after-delete="onAfterDelete" />
     <ScenarioEditDrawer v-model:open="editOpen" :scenario="editingScenario" :prefill-from-state="prefillDraft"
@@ -318,14 +319,14 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
   gap: var(--spacingHorizontalL);
 }
 
-.scenarios-view__grid > .n-empty {
+.scenarios-view__grid > .ant-empty {
   grid-column: 1 / -1;
   justify-self: center;
   align-self: center;
   padding: var(--spacingVerticalXXL) var(--spacingHorizontalL);
 }
 
-.scenarios-view__grid:has(.n-empty) {
+.scenarios-view__grid:has(.ant-empty) {
   min-height: 50vh;
 }
 

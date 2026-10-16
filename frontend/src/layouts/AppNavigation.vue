@@ -1,125 +1,57 @@
+<!-- Ant分组导航：按现场操作/内容资源/系统组织，小屏保留五个稳定底部入口。 -->
 <script setup lang="ts">
-/**
- * AppShell 导航区域：桌面 rail/drawer 与 compact bottom navigation。
- * 通过 props 接收已按运行态过滤/命名的导航条目，保持父组件只负责布局状态。
- */
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { RouterLink } from 'vue-router';
-import { NDivider } from 'naive-ui';
-
+import { RouterLink, useRouter } from 'vue-router';
+import AMenu, { MenuItem as AMenuItem, ItemGroup as AMenuItemGroup } from 'ant-design-vue/es/menu';
 import MoreSheet from './MoreSheet.vue';
 import { DESKTOP_SECONDARY_NAV, MOBILE_TAB_BAR } from './navItems';
 import type { NavItemDef } from './types';
 import FIcon from '@/design-system/FIcon.vue';
 
-interface AppNavigationProps {
-  compact: boolean;
-  navVariant: 'bottom' | 'rail' | 'drawer';
-  primaryItems: NavItemDef[];
-  moreOpen: boolean;
-  isActive: (path: string) => boolean;
-}
-
-defineProps<AppNavigationProps>();
-
+const props = defineProps<{
+  compact: boolean; navVariant: 'bottom' | 'rail' | 'drawer'; primaryItems: NavItemDef[];
+  moreOpen: boolean; isActive: (path: string) => boolean;
+}>();
 const emit = defineEmits<{
   (event: 'update:moreOpen', value: boolean): void;
   (event: 'bottomClick', path: string, value: MouseEvent): void;
 }>();
-
 const { t } = useI18n();
+const router = useRouter();
+const all = computed(() => [...props.primaryItems, ...DESKTOP_SECONDARY_NAV]);
+const selected = computed(() => all.value.filter(item => props.isActive(item.path)).map(item => item.path));
+const groups = computed(() => [
+  { key: 'operate', label: '现场操作', children: props.primaryItems.filter(item =>
+    ['/dashboard', '/display/big-left', '/display/big-right', '/devices'].includes(item.path)) },
+  { key: 'content', label: '内容资源', children: props.primaryItems.filter(item =>
+    ['/sources', '/background-audio', '/scenarios'].includes(item.path)) },
+  { key: 'system', label: '系统', children: DESKTOP_SECONDARY_NAV },
+]);
+/** :param key: 已知菜单键。:returns: 导航到原路由，不另发业务命令。 */
+function navigate({ key, domEvent }: { key: string | number; domEvent?: Event }): void {
+  // 鼠标链接由RouterLink处理（含修饰键新标签页）；Ant菜单键盘事件保留显式导航。
+  if (domEvent?.type === 'click' && domEvent.target instanceof Element && domEvent.target.closest('a[href]')) return;
+  if (all.value.some(item => item.path === key)) void router.push(String(key));
+}
 </script>
-
 <template>
-  <nav
-    v-if="!compact"
-    class="app-shell__nav flex min-h-0 shrink-0 flex-col gap-4 overflow-y-auto py-4"
-    :class="navVariant === 'drawer' ? 'w-60 bg-surface-subtle px-4' : 'w-[5.5rem] items-center bg-surface px-2'"
-    :data-variant="navVariant"
-    :aria-label="t('app.primaryNav')"
-  >
-    <ul class="app-shell__nav-list m-0 flex w-full list-none flex-col gap-1 p-0">
-      <li v-for="item in primaryItems" :key="item.path">
-        <RouterLink
-          :to="item.path"
-          class="app-shell__nav-item flex min-h-12 items-center rounded-md py-2 font-semibold text-foreground-muted no-underline"
-          :class="[
-            navVariant === 'rail' ? 'w-full flex-col gap-1 px-1 text-center' : 'gap-4 px-4',
-            { 'app-shell__nav-item--active': isActive(item.path) },
-          ]"
-          :aria-current="isActive(item.path) ? 'page' : undefined"
-        >
-          <span
-            class="app-shell__nav-indicator grid shrink-0 place-items-center"
-            :class="navVariant === 'rail' ? 'h-8 w-14 rounded-md' : ''"
-          >
-            <FIcon
-              class="app-shell__nav-icon text-2xl"
-              :name="(isActive(item.path) && item.iconSelected) || item.icon"
-            />
-          </span>
-          <span
-            class="app-shell__nav-label max-w-full truncate whitespace-nowrap"
-            :class="navVariant === 'rail' ? 'text-xs' : ''"
-          >{{ item.label }}</span>
-        </RouterLink>
-      </li>
-    </ul>
-
-    <n-divider />
-
-    <ul class="app-shell__nav-list m-0 flex w-full list-none flex-col gap-1 p-0">
-      <li v-for="item in DESKTOP_SECONDARY_NAV" :key="item.path">
-        <RouterLink
-          :to="item.path"
-          class="app-shell__nav-item flex min-h-12 items-center rounded-md py-2 font-semibold text-foreground-muted no-underline"
-          :class="[
-            navVariant === 'rail' ? 'w-full flex-col gap-1 px-1 text-center' : 'gap-4 px-4',
-            { 'app-shell__nav-item--active': isActive(item.path) },
-          ]"
-          :aria-current="isActive(item.path) ? 'page' : undefined"
-        >
-          <span
-            class="app-shell__nav-indicator grid shrink-0 place-items-center"
-            :class="navVariant === 'rail' ? 'h-8 w-14 rounded-md' : ''"
-          >
-            <FIcon
-              class="app-shell__nav-icon text-2xl"
-              :name="(isActive(item.path) && item.iconSelected) || item.icon"
-            />
-          </span>
-          <span
-            class="app-shell__nav-label max-w-full truncate whitespace-nowrap"
-            :class="navVariant === 'rail' ? 'text-xs' : ''"
-          >{{ item.label }}</span>
-        </RouterLink>
-      </li>
-    </ul>
+  <nav v-if="!compact" class="console-navigation" :aria-label="t('app.primaryNav')">
+    <a-menu mode="inline" theme="dark" :selected-keys="selected" @click="navigate">
+      <a-menu-item-group v-for="group in groups" :key="group.key" :title="group.label">
+        <a-menu-item v-for="item in group.children" :key="item.path" :title="item.label">
+          <template #icon><FIcon :name="item.icon" :size="19" /></template>
+          <RouterLink :to="item.path" :aria-current="isActive(item.path) ? 'page' : undefined">{{ item.label }}</RouterLink>
+        </a-menu-item>
+      </a-menu-item-group>
+    </a-menu>
   </nav>
-
-  <nav
-    v-if="compact"
-    class="app-shell__bottom sticky bottom-0 z-[var(--z-sticky)] grid grid-cols-5 gap-1 bg-surface-subtle px-1 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] shadow-panel"
-    :aria-label="t('app.primaryNav')"
-  >
-    <a
-      v-for="item in MOBILE_TAB_BAR"
-      :key="item.path"
-      :href="item.path"
-      class="app-shell__bottom-item flex min-h-[3.25rem] flex-col items-center justify-center gap-0.5 py-1 text-foreground-muted no-underline"
-      :class="{ 'app-shell__bottom-item--active': isActive(item.path) }"
-      :aria-current="isActive(item.path) ? 'page' : undefined"
-      @click.prevent="(event) => emit('bottomClick', item.path, event)"
-    >
-      <span class="app-shell__bottom-indicator grid h-8 w-16 place-items-center rounded-md">
-        <FIcon
-          class="app-shell__bottom-icon text-2xl"
-          :name="(isActive(item.path) && item.iconSelected) || item.icon"
-        />
-      </span>
-      <span class="app-shell__bottom-label text-xs font-semibold">{{ item.label }}</span>
+  <nav v-else class="app-shell__bottom" :aria-label="t('app.primaryNav')">
+    <a v-for="item in MOBILE_TAB_BAR" :key="item.path" :href="item.path" class="app-shell__bottom-item"
+      :class="{ 'app-shell__bottom-item--active': isActive(item.path) }" :aria-current="isActive(item.path) ? 'page' : undefined"
+      @click.prevent="event => emit('bottomClick', item.path, event)">
+      <FIcon :name="(isActive(item.path) && item.iconSelected) || item.icon" :size="22" /><span>{{ item.label }}</span>
     </a>
   </nav>
-
-  <MoreSheet :open="moreOpen" @update:open="(value) => emit('update:moreOpen', value)" />
+  <MoreSheet :open="moreOpen" @update:open="value => emit('update:moreOpen', value)" />
 </template>

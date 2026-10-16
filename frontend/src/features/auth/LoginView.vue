@@ -5,10 +5,17 @@
  *  - 表单走 Pinia auth store；
  *  - 登录成功后跳转 query.redirect 指定路径，否则回 /dashboard。
  */
+import { InputPassword as AInputPassword } from 'ant-design-vue/es/input';
+
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink, useRoute, useRouter } from 'vue-router';
-import { NAlert, NButton, NCard, NForm, NFormItem, NInput } from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import AForm from 'ant-design-vue/es/form';
+import { FormItem as AFormItem } from 'ant-design-vue/es/form';
+import AInput from 'ant-design-vue/es/input';
 
 import { useToast } from '@/composables/useToast';
 import { useAuthStore } from '@/stores/auth';
@@ -58,53 +65,49 @@ async function submit(): Promise<void> {
         <FIcon name="tv_24_regular" :size="28" />
       </span>
     </div>
-    <n-card class="login-view__card"
-      content-style="padding: 28px; padding-top: 8px; overflow: visible;"
-      header-style="padding-bottom: 4px;">
+    <a-card class="login-view__card"
+      :body-style="{ padding: '28px', paddingTop: '8px', overflow: 'visible' }"
+      >
       <FPageHeader :title="t('auth.pageTitle')" :description="t('auth.pageSubtitle')" />
-      <n-form @submit.prevent="submit">
-        <n-form-item :label="t('auth.username')" required>
-          <n-input
+      <a-form layout="vertical" :model="{ username, password }" @finish="submit">
+        <a-form-item :label="t('auth.username')" required>
+          <a-input
             v-model:value="username"
             :placeholder="t('auth.usernamePlaceholder')"
             :disabled="submitting"
             autocomplete="username"
-            :input-props="{ 'aria-label': t('auth.username') }"
-            @keydown.enter.prevent="submit"
+            v-bind="{ 'aria-label': t('auth.username') }"
           />
-        </n-form-item>
-        <n-form-item :label="t('auth.password')" required>
-          <n-input
+        </a-form-item>
+        <a-form-item :label="t('auth.password')" required>
+          <a-input-password
             v-model:value="password"
-            type="password"
-            show-password-on="click"
+
             :placeholder="t('auth.passwordPlaceholder')"
             :disabled="submitting"
             autocomplete="current-password"
-            :input-props="{ 'aria-label': t('auth.password') }"
-            @keydown.enter.prevent="submit"
+            v-bind="{ 'aria-label': t('auth.password') }"
           />
-        </n-form-item>
-        <n-alert v-if="errorMessage" type="error" :title="t('auth.loginFail')">
+        </a-form-item>
+        <a-alert v-if="errorMessage" type="error" :message="t('auth.loginFail')"><template #description>
           {{ errorMessage }}
-        </n-alert>
-        <n-button
-          attr-type="submit"
+        </template></a-alert>
+        <a-button
+          html-type="submit"
           type="primary"
           block
           :loading="submitting"
           :disabled="submitting"
           class="login-view__submit"
-          @click="submit"
         >
           {{ submitting ? t('auth.submitting') : t('auth.submit') }}
-        </n-button>
-      </n-form>
+        </a-button>
+      </a-form>
       <p class="login-view__hint">{{ t('auth.defaultHint') }}</p>
       <p class="login-view__server-link">
         <RouterLink to="/connect">{{ t('auth.changeServer') }}</RouterLink>
       </p>
-    </n-card>
+    </a-card>
   </main>
 </template>
 
@@ -179,8 +182,8 @@ async function submit(): Promise<void> {
   }
 }
 
-/* 收紧 Naive UI 卡片标题与内容间距 */
-.login-view__card :deep(.n-card-header__main) {
+/* 收紧 Ant Design Vue 卡片标题与内容间距 */
+.login-view__card :deep(.ant-card-head-title) {
   font-size: 20px;
   font-weight: 600;
 }

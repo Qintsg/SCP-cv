@@ -5,117 +5,117 @@
  * 1. 业务侧延续既有名 token（`home_24_regular` 等）调用 `<FIcon name="…" />`，
  *    本表把它翻译为 @vicons/fluent 暴露的 Vue 组件（PascalCase 化的官方
  *    Fluent UI System Icons 名）。
- * 2. 渲染由 FIcon.vue 通过 `<n-icon><component :is /></n-icon>` 完成；本文件
+ * 2. 渲染由 FIcon.vue 通过原生span与SVG组件完成；本文件
  *    只负责映射，不直接渲染。
  * 3. `FluentIconName` 联合类型从 ICON_MAP 的键派生，保持全仓库类型契约不变。
  */
 import type { Component } from 'vue';
-import {
-  Add24Regular,
-  Add20Regular,
-  Alert24Regular,
-  AlertUrgent24Regular,
-  Apps24Regular,
-  AppsList24Regular,
-  ArrowClockwise24Regular,
-  ArrowClockwise20Regular,
-  ArrowDownload24Regular,
-  ArrowLeft24Regular,
-  ArrowRight24Regular,
-  ArrowMaximize24Regular,
-  ArrowMinimize24Regular,
-  ArrowRepeatAll24Regular,
-  ArrowRepeatAllOff24Regular,
-  ArrowReset24Regular,
-  ArrowSwap24Regular,
-  ArrowUpload24Regular,
-  Checkmark16Filled,
-  Checkmark20Regular,
-  Checkmark24Regular,
-  CheckmarkCircle24Filled,
-  ChevronDown20Regular,
-  ChevronUp20Regular,
-  ChevronLeft20Regular,
-  ChevronLeft24Regular,
-  ChevronRight20Regular,
-  ChevronRight24Regular,
-  Circle24Regular,
-  DarkTheme24Regular,
-  Delete24Regular,
-  Delete20Regular,
-  Desktop24Regular,
-  DesktopMac24Regular,
-  Dismiss24Regular,
-  Dismiss20Regular,
-  Dismiss16Regular,
-  Document24Regular,
-  Edit24Regular,
-  Edit20Regular,
-  ErrorCircle24Filled,
-  ErrorCircle20Filled,
-  Eye24Regular,
-  EyeOff24Regular,
-  Filter24Regular,
-  Folder24Regular,
-  FullScreenMaximize24Regular,
-  FullScreenMinimize24Regular,
-  Globe24Regular,
-  Home24Regular,
-  Home24Filled,
-  Image24Regular,
-  Info24Regular,
-  Layer24Regular,
-  Layer24Filled,
-  Library24Regular,
-  Library24Filled,
-  Link24Regular,
-  Live24Regular,
-  MoreHorizontal24Regular,
-  MoreHorizontal20Regular,
-  MusicNote224Regular,
-  Navigation24Regular,
-  Next24Regular,
-  Open24Regular,
-  Pause24Regular,
-  Pause24Filled,
-  Pin24Regular,
-  Pin24Filled,
-  PinOff24Regular,
-  Play24Regular,
-  Play24Filled,
-  PlugDisconnected24Regular,
-  Power24Regular,
-  Previous24Regular,
-  RadioButton24Regular,
-  RadioButton24Filled,
-  Search24Regular,
-  Search20Regular,
-  Settings24Regular,
-  Settings24Filled,
-  Speaker224Regular,
-  Speaker220Regular,
-  SpeakerMute24Regular,
-  SpeakerMute20Regular,
-  SpeakerOff24Regular,
-  SpinnerIos20Regular,
-  Star24Regular,
-  Star24Filled,
-  Stop24Regular,
-  Subtract16Filled,
-  Tv24Regular,
-  Tv24Filled,
-  Video24Regular,
-  Warning24Filled,
-  Warning20Filled,
-  WeatherMoon24Regular,
-  WeatherSunny24Regular,
-} from '@vicons/fluent';
+import Camera24Regular from '@vicons/fluent/es/Camera24Regular';
+import Add24Regular from '@vicons/fluent/es/Add24Regular';
+import Add20Regular from '@vicons/fluent/es/Add20Regular';
+import Alert24Regular from '@vicons/fluent/es/Alert24Regular';
+import AlertUrgent24Regular from '@vicons/fluent/es/AlertUrgent24Regular';
+import Apps24Regular from '@vicons/fluent/es/Apps24Regular';
+import AppsList24Regular from '@vicons/fluent/es/AppsList24Regular';
+import ArrowClockwise24Regular from '@vicons/fluent/es/ArrowClockwise24Regular';
+import ArrowClockwise20Regular from '@vicons/fluent/es/ArrowClockwise20Regular';
+import ArrowDownload24Regular from '@vicons/fluent/es/ArrowDownload24Regular';
+import ArrowLeft24Regular from '@vicons/fluent/es/ArrowLeft24Regular';
+import ArrowRight24Regular from '@vicons/fluent/es/ArrowRight24Regular';
+import ArrowMaximize24Regular from '@vicons/fluent/es/ArrowMaximize24Regular';
+import ArrowMinimize24Regular from '@vicons/fluent/es/ArrowMinimize24Regular';
+import ArrowRepeatAll24Regular from '@vicons/fluent/es/ArrowRepeatAll24Regular';
+import ArrowRepeatAllOff24Regular from '@vicons/fluent/es/ArrowRepeatAllOff24Regular';
+import ArrowReset24Regular from '@vicons/fluent/es/ArrowReset24Regular';
+import ArrowSwap24Regular from '@vicons/fluent/es/ArrowSwap24Regular';
+import ArrowUpload24Regular from '@vicons/fluent/es/ArrowUpload24Regular';
+import Checkmark16Filled from '@vicons/fluent/es/Checkmark16Filled';
+import Checkmark20Regular from '@vicons/fluent/es/Checkmark20Regular';
+import Checkmark24Regular from '@vicons/fluent/es/Checkmark24Regular';
+import CheckmarkCircle24Filled from '@vicons/fluent/es/CheckmarkCircle24Filled';
+import ChevronDown20Regular from '@vicons/fluent/es/ChevronDown20Regular';
+import ChevronUp20Regular from '@vicons/fluent/es/ChevronUp20Regular';
+import ChevronLeft20Regular from '@vicons/fluent/es/ChevronLeft20Regular';
+import ChevronLeft24Regular from '@vicons/fluent/es/ChevronLeft24Regular';
+import ChevronRight20Regular from '@vicons/fluent/es/ChevronRight20Regular';
+import ChevronRight24Regular from '@vicons/fluent/es/ChevronRight24Regular';
+import Circle24Regular from '@vicons/fluent/es/Circle24Regular';
+import DarkTheme24Regular from '@vicons/fluent/es/DarkTheme24Regular';
+import Delete24Regular from '@vicons/fluent/es/Delete24Regular';
+import Delete20Regular from '@vicons/fluent/es/Delete20Regular';
+import Desktop24Regular from '@vicons/fluent/es/Desktop24Regular';
+import DesktopMac24Regular from '@vicons/fluent/es/DesktopMac24Regular';
+import Dismiss24Regular from '@vicons/fluent/es/Dismiss24Regular';
+import Dismiss20Regular from '@vicons/fluent/es/Dismiss20Regular';
+import Dismiss16Regular from '@vicons/fluent/es/Dismiss16Regular';
+import Document24Regular from '@vicons/fluent/es/Document24Regular';
+import Edit24Regular from '@vicons/fluent/es/Edit24Regular';
+import Edit20Regular from '@vicons/fluent/es/Edit20Regular';
+import ErrorCircle24Filled from '@vicons/fluent/es/ErrorCircle24Filled';
+import ErrorCircle20Filled from '@vicons/fluent/es/ErrorCircle20Filled';
+import Eye24Regular from '@vicons/fluent/es/Eye24Regular';
+import EyeOff24Regular from '@vicons/fluent/es/EyeOff24Regular';
+import Filter24Regular from '@vicons/fluent/es/Filter24Regular';
+import Folder24Regular from '@vicons/fluent/es/Folder24Regular';
+import FullScreenMaximize24Regular from '@vicons/fluent/es/FullScreenMaximize24Regular';
+import FullScreenMinimize24Regular from '@vicons/fluent/es/FullScreenMinimize24Regular';
+import Globe24Regular from '@vicons/fluent/es/Globe24Regular';
+import Home24Regular from '@vicons/fluent/es/Home24Regular';
+import Home24Filled from '@vicons/fluent/es/Home24Filled';
+import Image24Regular from '@vicons/fluent/es/Image24Regular';
+import Info24Regular from '@vicons/fluent/es/Info24Regular';
+import Layer24Regular from '@vicons/fluent/es/Layer24Regular';
+import Layer24Filled from '@vicons/fluent/es/Layer24Filled';
+import Library24Regular from '@vicons/fluent/es/Library24Regular';
+import Library24Filled from '@vicons/fluent/es/Library24Filled';
+import Link24Regular from '@vicons/fluent/es/Link24Regular';
+import Live24Regular from '@vicons/fluent/es/Live24Regular';
+import MoreHorizontal24Regular from '@vicons/fluent/es/MoreHorizontal24Regular';
+import MoreHorizontal20Regular from '@vicons/fluent/es/MoreHorizontal20Regular';
+import MusicNote224Regular from '@vicons/fluent/es/MusicNote224Regular';
+import Navigation24Regular from '@vicons/fluent/es/Navigation24Regular';
+import Next24Regular from '@vicons/fluent/es/Next24Regular';
+import Open24Regular from '@vicons/fluent/es/Open24Regular';
+import Pause24Regular from '@vicons/fluent/es/Pause24Regular';
+import Pause24Filled from '@vicons/fluent/es/Pause24Filled';
+import Pin24Regular from '@vicons/fluent/es/Pin24Regular';
+import Pin24Filled from '@vicons/fluent/es/Pin24Filled';
+import PinOff24Regular from '@vicons/fluent/es/PinOff24Regular';
+import Play24Regular from '@vicons/fluent/es/Play24Regular';
+import Play24Filled from '@vicons/fluent/es/Play24Filled';
+import PlugDisconnected24Regular from '@vicons/fluent/es/PlugDisconnected24Regular';
+import Power24Regular from '@vicons/fluent/es/Power24Regular';
+import Previous24Regular from '@vicons/fluent/es/Previous24Regular';
+import RadioButton24Regular from '@vicons/fluent/es/RadioButton24Regular';
+import RadioButton24Filled from '@vicons/fluent/es/RadioButton24Filled';
+import Search24Regular from '@vicons/fluent/es/Search24Regular';
+import Search20Regular from '@vicons/fluent/es/Search20Regular';
+import Settings24Regular from '@vicons/fluent/es/Settings24Regular';
+import Settings24Filled from '@vicons/fluent/es/Settings24Filled';
+import Speaker224Regular from '@vicons/fluent/es/Speaker224Regular';
+import Speaker220Regular from '@vicons/fluent/es/Speaker220Regular';
+import SpeakerMute24Regular from '@vicons/fluent/es/SpeakerMute24Regular';
+import SpeakerMute20Regular from '@vicons/fluent/es/SpeakerMute20Regular';
+import SpeakerOff24Regular from '@vicons/fluent/es/SpeakerOff24Regular';
+import SpinnerIos20Regular from '@vicons/fluent/es/SpinnerIos20Regular';
+import Star24Regular from '@vicons/fluent/es/Star24Regular';
+import Star24Filled from '@vicons/fluent/es/Star24Filled';
+import Stop24Regular from '@vicons/fluent/es/Stop24Regular';
+import Subtract16Filled from '@vicons/fluent/es/Subtract16Filled';
+import Tv24Regular from '@vicons/fluent/es/Tv24Regular';
+import Tv24Filled from '@vicons/fluent/es/Tv24Filled';
+import Video24Regular from '@vicons/fluent/es/Video24Regular';
+import Warning24Filled from '@vicons/fluent/es/Warning24Filled';
+import Warning20Filled from '@vicons/fluent/es/Warning20Filled';
+import WeatherMoon24Regular from '@vicons/fluent/es/WeatherMoon24Regular';
+import WeatherSunny24Regular from '@vicons/fluent/es/WeatherSunny24Regular';
 
 /**
  * token 名 → @vicons/fluent Vue 组件 静态映射。
  * 沿用业务层既有的 ~70 个 token 名，避免大面积改 props。
  */
 export const ICON_MAP = {
+  camera_24_regular: Camera24Regular,
   add_24_regular: Add24Regular,
   add_20_regular: Add20Regular,
   alert_24_regular: Alert24Regular,

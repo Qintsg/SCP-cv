@@ -1,11 +1,13 @@
 /*
- * 文稿编辑抽屉的布局制品状态回归，挂载真实 Vue/Naive UI。
+ * 文稿编辑抽屉的布局制品状态回归，挂载真实 Vue/Ant Design Vue。
  * 只在 HTTP 边界提供测试响应，不连接播放主机或启动原生引擎。
  * @Project : SCP-cv
  * @File : edit-source-presentation.test.mjs
  * @Author : Qintsg
  * @Date : 2026-10-02
  */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import test, { after, afterEach, before } from 'node:test';
@@ -126,7 +128,7 @@ test('缺失适配制品不显示原排版已准备页数，并保留显式准�
   await toggleFit();
   assert.match(preparationText(), /页图尚未准备；已准备 0 页/);
   assert.ok([...browser.document.querySelectorAll('.edit-source__preparation button')]
-    .some((button) => button.textContent.trim() === '重试转换'));
+    .some((button) => visibleText(button.textContent) === visibleText('重试转换')));
 });
 
 test('适配转换结果待确认时显示独立状态和零页，不提供盲重试', async () => {
@@ -135,7 +137,7 @@ test('适配转换结果待确认时显示独立状态和零页，不提供盲�
   await toggleFit();
   assert.match(preparationText(), /转换结果待人工确认；已准备 0 页/);
   assert.equal([...browser.document.querySelectorAll('.edit-source__preparation button')]
-    .some((button) => button.textContent.trim() === '重试转换'), false);
+    .some((button) => visibleText(button.textContent) === visibleText('重试转换')), false);
 });
 
 test('无效制品页数不能冒充已准备页数，旧默认布局顶层页数仍兼容', async () => {

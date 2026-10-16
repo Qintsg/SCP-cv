@@ -3,11 +3,15 @@
  * 设置中心容器：品牌头 + 设置分组 Tab。
  * 各设置分组拆入 tabs/ 子组件，避免单文件继续堆积运行态、显示器、设备电源与开发诊断逻辑。
  */
+import { tabsKeyboard as vTabsKeyboard } from '@/design-system/tabsKeyboard';
+
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NTabPane, NTabs } from 'naive-ui';
+import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
+import ATabs from 'ant-design-vue/es/tabs';
 
 import FPageHeader from '@/design-system/FPageHeader.vue';
+import { useBreakpoint } from '@/composables/useBreakpoint';
 import { getConnectionPorts } from '@/services/api';
 import RuntimeSettingsTab from './tabs/RuntimeSettingsTab.vue';
 import DisplaySettingsTab from './tabs/DisplaySettingsTab.vue';
@@ -20,6 +24,7 @@ type SettingsTab = 'runtime' | 'display' | 'devices' | 'account' | 'dev';
 const { t } = useI18n();
 
 const activeTab = ref<SettingsTab>('runtime');
+const { isMobile } = useBreakpoint();
 const connectionPorts = getConnectionPorts();
 const portsCaption = computed(() => t('settings.ports', connectionPorts));
 </script>
@@ -30,23 +35,23 @@ const portsCaption = computed(() => t('settings.ports', connectionPorts));
       <template #context><p class="settings-view__brand-caption">{{ portsCaption }}</p></template>
     </FPageHeader>
 
-    <n-tabs v-model:value="activeTab" type="line" :aria-label="t('settings.tabsAria')">
-      <n-tab-pane name="runtime" :tab="t('settings.tabRuntime')">
+    <a-tabs v-tabs-keyboard v-model:activeKey="activeTab" :tab-position="isMobile ? 'top' : 'left'" type="line" :aria-label="t('settings.tabsAria')" class="console-settings-tabs">
+      <a-tab-pane key="runtime" :tab="t('settings.tabRuntime')">
         <RuntimeSettingsTab />
-      </n-tab-pane>
-      <n-tab-pane name="display" :tab="t('settings.tabDisplay')">
+      </a-tab-pane>
+      <a-tab-pane key="display" :tab="t('settings.tabDisplay')">
         <DisplaySettingsTab />
-      </n-tab-pane>
-      <n-tab-pane name="devices" :tab="t('settings.tabDevices')">
+      </a-tab-pane>
+      <a-tab-pane key="devices" :tab="t('settings.tabDevices')">
         <DevicePowerSettingsTab />
-      </n-tab-pane>
-      <n-tab-pane name="account" :tab="t('settings.tabAccount')">
+      </a-tab-pane>
+      <a-tab-pane key="account" :tab="t('settings.tabAccount')">
         <AccountSettingsTab />
-      </n-tab-pane>
-      <n-tab-pane name="dev" :tab="t('settings.tabDev')">
+      </a-tab-pane>
+      <a-tab-pane key="dev" :tab="t('settings.tabDev')">
         <DevSettingsTab />
-      </n-tab-pane>
-    </n-tabs>
+      </a-tab-pane>
+    </a-tabs>
   </div>
 </template>
 

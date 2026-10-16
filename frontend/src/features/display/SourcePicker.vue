@@ -9,21 +9,23 @@
  * @Author : Qintsg
  * @Date : 2026-09-29
  */
+import { tabsKeyboard as vTabsKeyboard } from '@/design-system/tabsKeyboard';
+import { selectAriaLabel as vSelectAriaLabel } from '@/design-system/selectAriaLabel';
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import {
-  NButton,
-  NCard,
-  NFormItem,
-  NInput,
-  NProgress,
-  NSelect,
-  NSwitch,
-  NSpin,
-  NTabs,
-  NTabPane,
-  NTag,
-} from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
+import ACard from 'ant-design-vue/es/card';
+import { FormItem as AFormItem } from 'ant-design-vue/es/form';
+import AInput from 'ant-design-vue/es/input';
+import AProgress from 'ant-design-vue/es/progress';
+import ASelect from 'ant-design-vue/es/select';
+import ASwitch from 'ant-design-vue/es/switch';
+import ASpin from 'ant-design-vue/es/spin';
+import ATabs from 'ant-design-vue/es/tabs';
+import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
+import ATag from 'ant-design-vue/es/tag';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
@@ -266,41 +268,41 @@ async function uploadOnly(): Promise<void> {
 </script>
 
 <template>
-  <n-card class="source-picker" :title="t('sourcePicker.title')" size="small">
-    <template #header-extra>
+  <a-card class="source-picker" :title="t('sourcePicker.title')" size="small">
+    <template #extra>
       <span class="source-picker__count">{{ totalLabel }}</span>
     </template>
 
-    <n-input
+    <a-input
       v-model:value="searchKeyword"
       :placeholder="t('sourcePicker.searchPlaceholder')"
       :aria-label="t('sourcePicker.searchAria')"
-      clearable
+      allow-clear
     >
       <template #prefix>
         <FIcon name="search_20_regular" />
       </template>
-    </n-input>
+    </a-input>
     <DirectoryNavigator v-model:folder-id="currentFolderId" :folders="sourceStore.folders" compact />
 
     <div class="source-picker__filter-scroll">
-      <n-tabs v-model:value="filterValue" type="segment" :aria-label="t('sourcePicker.filterAria')">
-        <n-tab-pane name="all" :tab="t('sourcePicker.filter.all')" />
-        <n-tab-pane name="ppt" :tab="t('sourcePicker.filter.ppt')" />
-        <n-tab-pane name="video" :tab="t('sourcePicker.filter.video')" />
-        <n-tab-pane name="image" :tab="t('sourcePicker.filter.image')" />
-        <n-tab-pane name="web" :tab="t('sourcePicker.filter.web')" />
-        <n-tab-pane name="stream" :tab="t('sourcePicker.filter.stream')" />
-      </n-tabs>
+      <a-tabs v-tabs-keyboard v-model:activeKey="filterValue" type="card" :aria-label="t('sourcePicker.filterAria')">
+        <a-tab-pane key="all" :tab="t('sourcePicker.filter.all')" />
+        <a-tab-pane key="ppt" :tab="t('sourcePicker.filter.ppt')" />
+        <a-tab-pane key="video" :tab="t('sourcePicker.filter.video')" />
+        <a-tab-pane key="image" :tab="t('sourcePicker.filter.image')" />
+        <a-tab-pane key="web" :tab="t('sourcePicker.filter.web')" />
+        <a-tab-pane key="stream" :tab="t('sourcePicker.filter.stream')" />
+      </a-tabs>
     </div>
 
-    <n-form-item v-if="filterValue === 'ppt'" label="文稿打开方式">
-      <n-select v-model:value="presentationMode" :options="presentationOptions" aria-label="文稿打开方式" />
-    </n-form-item>
+    <a-form-item v-if="filterValue === 'ppt'" label="文稿打开方式">
+      <a-select v-select-aria-label="'文稿打开方式'" v-model:value="presentationMode" :options="presentationOptions" aria-label="文稿打开方式" />
+    </a-form-item>
 
-    <n-form-item v-if="filterValue === 'ppt'" label="文字适配（不修改原件）">
-      <n-switch v-model:value="fitText" aria-label="文字适配（不修改原件）" />
-    </n-form-item>
+    <a-form-item v-if="filterValue === 'ppt'" label="文字适配（不修改原件）">
+      <a-switch v-model:checked="fitText" aria-label="文字适配（不修改原件）" />
+    </a-form-item>
 
     <ul class="source-picker__list">
       <li v-if="filteredSources.length === 0" class="source-picker__empty">
@@ -328,18 +330,18 @@ async function uploadOnly(): Promise<void> {
             <p class="source-picker__name">{{ source.name }}</p>
             <p class="source-picker__sub">{{ sourcePath(source, sourceStore.folders) }}</p>
             <p class="source-picker__sub">
-              <n-tag v-if="isCurrentSource(source)" :type="currentSourceIsPlaying ? 'success' : 'warning'" size="small" round>
+              <a-tag v-if="isCurrentSource(source)" :color="tagColor(currentSourceIsPlaying ? 'success' : 'warning')"  >
                 当前输出{{ controlsDisabled ? '（离线，最后报告）' : '' }}
-              </n-tag>
-              <n-tag v-if="isRequestedSource(source)" type="warning" size="small" round>
+              </a-tag>
+              <a-tag v-if="isRequestedSource(source)" color="warning"  >
                 {{ requestedSourceStatus }}
-              </n-tag>
-              <n-tag :type="source.is_available ? 'default' : source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error'" size="small" round>
+              </a-tag>
+              <a-tag :color="tagColor(source.is_available ? 'default' : source.preparation_state === 'queued' || source.preparation_state === 'running' ? 'warning' : 'error')"  >
                 {{ source.is_available ? sourceCategoryLabel(source) : sourceAvailabilityLabel(source) }}
-              </n-tag>
+              </a-tag>
             </p>
           </div>
-          <n-spin v-if="switchingSourceId === source.id" :size="18" />
+          <a-spin v-if="switchingSourceId === source.id" size="large" />
         </button>
       </li>
     </ul>
@@ -352,48 +354,48 @@ async function uploadOnly(): Promise<void> {
       </summary>
       <div class="source-picker__upload-body">
         <p class="source-picker__pdf-hint">此处上传默认保存到 / 根目录；不会跟随浏览目录。</p>
-        <n-form-item :label="t('sourcePicker.file')" required>
+        <a-form-item :label="t('sourcePicker.file')" required>
           <div class="source-picker__file-row">
             <label class="source-picker__file">
               <input ref="fileInputRef" type="file" class="visually-hidden" :disabled="uploading"
                 :accept="acceptedFileTypes.join(',')"
                 @change="onFileSelect" />
               <span>{{ fileToUpload ? fileToUpload.name : t('sourcePicker.noFile') }}</span>
-              <n-button @click.stop="triggerFilePicker">
+              <a-button @click.stop="triggerFilePicker">
                 {{ t('sourcePicker.chooseFile') }}
-              </n-button>
+              </a-button>
             </label>
             <p class="source-picker__pdf-hint">{{ t('sourcePicker.pdfSuggestion') }}</p>
           </div>
-        </n-form-item>
-        <n-form-item :label="t('sourcePicker.displayName')">
-          <n-input v-model:value="fileDisplayName" :disabled="!!uploadedSource" :placeholder="t('sourcePicker.displayNamePlaceholder')" />
-        </n-form-item>
+        </a-form-item>
+        <a-form-item :label="t('sourcePicker.displayName')">
+          <a-input v-model:value="fileDisplayName" :disabled="!!uploadedSource" :placeholder="t('sourcePicker.displayNamePlaceholder')" />
+        </a-form-item>
         <p v-if="uploadedSource" class="source-picker__upload-state">
           文件已上传为“{{ uploadedSource.name }}”；重试仅打开该源，重新选文件才会再次上传。
         </p>
         <p v-if="uploadError" class="source-picker__upload-error">{{ uploadError }}</p>
         <template v-if="uploading">
-          <n-progress type="line" :percentage="uploadProgress" :show-indicator="false" />
+          <a-progress type="line" :percent="uploadProgress" :show-info="false" />
           <p class="source-picker__upload-state">{{ uploadStatusText }}</p>
         </template>
 
         <div class="source-picker__upload-actions">
-          <n-button :disabled="uploading || !fileToUpload || !!uploadedSource" :loading="uploading" @click="uploadOnly">
+          <a-button :disabled="uploading || !fileToUpload || !!uploadedSource" :loading="uploading" @click="uploadOnly">
             {{ t('sourcePicker.uploadOnly') }}
-          </n-button>
-          <n-button type="primary" :disabled="controlsDisabled || uploading || !fileToUpload" :loading="uploading"
+          </a-button>
+          <a-button type="primary" :disabled="controlsDisabled || uploading || !fileToUpload" :loading="uploading"
             @click="uploadAndOpen">
             {{ uploadedSource ? '重试打开已上传源' : t('sourcePicker.uploadOpen') }}
-          </n-button>
+          </a-button>
         </div>
       </div>
     </details>
 
     <p v-if="uploading && !expanded" class="source-picker__upload-state">
-      <n-spin :size="16" /> {{ uploadStatusText }}
+      <a-spin size="large" /> {{ uploadStatusText }}
     </p>
-  </n-card>
+  </a-card>
 </template>
 
 <style scoped src="./SourcePicker.css"></style>

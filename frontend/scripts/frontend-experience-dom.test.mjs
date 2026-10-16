@@ -1,4 +1,6 @@
 /** 真实Vue目录和外壳交互：清除条件、失败反馈、路由滚动与焦点，无实体流量。 */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import test, { before, after, afterEach } from 'node:test';
 import { setImmediate as nextTurn } from 'node:timers/promises';
@@ -34,7 +36,7 @@ test('类型筛选无匹配可清除，保留目录并把键盘焦点还给搜�
  let writes=0;globalThis.fetch=async()=>{writes++;throw new Error('不应访问网络');};
  const{store,root}=await mount();store.setCategory('video');store.setSearchKeyword('无匹配');await flush();
  assert.match(root.textContent,/没有匹配的媒体/);
- const clear=[...root.querySelectorAll('button')].find(button=>button.textContent.trim()==='清除筛选');assert.ok(clear);clear.click();await flush();
+ const clear=[...root.querySelectorAll('button')].find(button=>visibleText(button.textContent) === visibleText('清除筛选'));assert.ok(clear);clear.click();await flush();
  assert.equal(store.category,'all');assert.equal(store.searchKeyword,'');assert.equal(store.currentFolderId,1);assert.equal(writes,0);
  assert.equal(browser.document.activeElement?.getAttribute('aria-label'),'搜索媒体名称或路径');assert.match(root.textContent,/测试图片/);
 });

@@ -6,6 +6,8 @@
  * @Author : Qintsg
  * @Date : 2026-10-03
  */
+import { browserKeyCode, visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import test, { after, afterEach, before } from 'node:test';
@@ -132,8 +134,8 @@ async function mountPicker(source, openFailure = '', delayUpload = false, sessio
  * :returns: 布局选择已由真实 DOM 事件更新。
  */
 async function selectFittedPresentation() {
-  const tab = [...browser.document.querySelectorAll('.n-tabs-tab')]
-    .find((element) => element.textContent.trim() === '演示文稿');
+  const tab = [...browser.document.querySelectorAll('[role="tab"]')]
+    .find((element) => visibleText(element.textContent) === visibleText('演示文稿'));
   assert.ok(tab, '应有文稿分类');
   tab.click();
   await flushUi();
@@ -164,24 +166,26 @@ async function chooseFile(filename) {
  * :returns: 当前模式已完成渲染。
  */
 async function choosePresentationMode(label) {
-  const select = browser.document.querySelector('.n-select[aria-label="文稿打开方式"] .n-base-selection');
+  const root = browser.document.querySelector('.ant-select[aria-label="文稿打开方式"]');
+  const select = root?.querySelector('input[role="combobox"]');
   assert.ok(select, '应有文稿模式选择');
-  select.click();
+  select.focus(); select.click();
+  select.dispatchEvent(new browser.KeyboardEvent('keydown', { key:'ArrowDown',keyCode:40,which:40,bubbles:true }));
   await flushUi();
   // happy-dom没有菜单布局高度，虚拟滚动不能保证第三个选项已有实体节点。
   // 从当前可见的默认选项按公开键盘操作移动，仍以最终可见文案确认选择。
-  assert.match(select.textContent, /LibreOffice 动态放映/);
+  assert.match(root.textContent, /LibreOffice 动态放映/);
   const steps = new Map([
     ['静态逐页图片（无动画／媒体）', 1], ['静态 PDF（无动画／媒体）', 2],
   ]).get(label);
   assert.notEqual(steps, undefined, '测试必须使用用户可见的已知静态模式');
   for (let index = 0; index < steps; index++) {
-    select.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    select.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowDown'), which: browserKeyCode('ArrowDown'),  key: 'ArrowDown', bubbles: true }));
     await flushUi();
   }
-  select.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  select.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('Enter'), which: browserKeyCode('Enter'),  key: 'Enter', bubbles: true }));
   await flushUi();
-  assert.ok(select.textContent.includes(label), `键盘选择后应显示${label}；实际：${select.textContent}`);
+  assert.ok(root.textContent.includes(label), `键盘选择后应显示${label}；实际：${root.textContent}`);
 }
 
 /** :returns: 用户可点击的上传并打开动作。 */
@@ -239,7 +243,7 @@ test('显式静态未准备保留原始错误和布局选择，再次点击只�
   assert.equal(sources.findById(42)?.id, 42, '明确上传成功的源应保留');
   assert.equal(browser.document.querySelector('[role="switch"][aria-label="文字适配（不修改原件）"]')
     ?.getAttribute('aria-checked'), 'true');
-  assert.match(browser.document.querySelector('.n-select[aria-label="文稿打开方式"]')?.textContent ?? '', /静态 PDF/);
+  assert.match(browser.document.querySelector('.ant-select[aria-label="文稿打开方式"]')?.textContent ?? '', /静态 PDF/);
   uploadAndOpenButton().click();
   await flushUi();
   assert.deepEqual(openBodies(), [0, 1].map(() => ({

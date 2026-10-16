@@ -5,6 +5,9 @@
  * @Author : Qintsg
  * @Date : 2026-10-04
  */
+import { prepareSliderGeometry } from './dom-test-server.mjs';
+import { browserKeyCode, visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
 import { setImmediate as nextTurn } from 'node:timers/promises';
 import test, { before, after, afterEach } from 'node:test';
@@ -170,7 +173,7 @@ test('离开音频页后旧刷新错误不污染共享通知', async () => {
     return new Response(JSON.stringify({ detail: '旧刷新失败', code: 'qa_refresh_failed' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } });
   };
-  [...browser.document.querySelectorAll('button')].find(button => button.textContent.trim() === '刷新').click();
+  [...browser.document.querySelectorAll('button')].find(button => visibleText(button.textContent) === visibleText('刷新')).click();
   await flush(); app.unmount(); app = undefined; browser.document.body.replaceChildren();
   release(); await flush(); await flush();
   assert.deepEqual(notices.items, [], '读取请求的失败也只属于已离开的页面');
@@ -211,7 +214,7 @@ test('播放列表项仅受理时使用相同请求提示', async () => {
   };
   const row = [...browser.document.querySelectorAll('.background-audio__playlist-item')]
     .find(item => item.textContent.includes('曲目2'));
-  [...row.querySelectorAll('button')].find(button => button.textContent.trim() === '播放').click();
+  [...row.querySelectorAll('button')].find(button => visibleText(button.textContent) === visibleText('播放')).click();
   await flush(); await flush();
   assert.deepEqual(writes, ['/api/background-audio/playlist/2/play/']);
   assert.equal(audio.state.playback_state, 'loading');
@@ -249,10 +252,10 @@ test('背景音频进度可用公开键盘定位，HTTP携带毫秒目标而不�
   };
   const progress = browser.document.querySelector('[role="slider"][aria-label="播放进度"]');
   assert.ok(progress, '支持定位的音频应提供进度操作');
-  progress.focus();
-  progress.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+  prepareSliderGeometry(progress); progress.focus();
+  progress.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true, cancelable: true }));
   await flush();
-  progress.dispatchEvent(new browser.KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true }));
+  progress.dispatchEvent(new browser.KeyboardEvent('keyup', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true }));
   await flush();
   assert.ok(writes.length >= 1);
   assert.ok(writes.every((write) => write.path === '/api/background-audio/control/'));
@@ -275,11 +278,11 @@ test('切换主机后背景音量未发缓冲不得自动投向新主机', async
     return response({ success: true, background_audio: snapshot(1, 1) });
   };
   const volume = browser.document.querySelector('[role="slider"][aria-label="音量"]');
-  volume.focus();
+  prepareSliderGeometry(volume); volume.focus();
   for (let index = 0; index < 2; index++) {
-    volume.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }));
+    volume.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowLeft'), which: browserKeyCode('ArrowLeft'),  key: 'ArrowLeft', bubbles: true, cancelable: true }));
     await flush();
-    volume.dispatchEvent(new browser.KeyboardEvent('keyup', { key: 'ArrowLeft', bubbles: true }));
+    volume.dispatchEvent(new browser.KeyboardEvent('keyup', { keyCode: browserKeyCode('ArrowLeft'), which: browserKeyCode('ArrowLeft'),  key: 'ArrowLeft', bubbles: true }));
     await flush();
   }
   assert.equal(writes.length, 1);
@@ -301,8 +304,8 @@ for (const [label, patch] of [['待机', { playback_state: 'idle' }], ['加载',
       return response({ success: true, background_audio: value });
     };
     const progress = browser.document.querySelector('[role="slider"][aria-label="播放进度"]');
-    progress.focus(); progress.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
-    await flush(); progress.dispatchEvent(new browser.KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true })); await flush();
+    prepareSliderGeometry(progress); progress.focus(); progress.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true, cancelable: true }));
+    await flush(); progress.dispatchEvent(new browser.KeyboardEvent('keyup', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true })); await flush();
     assert.deepEqual(writes, []);
   });
 }
@@ -316,10 +319,10 @@ test('定位在途换曲丢弃旧缓冲，新的用户输入仍可定位新曲�
     if (writes.length === 1) await gate;
     return response({ success: true, background_audio: audio.snapshot });
   };
-  const progress = browser.document.querySelector('[role="slider"][aria-label="播放进度"]'); progress.focus();
+  const progress = browser.document.querySelector('[role="slider"][aria-label="播放进度"]'); prepareSliderGeometry(progress); progress.focus();
   for (let index = 0; index < 2; index++) {
-    progress.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
-    await flush(); progress.dispatchEvent(new browser.KeyboardEvent('keyup', { key: 'ArrowRight', bubbles: true })); await flush();
+    progress.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true, cancelable: true }));
+    await flush(); progress.dispatchEvent(new browser.KeyboardEvent('keyup', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true })); await flush();
   }
   assert.equal(writes.length, 1);
   const next = snapshot(2, 2); next.state.position_ms = 2000;
@@ -330,7 +333,7 @@ test('定位在途换曲丢弃旧缓冲，新的用户输入仍可定位新曲�
   const currentProgress = browser.document.querySelector('[role="slider"][aria-label="播放进度"]');
   currentProgress.focus();
   assert.equal(currentProgress.getAttribute('aria-valuenow'), '2000');
-  currentProgress.dispatchEvent(new browser.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true })); await flush();
+  currentProgress.dispatchEvent(new browser.KeyboardEvent('keydown', { keyCode: browserKeyCode('ArrowRight'), which: browserKeyCode('ArrowRight'),  key: 'ArrowRight', bubbles: true, cancelable: true })); await flush();
   assert.equal(writes.length, 2, '新用户输入应可用');
   assert.deepEqual(writes[1].body, { action: 'seek', position_ms: 3000 });
 });

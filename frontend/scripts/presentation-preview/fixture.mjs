@@ -1,6 +1,6 @@
 /*
  * 文稿预览真实DOM合同：按实际源与实际文字布局取图，不借期望源缩略图。
- * 真实Vue/Naive UI/Pinia/API均保留，只在外部fetch边界提供两布局资源。
+ * 真实Vue/Ant Design Vue/Pinia/API均保留，只在外部fetch边界提供两布局资源。
  * @Project : SCP-cv
  * @File : fixture.mjs
  * @Author : Qintsg
@@ -153,7 +153,7 @@ export async function mountPreview(component, { observation = {}, respondResourc
   let NotificationProvider;
   if (withNotifications) {
     ({ default: ToastHost } = await server.ssrLoadModule('/src/design-system/FToastHost.vue'));
-    ({ NNotificationProvider: NotificationProvider } = await server.ssrLoadModule('naive-ui'));
+    ({ default: NotificationProvider } = await server.ssrLoadModule('ant-design-vue/es/config-provider'));
   }
   app = vue.createApp({ setup: () => () => {
     const view = vue.h(component, component === PlaybackControl ? { session: sessions.byWindowId(1) } : {});

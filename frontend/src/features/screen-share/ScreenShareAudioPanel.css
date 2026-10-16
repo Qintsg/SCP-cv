@@ -7,6 +7,6 @@
 .share-audio__field { display: flex; align-items: center; gap: var(--spacingHorizontalS); font-size: var(--fontSizeBase300); }
 .share-audio__field input { box-sizing: border-box; width: 6rem; min-height: 44px; padding: var(--spacingVerticalS) var(--spacingHorizontalS); border: var(--strokeWidthThin) solid var(--colorNeutralStroke1); border-radius: var(--borderRadiusMedium); background: var(--colorNeutralBackground1); color: var(--colorNeutralForeground1); font: inherit; }
 .share-audio__field input:disabled { background: var(--colorNeutralBackgroundDisabled); color: var(--colorNeutralForegroundDisabled); }
-.share-audio__actions :deep(.n-button) { min-height: 44px; }
-.share-audio__field input:focus-visible, .share-audio__actions :deep(.n-button:focus-visible) { outline: var(--strokeWidthThick) solid var(--colorBrandStroke1); outline-offset: var(--spacingHorizontalXXS); }
+.share-audio__actions :deep(.ant-btn) { min-height: 44px; }
+.share-audio__field input:focus-visible, .share-audio__actions :deep(.ant-btn:focus-visible) { outline: var(--strokeWidthThick) solid var(--colorBrandStroke1); outline-offset: var(--spacingHorizontalXXS); }
 .share-audio__hint, .share-audio__feedback { margin: var(--spacingVerticalS) 0 0; color: var(--colorNeutralForeground2); font-size: var(--fontSizeBase200); line-height: var(--lineHeightBase200); overflow-wrap: anywhere; }

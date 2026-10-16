@@ -6,9 +6,13 @@
  *  - 显示窗口 ID（调试用，仅触发一次）
  *  - 系统关机（带 Dialog 二次确认 + Danger 主按钮）
  */
+import type { DropdownOption } from '@/design-system/dropdownActions';
+
+import ActionMenu from '@/design-system/ActionMenu.vue';
+
 import { computed, h, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NButton, NDropdown, type DropdownOption } from 'naive-ui';
+import AButton from 'ant-design-vue/es/button';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { runDropdownAction, type ActionDropdownOption } from '@/design-system/dropdownActions';
@@ -41,13 +45,14 @@ async function onResetAll(): Promise<void> {
  * :return: Promise 完成时表示请求已处理或用户已取消
  */
 async function onResetPptPlayback(): Promise<void> {
+  const current = dialog.captureContext();
   const confirmed = await dialog.danger({
     title: t('emergency.resetPptTitle'),
     description: t('emergency.resetPptDesc'),
     confirmLabel: t('emergency.resetPptConfirm'),
     cancelLabel: t('common.cancel'),
   });
-  if (!confirmed) return;
+  if (!confirmed || !current()) return;
   try {
     await session.resetPptPlayback();
     toast.success(t('emergency.resetPptOk'));
@@ -75,13 +80,14 @@ async function onShowWindowIds(): Promise<void> {
  */
 async function onShutdown(): Promise<void> {
   if (systemActionPending.value) return;
+  const current = dialog.captureContext();
   const confirmed = await dialog.danger({
     title: t('emergency.shutdownTitle'),
     description: t('emergency.shutdownDesc'),
     confirmLabel: t('emergency.shutdownConfirm'),
     cancelLabel: t('common.cancel'),
   });
-  if (!confirmed) return;
+  if (!confirmed || !current()) return;
   systemActionPending.value = true;
   try {
     const result = await session.shutdownSystem();
@@ -99,13 +105,14 @@ async function onShutdown(): Promise<void> {
  */
 async function onRestartAll(): Promise<void> {
   if (systemActionPending.value) return;
+  const current = dialog.captureContext();
   const confirmed = await dialog.danger({
     title: t('emergency.restartAllTitle'),
     description: t('emergency.restartAllDesc'),
     confirmLabel: t('emergency.restartAllConfirm'),
     cancelLabel: t('common.cancel'),
   });
-  if (!confirmed) return;
+  if (!confirmed || !current()) return;
   systemActionPending.value = true;
   try {
     const result = await session.restartAll();
@@ -120,7 +127,7 @@ async function onRestartAll(): Promise<void> {
 /**
  * 构造下拉菜单使用的 Fluent 图标渲染函数。
  * :param name: 设计系统图标名称
- * :return: Naive UI 图标渲染函数
+ * :return: Ant Design Vue 图标渲染函数
  */
 function renderIcon(name: FluentIconName): () => ReturnType<typeof h> {
   return () => h(FIcon, { name, size: 18 });
@@ -157,7 +164,7 @@ const options = computed<ActionDropdownOption[]>(() => [
 
 /**
  * 执行下拉选项绑定的动作。
- * :param _key: Naive UI 选项键，本处理器不使用
+ * :param _key: Ant Design Vue 选项键，本处理器不使用
  * :param option: 被选择的下拉选项
  * :return: None
  */
@@ -168,15 +175,15 @@ function handleSelect(_key: string | number, option: DropdownOption): void {
 </script>
 
 <template>
-  <n-dropdown
-    trigger="click"
-    placement="bottom-end"
+  <ActionMenu
+
+    placement="bottomRight"
     :options="options"
     @select="handleSelect"
   >
-    <n-button
-      quaternary
-      circle
+    <a-button
+      type="text"
+      shape="circle"
       :loading="systemActionPending"
       :disabled="systemActionPending"
       :aria-label="t('emergency.triggerAria')"
@@ -184,6 +191,6 @@ function handleSelect(_key: string | number, option: DropdownOption): void {
       <template #icon>
         <FIcon name="alert_urgent_24_regular" />
       </template>
-    </n-button>
-  </n-dropdown>
+    </a-button>
+  </ActionMenu>
 </template>

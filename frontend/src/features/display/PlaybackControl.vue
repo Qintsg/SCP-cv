@@ -13,18 +13,18 @@
  * @Author : Qintsg
  * @Date : 2026-09-29
  */
+import { tagColor } from '@/design-system/tagColor';
+
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
-import {
-  NAlert,
-  NButton,
-  NInput,
-  NProgress,
-  NSlider,
-  NSwitch,
-  NTag,
-} from 'naive-ui';
+import AAlert from 'ant-design-vue/es/alert';
+import AButton from 'ant-design-vue/es/button';
+import AInput from 'ant-design-vue/es/input';
+import AProgress from 'ant-design-vue/es/progress';
+import ASlider from 'ant-design-vue/es/slider';
+import ASwitch from 'ant-design-vue/es/switch';
+import ATag from 'ant-design-vue/es/tag';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
@@ -256,27 +256,27 @@ const errorBarDescription = computed(() => {
       <div class="playback-control__identity">
         <SourceThumbnail v-if="currentSource" :source="currentSource" size="comfortable" />
         <div>
-          <n-tag :type="stateType" round size="small">
+          <a-tag :color="tagColor(stateType)"  >
             {{ requestedShare || shareStopPending ? sharedStateLabel : session.source_id ? (session.playback_state_label || session.playback_state) : t('playback.idle') }}
-          </n-tag>
+          </a-tag>
           <h3 class="playback-control__source-name">
             {{ requestedShare || shareStopPending ? t('screenShare.title') : session.source_name && session.source_id ? session.source_name : t('playback.notOpened') }}
           </h3>
           <p v-if="outputMismatch" class="playback-control__caption">{{ t('playback.requestedSourceLabel') }}</p>
           <p v-if="session.source_id" class="playback-control__caption">
             {{ session.source_type_label || t('playback.idle') }}
-            <n-tag v-if="category === 'ppt' && session.playback_mode === 'pdf'" type="info" round size="small">
+            <a-tag v-if="category === 'ppt' && session.playback_mode === 'pdf'" color="processing"  >
               {{ t('playback.pdfBadge') }}
-            </n-tag>
-            <n-tag v-else-if="category === 'ppt' && session.playback_mode === 'slide_images'" type="info" round size="small">
+            </a-tag>
+            <a-tag v-else-if="category === 'ppt' && session.playback_mode === 'slide_images'" color="processing"  >
               {{ t('playback.slideImagesBadge') }}
-            </n-tag>
-            <n-tag v-else-if="category === 'ppt' && session.playback_mode === 'libreoffice'" type="info" round size="small">
+            </a-tag>
+            <a-tag v-else-if="category === 'ppt' && session.playback_mode === 'libreoffice'" color="processing"  >
               LibreOffice
-            </n-tag>
-            <n-tag v-if="session.actual_fit_text !== null && session.actual_fit_text !== undefined" type="info" round size="small">
+            </a-tag>
+            <a-tag v-if="session.actual_fit_text !== null && session.actual_fit_text !== undefined" color="processing"  >
               {{ t(session.actual_fit_text ? 'playback.fittedTextBadge' : 'playback.originalTextBadge') }}
-            </n-tag>
+            </a-tag>
           </p>
         </div>
       </div>
@@ -296,56 +296,56 @@ const errorBarDescription = computed(() => {
         <strong>{{ monitorSource?.name || (usesPresentationPreview ? '实际源或文字布局未知，不显示默认预览' : missingOutputLabel) }}</strong>
         <span v-if="outputMismatch">{{ t('playback.outputMismatch') }}</span>
         <span>{{ t('playback.previewReference') }}</span>
-        <n-button v-if="previewContext" size="small" :loading="previewPending" :disabled="previewPending"
-          @click="refreshPreview">刷新预览</n-button>
+        <a-button v-if="previewContext" size="small" :loading="previewPending" :disabled="previewPending"
+          @click="refreshPreview">刷新预览</a-button>
       </div>
     </section>
 
-    <n-alert v-if="previewUnavailable" type="info">
+    <a-alert v-if="previewUnavailable" type="info"><template #description>
       所选布局预览尚未准备；此提示仅指静态参考图，不表示原生播放失败。
-    </n-alert>
+    </template></a-alert>
 
-    <n-alert v-if="session.actual_source_id && !supportsRequestedPlaybackControls(session)" type="warning">
+    <a-alert v-if="session.actual_source_id && !supportsRequestedPlaybackControls(session)" type="warning"><template #description>
       {{ t('playback.controlsTypeMismatch') }}
-    </n-alert>
+    </template></a-alert>
 
-    <n-alert v-if="showErrorBar" type="error" :title="errorBarTitle" closable @close="dismissErrorBar">
+    <a-alert v-if="showErrorBar" type="error" :message="errorBarTitle" closable @close="dismissErrorBar"><template #description>
       <div class="playback-control__alert-body">
         <span>{{ errorBarDescription }}</span>
-        <n-button size="small" :disabled="!reopenSourceId || controlsDisabled" @click="reopenCurrentSource">
+        <a-button size="small" :disabled="!reopenSourceId || controlsDisabled" @click="reopenCurrentSource">
           {{ t('playback.reopen') }}
-        </n-button>
+        </a-button>
       </div>
-    </n-alert>
+    </template></a-alert>
 
     <section v-if="category === 'ppt'" class="playback-control__section">
       <div class="playback-control__row playback-control__row--ppt">
-        <n-button :disabled="presentationControlsDisabled" @click="onPrev">
+        <a-button :disabled="presentationControlsDisabled" @click="onPrev">
           <template #icon><FIcon name="previous_24_regular" /></template>
           {{ t('playback.prevPage') }}
-        </n-button>
-        <n-button type="primary" :disabled="presentationControlsDisabled" @click="onNext">
+        </a-button>
+        <a-button type="primary" :disabled="presentationControlsDisabled" @click="onNext">
           <template #icon><FIcon name="next_24_regular" /></template>
           {{ t('playback.nextPage') }}
-        </n-button>
+        </a-button>
         <div class="playback-control__jump">
-          <n-input v-model:value="jumpInput" type="text" :placeholder="t('playback.jumpPlaceholder')" :maxlength="4" />
-          <n-button :disabled="presentationControlsDisabled" @click="onJump">{{ t('playback.jump') }}</n-button>
+          <a-input v-model:value="jumpInput" type="text" :placeholder="t('playback.jumpPlaceholder')" :maxlength="4" />
+          <a-button :disabled="presentationControlsDisabled" @click="onJump">{{ t('playback.jump') }}</a-button>
         </div>
       </div>
       <div v-if="session.total_slides > 0" class="playback-control__row playback-control__row--progress">
-        <n-progress
+        <a-progress
           type="line"
-          :percentage="pptProgressPercentage"
-          :show-indicator="false"
+          :percent="pptProgressPercentage"
+          :show-info="false"
           class="playback-control__progress"
         />
         <span class="playback-control__progress-label">{{ pptProgressLabel }}</span>
       </div>
 
-      <n-alert v-if="pptError" type="error" :title="t('playback.pptLoadFail')">
+      <a-alert v-if="pptError" type="error" :message="t('playback.pptLoadFail')"><template #description>
         {{ pptError }}
-      </n-alert>
+      </template></a-alert>
 
       <PresentationEffectControls v-if="session.playback_mode === 'libreoffice'" :window-id="session.window_id" :disabled="presentationControlsDisabled" />
       <div v-if="!isStaticSlideMode && session.playback_mode !== 'libreoffice' && currentResource && currentResource.media_items.length > 0" class="playback-control__media">
@@ -354,18 +354,18 @@ const errorBarDescription = computed(() => {
           <li v-for="media in currentResource.media_items" :key="media.id" class="playback-control__media-item">
             <span class="playback-control__media-name">{{ media.name }}</span>
             <span class="playback-control__media-actions">
-              <n-button size="small" circle :disabled="playbackControlsDisabled" :aria-label="t('playback.playMedia')"
+              <a-button size="small" shape="circle" :disabled="playbackControlsDisabled" :aria-label="t('playback.playMedia')"
                 @click="pptMediaAction(media.id, media.media_index, 'play')">
                 <template #icon><FIcon name="play_24_regular" /></template>
-              </n-button>
-              <n-button size="small" circle :disabled="playbackControlsDisabled" :aria-label="t('playback.pauseMedia')"
+              </a-button>
+              <a-button size="small" shape="circle" :disabled="playbackControlsDisabled" :aria-label="t('playback.pauseMedia')"
                 @click="pptMediaAction(media.id, media.media_index, 'pause')">
                 <template #icon><FIcon name="pause_24_regular" /></template>
-              </n-button>
-              <n-button size="small" circle type="error" :disabled="playbackControlsDisabled" :aria-label="t('playback.stopMedia')"
+              </a-button>
+              <a-button size="small" shape="circle" danger :disabled="playbackControlsDisabled" :aria-label="t('playback.stopMedia')"
                 @click="pptMediaAction(media.id, media.media_index, 'stop')">
                 <template #icon><FIcon name="stop_24_regular" /></template>
-              </n-button>
+              </a-button>
             </span>
           </li>
         </ul>
@@ -374,26 +374,26 @@ const errorBarDescription = computed(() => {
 
     <section v-else-if="category === 'video'" class="playback-control__section">
       <div class="playback-control__row">
-        <n-button v-if="!isPlaying" type="primary" :disabled="playbackControlsDisabled" @click="onPlay">
+        <a-button v-if="!isPlaying" type="primary" :disabled="playbackControlsDisabled" @click="onPlay">
           <template #icon><FIcon name="play_24_regular" /></template>
           {{ t('playback.play') }}
-        </n-button>
-        <n-button v-else type="primary" :disabled="playbackControlsDisabled" @click="onPause">
+        </a-button>
+        <a-button v-else type="primary" :disabled="playbackControlsDisabled" @click="onPause">
           <template #icon><FIcon name="pause_24_regular" /></template>
           {{ t('playback.pause') }}
-        </n-button>
-        <n-button :disabled="playbackControlsDisabled" @click="onStop">
+        </a-button>
+        <a-button :disabled="playbackControlsDisabled" @click="onStop">
           <template #icon><FIcon name="stop_24_regular" /></template>
           {{ t('playback.stop') }}
-        </n-button>
+        </a-button>
         <div class="playback-control__switch">
           <span>{{ t('playback.loop') }}</span>
-          <n-switch :value="session.loop_enabled" :disabled="playbackControlsDisabled" :aria-label="t('playback.loop')"
-            @update:value="onLoopToggle" />
+          <a-switch :checked="session.loop_enabled" :disabled="playbackControlsDisabled" :aria-label="t('playback.loop')"
+            @update:checked="value => onLoopToggle(value === true)" />
         </div>
       </div>
       <div v-if="(session.duration_ms ?? 0) > 0" class="playback-control__row playback-control__row--seek">
-        <n-slider
+        <a-slider
           v-slider-aria-label="t('playback.seekAria')"
           :value="videoSeek.value.value"
           :min="0"
@@ -402,9 +402,9 @@ const errorBarDescription = computed(() => {
           :disabled="playbackControlsDisabled"
           :aria-label="t('playback.seekAria')"
           class="playback-control__seek"
-          @update:value="videoSeek.handleInput"
-          @dragend="videoSeek.handleChange(videoSeek.value.value)"
-          @keyup="videoSeek.handleChange(videoSeek.value.value)"
+          @change="value => { if (typeof value === 'number') videoSeek.handleInput(value); }"
+          @afterChange="videoSeek.handleChange(videoSeek.value.value)"
+
         />
         <span class="playback-control__progress-label">
           {{ formatDuration(session.position_ms ?? 0) }} / {{ formatDuration(session.duration_ms ?? 0) }}
@@ -415,21 +415,21 @@ const errorBarDescription = computed(() => {
     <section v-else-if="category === 'image' || category === 'web'" class="playback-control__section">
       <p v-if="session.source_uri" class="playback-control__uri">{{ session.source_uri }}</p>
       <p v-else class="playback-control__uri">{{ t('playback.uriMissing') }}</p>
-      <n-button v-if="category === 'web'" size="small" :disabled="playbackControlsDisabled" @click="refreshWebSource">
+      <a-button v-if="category === 'web'" size="small" :disabled="playbackControlsDisabled" @click="refreshWebSource">
         <template #icon><FIcon name="arrow_clockwise_24_regular" /></template>
         {{ t('playback.refresh') }}
-      </n-button>
+      </a-button>
     </section>
 
     <section v-else-if="category === 'stream'" class="playback-control__section">
-      <n-tag :type="controlsDisabled ? 'warning' : stateType" round size="small">
+      <a-tag :color="tagColor(controlsDisabled ? 'warning' : stateType)"  >
         {{ streamStatusLabel }}
-      </n-tag>
+      </a-tag>
       <p v-if="session.source_uri" class="playback-control__uri">{{ session.source_uri }}</p>
-      <n-button size="small" :disabled="playbackControlsDisabled" @click="refreshWebSource">
+      <a-button size="small" :disabled="playbackControlsDisabled" @click="refreshWebSource">
         <template #icon><FIcon name="arrow_clockwise_24_regular" /></template>
         {{ t('playback.refresh') }}
-      </n-button>
+      </a-button>
     </section>
 
     <section v-else-if="requestedShare || actualShare" class="playback-control__section">
@@ -442,7 +442,7 @@ const errorBarDescription = computed(() => {
     <section class="playback-control__section">
       <div class="playback-control__row">
         <span class="playback-control__field-label">{{ t('playback.windowVolume') }}</span>
-        <n-slider
+        <a-slider
           v-slider-aria-label="t('playback.windowVolumeAria')"
           :value="windowVolume.value.value"
           :min="0"
@@ -450,26 +450,26 @@ const errorBarDescription = computed(() => {
           :aria-label="t('playback.windowVolumeAria')"
           :disabled="!canAdjustWindowAudio || playbackControlsDisabled"
           class="playback-control__seek"
-          @update:value="windowVolume.handleInput"
-          @dragend="windowVolume.handleChange(windowVolume.value.value)"
-          @keyup="windowVolume.handleChange(windowVolume.value.value)"
+          @change="value => { if (typeof value === 'number') windowVolume.handleInput(value); }"
+          @afterChange="windowVolume.handleChange(windowVolume.value.value)"
+
         />
       </div>
       <div class="playback-control__row">
         <div class="playback-control__switch">
           <span>{{ t('playback.windowMute') }}</span>
-          <n-switch
-            :value="session.is_muted"
+          <a-switch
+            :checked="session.is_muted"
             :aria-label="t('playback.windowMute')"
             :disabled="!canAdjustWindowAudio || playbackControlsDisabled"
             :aria-disabled="!canAdjustWindowAudio || playbackControlsDisabled"
-            @update:value="onMuteToggle"
+            @update:checked="value => onMuteToggle(value === true)"
           />
         </div>
-        <n-button v-if="hasContent" type="error" :disabled="controlsDisabled || shareStopPending" @click="onClose">
+        <a-button v-if="hasContent" danger :disabled="controlsDisabled || shareStopPending" @click="onClose">
           <template #icon><FIcon name="dismiss_24_regular" /></template>
           {{ t(requestedShare || shareStopPending ? 'screenShare.stop' : 'playback.closeDisplay') }}
-        </n-button>
+        </a-button>
       </div>
     </section>
   </div>

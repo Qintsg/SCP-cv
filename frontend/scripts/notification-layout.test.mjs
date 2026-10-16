@@ -1,189 +1,86 @@
-/*
- * 全局通知布局回归：真实 Naive UI DOM 验证断点、安全区样式与关闭行为。
- * Happy DOM 只证明组件配置与事件，不作为真实浏览器几何或出画证据。
- */
+/** Ant通知真实DOM合同：持久错误、手动关闭、重试动作及弹层层级；几何另由浏览器验收。 */
+import { visibleText } from './dom-test-server.mjs';
+
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { setImmediate as nextTurn } from 'node:timers/promises';
-import test, { after, afterEach, before } from 'node:test';
-import { Window } from 'happy-dom';
-import { createDomTestServer } from './dom-test-server.mjs';
-
-const browser = new Window({ url: 'http://localhost:5173/sources' });
-const globalNames = ['window', 'document', 'navigator', 'HTMLElement', 'HTMLInputElement',
-  'HTMLTextAreaElement', 'Element', 'Node', 'SVGElement', 'Document', 'MutationObserver',
-  'ResizeObserver', 'Image', 'InputEvent', 'getComputedStyle', 'requestAnimationFrame', 'cancelAnimationFrame'];
-const previousGlobals = new Map(globalNames.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]));
-for (const name of globalNames) {
-  const value = typeof browser[name] === 'function' && /^[a-z]/.test(name)
-    ? browser[name].bind(browser) : browser[name];
-  Object.defineProperty(globalThis, name, { value, configurable: true, writable: true });
+import test,{before,after,afterEach}from'node:test';
+import {Window}from'happy-dom';
+import {createDomTestServer,waitForDom}from'./dom-test-server.mjs';
+const browser=new Window({url:'http://localhost:5173/sources'});
+const names=['window','document','navigator','HTMLElement','HTMLInputElement','HTMLTextAreaElement','Element','Node','SVGElement',
+ 'Document','MutationObserver','ResizeObserver','Image','InputEvent','getComputedStyle','requestAnimationFrame','cancelAnimationFrame'];
+const old=new Map(names.map(n=>[n,Object.getOwnPropertyDescriptor(globalThis,n)]));
+for(const n of names)Object.defineProperty(globalThis,n,{value:typeof browser[n]==='function'&&/^[a-z]/.test(n)?browser[n].bind(browser):browser[n],configurable:true,writable:true});
+let vue,createPinia,server,Host,Drawer,ControlDrawer,useStore,app,pinia,open;
+before(async()=>{
+ [vue,{createPinia},server]=await Promise.all([import('vue'),import('pinia'),createDomTestServer()]);
+ ({default:Host}=await server.ssrLoadModule('/src/design-system/FToastHost.vue'));
+ ({default:Drawer}=await server.ssrLoadModule('/src/features/sources/AddSourceDrawer.vue'));
+ ({default:ControlDrawer}=await server.ssrLoadModule('/src/design-system/ControlDrawer.vue'));
+ ({useToastStore:useStore}=await server.ssrLoadModule('/src/composables/useToast.ts'));
+});
+afterEach(async()=>{useStore?.(pinia)?.clear();app?.unmount();app=undefined;browser.document.body.replaceChildren();await browser.happyDOM.abort();});
+after(async()=>{await server?.close();await browser.happyDOM.close();for(const[n,d]of old){if(d)Object.defineProperty(globalThis,n,d);else delete globalThis[n];}});
+/** :returns: 两轮响应式与通知入队完成。 */
+async function flush(){await vue.nextTick();await nextTurn();await vue.nextTick();await nextTurn();}
+/** :param width: 视口宽度。:param action: 可选重试。:returns: 业务通知store。 */
+async function mount(width,action){
+ browser.happyDOM.setWindowSize({width,height:844});pinia=createPinia();const store=useStore(pinia);
+ store.error('保存失败','当前目录已存在同名媒体',action?{label:'重试',onTrigger:action}:undefined);
+ open=vue.ref(false);const {createI18n}=await import('vue-i18n');
+ app=vue.createApp({render:()=>vue.h('div',[vue.h(Host),vue.h(Drawer,{open:open.value})])});
+ app.use(pinia);app.use(createI18n({legacy:false,locale:'zh',messages:{zh:{}},missingWarn:false,fallbackWarn:false}));
+ const host=browser.document.createElement('div');browser.document.body.append(host);app.mount(host);await flush();return store;
 }
-
-let server;
-let vue;
-let createPinia;
-let useToastStore;
-let FNotificationProvider;
-let FToastHost;
-let AddSourceDrawer;
-let createI18n;
-let drawerOpen;
-let app;
-
-before(async () => {
-  const [vueModule, piniaModule, testServer] = await Promise.all([
-    import('vue'), import('pinia'), createDomTestServer(),
-  ]);
-  vue = vueModule;
-  createPinia = piniaModule.createPinia;
-  server = testServer;
-  ({ default: FNotificationProvider } = await server.ssrLoadModule('/src/design-system/FNotificationProvider.vue'));
-  ({ default: FToastHost } = await server.ssrLoadModule('/src/design-system/FToastHost.vue'));
-  ({ default: AddSourceDrawer } = await server.ssrLoadModule('/src/features/sources/AddSourceDrawer.vue'));
-  ({ createI18n } = await import('vue-i18n'));
-  ({ useToastStore } = await server.ssrLoadModule('/src/composables/useToast.ts'));
+test('手机通知放顶部、错误持久且原错误内容完整',async()=>{
+ const store=await mount(390);assert.equal(store.items[0].duration,0);
+ const container=browser.document.querySelector('.ant-notification-topRight');assert.ok(container);
+ assert.match(container.textContent,/保存失败/);assert.match(container.textContent,/当前目录已存在同名媒体/);
+});
+test('桌面通知放右下，不丢失Ant主题上下文宿主',async()=>{
+ await mount(1440);assert.ok(browser.document.querySelector('.ant-notification-bottomRight'));
+ assert.equal(browser.document.querySelectorAll('.console-toast').length,1);
+});
+test('持久错误可通过真实关闭入口移除',async()=>{
+ const store=await mount(390);const close=browser.document.querySelector('.ant-notification-notice-close');assert.ok(close);
+ close.click();await flush();assert.equal(store.items.length,0);
+});
+test('重试动作只执行一次并关闭原通知',async()=>{
+ let count=0;const store=await mount(390,async()=>{count++;});
+ const retry=[...browser.document.querySelectorAll('button')].find(b=>visibleText(b.textContent) === visibleText('重试'));assert.ok(retry);
+ retry.click();await flush();assert.equal(count,1);assert.equal(store.items.length,0);
+});
+test('通知层低于新表单，抽屉不再使用会遮住Select的7500层级',async()=>{
+ const store=await mount(1440);open.value=true;await flush();await waitForDom(()=>browser.document.querySelector('[role="dialog"]'));
+ assert.ok(browser.document.querySelector('[role="dialog"]'));assert.equal(store.items.length,1);
+ const css=readFileSync(new URL('../src/styles/console.css',import.meta.url),'utf8');
+ assert.match(css,/\.ant-notification\s*\{\s*z-index:1900/);
+ const drawer=readFileSync(new URL('../src/features/sources/AddSourceDrawer.vue',import.meta.url),'utf8');
+ assert.doesNotMatch(drawer,/:z-index="7500"/);
+});
+test('手机通知安全区、底栏留白和弹层44px由统一样式声明，真实几何另验',()=>{
+ const css=readFileSync(new URL('../src/styles/console.css',import.meta.url),'utf8');
+ assert.match(css,/safe-area-inset-top/);assert.match(css,/safe-area-inset-bottom/);assert.match(css,/max-height:calc\(100dvh - 156px/);
+ assert.match(css,/min-height:44px/);
+ assert.match(css,/\.ant-drawer \.ant-drawer-close[^}]*min-height:44px; min-width:44px/);
 });
 
-afterEach(async () => {
-  app?.unmount();
-  app = undefined;
-  browser.document.body.replaceChildren();
-  await browser.happyDOM.abort();
-});
-
-after(async () => {
-  await server?.close();
-  await browser.happyDOM.close();
-  for (const [name, descriptor] of previousGlobals) {
-    if (descriptor) Object.defineProperty(globalThis, name, descriptor);
-    else delete globalThis[name];
-  }
-});
-
-/**
- * 等待原生通知 DOM 跟随响应式更新。
- * :returns: 当前一轮渲染完成。
- */
-async function flushUi() {
-  await vue.nextTick();
-  await nextTurn();
-  await vue.nextTick();
-}
-
-/**
- * 等待通知关闭动画完成，不把过渡中的 DOM 当作残留通知。
- * :param condition: 通知状态判定。
- * :returns: 状态满足。
- * :raises Error: 一秒内仍未达到预期状态。
- */
-async function waitForUi(condition) {
-  if (condition()) return;
-  await new Promise((resolve, reject) => {
-    const observer = new browser.MutationObserver(() => {
-      if (!condition()) return;
-      clearTimeout(timeout);
-      observer.disconnect();
-      resolve();
-    });
-    const timeout = setTimeout(() => {
-      observer.disconnect();
-      reject(new Error('等待通知 DOM 状态超时'));
-    }, 1000);
-    observer.observe(browser.document.body, { childList: true, subtree: true, attributes: true });
-  });
-}
-
-/**
- * 通过业务公开 store 创建一条持久错误通知。
- * :param width: 测试视口宽度，只用于断点监听。
- * :returns: 通知 store 与原生容器。
- */
-async function mountNotifications(width) {
-  browser.happyDOM.setWindowSize({ width, height: 844 });
-  const pinia = createPinia();
-  const store = useToastStore(pinia);
-  store.error('保存失败', '当前目录已存在同名媒体');
-  const host = browser.document.createElement('div');
-  browser.document.body.append(host);
-  drawerOpen = vue.ref(false);
-  app = vue.createApp({
-    render: () => vue.h(FNotificationProvider, null, { default: () => [vue.h(FToastHost),
-      vue.h(AddSourceDrawer, { open: drawerOpen.value })] }),
-  });
-  app.use(pinia);
-  app.use(createI18n({ legacy: false, locale: 'zh', messages: { zh: {} }, missingWarn: false, fallbackWarn: false }));
-  app.mount(host);
-  await flushUi();
-  const container = browser.document.querySelector('.n-notification-container');
-  assert.ok(container, '持久通知应实际渲染');
-  return { store, container };
-}
-
-test('手机通知位于顶部并为应用头部和底部操作保留安全区', async () => {
-  const { container } = await mountNotifications(390);
-  assert.equal(container.classList.contains('n-notification-container--top'), true);
-  assert.ok(container.style.top.includes('safe-area-inset-top'));
-  assert.ok(container.style.maxHeight.includes('safe-area-inset-bottom'));
-  assert.equal(container.style.overflowY, 'auto');
-});
-
-test('桌面保留右下通知和默认宽度，不应用手机偏移', async () => {
-  const { container } = await mountNotifications(1440);
-  assert.equal(container.classList.contains('n-notification-container--bottom-right'), true);
-  assert.equal(container.getAttribute('style'), null);
-  const notification = browser.document.querySelector('.n-notification');
-  assert.equal(notification.style.getPropertyValue('--n-width'), '365px');
-});
-
-test('通知随导航的599/600断点和窗口变化调整安全区', async () => {
-  const { container } = await mountNotifications(599);
-  assert.equal(container.classList.contains('n-notification-container--top'), true);
-  const notification = browser.document.querySelector('.n-notification');
-  // Happy DOM 不解析 max() 定位；这里只核对真实通知收到的安全区宽度表达式。
-  assert.ok(notification.style.getPropertyValue('--n-width').includes('safe-area-inset-left'));
-  assert.ok(notification.style.getPropertyValue('--n-width').includes('safe-area-inset-right'));
-  browser.happyDOM.setWindowSize({ width: 600, height: 844 });
-  await flushUi();
-  assert.equal(container.classList.contains('n-notification-container--bottom-right'), true);
-  assert.equal(container.style.top, '');
-  browser.happyDOM.setWindowSize({ width: 390, height: 844 });
-  await flushUi();
-  assert.equal(container.classList.contains('n-notification-container--top'), true);
-  assert.equal(container.style.overflowY, 'auto');
-});
-
-test('手机持久错误通知仍可通过实际关闭按钮移除', async () => {
-  const { store, container } = await mountNotifications(390);
-  const close = container.querySelector('.n-notification__close');
-  assert.ok(close, '持久通知必须提供关闭入口');
-  close.click();
-  await waitForUi(() => store.items.length === 0);
-  assert.equal(Boolean(browser.document.querySelector('.n-notification')), false);
-});
-
-test('已有持久通知不能盖住新上传抽屉的保存按钮，错误不会被自动删除', async () => {
-  const { store, container } = await mountNotifications(1440);
-  drawerOpen.value = true;
-  await flushUi();
-  const drawer = browser.document.querySelector('.n-drawer-container');
-  assert.ok(drawer, '真实上传抽屉应已显示');
-  const layer = Number.parseInt(browser.getComputedStyle(drawer).zIndex, 10);
-  const notificationLayer = Number.parseInt(browser.getComputedStyle(container).zIndex, 10);
-  assert.ok(layer > notificationLayer, `上传层${layer}须高于旧通知层${notificationLayer}`);
-  assert.equal(store.items.length, 1, '不能用删除旧错误的方式解决遮挡');
-});
-
-test('手机上传抽屉的确认和取消具有至少44px触控高度', async () => {
-  browser.document.documentElement.style.setProperty('--touch-target-min', '44px');
-  try {
-    await mountNotifications(390);
-    drawerOpen.value = true;
-    await flushUi();
-    const buttons = browser.document.querySelectorAll('.add-source__actions button');
-    assert.equal(buttons.length, 2);
-    for (const button of buttons) {
-      assert.ok(Number.parseFloat(browser.getComputedStyle(button).minHeight) >= 44,
-        '真实按钮应收到44px最小高度；实际排版另在浏览器验证');
-    }
-  } finally { browser.document.documentElement.style.removeProperty('--touch-target-min'); }
+test('编辑关闭与预览打开交错时，旧离场不能把新弹层焦点抢回背景',async()=>{
+ const editing=vue.ref(false),preview=vue.ref(false);
+ app=vue.createApp({render:()=>vue.h('div',[
+  vue.h('button',{id:'open-editor',onClick:()=>{editing.value=true;}},'新建'),
+  vue.h(ControlDrawer,{open:editing.value,title:'编辑'},()=>vue.h('button',{id:'save-preview',onClick:()=>{
+   editing.value=false;preview.value=true;
+  }},'保存并预览')),
+  vue.h(ControlDrawer,{open:preview.value,title:'预览'},()=>vue.h('button','编辑预设')),
+ ])});
+ const root=browser.document.createElement('div');browser.document.body.append(root);app.mount(root);
+ const opener=root.querySelector('#open-editor');opener.focus();opener.click();await flush();
+ await waitForDom(()=>browser.document.querySelector('[role="dialog"][aria-label="编辑"]'));
+ const save=browser.document.querySelector('#save-preview');save.focus();save.click();await flush();
+ await waitForDom(()=>browser.document.querySelector('[role="dialog"][aria-label="编辑"]')?.getAttribute('aria-hidden')==='true');
+ const current=browser.document.querySelector('[role="dialog"][aria-label="预览"]');
+ assert.ok(current?.contains(browser.document.activeElement),'焦点应留在新预览，不回到背景新建按钮');
+ assert.equal(browser.document.querySelector('[aria-label="编辑"]').getAttribute('data-scp-dialog-open'),'false');
 });

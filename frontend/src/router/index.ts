@@ -13,16 +13,17 @@ import { createRouter, type RouteRecordRaw, type Router } from 'vue-router';
 
 import { t } from '@/locales';
 
-import DashboardView from '@/features/dashboard/DashboardView.vue';
-import BackgroundAudioView from '@/features/backgroundAudio/BackgroundAudioView.vue';
-import DisplayControlView from '@/features/display/DisplayControlView.vue';
-import LoginView from '@/features/auth/LoginView.vue';
-import ServerConnectionView from '@/features/settings/ServerConnectionView.vue';
-import PptFocusView from '@/features/pptFocus/PptFocusView.vue';
-import ScenariosView from '@/features/scenarios/ScenariosView.vue';
-import SettingsView from '@/features/settings/SettingsView.vue';
-import SourcesView from '@/features/sources/SourcesView.vue';
-import DevicesView from '@/features/devices/DevicesView.vue';
+// 按任务工作区加载，首次进入仪表盘不预先下载全部设置、目录与演示控制代码。
+const DashboardView = () => import('@/features/dashboard/DashboardView.vue');
+const BackgroundAudioView = () => import('@/features/backgroundAudio/BackgroundAudioView.vue');
+const DisplayControlView = () => import('@/features/display/DisplayControlView.vue');
+const LoginView = () => import('@/features/auth/LoginView.vue');
+const ServerConnectionView = () => import('@/features/settings/ServerConnectionView.vue');
+const PptFocusView = () => import('@/features/pptFocus/PptFocusView.vue');
+const ScenariosView = () => import('@/features/scenarios/ScenariosView.vue');
+const SettingsView = () => import('@/features/settings/SettingsView.vue');
+const SourcesView = () => import('@/features/sources/SourcesView.vue');
+const DevicesView = () => import('@/features/devices/DevicesView.vue');
 import { useAuthStore } from '@/stores/auth';
 import { createClientHistory, getClientBuildTarget, resolveInitialRoute } from '@/platform';
 import { loadStoredServerProfile } from '@/platform/connection';
