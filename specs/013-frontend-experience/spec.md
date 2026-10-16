@@ -6,7 +6,7 @@
 
 **Created**: 2026-10-15
 
-**Status**: Implemented — 人工视觉验收部分待完成（见verification.md）
+**Status**: Implemented — 本机验收完成，真实缩放与系统偏好见[接续验收](verification/20261017-zoom-motion.md)
 
 **Input**: 用户要求暂不处理此前现场验收阻碍，全面优化前端操作体验和表现，并使用“说人话”处理文案。
 

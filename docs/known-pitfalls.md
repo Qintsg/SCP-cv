@@ -459,6 +459,11 @@
 - **现状**：业务ActionMenu补充同层角色/键盘且只派发一次；滑杆合并同轮同值但仍解除最终节流；原生返回键过滤隐藏层并识别真实关闭入口；ControlDrawer交接焦点且将旧缓存退出可访问树；手机关闭入口至少44px。确认框另有页面/主机/账号归属，防止旧意图延续。
 - **验证边界**：真实Ant DOM回归和本机Chromium完整流程/四档视口通过。HappyDOM零尺寸滑杆需补公开几何，不能把测试替身或两个nextTick当真实浏览器/动画完成；测试卸载前等待真实过渡状态结束。本轮不证明Android系统按钮、D4原生出画或实体声音。
 
+### 坑139 - 浏览器自动化默认值会掩盖真实系统偏好和页面缩放（2026-10-17）
+
+- **症状**：Windows动画实际读回关闭，浏览器仍显示no-preference；真200%后的fullPage截图只捕获半张视口，容易被当成产品溢出。
+- **根因与现状**：Playwright默认模拟no-preference，需显式`reduced_motion='null'`恢复系统值；Chrome的page zoom/DPR、CSS视口、原生像素与pinch scale不是同一概念。用Chrome公开缩放控件和独立指标证明200%，截图用无clip原生视口，不改生产CSS或关闭断言。最终121组/10组交互通过，系统原值恢复，失败保留，见[缩放/系统偏好验收](../specs/013-frontend-experience/verification/20261017-zoom-motion.md)。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 前端坑132–136记录配置与完成状态、部署核验、批量确认对象、主机/账号快照归属，以及旧响应式断点覆盖新布局的问题，见[前端体验记录](known-pitfalls/frontend-experience.md)。

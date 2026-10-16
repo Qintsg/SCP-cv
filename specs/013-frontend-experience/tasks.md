@@ -40,8 +40,8 @@
 
 **独立验收**: 五种宽度/双主题无页面级溢出，手机44px，键盘/减少动效可用。
 
-- [ ] T013 [US4] 全主要页面真实浏览器截图和关键交互：`specs/013-frontend-experience/verification.md`、忽略的`.validation/frontend-experience-013/`。
-  - 已完成五宽度/双主题主要页面与目录、抽屉、取消确认、导航交互；真实200%缩放和系统减少动效偏好尚未验收，不勾全。
+- [X] T013 [US4] 全主要页面真实浏览器截图和关键交互：`specs/013-frontend-experience/verification.md`、忽略的`.validation/frontend-experience-013/`。
+  - 2026-10-17已对当前Ant界面补齐真实200%页面缩放、Windows系统减少动画与768/1280/1920双主题；新增121组页面与10组交互均通过，无接口写入，系统设置恢复原值。早期五宽度记录与014四宽度记录保留，详见[接续验收](verification/20261017-zoom-motion.md)；不替代012现场验收。
 - [X] T014 [US4] 依据截图修正溢出、触控、焦点和布局：本轮`frontend/src/`组件及样式。
 
 ## Phase 7: Polish
