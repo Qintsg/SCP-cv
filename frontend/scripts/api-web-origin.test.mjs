@@ -58,8 +58,8 @@ test('已选择的播放主机仍覆盖网页构建地址，不被同源默认�
   assert.deepEqual(module.getConnectionPorts(), { backendPort: '24443', frontendPort: '5212' });
 });
 
-test('未配置的封装端保留显式后端端口回退，不能误向本地资源包发REST', async () => {
+test('未配置的封装端不从资源包地址猜测后端端口', async () => {
   const module = await loadApi('app');
-  assert.equal(module.buildBackendUrl('/api/runtime/'), 'https://qa.example.test:8000/api/runtime/');
-  assert.deepEqual(module.getConnectionPorts(), { backendPort: '8000', frontendPort: '5212' });
+  assert.throws(() => module.buildBackendUrl('/api/runtime/'), { name: 'ServerProfileRequiredError' });
+  assert.equal(module.getConnectionPorts().backendPort, '');
 });

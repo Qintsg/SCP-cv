@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { api, clearApiSessionState, type AuthUser } from '@/services/api';
 import { clientConnection, ConnectionSwitchInProgressError } from '@/platform/connection';
+import { assertServerProfileSelected, requiresServerProfile } from '@/platform/serverSelection';
 import { bindAuthenticationScope, captureAuthenticationScope, assertAuthenticationScope } from '@/services/authenticationScope';
 
 /** 退出的短期完成凭据；只证明页面状态/本次HTTP结果，不保证网络层Cookie已删除。 */
@@ -40,6 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
   function begin(clearUser: boolean): () => boolean {
     assertAuthenticationScope(binding.isCurrent);
     if (clientConnection.isSwitching) throw new ConnectionSwitchInProgressError();
+    assertServerProfileSelected();
     revision++;
     initialization = null;
     if (clearUser) user.value = null;
@@ -56,6 +58,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /** :returns: 共用在途启动探测；过期探测安静退出，不回写新登录或初始化标志。 */
   async function ensureInitialized(): Promise<void> {
+    if (requiresServerProfile()) return;
     if (clientConnection.isSwitching) return;
     if (initialized.value) return;
     if (initialization?.isCurrent()) return initialization.promise;

@@ -23,6 +23,7 @@ import {
   type ConnectionSwitchScope,
 } from '@/platform/connection';
 import { captureAuthenticationScope, assertAuthenticationScope } from '@/services/authenticationScope';
+import { requiresServerProfile } from '@/platform/serverSelection';
 import { t } from '@/locales';
 import { useBackgroundAudioStore } from './backgroundAudio';
 import { useAuthStore } from './auth';
@@ -194,7 +195,7 @@ export const useRuntimeStore = defineStore('runtime', {
      * 自动重连：连接关闭后 2 s 重试一次，期间 sseStatus = 'reconnecting'。
      */
     connectEvents(): void {
-      if (clientConnection.isSwitching) { this.disconnectEvents(); return; }
+      if (clientConnection.isSwitching || requiresServerProfile()) { this.disconnectEvents(); return; }
       this.disconnectEvents();
       this.sseStatus = 'connecting';
       clientConnection.markConnecting();

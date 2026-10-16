@@ -8,6 +8,7 @@ import {
 } from '@/platform/connection';
 import { csrfCookieName, resolveCsrfToken } from '@/platform/csrf';
 import { getClientBuildTarget } from '@/platform';
+import { assertServerProfileSelected } from '@/platform/serverSelection';
 import { captureAuthenticationScope, assertAuthenticationScope } from './authenticationScope';
 
 import type {
@@ -56,18 +57,12 @@ function resolveBackendBase(): string {
 
   // 网页两入口一律通过同源代理；VITE_BACKEND_TARGET在网页只配置服务端上游。
   if (getClientBuildTarget() === 'web') return '';
-  const configuredTarget = String(import.meta.env.VITE_BACKEND_TARGET || '').trim();
-  if (configuredTarget) {
-    // 显式配置优先，避免运行时偷偷改写导致 .env 中的地址失效。
-    return configuredTarget.replace(/\/+$/, '');
-  }
-
-  const currentProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-  const currentHost = window.location.hostname || '127.0.0.1';
-  return `${currentProtocol}//${currentHost}:${DEFAULT_BACKEND_PORT}`;
+  // app请求入口已要求显式主机，不从本地资源包或编译上游推测运行目标。
+  return '';
 }
 
 export function buildBackendUrl(path: string): string {
+  assertServerProfileSelected();
   if (/^https?:\/\//i.test(path)) return path;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return resolveBackendBase() + normalizedPath;
@@ -78,9 +73,8 @@ export function buildBackendUrl(path: string): string {
  * :returns: 仅含端口的诊断信息，不返回主机地址或认证信息。
  */
 export function getConnectionPorts(): { backendPort: string; frontendPort: string } {
-  const configuredTarget = clientConnection.profile?.origin
-    || (getClientBuildTarget() === 'web' ? '' : String(import.meta.env.VITE_BACKEND_TARGET || '').trim());
-  let backendPort = DEFAULT_BACKEND_PORT;
+  const configuredTarget = clientConnection.profile?.origin || '';
+  let backendPort = getClientBuildTarget() === 'app' ? '' : DEFAULT_BACKEND_PORT;
   if (!configuredTarget && getClientBuildTarget() === 'web') {
     backendPort = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
   }
@@ -242,8 +236,8 @@ function uploadFormData<T>(url: string, formData: FormData, options: UploadOptio
   return new Promise((resolve, reject) => {
     if (clientConnection.isSwitching) throw new ConnectionSwitchInProgressError();
     const scope = captureApiRequestScope();
-    const request = new XMLHttpRequest();
     const absoluteUrl = buildBackendUrl(url);
+    const request = new XMLHttpRequest();
     request.open('POST', absoluteUrl);
     // 文件上传走 multipart：必须同样携带会话 Cookie + CSRF token，否则被拦截。
     request.withCredentials = true;
