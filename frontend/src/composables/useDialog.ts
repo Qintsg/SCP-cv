@@ -3,11 +3,12 @@
  * DESIGN.md §6 组件规范 / §7 无障碍：
  *  - 危险操作必须 Confirm（Dialog）+ Danger 主按钮 + 写明对象/范围/后果；
  *  - 可恢复操作优先用 Toast 撤销，不要滥用确认对话框；
- *  - 焦点：打开时移入 Dialog 内，关闭后回到触发元素，由 FDialogHost + n-modal 实现。
+ *  - 焦点：打开时移入 Dialog 内，关闭后回到触发元素，由 FDialogHost + Ant Modal 实现。
  *
  * 这里只负责语义数据：组件层订阅 store 渲染。
  */
 import { defineStore } from 'pinia';
+import { useRequestContext } from './useRequestContext';
 
 /** Dialog 主按钮风格；危险操作必须使用 danger。 */
 export type DialogVariant = 'default' | 'danger';
@@ -87,11 +88,31 @@ export const useDialogStore = defineStore('dialog', {
   },
 });
 
+/** :returns: 随调用页面寿命失效的确认接口，以及提交前可复核的归属快照。 */
 export function useDialog() {
   const store = useDialogStore();
+  let ownedResolver: DialogState['resolver'] = null;
+  /** :returns: 只取消本页面持有的确认，不能关闭后来者的弹窗。 */
+  function cancelOwned(): void {
+    if (ownedResolver && store.resolver === ownedResolver) store.cancel();
+    ownedResolver = null;
+  }
+  const captureContext = useRequestContext(cancelOwned);
+  /** :param config: 确认意图。:returns: 归属仍有效时才接受用户确认。 */
+  function confirm(config: DialogConfig): Promise<boolean> {
+    const current = captureContext();
+    const result = store.confirm(config);
+    const resolver = store.resolver;
+    ownedResolver = resolver;
+    return result.then(accepted => {
+      if (ownedResolver === resolver) ownedResolver = null;
+      return accepted && current();
+    });
+  }
   return {
-    confirm: store.confirm.bind(store),
+    captureContext,
+    confirm,
     danger: (config: Omit<DialogConfig, 'variant'>) =>
-      store.confirm({ ...config, variant: 'danger' }),
+      confirm({ ...config, variant: 'danger' }),
   };
 }

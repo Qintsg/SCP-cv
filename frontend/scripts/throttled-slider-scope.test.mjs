@@ -71,6 +71,29 @@ function fixture() {
  */
 async function flush() { await vue.nextTick(); await nextTurn(); await vue.nextTick(); }
 
+test('同一事件中的变更及重复收尾不重复提交同值', async () => {
+  const { calls, slider } = fixture();
+  slider.handleInput(49); slider.handleChange(49); slider.handleChange(49);
+  calls[0].complete(); await flush();
+  if (calls[1]) { calls[1].complete(); await flush(); }
+  assert.deepEqual(calls.map(call => call.value), [49]);
+});
+
+test('下一事件明确提交相同值仍可执行，不做全局同值抑制', async () => {
+  const { calls, slider } = fixture();
+  slider.handleChange(49); calls[0].complete(); await flush();
+  slider.handleChange(49);
+  assert.deepEqual(calls.map(call => call.value), [49, 49]);
+  calls[1].complete(); await flush();
+});
+
+test('同一事件的最终值不同时必须提交最后值', async () => {
+  const { calls, slider } = fixture();
+  slider.handleInput(49); slider.handleChange(48); calls[0].complete(); await flush();
+  assert.deepEqual(calls.map(call => call.value), [49, 48]);
+  calls[1].complete(); await flush();
+});
+
 test('在途第一请求后的缓冲不能在离线恢复时自动重放', async () => {
   const { state, calls, slider } = fixture();
   slider.handleInput(10);

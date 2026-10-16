@@ -32,11 +32,11 @@ export interface ThrottledSliderOptions {
 
 /** 暴露给视图绑定的接口：value 用于显示，handleInput/handleChange 用于事件。 */
 export interface ThrottledSliderHandle {
-  /** 直接绑定到 n-slider 的 model-value；拖动期间立即更新，服务端响应不覆盖。 */
+  /** 绑定Ant Slider的value；拖动期间立即更新，服务端响应不覆盖。 */
   value: Ref<number>;
-  /** 绑定到 n-slider 的 update:modelValue：拖动中触发，节流上报。 */
+  /** 绑定Ant Slider的change：拖动中触发，节流上报。 */
   handleInput: (next: number) => void;
-  /** 绑定到 n-slider 的 change：抬手或键盘 commit 时触发，立即上报最终值。 */
+  /** 绑定Ant Slider的afterChange：抬手或键盘收尾时立即提交最终值。 */
   handleChange: (next: number) => void;
 }
 
@@ -65,6 +65,8 @@ export function useThrottledSlider(
   let throttleTimer: number | null = null;
   let scopeVersion = 0;
   let disposed = false;
+  let turnInput: number | null = null;
+  let turnVersion = 0;
 
   /**
    * 检查当前组件和外部操作边界是否仍允许新提交。
@@ -80,6 +82,8 @@ export function useThrottledSlider(
    */
   function discardPending(): void {
     scopeVersion += 1;
+    turnVersion += 1;
+    turnInput = null;
     pendingValue = null;
     dragging = false;
     inFlight = false;
@@ -167,6 +171,10 @@ export function useThrottledSlider(
    */
   function handleInput(next: number): void {
     if (!canCommit()) return;
+    const version = ++turnVersion;
+    turnInput = next;
+    // Ant同一个keydown会连续触发change和多次afterChange；只合并本轮已排入的同值。
+    queueMicrotask(() => { if (version === turnVersion) turnInput = null; });
     dragging = true;
     schedule(next);
   }
@@ -181,10 +189,13 @@ export function useThrottledSlider(
   function handleChange(next: number): void {
     if (!canCommit()) return;
     dragging = false;
-    pendingValue = next;
-    value.value = next;
     clearThrottleTimer();
     lastSentAt = 0;
+    // 同轮收尾不再排入同值，但必须解除节流等待，及时发送已经缓存的最终输入。
+    if (turnInput !== next) {
+      pendingValue = next;
+      value.value = next;
+    }
     if (inFlight) return;
     void flush();
   }
