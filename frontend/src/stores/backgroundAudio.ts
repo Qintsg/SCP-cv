@@ -6,6 +6,7 @@
  * @Date : 2026-10-04
  */
 import { defineStore } from 'pinia';
+import { captureStoreRequestScope, assertStoreRequestScope } from './requestScope';
 
 import {
   api,
@@ -21,6 +22,15 @@ interface BackgroundAudioStoreState {
 
 // 刷新寿命属于store实例，不进入持久/可重置状态；主机切换后的新读取不会与旧数字代次重名。
 const refreshOwners = new WeakMap<BackgroundAudioStoreState, symbol>();
+
+/** :param store: 音频投影。:param receive: 原归属HTTP。:returns: 只向当前认证投影，保留原时间戳围栏。 */
+async function applyOwnedSnapshot(store: { applyRemoteSnapshot: (value: BackgroundAudioSnapshot) => void },
+  receive: () => Promise<{ background_audio: BackgroundAudioSnapshot }>): Promise<void> {
+  const current = captureStoreRequestScope();
+  const response = await receive();
+  assertStoreRequestScope(current);
+  store.applyRemoteSnapshot(response.background_audio);
+}
 
 export const useBackgroundAudioStore = defineStore('backgroundAudio', {
   state: (): BackgroundAudioStoreState => ({
@@ -46,12 +56,13 @@ export const useBackgroundAudioStore = defineStore('backgroundAudio', {
         && (!Number.isFinite(incomingTime) || incomingTime < currentTime)) return;
       this.snapshot = snapshot;
     },
+    /** :returns: 当前归属音频快照；旧刷新不能解除新读取的loading。 */
     async refresh(): Promise<void> {
       const owner = Symbol('background-audio-refresh');
       refreshOwners.set(this, owner);
       this.loading = true;
       try {
-        this.applyRemoteSnapshot((await api.getBackgroundAudio()).background_audio);
+        await applyOwnedSnapshot(this, () => api.getBackgroundAudio());
       } finally {
         if (refreshOwners.get(this) === owner) {
           refreshOwners.delete(this);
@@ -59,32 +70,41 @@ export const useBackgroundAudioStore = defineStore('backgroundAudio', {
         }
       }
     },
+    /** :param sourceId: 明确音频源。:returns: 当前归属列表更新，不表示已播放。 */
     async addSource(sourceId: number): Promise<void> {
-      this.applyRemoteSnapshot((await api.addBackgroundAudioSource(sourceId)).background_audio);
+      await applyOwnedSnapshot(this, () => api.addBackgroundAudioSource(sourceId));
     },
+    /** :param sourceId: 明确音频源。:returns: 当前归属的受理/实际快照。 */
     async playSource(sourceId: number): Promise<void> {
-      this.applyRemoteSnapshot((await api.playBackgroundAudioSource(sourceId)).background_audio);
+      await applyOwnedSnapshot(this, () => api.playBackgroundAudioSource(sourceId));
     },
+    /** :param itemId: 列表项目。:returns: 当前归属快照。 */
     async playItem(itemId: number): Promise<void> {
-      this.applyRemoteSnapshot((await api.playBackgroundAudioItem(itemId)).background_audio);
+      await applyOwnedSnapshot(this, () => api.playBackgroundAudioItem(itemId));
     },
+    /** :param itemId: 列表项目。:returns: 当前归属列表更新。 */
     async removeItem(itemId: number): Promise<void> {
-      this.applyRemoteSnapshot((await api.removeBackgroundAudioItem(itemId)).background_audio);
+      await applyOwnedSnapshot(this, () => api.removeBackgroundAudioItem(itemId));
     },
+    /** :returns: 清空列表的当前归属回执，不操作其它账号投影。 */
     async clearPlaylist(): Promise<void> {
-      this.applyRemoteSnapshot((await api.clearBackgroundAudioPlaylist()).background_audio);
+      await applyOwnedSnapshot(this, () => api.clearBackgroundAudioPlaylist());
     },
+    /** :param action: 明确控制动作。:param positionMs: 定位值。:returns: 当前归属快照。 */
     async control(action: 'play' | 'pause' | 'stop' | 'next' | 'prev' | 'seek', positionMs = 0): Promise<void> {
-      this.applyRemoteSnapshot((await api.controlBackgroundAudio(action, positionMs)).background_audio);
+      await applyOwnedSnapshot(this, () => api.controlBackgroundAudio(action, positionMs));
     },
+    /** :param volume: 音量。:returns: 当前归属回执。 */
     async setVolume(volume: number): Promise<void> {
-      this.applyRemoteSnapshot((await api.setBackgroundAudioVolume(volume)).background_audio);
+      await applyOwnedSnapshot(this, () => api.setBackgroundAudioVolume(volume));
     },
+    /** :param muted: 静音选择。:returns: 当前归属回执。 */
     async setMute(muted: boolean): Promise<void> {
-      this.applyRemoteSnapshot((await api.setBackgroundAudioMute(muted)).background_audio);
+      await applyOwnedSnapshot(this, () => api.setBackgroundAudioMute(muted));
     },
+    /** :param enabled: 循环选择。:returns: 当前归属回执。 */
     async setLoop(enabled: boolean): Promise<void> {
-      this.applyRemoteSnapshot((await api.setBackgroundAudioLoop(enabled)).background_audio);
+      await applyOwnedSnapshot(this, () => api.setBackgroundAudioLoop(enabled));
     },
   },
 });

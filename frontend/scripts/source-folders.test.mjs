@@ -9,7 +9,7 @@ test('媒体库保留跨目录选源索引，列表只展示当前位置', async
   const store = await readFile(new URL('../src/stores/sources.ts', import.meta.url), 'utf8');
   assert.match(store, /api\.listSources\(\)/);
   assert.match(store, /inDirectory\(source\.folder_id, state\.currentFolderId, state\.folders/);
-  assert.match(store, /async moveFolder\(folderId: number, parentId: number \| null\)/);
+  assert.match(store, /async moveFolder\(folderId: number, parentId: number \| null, canContinue\?: \(\) => boolean\)/);
   assert.match(store, /await api\.updateFolder\(folderId, \{ parent_id: parentId \}\)/);
 });
 

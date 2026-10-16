@@ -7,6 +7,7 @@ import type { ActionDropdownOption } from '@/design-system/dropdownActions';
 
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
+import { useRequestContext } from '@/composables/useRequestContext';
 import type { MediaFolderItem, MediaSourceItem } from '@/services/api';
 import { useSourceStore } from '@/stores/sources';
 
@@ -23,85 +24,132 @@ export function useSourceFolders(refresh: () => Promise<void>, isLoading: Ref<bo
   const deleteFolderContents = ref(false);
   const deletingFolder = ref(false);
   const deleteFolderDialogOpen = ref(false);
+  const renameFolderOpen = ref(false), renameValue = ref(''), renameFolderError = ref('');
+  const renameFolderName = computed({ get: () => renameValue.value,
+    set: (value: string) => { renameValue.value = value; renameFolderError.value = ''; } });
+  const renameFolderTarget = ref<MediaFolderItem | null>(null), renamingFolder = ref(false);
+  const captureContext = useRequestContext(() => {
+    renameFolderOpen.value = false; renameFolderTarget.value = null;
+    renameFolderName.value = ''; renameFolderError.value = ''; renamingFolder.value = false;
+    newFolderDialogOpen.value = false; creatingFolder.value = false; newFolderName.value = ''; folderNameError.value = false;
+    deleteFolderDialogOpen.value = false; deleteFolderTarget.value = null; deletingFolder.value = false;
+    isLoading.value = false;
+  });
+  let renameCurrent = () => false;
+  let deleteCurrent = () => false;
+  let createParent: number | null = null;
   const breadcrumbs = computed(() => store.folderBreadcrumbs);
   const childFolders = computed(() => store.childFolders);
 
+  /** :param folderId: 明确选择的目录。:returns: 当前归属的读取完成或保留真实错误。 */
   async function navigateToFolder(folderId: number | null): Promise<void> {
+    const current = captureContext();
     isLoading.value = true;
     try {
       store.setCurrentFolder(folderId);
       await store.refresh();
     } catch (error) {
-      toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
+      if (current()) toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
     } finally {
-      isLoading.value = false;
+      if (current()) isLoading.value = false;
     }
   }
 
+  /** :returns: 冻结父目录并清空新建表单，等待中不重复打开。 */
   function openFolderDialog(): void {
+    if (creatingFolder.value) return;
+    createParent = store.currentFolderId;
     newFolderName.value = '';
     folderNameError.value = false;
     newFolderDialogOpen.value = true;
   }
 
+  /** :returns: 仅原归属创建成功时允许关闭；错误保留供重试。 */
   async function createFolder(): Promise<boolean> {
+    if (creatingFolder.value) return false;
+    const current = captureContext();
     const name = newFolderName.value.trim();
     if (!name) { folderNameError.value = true; return false; }
     folderNameError.value = false;
     creatingFolder.value = true;
     try {
-      await store.createFolder(name, store.currentFolderId);
+      await store.createFolder(name, createParent);
+      if (!current()) return false;
       toast.success(t('sources.folderCreatedOk'));
       newFolderName.value = '';
       newFolderDialogOpen.value = false;
       return true;
     } catch (error) {
-      toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
+      if (current()) toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
       return false;
     } finally {
-      creatingFolder.value = false;
+      if (current()) creatingFolder.value = false;
     }
   }
 
-  async function renameFolder(folder: MediaFolderItem): Promise<void> {
-    const newName = window.prompt(t('sources.renameFolder'), folder.name);
-    if (newName === null || newName.trim() === folder.name) return;
+  /** :param folder: 菜单选中的目录。:returns: 冻结原目录并打开Ant表单，不发送请求。 */
+  function renameFolder(folder: MediaFolderItem): void {
+    if (folder.is_protected || renamingFolder.value) return;
+    renameCurrent = captureContext();
+    renameFolderTarget.value = { ...folder };
+    renameFolderName.value = folder.name; renameFolderError.value = ''; renameFolderOpen.value = true;
+  }
+
+  /** :returns: 原归属下重命名成功才允许关闭；失败保留名称与目标。 */
+  async function executeFolderRename(): Promise<boolean> {
+    const folder = renameFolderTarget.value, name = renameFolderName.value.trim(), current = renameCurrent;
+    if (!folder || folder.is_protected || renamingFolder.value || !current()) return false;
+    if (!name) { renameFolderError.value = '请输入目录名称'; return false; }
+    if (name === folder.name) return true;
+    renamingFolder.value = true; renameFolderError.value = '';
     try {
-      await store.renameFolder(folder.id, newName.trim());
+      await store.renameFolder(folder.id, name, current);
+      if (!current()) return false;
       toast.success(t('sources.folderRenamedOk'));
+      return true;
     } catch (error) {
-      toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
-    }
+      if (current()) renameFolderError.value = error instanceof Error ? error.message : t('common.retry');
+      return false;
+    } finally { if (current()) renamingFolder.value = false; }
   }
 
+  /** :param folder: 原目录。:returns: 冻结删除对象，不立即发送请求。 */
   function deleteFolderConfirm(folder: MediaFolderItem): void {
-    deleteFolderTarget.value = folder;
+    if (folder.is_protected || deletingFolder.value) return;
+    deleteCurrent = captureContext();
+    deleteFolderTarget.value = { ...folder };
     deleteFolderContents.value = false;
     deleteFolderDialogOpen.value = true;
   }
 
+  /** :returns: 按冻结对象和递归选项删除，旧归属不再续读或反馈。 */
   async function executeFolderDelete(): Promise<void> {
     const folder = deleteFolderTarget.value;
-    if (folder === null) return;
+    const current = deleteCurrent, deleteContents = deleteFolderContents.value;
+    if (folder === null || folder.is_protected || deletingFolder.value || !current()) return;
     deletingFolder.value = true;
     try {
-      await store.deleteFolder(folder.id, deleteFolderContents.value);
+      await store.deleteFolder(folder.id, deleteContents, current);
+      if (!current()) return;
       toast.success(t('sources.folderDeletedOk'));
       deleteFolderDialogOpen.value = false;
       deleteFolderTarget.value = null;
     } catch (error) {
-      toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
+      if (current()) toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
     } finally {
-      deletingFolder.value = false;
+      if (current()) deletingFolder.value = false;
     }
   }
 
+  /** :param folder: 原目录。:param parentId: 明确目标。:returns: 当前归属下完成或反馈真实错误。 */
   async function moveFolder(folder: MediaFolderItem, parentId: number | null): Promise<void> {
+    const current = captureContext();
     try {
-      await store.moveFolder(folder.id, parentId);
+      await store.moveFolder(folder.id, parentId, current);
+      if (!current()) return;
       toast.success(parentId === null ? t('sources.folderMovedRootOk') : t('sources.folderMovedOk'));
     } catch (error) {
-      toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
+      if (current()) toast.error(t('sources.folderFail'), error instanceof Error ? error.message : t('common.retry'));
     }
   }
 
@@ -165,18 +213,21 @@ export function useSourceFolders(refresh: () => Promise<void>, isLoading: Ref<bo
     ];
   }
 
+  /** :param source: 原媒体。:param folderId: 冻结目标。:returns: 当前页面才反馈并刷新。 */
   async function moveSourceToFolder(source: MediaSourceItem, folderId: number | null): Promise<void> {
+    const current = captureContext(), folderName = store.folders.find(folder => folder.id === folderId)?.name;
     try {
       await store.moveSource(source.id, folderId);
-      const folderName = store.folders.find((folder) => folder.id === folderId)?.name;
+      if (!current()) return;
       toast.success(folderId === null ? t('sources.movedRootOk') : t('sources.movedOk', { name: folderName ?? '' }));
       await refresh();
     } catch (error) {
-      toast.error(t('sources.moveFail'), error instanceof Error ? error.message : t('common.retry'));
+      if (current()) toast.error(t('sources.moveFail'), error instanceof Error ? error.message : t('common.retry'));
     }
   }
 
   return { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
+    renameFolderOpen, renameFolderName, renameFolderTarget, renameFolderError, renamingFolder, executeFolderRename,
     deleteFolderTarget, deleteFolderContents, deletingFolder, deleteFolderDialogOpen,
     breadcrumbs, childFolders, navigateToFolder, openFolderDialog, createFolder,
     executeFolderDelete, buildFolderMenu, buildMoveToFolderOptions };

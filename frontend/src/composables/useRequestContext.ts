@@ -11,7 +11,7 @@ export function useRequestContext(reset: () => void = () => {}): () => () => boo
   let active = true;
   let revision = 0;
   const invalidate = () => { revision++; reset(); };
-  watch(() => [runtime.connectionGeneration, auth.user?.id], invalidate, { flush: 'sync' });
+  watch(() => [runtime.connectionGeneration, auth.user, auth.user?.id], invalidate, { flush: 'sync' });
   // coordinator先失效真实代次，再等待旧会话退出；runtime投影可能尚未更新。
   const unsubscribe = clientConnection.onGenerationChanged(invalidate);
   onScopeDispose(() => { active = false; revision++; unsubscribe(); reset(); });
@@ -20,8 +20,9 @@ export function useRequestContext(reset: () => void = () => {}): () => () => boo
     const generation = runtime.connectionGeneration;
     const connectionGeneration = clientConnection.captureGeneration();
     const user = auth.user?.id;
+    const account = auth.user;
     return () => active && captured === revision
       && generation === runtime.connectionGeneration && connectionGeneration === clientConnection.captureGeneration()
-      && user === auth.user?.id;
+      && user === auth.user?.id && account === auth.user;
   };
 }

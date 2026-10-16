@@ -69,6 +69,7 @@ export default {
     unavailableCard: '当前不可用，请检查源文件或推流状态。',
     openToWindow: '打开到窗口',
     playAsBackgroundAudio: '立即播放背景音乐',
+    addedToBackgroundAudioOk: '已加入背景音乐列表：{name}',
     addToBackgroundAudio: '加入背景音乐列表',
     backgroundAudioPlayOk: '已提交播放请求：{name}',
     backgroundAudioAddOk: '已加入背景音乐列表',

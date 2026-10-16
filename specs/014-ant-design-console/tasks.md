@@ -48,3 +48,12 @@ T001→T002→T003→T004；US1与外壳设计在基础完成后分片推进，U
 ## Implementation Strategy
 
 先完成实际Ant基础与US1（最小可用切片），再逐个工作区迁移/重排，每片保留真实交互验证。不能把控件改名或静态原型当整轮完成。部署与实体设备验证不在本轮任务范围。
+
+## Phase 7: Convergence
+
+2026-10-17复核当前代码及完整FR/SC、故事验收、方案与宪章；新增两个HIGH partial，不以既有555绿或浏览器矩阵替代未覆盖的重命名/旧反馈行为。既有任务不改写。
+
+- [x] T016 将媒体目录`window.prompt`重命名改为真实Ant表单，冻结当前目录目标，支持名称校验、处理中防重、失败保留及键盘提交/取消；菜单触发弹层时正确移交焦点，关闭后回到可见触发器。先补真实DOM及浏览器回归，涉及`frontend/src/features/sources/useSourceFolders.ts`、`FolderDialogs.vue`、`SourcesView.vue`、`design-system/ActionMenu.vue`及目录/菜单测试，追溯FR-006/009/010、US3/AC1/3（partial，HIGH）。
+- [x] T017 为媒体库单源背景音频及目录操作的异步反馈补齐页面/主机/账号归属，冻结名称与目标；旧响应不得在新页面提示成功/失败或启动后续刷新，正常操作与失败反馈保留。先以延迟HTTP覆盖离页/换主机/换账号、正常提交及防重，涉及`frontend/src/features/sources/useSourceActions.ts`、`useSourceFolders.ts`、`SourcesView.vue`及相关真实DOM回归，追溯FR-004/009、US3/AC3–4、Constitution I（partial，HIGH）。
+
+本阶段完整前端601/601、Web/App类型与构建、56组页面/10组流程，以及390px/真实200%重命名键盘流程通过；41项新增归属回归覆盖失效/正常/原错误及恢复读取，详见[目录与归属收口](verification/20261017-directory-scope.md)。

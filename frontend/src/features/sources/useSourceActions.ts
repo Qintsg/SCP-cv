@@ -20,14 +20,15 @@ export function useSourceActions(edit: (source: MediaSourceItem) => void, open: 
     const current = dialog.captureContext();
     if (source.is_protected || !await dialog.danger({ title: t('sources.deleteTitle', { name: source.name }),
       description: t('sources.deleteDesc'), confirmLabel: t('sources.deleteSource') }) || !current()) return;
-    try { await store.deleteSource(source.id); if (current()) toast.success(t('sources.deletedOk')); }
+    try { await store.deleteSource(source.id, current); if (current()) toast.success(t('sources.deletedOk')); }
     catch (error) { if (current()) toast.error(t('sources.deleteFail'), error instanceof Error ? error.message : t('common.retry')); }
   }
   /** :param source: 音频源。:param play: 立即播放或仅加入列表。:returns: 不走大屏窗口。 */
   async function useAudio(source: MediaSourceItem, play: boolean): Promise<void> {
+    const current = dialog.captureContext(), name = source.name;
     try { if (play) await audio.playSource(source.id); else await audio.addSource(source.id);
-      toast.success(play ? t('backgroundAudio.playRequested', { name: source.name }) : t('sources.addedToBackgroundAudioOk', { name: source.name })); }
-    catch (error) { toast.error(t('sources.backgroundAudioFail'), error instanceof Error ? error.message : t('common.retry')); }
+      if (current()) toast.success(play ? t('backgroundAudio.playRequested', { name }) : t('sources.addedToBackgroundAudioOk', { name })); }
+    catch (error) { if (current()) toast.error(t('sources.backgroundAudioFail'), error instanceof Error ? error.message : t('common.retry')); }
   }
   /** :param source: 当前行。:returns: 内置源仅播放，不暴露可写动作。 */
   function buildRowMenu(source: MediaSourceItem): ActionDropdownOption[] {

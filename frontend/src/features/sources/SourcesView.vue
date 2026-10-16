@@ -22,6 +22,7 @@ import FEmptyState from '@/design-system/FEmptyState.vue';
 import { runDropdownAction } from '@/design-system/dropdownActions';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useToast } from '@/composables/useToast';
+import { useRequestContext } from '@/composables/useRequestContext';
 import { useSourceStore, type SourceCategory } from '@/stores/sources';
 import { useSessionStore } from '@/stores/sessions';
 import type { MediaSourceItem } from '@/services/api';
@@ -49,6 +50,8 @@ const categoryModel = computed({ get: () => sourceStore.category, set: (value: S
 const searchModel = computed({ get: () => sourceStore.searchKeyword, set: (value: string) => sourceStore.setSearchKeyword(value) });
 const hasFilters = computed(() => !!searchModel.value.trim() || categoryModel.value !== 'all');
 const loadError = ref('');
+let refreshOwner: symbol | null = null;
+const captureRefresh = useRequestContext(() => { refreshOwner = null; isLoading.value = false; loadError.value = ''; });
 const searchInput = ref<{ focus: () => void } | null>(null);
 const pathElement = ref<HTMLElement | null>(null);
 /** :returns: 目录卡片移除后，把键盘定位留在新目录，而非退回文档根。 */
@@ -69,13 +72,17 @@ function mediaRow(id: unknown): MediaSourceItem | undefined {
 }
 /** :returns: 读取全量索引，呈现当前位置，不创建或移动任何文件。 */
 async function refresh(): Promise<void> {
+  const scope = captureRefresh(), owner = Symbol('source-view-refresh');
+  refreshOwner = owner;
+  const current = () => scope() && refreshOwner === owner;
   isLoading.value = true;
   loadError.value = '';
   try { await sourceStore.refresh(); }
-  catch (error) { loadError.value = error instanceof Error ? error.message : t('common.retry'); toast.error(t('sources.loadFail'), loadError.value); }
-  finally { isLoading.value = false; }
+  catch (error) { if (current()) { loadError.value = error instanceof Error ? error.message : t('common.retry'); toast.error(t('sources.loadFail'), loadError.value); } }
+  finally { if (current()) isLoading.value = false; }
 }
 const { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
+  renameFolderOpen, renameFolderName, renameFolderTarget, renameFolderError, renamingFolder, executeFolderRename,
   deleteFolderTarget, deleteFolderContents, deletingFolder, deleteFolderDialogOpen,
   childFolders, navigateToFolder, openFolderDialog, createFolder,
   executeFolderDelete, buildFolderMenu, buildMoveToFolderOptions } = useSourceFolders(refresh, isLoading);
@@ -178,6 +185,8 @@ function activeWindowLabel(id: number): string {
       </section>
     </div>
     <FolderDialogs v-model:create-open="newFolderDialogOpen" v-model:name="newFolderName" v-model:name-error="folderNameError"
+      v-model:rename-open="renameFolderOpen" v-model:rename-name="renameFolderName" :rename-target="renameFolderTarget"
+      :rename-error="renameFolderError" :renaming="renamingFolder" :rename-folder="executeFolderRename"
       v-model:delete-open="deleteFolderDialogOpen" v-model:delete-contents="deleteFolderContents" :creating="creatingFolder" :deleting="deletingFolder"
       :delete-target="deleteFolderTarget" :create-folder="createFolder" :delete-folder="executeFolderDelete" @delete-cancelled="deleteFolderTarget = null" />
     <AddSourceDrawer v-model:open="drawerOpen" :folder-id="sourceStore.currentFolderId" @added="refresh" />

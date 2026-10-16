@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, ref, useAttrs, useId, watch } from 'vue';
 import ADrawer from 'ant-design-vue/es/drawer';
+import { restoreDialogFocus } from './dialogFocus';
 defineOptions({ inheritAttrs: false });
 const props = defineProps<{ open: boolean; title?: string }>();
 const emit = defineEmits<{
@@ -32,14 +33,7 @@ function afterChange(open: boolean): void {
   syncSemantics();
   if (!open && !props.open && alive) {
     const element = document.getElementsByClassName(marker)[0];
-    const others = [...document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]')]
-      .filter(layer => layer !== element && layer.getAttribute('aria-hidden') !== 'true'
-        && layer.getAttribute('data-scp-dialog-open') !== 'false');
-    const trigger = opener.value;
-    const triggerUsable = trigger?.isConnected && !trigger.closest('[aria-hidden="true"], [data-scp-dialog-open="false"]');
-    // 保存后编辑器关闭、预览同时打开时，旧关闭动画不能把新弹层的焦点抢回背景。
-    if (triggerUsable && (!others.length || others.some(layer => layer.contains(trigger)))) trigger.focus({ preventScroll: true });
-    else if (others.length && !others.some(layer => layer.contains(document.activeElement))) others.at(-1)?.focus({ preventScroll: true });
+    restoreDialogFocus(opener.value, element ?? null);
   }
   if (!open && !props.open) document.getElementsByClassName(marker)[0]?.setAttribute('aria-hidden', 'true');
   emit('afterOpenChange', open);

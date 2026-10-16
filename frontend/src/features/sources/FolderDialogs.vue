@@ -1,13 +1,15 @@
 <script setup lang="ts">
 /**
- * 文件夹创建与删除对话框，复用页面的目录状态与操作回调。
+ * 文件夹创建、重命名与删除对话框，复用页面的目录状态与操作回调。
  * 输入属性传给原生控件，保持文件夹错误的可访问语义。
  */
 import { useI18n } from 'vue-i18n';
+import { ref, useId, watch } from 'vue';
 import AAlert from 'ant-design-vue/es/alert';
 import ACheckbox from 'ant-design-vue/es/checkbox';
 import AInput from 'ant-design-vue/es/input';
 import AModal from 'ant-design-vue/es/modal';
+import { restoreDialogFocus } from '@/design-system/dialogFocus';
 import type { MediaFolderItem } from '@/services/api';
 
 const props = defineProps<{
@@ -16,6 +18,10 @@ const props = defineProps<{
   deleteTarget: MediaFolderItem | null;
   createFolder: () => Promise<boolean>;
   deleteFolder: () => Promise<void>;
+  renaming?: boolean;
+  renameTarget?: MediaFolderItem | null;
+  renameError?: string;
+  renameFolder?: () => Promise<boolean>;
 }>();
 
 const emit = defineEmits<{ (event: 'delete-cancelled'): void }>();
@@ -24,7 +30,37 @@ const name = defineModel<string>('name', { required: true });
 const nameError = defineModel<boolean>('nameError', { required: true });
 const deleteOpen = defineModel<boolean>('deleteOpen', { required: true });
 const deleteContents = defineModel<boolean>('deleteContents', { required: true });
+const renameOpen = defineModel<boolean>('renameOpen', { default: false });
+const renameName = defineModel<string>('renameName', { default: '' });
+const renameErrorId = useId();
+const renameMarker = 'folder-rename-' + useId().replaceAll(':', '-');
+let renameTrigger: HTMLElement | null = null;
+const renameInput = ref<{ focus: (options: { cursor: 'all' }) => void } | null>(null);
 const { t } = useI18n();
+watch([renameOpen, renameInput], ([open, input]) => { if (open) input?.focus({ cursor: 'all' }); }, { flush: 'post' });
+watch(renameOpen, open => {
+  if (open) renameTrigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+}, { flush: 'sync' });
+
+/** :returns: 自动聚焦输入框时Ant不会记录外部焦点，因此由业务显式安全返还。 */
+function afterRenameClose(): void {
+  if (!renameOpen.value && props.renameTarget) restoreDialogFocus(renameTrigger, document.getElementsByClassName(renameMarker)[0] ?? null);
+}
+
+/** :returns: 只在父级确认本次成功后关闭，不自动吞掉后端错误或取消等待中的请求。 */
+async function submitRename(): Promise<boolean> {
+  if (!renameOpen.value || props.renaming || !props.renameFolder) return false;
+  const renamed = await props.renameFolder();
+  if (renamed) renameOpen.value = false;
+  return renamed;
+}
+
+/** :param event: 输入框自己的按下事件。:returns: 不接收打开菜单的keyup，不打断中文组合输入。 */
+function renameFromKey(event: KeyboardEvent): void {
+  if (event.isComposing || event.keyCode === 229 || event.repeat) return;
+  event.preventDefault();
+  void submitRename();
+}
 
 /**
  * 等待当前创建完成，避免回车再次提交同一目录。
@@ -52,6 +88,16 @@ function updateName(value: string): void { name.value = value; nameError.value =
 </script>
 
 <template>
+  <a-modal v-model:open="renameOpen" title="重命名目录" ok-text="重命名" :cancel-text="t('common.cancel')"
+    :wrap-class-name="renameMarker" :focus-trigger-after-close="false" :after-close="afterRenameClose"
+    :confirm-loading="renaming" :ok-button-props="{ disabled: renaming }" :cancel-button-props="{ disabled: renaming }"
+    :mask-closable="!renaming" :keyboard="!renaming" :closable="!renaming" @ok="submitRename">
+    <p class="folder-rename-path">原目录：{{ renameTarget?.relative_path || renameTarget?.name }}</p>
+    <a-input ref="renameInput" v-model:value="renameName" aria-label="新目录名称" :disabled="renaming"
+      :status="renameError ? 'error' : undefined" :aria-invalid="Boolean(renameError)"
+      :aria-describedby="renameError ? renameErrorId : undefined" @pressEnter="renameFromKey" />
+    <a-alert v-if="renameError" :id="renameErrorId" type="error" show-icon :message="renameError" style="margin-top:var(--spacingVerticalM)" />
+  </a-modal>
   <a-modal v-model:open="deleteOpen"
     :title="t('sources.deleteFolderTitle', { name: deleteTarget?.name ?? '' })"
     :ok-text="t('sources.deleteFolderOk')"
@@ -62,7 +108,7 @@ function updateName(value: string): void { name.value = value; nameError.value =
     <p style="margin: 0 0 var(--spacingVerticalS); color: var(--colorNeutralForeground2);">
       {{ t('sources.deleteFolderDesc') }}
     </p>
-    <a-checkbox v-model:checked="deleteContents">
+    <a-checkbox v-model:checked="deleteContents" :disabled="deleting">
       {{ t('sources.deleteFolderContentsCheckbox') }}
     </a-checkbox>
     <a-alert v-if="deleteContents" type="warning" :closable="false" style="margin-top: var(--spacingVerticalS);"><template #description>
@@ -90,4 +136,5 @@ function updateName(value: string): void { name.value = value; nameError.value =
   color: var(--colorStatusDangerForeground1);
   font-size: var(--fontSizeBase200);
 }
+.folder-rename-path { margin:0 0 var(--spacingVerticalM); color:var(--colorNeutralForeground2); overflow-wrap:anywhere; }
 </style>

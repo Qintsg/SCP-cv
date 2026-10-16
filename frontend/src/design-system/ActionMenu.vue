@@ -159,7 +159,14 @@ export default defineComponent({
         }
       };
       const item = find(props.options);
-      if (item && !props.disabled) { accepted = true; emit('select', key, item); openChange(false); }
+      if (item && !props.disabled) {
+        accepted = true;
+        // 业务可能打开Modal/Drawer；先关闭菜单并返回可见入口，避免新弹层捕获隐藏菜单焦点。
+        const trigger = opener;
+        openChange(false);
+        if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+        emit('select', key, item);
+      }
     }
 
     /** :returns: Ant只克隆首个触发器；直接传递原Slot，避免template的slot占位产生Fragment而丢失点击事件。 */

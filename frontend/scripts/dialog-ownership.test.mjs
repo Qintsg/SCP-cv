@@ -56,3 +56,13 @@ test('确认后同一轮切换主机，调用方复核不能提交旧动作', as
   assert.equal(calls, 0);
   scope.stop();
 });
+
+test('相同ID重新认证也取消旧会话的确认意图', async () => {
+  const { scope, dialog, store } = setup();
+  useAuthStore().user = { id: 1, username: 'first' };
+  const result = dialog.confirm({ title: '原会话确认' });
+  useAuthStore().user = { id: 1, username: 'new-session' };
+  assert.equal(store.open, false);
+  assert.equal(await result, false);
+  scope.stop();
+});

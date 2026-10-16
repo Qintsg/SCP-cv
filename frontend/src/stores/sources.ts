@@ -8,6 +8,7 @@
  */
 import { defineStore } from 'pinia';
 import { runSourceDeletion } from './sourceDeletion';
+import { captureStoreRequestScope, assertStoreRequestScope } from './requestScope';
 import { inDirectory, sourcePath } from '@/features/directories/directoryPath';
 
 import { api, type MediaFolderItem, type MediaSourceItem, type MediaSourceUpdate, type StreamSourceCreate, type UploadOptions } from '@/services/api';
@@ -53,6 +54,8 @@ interface SourceState {
   currentFolderId: number | null;
   searchSubfolders: boolean;
 }
+
+const refreshOwners = new WeakMap<SourceState, symbol>();
 
 export const useSourceStore = defineStore('sources', {
   state: (): SourceState => ({
@@ -142,35 +145,55 @@ export const useSourceStore = defineStore('sources', {
     setSearchKeyword(keyword: string): void {
       this.searchKeyword = keyword;
     },
+    /** :returns: 仅最新有效读取原子提交两个索引，过期读取不投影。 */
     async refresh(): Promise<void> {
-      const [sourcePayload, folderPayload] = await Promise.all([
-        api.listSources(),
-        api.listFolders(),
-      ]);
-      // 背景音乐功能启用后，audio 源保留在列表中并进入独立大类。
-      this.sources = sourcePayload.sources.filter(isVisibleSource);
-      this.folders = folderPayload.folders;
+      const current = captureStoreRequestScope(), owner = Symbol('source-refresh');
+      refreshOwners.set(this, owner);
+      try {
+        const [sourcePayload, folderPayload] = await Promise.all([api.listSources(), api.listFolders()]);
+        if (!current() || refreshOwners.get(this) !== owner) return;
+        // 同次完整索引仅提交给仍属于原认证的最新读取。
+        this.$patch(state => {
+          state.sources = sourcePayload.sources.filter(isVisibleSource);
+          state.folders = folderPayload.folders;
+        });
+      } finally { if (refreshOwners.get(this) === owner) refreshOwners.delete(this); }
     },
     /** 切换到指定文件夹；null 返回根目录。 */
     setCurrentFolder(folderId: number | null): void {
       this.currentFolderId = folderId;
     },
+    /** :param name: 冻结名称。:param parentId: 冻结父目录。:returns: 当前归属的已创建目录。 */
     async createFolder(name: string, parentId: number | null = null): Promise<MediaFolderItem> {
+      const current = captureStoreRequestScope();
       const payload = await api.createFolder({ name, parent_id: parentId });
+      assertStoreRequestScope(current);
       this.folders = [...this.folders, payload.folder];
       return payload.folder;
     },
-    async renameFolder(folderId: number, name: string): Promise<void> {
+    /** :param folderId: 目录ID。:param name: 冻结名称。:param canContinue: 可选页面寿命。:returns: 有效归属才续读完整路径索引。 */
+    async renameFolder(folderId: number, name: string, canContinue?: () => boolean): Promise<void> {
+      const current = captureStoreRequestScope();
       await api.updateFolder(folderId, { name });
+      assertStoreRequestScope(current);
+      if (canContinue && !canContinue()) return;
       await this.refresh();
     },
-    async moveFolder(folderId: number, parentId: number | null): Promise<void> {
+    /** :param folderId: 目录ID。:param parentId: 目标父目录。:param canContinue: 可选页面寿命。:returns: 不向已离开的页面续读。 */
+    async moveFolder(folderId: number, parentId: number | null, canContinue?: () => boolean): Promise<void> {
+      const current = captureStoreRequestScope();
       await api.updateFolder(folderId, { parent_id: parentId });
+      assertStoreRequestScope(current);
+      if (canContinue && !canContinue()) return;
       await this.refresh();
     },
-    async deleteFolder(folderId: number, deleteContents: boolean = false): Promise<void> {
+    /** :param folderId: 目录ID。:param deleteContents: 冻结的递归选项。:param canContinue: 可选页面寿命。:returns: 当前页面才变更路径并续读。 */
+    async deleteFolder(folderId: number, deleteContents: boolean = false, canContinue?: () => boolean): Promise<void> {
+      const current = captureStoreRequestScope();
       const parent = this.folders.find((folder) => folder.id === folderId)?.parent_id ?? null;
       await api.deleteFolder(folderId, deleteContents);
+      assertStoreRequestScope(current);
+      if (canContinue && !canContinue()) return;
       // 删除子树后当前路径可能已失效，统一返回被删根目录的父级。
       let cursor = this.currentFolderId;
       while (cursor !== null) {
@@ -179,13 +202,17 @@ export const useSourceStore = defineStore('sources', {
       }
       await this.refresh();
     },
+    /** :param sourceId: 原源ID。:param folderId: 目标目录。:returns: 当前归属的源，不以旧结果覆盖新账号。 */
     async moveSource(sourceId: number, folderId: number | null): Promise<MediaSourceItem> {
+      const current = captureStoreRequestScope();
       const payload = await api.moveSource(sourceId, folderId);
+      assertStoreRequestScope(current);
       this.sources = this.sources.map((item) => item.id === sourceId ? payload.source : item);
       return payload.source;
     },
     /** 上传源；支持「上传但不保存（is_temporary）」/「上传并保存」两种语义。 */
     async upload(file: File, options: { name?: string; isTemporary?: boolean; preheatEnabled?: boolean; folderId?: number | null; onProgress?: (percent: number) => void }): Promise<MediaSourceItem> {
+      const current = captureStoreRequestScope();
       const formData = new FormData();
       formData.append('file', file);
       if (options.name) formData.append('name', options.name);
@@ -194,6 +221,7 @@ export const useSourceStore = defineStore('sources', {
       if (options.folderId !== undefined && options.folderId !== null) formData.append('folder_id', String(options.folderId));
       const uploadOptions: UploadOptions = options.onProgress ? { onProgress: options.onProgress } : {};
       const payload = await api.uploadSource(formData, uploadOptions);
+      assertStoreRequestScope(current);
       // 仅持久源加入列表；临时源不入列表（避免出现在管理页）。
       if (options.isTemporary && isVisibleSource(payload.source)) {
         this.transientSources = [
@@ -213,14 +241,18 @@ export const useSourceStore = defineStore('sources', {
      * @param folderId 目标文件夹 ID；null 为根目录
      */
     async addWebSource(url: string, name?: string, preheatEnabled: boolean = true, folderId: number | null = null): Promise<MediaSourceItem> {
+      const current = captureStoreRequestScope();
       const payload = await api.addWebSource({ url, name, preheat_enabled: preheatEnabled, folder_id: folderId });
+      assertStoreRequestScope(current);
       // 网页源不会是 audio，直接前置即可。
       this.sources = [payload.source, ...this.sources];
       return payload.source;
     },
     /** 登记可尝试播放的流地址，实际连通与画面须由目标窗口验证。 */
     async addStreamSource(input: StreamSourceCreate): Promise<MediaSourceItem> {
+      const current = captureStoreRequestScope();
       const payload = await api.addStreamSource(input);
+      assertStoreRequestScope(current);
       this.sources = [payload.source, ...this.sources];
       return payload.source;
     },
@@ -230,22 +262,31 @@ export const useSourceStore = defineStore('sources', {
      * @param patch 仅传入需要修改的字段；未传字段保持后端原值
      */
     async updateSource(sourceId: number, patch: MediaSourceUpdate): Promise<MediaSourceItem> {
+      const current = captureStoreRequestScope();
       const payload = await api.updateSource(sourceId, patch);
+      assertStoreRequestScope(current);
       this.sources = this.sources.map((item) => (item.id === sourceId ? payload.source : item));
       return payload.source;
     },
     async retryPptImages(sourceId: number, fitText = false): Promise<MediaSourceItem> {
+      const current = captureStoreRequestScope();
       const payload = await api.preparePptImages(sourceId, fitText);
+      assertStoreRequestScope(current);
       this.sources = this.sources.map((item) => item.id === sourceId ? payload.source : item);
       return payload.source;
     },
     /**
      * 删除源；失败时同步真实列表并保留原始错误。
      * :param sourceId: 媒体源主键。
+     * :param canContinue: 可选页面寿命；页面已离开时不再发恢复读取。
      * :returns: 删除完成或重新抛出错误。
      */
-    async deleteSource(sourceId: number): Promise<void> {
-      await runSourceDeletion(async () => { await api.deleteSource(sourceId); }, () => this.refresh());
+    async deleteSource(sourceId: number, canContinue?: () => boolean): Promise<void> {
+      const current = captureStoreRequestScope();
+      await runSourceDeletion(async () => { await api.deleteSource(sourceId); }, async () => {
+        if (current() && (!canContinue || canContinue())) await this.refresh();
+      });
+      assertStoreRequestScope(current);
       this.sources = this.sources.filter((source) => source.id !== sourceId);
     },
     /**
