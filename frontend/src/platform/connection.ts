@@ -35,11 +35,18 @@ export function saveServerProfile(
   storage.setItem(SERVER_PROFILE_STORAGE_KEY, JSON.stringify(normalizeServerProfile(profile)));
 }
 
+/** 仅代表本次意图，不允许调用方在await后借用后来的全局代次。 */
+export interface ConnectionSwitchScope {
+  readonly generation: number;
+  isCurrent(): boolean;
+}
+
 export interface ConnectionCoordinatorDependencies {
-  closeEvents?(): void;
-  clearSession?(): Promise<void>;
-  clearStores?(): void;
-  saveProfile?(profile: ServerProfile): Promise<void>;
+  canContinue?(): boolean;
+  closeEvents?(scope: ConnectionSwitchScope): void;
+  clearSession?(scope: ConnectionSwitchScope): Promise<void>;
+  clearStores?(scope: ConnectionSwitchScope): void;
+  saveProfile?(profile: ServerProfile, scope: ConnectionSwitchScope): Promise<void>;
   refreshSnapshot?(): Promise<void>;
   openEvents?(): void;
   scheduleReconnect?(callback: () => void | Promise<void>): unknown;
@@ -57,6 +64,17 @@ export class StaleConnectionResponseError extends Error {
     super('响应属于已切换的播放主机，已丢弃。');
     this.name = 'StaleConnectionResponseError';
   }
+}
+
+/** 切换尚有实际清理/保存未结束，不允许把业务或密码发往中间地址。 */
+export class ConnectionSwitchInProgressError extends Error {
+  /** :returns: 不承诺自动重放的当前门禁错误。 */
+  constructor() { super('播放主机正在切换，请等待当前清理结束后重试。'); this.name = 'ConnectionSwitchInProgressError'; }
+}
+
+export class ConnectionSwitchCancelledError extends Error {
+  /** :returns: 页面或调用意图失效，不表示撤销已开始的原生阶段。 */
+  constructor() { super('连接切换所属页面或意图已失效，旧操作已丢弃。'); this.name = 'ConnectionSwitchCancelledError'; }
 }
 
 /** :param profile: 用户地址，网页裸主机默认HTTP。:returns: 无凭据/路径的HTTP或HTTPS origin；不自动降级明确HTTPS。 */
@@ -87,6 +105,8 @@ export class ClientConnectionCoordinator {
   private reconnectScheduled = false;
   private dependencies: ConnectionCoordinatorDependencies;
   private currentProfile: ServerProfile | null = null;
+  private pendingSwitches = 0;
+  private mutationTail: Promise<void> = Promise.resolve();
   private readonly generationListeners = new Set<(generation: number) => void>();
 
   status: ClientConnectionStatus = 'disconnected';
@@ -99,6 +119,9 @@ export class ClientConnectionCoordinator {
     return this.currentProfile;
   }
 
+  /** :returns: 所有已启动的清理/保存实际结束后才解除，restore不能伪造其完成。 */
+  get isSwitching(): boolean { return this.pendingSwitches > 0; }
+
   captureGeneration(): number {
     return this.generation;
   }
@@ -110,32 +133,60 @@ export class ClientConnectionCoordinator {
   }
 
   /** :returns: 先失效原身份再同步通知资源所有者，不能等异步清会话结束。 */
-  private advanceGeneration(): void {
-    this.generation += 1;
-    for (const listener of [...this.generationListeners]) listener(this.generation);
+  private advanceGeneration(): number {
+    const generation = ++this.generation;
+    for (const listener of [...this.generationListeners]) {
+      if (generation !== this.generation) break;
+      listener(generation);
+    }
+    return generation;
   }
 
+  /** :param profile: 已验证的本地配置。:returns: 本次恢复代次，不借用回调重入后的新代次。 */
   restoreProfile(profile: ServerProfile): number {
     this.currentProfile = normalizeServerProfile(profile);
-    this.advanceGeneration();
     this.status = 'disconnected';
-    return this.generation;
+    return this.advanceGeneration();
   }
 
+  /** :param profile: 明确目标。:param dependencies: 受管阶段与调用归属。:returns: 本次冻结代次，失效或失败明确拒绝。 */
   async switchServer(
     profile: ServerProfile,
     dependencies: ConnectionCoordinatorDependencies = this.dependencies,
   ): Promise<number> {
     const normalized = normalizeServerProfile(profile);
-    this.advanceGeneration();
-    this.status = 'disconnected';
-    this.reconnectScheduled = false;
-    dependencies.closeEvents?.();
-    await dependencies.clearSession?.();
-    dependencies.clearStores?.();
-    this.currentProfile = normalized;
-    await dependencies.saveProfile?.(normalized);
-    return this.generation;
+    if (!(dependencies.canContinue?.() ?? true)) throw new ConnectionSwitchCancelledError();
+    const generation = this.generation + 1;
+    const scope: ConnectionSwitchScope = { generation,
+      isCurrent: () => generation === this.generation && (dependencies.canContinue?.() ?? true) };
+    const assertCurrent = () => {
+      if (generation !== this.generation) throw new StaleConnectionResponseError();
+      if (!(dependencies.canContinue?.() ?? true)) throw new ConnectionSwitchCancelledError();
+    };
+    this.pendingSwitches++;
+    try {
+      this.status = 'disconnected';
+      this.reconnectScheduled = false;
+      this.advanceGeneration();
+      assertCurrent();
+      dependencies.closeEvents?.(scope);
+      assertCurrent();
+      // 代次立即失效，无法撤销的原生阶段依次结束；新意图不与旧清理/保存并行。
+      const operation = this.mutationTail.then(async () => {
+        assertCurrent();
+        await dependencies.clearSession?.(scope);
+        assertCurrent();
+        dependencies.clearStores?.(scope);
+        assertCurrent();
+        this.currentProfile = normalized;
+        await dependencies.saveProfile?.(normalized, scope);
+        assertCurrent();
+        return generation;
+      });
+      this.mutationTail = operation.then(() => undefined, () => undefined);
+      return await operation;
+    } catch (error) { assertCurrent(); throw error; }
+    finally { this.pendingSwitches--; }
   }
 
   applyIfCurrent(generation: number, apply: () => void): boolean {

@@ -81,3 +81,12 @@ T001→T002→T003→T004；US1与外壳设计在基础完成后分片推进，U
 - [x] T020 HIGH 为账户页退出补齐单次意图与页面/主机/认证完成归属；正常退出自身清用户不误判旧请求，离页/换账号/换主机的旧结果不串反馈或导航。区分本地身份已清与服务端退出确认：真实网络失败保留原说明，不假报服务端已退出、不自动重放。先以真实Auth/API/Ant表单和延迟HTTP覆盖正常、当前失败、当前401、迟到成功/失败、同ID重登、在途清理及防重，再用生产浏览器复验；涉及`frontend/src/features/settings/tabs/AccountSettingsTab.vue`、`stores/auth.ts`、账户文案及相关测试/文档，追溯FR-009/011/012、US3/AC3–4、plan认证寿命（partial，HIGH）。
 
 20项新增真实模块/组件回归、全量664/664、Web/App类型及构建、54SFC及规范校验通过；7组生产SPA退出先红后绿，原5段认证/3组改密/10组操作/56组页面复验通过，详见[退出完成记录](verification/20261017-logout-scope.md)。仅本地，未推送或部署。
+
+## Phase 11: Convergence
+
+2026-10-17重点复核FR-009/011、US3/AC3–4、认证/主机寿命设计及宪章I/III，发现两个缺口。CRITICAL contradicts：真实ClientConnectionCoordinator内存实验先挂起旧切换、完成新切换、再放旧请求，最终地址回退older.invalid，旧操作清状态/保存并返回新代次2；runtime还在等待旧logout之后才递增真实代次。HIGH partial：LoginView.submit无同步防重及页面/主机意图围栏，await后直接提示/读取可变redirect导航，旧finally无条件解锁。既有664绿不覆盖这些时序。
+
+- [x] T021 CRITICAL 修复主机切换完整链路的意图/代次与认证归属，切换开始即使旧资源失效；旧logout/清会话/持久化完成不得清新会话、覆盖新主机或借用新代次，离页不继续旧探测/导航。先持久化coordinator反序完成红回归，再覆盖runtime真实API/Auth、连接页、并发/重入、当前失败/部分完成、Electron清会话与保存延迟、无效地址零副作用和当前成功；保存失败如实投影已经发生的状态，不盲重放或执行设备命令。涉及`frontend/src/platform/connection.ts`、`stores/runtime.ts`、`features/settings/ServerConnectionView.vue`及连接测试/文档，追溯Constitution I、FR-009/011/012、US3/AC3–4、plan主机寿命（contradicts，CRITICAL）。
+- [ ] T022 HIGH 为登录页补齐同步防重、冻结凭据/redirect、页面/主机/认证意图与完成归属；离页或旧意图不得在CSRF后继续提交密码、串成功/错误/导航或解锁新提交，当前错误密码仍有原说明。先补实际Auth/API/Ant及延迟HTTP红回归，覆盖同渲染轮重复提交、CSRF/密码响应在途离页与换主机/账号、正常/失败/重试及敏感字段清理，再验证生产SPA。涉及`frontend/src/features/auth/LoginView.vue`、`stores/auth.ts`及认证回归/文档，追溯FR-009/011/012、US3/AC3–4、plan认证寿命（partial，HIGH）。
+
+T021已由51项新增回归使664→715；双构建/主进程编译、54SFC、6组真实连接与原5段认证/3组改密/7组退出/10组操作/56组页面通过。真实后退须先取消旧探测，再由初始化守卫进入新表单，不以URL变化当完成。见[切换验收](verification/20261017-server-switch.md)；T022仍待实现，未推送/部署。

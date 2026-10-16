@@ -2,6 +2,7 @@
 import { t } from '@/locales';
 import {
   clientConnection,
+  ConnectionSwitchInProgressError,
   StaleConnectionResponseError,
   type ServerProfile,
 } from '@/platform/connection';
@@ -186,11 +187,14 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
   }
 }
 
-/** :param url: API路由。:param init: 请求及可选上层取消。:param timeoutMs: 请求硬限。:returns: 沿用认证/CSRF/主机代次校验的JSON结果。 */
-export async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
+/** :param url: API路由。:param init: 请求及上层取消。:param timeoutMs: 请求硬限。:param allowDuringSwitch: 仅固定logout的受管检查器。:returns: 认证/CSRF/主机围栏后的JSON。 */
+export async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS, allowDuringSwitch?: () => boolean): Promise<T> {
   const scope = captureApiRequestScope();
-  const absoluteUrl = buildBackendUrl(url);
   const method = (init.method || 'GET').toUpperCase();
+  // 仅Runtime持有的清会话logout可用本次检查器越过门禁；其它业务和密码不发往中间地址。
+  const switchCleanup = Boolean(clientConnection.isSwitching && url === '/api/auth/logout/' && method === 'POST' && allowDuringSwitch?.());
+  if (clientConnection.isSwitching && !switchCleanup) throw new ConnectionSwitchInProgressError();
+  const absoluteUrl = buildBackendUrl(url);
   const csrfHeader: Record<string, string> = {};
   if (UNSAFE_METHODS.has(method)) {
     const token = resolveCsrfToken(csrfRequestToken, readCookie(csrfCookieName(absoluteUrl, window.location.href)));
@@ -215,7 +219,8 @@ export async function requestJson<T>(url: string, init: RequestInit = {}, timeou
   scope.assertCurrent();
   const payload = parseJsonText<T>(responseText, response.status, response.headers.get('Content-Type') || '');
   if (response.status === 401) {
-    unauthorizedHandler?.();
+    // 旧主机清会话401只供切换流程处理，不能将当前连接页带走；普通当前401保持原行为。
+    if (!switchCleanup) unauthorizedHandler?.();
     throw new UnauthorizedError(payload.detail || t('api.requestFail', { status: 401 }));
   }
   if (!response.ok) {
@@ -226,6 +231,7 @@ export async function requestJson<T>(url: string, init: RequestInit = {}, timeou
 
 function uploadFormData<T>(url: string, formData: FormData, options: UploadOptions = {}): Promise<T> {
   return new Promise((resolve, reject) => {
+    if (clientConnection.isSwitching) throw new ConnectionSwitchInProgressError();
     const scope = captureApiRequestScope();
     const request = new XMLHttpRequest();
     const absoluteUrl = buildBackendUrl(url);
@@ -297,7 +303,7 @@ export const api = {
   },
   login: (payload: { username: string; password: string }) =>
     requestJson<{ user: AuthUser }>('/api/auth/login/', { method: 'POST', body: JSON.stringify(payload) }),
-  logout: () => requestJson<{ detail: string }>('/api/auth/logout/', { method: 'POST' }),
+  logout: (allowDuringSwitch?: () => boolean) => requestJson<{ detail: string }>('/api/auth/logout/', { method: 'POST' }, REQUEST_TIMEOUT_MS, allowDuringSwitch),
   fetchMe: () => requestJson<{ user: AuthUser }>('/api/auth/me/'),
   fetchAuthStatus: () => requestJson<{ authenticated: boolean; user: AuthUser | null }>('/api/auth/status/'),
   changePassword: (payload: { current_password: string; new_password: string }) =>

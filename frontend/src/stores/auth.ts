@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { api, clearApiSessionState, type AuthUser } from '@/services/api';
-import { clientConnection } from '@/platform/connection';
+import { clientConnection, ConnectionSwitchInProgressError } from '@/platform/connection';
 import { bindAuthenticationScope, captureAuthenticationScope, assertAuthenticationScope } from '@/services/authenticationScope';
 
 /** 退出的短期完成凭据；只证明页面状态/本次HTTP结果，不保证网络层Cookie已删除。 */
@@ -10,6 +10,12 @@ export interface LogoutResult {
   remoteSignedOut: boolean;
   detail: string;
   isCurrent: () => boolean;
+}
+
+/** 调用页只接收自己的认证完成；现有布尔/用户返回值与平台调用保持不变。 */
+export interface AuthenticationOperationOptions {
+  canContinue?: () => boolean;
+  onCommitted?: (isCurrent: () => boolean) => void;
 }
 
 export const useAuthStore = defineStore('auth', () => {
@@ -20,7 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
   let revision = 0;
   // 公开State/$patch也能改变身份；记录历史，不能由ID改回原值产生ABA复活。
   watch([user, () => user.value?.id], () => { revision++; }, { flush: 'sync' });
-  let initialization: Promise<void> | null = null;
+  let initialization: { promise: Promise<void>; isCurrent: () => boolean } | null = null;
   const binding = bindAuthenticationScope(() => ({ revision, account: user.value, userId: user.value?.id }));
   onScopeDispose(binding.dispose);
 
@@ -33,6 +39,7 @@ export const useAuthStore = defineStore('auth', () => {
   /** :param clearUser: 是否进入未知身份状态。:returns: 本次认证意图，后来的意图使它失效。 */
   function begin(clearUser: boolean): () => boolean {
     assertAuthenticationScope(binding.isCurrent);
+    if (clientConnection.isSwitching) throw new ConnectionSwitchInProgressError();
     revision++;
     initialization = null;
     if (clearUser) user.value = null;
@@ -49,8 +56,10 @@ export const useAuthStore = defineStore('auth', () => {
 
   /** :returns: 共用在途启动探测；过期探测安静退出，不回写新登录或初始化标志。 */
   async function ensureInitialized(): Promise<void> {
+    if (clientConnection.isSwitching) return;
     if (initialized.value) return;
-    if (initialization) return initialization;
+    if (initialization?.isCurrent()) return initialization.promise;
+    initialization = null;
     const current = currentScope();
     if (!current()) return;
     const operation = (async () => {
@@ -62,14 +71,17 @@ export const useAuthStore = defineStore('auth', () => {
         if (current()) commit(payload.authenticated ? payload.user : null);
       } catch { if (current()) commit(null); }
     })();
-    initialization = operation;
+    initialization = { promise: operation, isCurrent: current };
     try { await operation; }
-    finally { if (initialization === operation) initialization = null; }
+    finally { if (initialization?.promise === operation) initialization = null; }
   }
 
-  /** :returns: 当前主机探测结果。:raises Error: 原网络/认证错误或明确归属失效。 */
-  async function probeCurrentServer(): Promise<boolean> {
-    const current = begin(true);
+  /** :param options: 调用页与完成归属，默认保留布尔合同。:returns: 当前主机探测结果。:raises Error: 原错误或明确归属失效。 */
+  async function probeCurrentServer(options: AuthenticationOperationOptions = {}): Promise<boolean> {
+    const canContinue = options.canContinue ?? (() => true);
+    assertAuthenticationScope(canContinue);
+    const authentication = begin(true);
+    const current = () => authentication() && canContinue();
     initialized.value = false;
     const operation = (async () => {
       try { await api.fetchCsrfToken(); }
@@ -79,6 +91,8 @@ export const useAuthStore = defineStore('auth', () => {
         const payload = await api.fetchAuthStatus();
         assertAuthenticationScope(current);
         commit(payload.authenticated ? payload.user : null);
+        const completed = currentScope();
+        options.onCommitted?.(() => canContinue() && completed());
         return user.value !== null;
       } catch (error) {
         if (current()) initialized.value = true;
@@ -87,9 +101,9 @@ export const useAuthStore = defineStore('auth', () => {
     })();
     // 路由的安静初始化复用显式探测；显式调用者仍收到原错误。
     const shared = operation.then(() => undefined, () => undefined);
-    initialization = shared;
+    initialization = { promise: shared, isCurrent: current };
     try { return await operation; }
-    finally { if (initialization === shared) initialization = null; }
+    finally { if (initialization?.promise === shared) initialization = null; }
   }
 
   /** :param name: 用户名。:param password: 仅发往本次主机。:returns: 本次登录身份，旧链路不再提交。 */

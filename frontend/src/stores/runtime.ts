@@ -20,7 +20,9 @@ import {
   normalizeServerProfile,
   saveServerProfile,
   type ServerProfile,
+  type ConnectionSwitchScope,
 } from '@/platform/connection';
+import { captureAuthenticationScope, assertAuthenticationScope } from '@/services/authenticationScope';
 import { t } from '@/locales';
 import { useBackgroundAudioStore } from './backgroundAudio';
 import { useAuthStore } from './auth';
@@ -35,6 +37,12 @@ interface SystemVolumeState {
   muted: boolean;
   systemSynced: boolean;
   backend: string;
+}
+
+/** 配置及清理完成后的短期归属，不代表控制主机或播放器已探测在线。 */
+export interface ServerSwitchResult {
+  generation: number;
+  isCurrent: () => boolean;
 }
 
 interface RuntimeState {
@@ -125,50 +133,68 @@ export const useRuntimeStore = defineStore('runtime', {
       const payload = await api.setSystemVolume(level, muted);
       this.applyVolume(payload.volume);
     },
-    async switchServer(profile: ServerProfile): Promise<void> {
+    /** :param profile: 本次目标。:param canContinue: 原页面寿命。:returns: 实际完成归属，旧结果明确拒绝。 */
+    async switchServer(profile: ServerProfile, canContinue: () => boolean = () => true): Promise<ServerSwitchResult> {
       // 先校验新地址，避免输入错误时提前登出当前仍可用的主机。
       const normalizedProfile = normalizeServerProfile(profile);
-      this.disconnectEvents();
+      assertAuthenticationScope(canContinue);
+      const originalAuthentication = captureAuthenticationScope();
+      const ownership: { scope?: ConnectionSwitchScope; authentication?: () => boolean } = {};
+      const assertOriginal = (scope: ConnectionSwitchScope) => assertAuthenticationScope(() => scope.isCurrent() && canContinue() && originalAuthentication());
+      const assertCompleted = (scope: ConnectionSwitchScope) => assertAuthenticationScope(() => scope.isCurrent() && canContinue() && Boolean(ownership.authentication?.()));
       try {
-        await api.logout();
-      } catch {
-        // 旧主机离线时只能清本端状态，不能声称服务端 session 已撤销。
+        const generation = await clientConnection.switchServer(normalizedProfile, {
+          canContinue,
+          closeEvents: (scope) => {
+            ownership.scope = scope;
+            this.connectionGeneration = scope.generation;
+            this.disconnectEvents();
+          },
+          clearSession: async (scope) => {
+            assertOriginal(scope);
+            try { await api.logout(() => scope.isCurrent() && canContinue() && originalAuthentication()); }
+            catch { assertOriginal(scope); /* 旧主机离线只允许清本端状态，不声称服务器已退出。 */ }
+            assertOriginal(scope);
+            clearApiSessionState();
+            if (typeof window !== 'undefined' && window.scpCvElectron) await window.scpCvElectron.clearSession();
+            assertOriginal(scope);
+          },
+          clearStores: (scope) => {
+            assertOriginal(scope);
+            useAuthStore().$reset();
+            ownership.authentication = captureAuthenticationScope();
+            const clearers = [() => useSessionStore().$reset(), () => useBackgroundAudioStore().$reset(),
+              () => useSourceStore().$reset(), () => useScenarioStore().$reset(), () => useDeviceStore().$reset(), () => useDisplayStore().$reset()];
+            for (const clear of clearers) { assertCompleted(scope); clear(); }
+            assertCompleted(scope);
+            this.runtime = null;
+            this.venueAudioResult = null;
+            this.systemVolume = { level: 100, muted: false, systemSynced: false, backend: 'runtime_state' };
+            this.sseLastUpdate = 0;
+          },
+          saveProfile: async (nextProfile, scope) => {
+            assertCompleted(scope);
+            // Coordinator此时已提交地址；磁盘/原生保存失败也必须展示实际已发生的切换。
+            this.serverProfile = nextProfile;
+            saveServerProfile(nextProfile);
+            if (typeof window !== 'undefined' && window.scpCvElectron) await window.scpCvElectron.saveServerProfile(nextProfile);
+            assertCompleted(scope);
+          },
+        });
+        return { generation, isCurrent: () => Boolean(ownership.scope?.isCurrent() && ownership.authentication?.() && !clientConnection.isSwitching) };
+      } finally {
+        if (ownership.scope?.generation === clientConnection.captureGeneration()) {
+          this.connectionGeneration = ownership.scope.generation;
+          this.serverProfile = clientConnection.profile;
+        }
       }
-      this.connectionGeneration = await clientConnection.switchServer(normalizedProfile, {
-        closeEvents: () => this.disconnectEvents(),
-        clearSession: async () => {
-          clearApiSessionState();
-          if (typeof window !== 'undefined' && window.scpCvElectron) {
-            await window.scpCvElectron.clearSession();
-          }
-        },
-        clearStores: () => {
-          useAuthStore().$reset();
-          useSessionStore().$reset();
-          useBackgroundAudioStore().$reset();
-          useSourceStore().$reset();
-          useScenarioStore().$reset();
-          useDeviceStore().$reset();
-          useDisplayStore().$reset();
-          this.runtime = null;
-          this.venueAudioResult = null;
-          this.systemVolume = { level: 100, muted: false, systemSynced: false, backend: 'runtime_state' };
-          this.sseLastUpdate = 0;
-        },
-        saveProfile: async (nextProfile) => {
-          saveServerProfile(nextProfile);
-          if (typeof window !== 'undefined' && window.scpCvElectron) {
-            await window.scpCvElectron.saveServerProfile(nextProfile);
-          }
-        },
-      });
-      this.serverProfile = clientConnection.profile;
     },
     /**
      * 建立 SSE 长连接：监听 `playback_state` 事件，刷新会话快照。
      * 自动重连：连接关闭后 2 s 重试一次，期间 sseStatus = 'reconnecting'。
      */
     connectEvents(): void {
+      if (clientConnection.isSwitching) { this.disconnectEvents(); return; }
       this.disconnectEvents();
       this.sseStatus = 'connecting';
       clientConnection.markConnecting();

@@ -4,6 +4,9 @@
  */
 import { useToastStore } from '@/composables/useToast';
 import { t } from '@/locales';
+import { clientConnection } from '@/platform/connection';
+import { captureAuthenticationScope } from '@/services/authenticationScope';
+import { useAuthStore } from './auth';
 
 import { useDeviceStore } from './devices';
 import { useDisplayStore } from './displays';
@@ -23,15 +26,17 @@ export {
   useDisplayStore,
 };
 
-/**
- * 应用启动数据初始化。
- * - 并发拉取各领域初始快照；
- * - 部分失败仅 Toast 提示，不阻塞 UI；
- * - 完成后建立 SSE 连接，让会话状态保持实时。
- *
- * @return Promise<void>
- */
-export async function refreshStores(): Promise<void> {
+/** :param canContinue: 调用者生命周期。:returns: 先绑定认证，再冻结完整读取的主机/账号归属。 */
+function captureSnapshotContext(canContinue: () => boolean): () => boolean {
+  useAuthStore();
+  const generation = clientConnection.captureGeneration(), authentication = captureAuthenticationScope();
+  return () => canContinue() && generation === clientConnection.captureGeneration() && authentication() && !clientConnection.isSwitching;
+}
+
+/** :param canContinue: 原调用寿命。:returns: 本轮是否仍属于当前身份；当前部分失败保留警告，失效安静结束。 */
+export async function refreshStores(canContinue: () => boolean = () => true): Promise<boolean> {
+  const current = captureSnapshotContext(canContinue);
+  if (!current()) return false;
   const runtime = useRuntimeStore();
   const backgroundAudio = useBackgroundAudioStore();
   const session = useSessionStore();
@@ -52,6 +57,8 @@ export async function refreshStores(): Promise<void> {
     display.refresh(),
   ]);
 
+  if (!current()) return false;
+
   // 单个失败不致命：使用 Toast 警告即可，让用户继续操作可用部分。
   const failed = tasks.find((task) => task.status === 'rejected');
   if (failed && failed.status === 'rejected') {
@@ -61,9 +68,11 @@ export async function refreshStores(): Promise<void> {
     );
   }
 
+  return true;
 }
 
-export async function bootstrapStores(): Promise<void> {
-  await refreshStores();
-  useRuntimeStore().connectEvents();
+/** :param canContinue: 原调用页寿命。:returns: 只有同一身份完整读取结束才建立SSE，旧读取安静结束。 */
+export async function bootstrapStores(canContinue: () => boolean = () => true): Promise<void> {
+  const current = captureSnapshotContext(canContinue);
+  if (await refreshStores(current) && current()) useRuntimeStore().connectEvents();
 }

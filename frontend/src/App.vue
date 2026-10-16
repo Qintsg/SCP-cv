@@ -6,7 +6,7 @@
  *  - 初始化主题（system/light/dark）、应用高度变量、全局 Toast / Dialog 宿主；
  *  - Ant ConfigProvider统一中文、明暗算法与全局反馈主题。
  */
-import { computed, onMounted, onUnmounted } from 'vue';
+import { computed, onBeforeUnmount, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterView, useRoute } from 'vue-router';
 import AConfigProvider from 'ant-design-vue/es/config-provider';
@@ -40,14 +40,16 @@ const antTheme = computed(() => consoleTheme(isDarkResolved.value));
 
 let unbindHeight: (() => void) | null = null;
 let bootstrapped = false;
+let active = true;
 
+/** :returns: 仅已认证实例启动读取；卸载后的旧初始化不向新应用反馈。 */
 async function bootstrapWhenReady(): Promise<void> {
   if (bootstrapped || !auth.isAuthenticated) return;
   bootstrapped = true;
   try {
-    await bootstrapStores();
+    await bootstrapStores(() => active);
   } catch (error) {
-    toast.error(t('bootstrap.initFail'), error instanceof Error ? error.message : t('bootstrap.initFailDetail'));
+    if (active && auth.isAuthenticated) toast.error(t('bootstrap.initFail'), error instanceof Error ? error.message : t('bootstrap.initFailDetail'));
   }
 }
 
@@ -70,6 +72,7 @@ watch(
   },
 );
 
+onBeforeUnmount(() => { active = false; });
 onUnmounted(() => {
   unbindHeight?.();
   runtime.disconnectEvents();

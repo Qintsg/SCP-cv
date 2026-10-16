@@ -1,3 +1,4 @@
+/** 连接页入口与分层状态合同；完整异步交互另由server-switch-interaction回归。 */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -39,6 +40,6 @@ test('连接页通过 runtime.switchServer 切换代次并重新探测认证状�
   const view = readFileSync(`${sourceRoot}/features/settings/ServerConnectionView.vue`, 'utf8');
   const locale = readFileSync(`${sourceRoot}/locales/zh-CN/core.ts`, 'utf8');
   assert.match(view, /await runtime\.switchServer\(/);
-  assert.match(view, /await auth\.probeCurrentServer\(\)/);
+  assert.match(view, /await auth\.probeCurrentServer\(\{ canContinue: canProbe/);
   assert.match(locale, /SSE 在线不能代替播放器在线/);
 });
