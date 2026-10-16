@@ -65,3 +65,11 @@ T001→T002→T003→T004；US1与外壳设计在基础完成后分片推进，U
 - [x] T018 CRITICAL 为JSON/XHR请求补齐认证寿命围栏并接入真实登录/退出/本地失效/初始化流程；旧401/成功响应不得清除或覆盖已成立的新登录、继续旧认证链路，当前401必须仍正常退出。先将本机真实模块红回归持久化，再覆盖迟到401/成功、当前401、XHR、同ID重新登录、初始化和认证操作交错；保留原CSRF/主机围栏/错误语义，不全局忽略401、不盲目重放或发现场指令。涉及`frontend/src/services/api.ts`、`stores/auth.ts`、`main.ts`及新增认证HTTP回归，追溯Constitution I、FR-009/011、US3/AC3–4（contradicts，CRITICAL）。
 
 认证纯服务与真实Auth Store接线完成；全量628/628、Web/App类型及构建、54SFC通过。真实生产SPA旧版先重现误退出、修复后5段流程通过，当前401与错误密码仍保留原行为；56组页面及10组原操作流程复验见[认证响应记录](verification/20261017-auth-scope.md)。未改变main的当前401处理，没有推送或部署。
+
+## Phase 9: Convergence
+
+2026-10-17接续检查账户流程：后端`AuthEndpoints.ChangePasswordAsync`成功后调用`csrf.IssueToken`，而前端`resolveCsrfToken`优先使用原内存令牌，`Auth.changePassword`未同步或失效该缓存，后续写请求会携带旧令牌。属于FR-009账户功能的HIGH partial，不因密码提交成功即认为后续操作可用。
+
+- [x] T019 HIGH 补齐修改密码成功后的CSRF同步及真实结果反馈：保留按目标协议/主机隔离、跨源客户端缓存和T018寿命围栏；先用实际API/Auth与受控Cookie轮换重现后续写入使用旧令牌，再覆盖正常同步、失败/离页/换主机/换账号和同步重试。密码已修改而令牌同步失败时必须明确区分，不自动重放密码或其它业务写入、不误报密码失败；真实Ant账户表单及生产浏览器验证敏感字段清空、忙态、防重和后续操作。涉及`frontend/src/stores/auth.ts`、`services/api.ts`、`features/settings/tabs/AccountSettingsTab.vue`、`locales/zh-CN/settings.ts`与相关测试/文档，追溯FR-009/011/012、US3/AC3–4、plan认证/CSRF边界（partial，HIGH）。
+
+本机完整644/644、Web/App类型及构建、54SFC和规范校验通过；3组真实改密/同步失败/键盘重试恢复、原5段认证/10组操作/56组页面通过。另修复该恢复流程暴露的Ant旧通知离场删除新提示，真实DOM先红后绿；详细证据见[改密同步记录](verification/20261017-password-csrf.md)。未推送或部署。

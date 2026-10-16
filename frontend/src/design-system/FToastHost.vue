@@ -2,13 +2,16 @@
 <script setup lang="ts">
 import { h, onBeforeUnmount, onMounted, watch } from 'vue';
 import notification from 'ant-design-vue/es/notification';
+import type { NotificationConfig } from 'ant-design-vue/es/notification/interface';
 import Button from 'ant-design-vue/es/button';
 import { useToastStore, type ToastItem } from '@/composables/useToast';
 import { useWindowSizeClass } from '@/composables/useWindowSizeClass';
 
 const store = useToastStore();
 const { isCompact } = useWindowSizeClass();
-const [notices, ContextHolder] = notification.useNotification({ maxCount: 3 });
+// 固定4.2.6的Holder实际接收此回调，公开类型漏列；显式扩展，不用any或关闭类型检查。
+const hostConfig: NotificationConfig & { onAllRemoved: () => void } = { maxCount: 3, onAllRemoved: restoreCurrent };
+const [notices, ContextHolder] = notification.useNotification(hostConfig);
 const active = new Set<number>();
 let mounted = false;
 
@@ -25,6 +28,12 @@ function open(item: ToastItem): void {
       try { await item.action!.onTrigger(); } finally { store.dismiss(item.id); }
     } }, () => item.action!.label) : undefined,
   });
+}
+
+/** :returns: Ant4旧placement离场可能晚于新通知进入；以仍有效的store重建，不复活旧通知。 */
+function restoreCurrent(): void {
+  if (!mounted) return;
+  for (const item of store.items) { active.delete(item.id); open(item); }
 }
 
 /** :returns: store与真实通知保持一致，手动关闭不留下隐藏通知。 */

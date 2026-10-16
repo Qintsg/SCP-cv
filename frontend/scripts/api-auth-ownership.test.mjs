@@ -28,11 +28,12 @@ after(async()=>{await server.close();await browser.happyDOM.close();for(const[na
 /** :returns: 独立认证与网络边界；默认登录响应是新用户。 */
 function setup(){
  pinia=createPinia();auth=useAuth(pinia);auth.user=user(1);auth.initialized=true;calls=[];clears=0;xhrs=[];
+ browser.document.cookie='csrftoken_http=; Max-Age=0; Path=/';browser.document.cookie='csrftoken=; Max-Age=0; Path=/';
  api.configureApiServer({origin:browser.location.origin,displayName:'内存测试',allowInsecureDevelopment:true});
  api.clearApiSessionState();
  api.registerUnauthorizedHandler(()=>{clears++;auth.clearLocal();});
  respond=async path=>json(path==='/api/auth/csrf/'?{csrfToken:'csrf-current'}:path==='/api/auth/login/'?{user:user(2)}:path==='/api/auth/status/'?{authenticated:true,user:user(1)}:{success:true});
- globalThis.fetch=async(url,options={})=>{const path=new URL(String(url),browser.location.href).pathname;calls.push({path,method:options.method||'GET',headers:options.headers,body:options.body});return respond(path,options);};
+ globalThis.fetch=async(url,options={})=>{const path=new URL(String(url),browser.location.href).pathname;calls.push({path,method:options.method||'GET',headers:options.headers,body:options.body,credentials:options.credentials});return respond(path,options);};
  globalThis.XMLHttpRequest=class {
   upload={};headers={};
   /** :param method: 方法。:param url: 上传地址。:returns: 不连接网络。 */
@@ -179,4 +180,67 @@ test('旧认证Store不得向新会话发送修改密码请求',async()=>{
   await assert.rejects(previous.changePassword('memory-old','memory-new'),/旧响应已丢弃/);
   assert.equal(calls.length,0,'不能发出请求后才发现旧认证动作');
  } finally { previous.$dispose(); }
+});
+test('修改密码轮换Cookie后，后续写入必须使用新CSRF而非旧缓存',async()=>{
+ setup();let token='before-password';
+ respond=async path=>{
+  if(path==='/api/auth/csrf/')return json({csrfToken:token});
+  if(path==='/api/auth/change-password/'){token='after-password';browser.document.cookie='csrftoken_http='+token+'; Path=/';}
+  return json({success:true});
+ };
+ await api.api.fetchCsrfToken();await auth.changePassword('memory-old','memory-new');await api.api.deleteSource(1);
+ assert.equal(calls.at(-1).headers['X-CSRFToken'],'after-password');
+});
+for(const origin of ['http://isolated.invalid','https://isolated.invalid'])test(`修改密码同步使用目标${new URL(origin).protocol}主机令牌，不依赖页面Cookie`,async()=>{
+ setup();api.configureApiServer({origin,displayName:'纯内存跨源主机',allowInsecureDevelopment:true});let token='target-before';
+ browser.document.cookie='csrftoken_http=unrelated-page-token; Path=/';
+ respond=async path=>{
+  if(path==='/api/auth/csrf/')return json({csrfToken:token});
+  if(path==='/api/auth/change-password/')token='target-after';
+  return json({success:true});
+ };
+ await api.api.fetchCsrfToken();assert.equal(await auth.changePassword('memory-old','memory-new'),true);
+ await api.api.deleteSource(1);assert.equal(calls.at(-1).headers['X-CSRFToken'],'target-after');assert.equal(calls.at(-1).credentials,'include');
+ assert.equal(calls.filter(call=>call.path==='/api/auth/change-password/').length,1);
+});
+test('密码已修改但同步503不误报密码失败，显式重试仅读取新CSRF',async()=>{
+ setup();let changed=false,failSync=true;
+ respond=async path=>{
+  if(path==='/api/auth/change-password/')changed=true;
+  if(path==='/api/auth/csrf/')return changed&&failSync?json({detail:'仅同步失败'},503):json({csrfToken:changed?'new-token':'old-token'});
+  return json({success:true});
+ };
+ await api.api.fetchCsrfToken();assert.equal(await auth.changePassword('memory-old','memory-new'),false);assert.equal(auth.user.id,1);
+ failSync=false;await auth.synchronizeSession();await api.api.deleteSource(1);
+ assert.equal(calls.at(-1).headers['X-CSRFToken'],'new-token');assert.equal(calls.filter(call=>call.path==='/api/auth/change-password/').length,1);
+});
+test('密码POST真实失败保留原错误和令牌，不启动成功同步',async()=>{
+ setup();respond=async path=>path==='/api/auth/csrf/'?json({csrfToken:'unchanged-token'}):path==='/api/auth/change-password/'?json({detail:'当前密码不正确'},400):json({success:true});
+ await api.api.fetchCsrfToken();await assert.rejects(auth.changePassword('memory-old','memory-new'),/当前密码不正确/);
+ assert.equal(calls.filter(call=>call.path==='/api/auth/csrf/').length,1);await api.api.deleteSource(1);assert.equal(calls.at(-1).headers['X-CSRFToken'],'unchanged-token');
+});
+for(const invalidate of ['account','host'])test(`密码成功后同步在途${invalidate}改变，旧响应不写缓存或报告新会话失败`,async()=>{
+ setup();const pending=gate();let changed=false;
+ respond=async path=>{
+  if(path==='/api/auth/change-password/'){changed=true;return json({detail:'已修改'});}
+  if(path==='/api/auth/csrf/'&&changed)return pending.promise;
+  return json({csrfToken:'current-token'});
+ };
+ const old=auth.changePassword('memory-old','memory-new');const rejected=assert.rejects(old,/切换|旧响应已丢弃/);
+ // 先释放外部门闩再断言；假fetch忽略AbortSignal，不允许夹具把错误实现挂死。
+ await new Promise(resolve=>setImmediate(resolve));const syncing=calls.some(call=>call.path==='/api/auth/csrf/');
+ if(invalidate==='account')auth.user=user(2);else client.restoreProfile({origin:'http://isolated.invalid',displayName:'新主机',allowInsecureDevelopment:true});
+ respond=async()=>json({csrfToken:'replacement-token'});await api.api.fetchCsrfToken();pending.resolve(json({csrfToken:'obsolete-token'}));await rejected;
+ assert.equal(syncing,true);await api.api.deleteSource(1);assert.equal(calls.at(-1).headers['X-CSRFToken'],'replacement-token');assert.equal(clears,0);
+});
+test('手动会话同步仍保留真实错误和旧Store发送前围栏',async()=>{
+ setup();respond=async()=>json({detail:'重读令牌暂不可用'},503);await assert.rejects(auth.synchronizeSession(),/重读令牌暂不可用/);
+ const previous=auth;auth=useAuth(createPinia());auth.user=user(2);const count=calls.length;
+ try {await assert.rejects(previous.synchronizeSession(),/旧响应已丢弃/);assert.equal(calls.length,count);} finally {previous.$dispose();}
+});
+test('修改密码成功使此前同ID请求失效，迟到401不能退出重签会话',async()=>{
+ setup();const pending=gate(),fallback=respond;respond=(path,options)=>path==='/api/sources/'?pending.promise:fallback(path,options);
+ const old=api.api.listSources();const rejected=assert.rejects(old,/旧响应已丢弃/);
+ assert.equal(await auth.changePassword('memory-old','memory-new'),true);pending.resolve(json({detail:'改密前401'},401));await rejected;
+ assert.equal(clears,0);assert.equal(auth.user.id,1);
 });

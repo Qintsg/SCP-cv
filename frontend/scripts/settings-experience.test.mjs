@@ -16,6 +16,7 @@ const originalFetch = globalThis.fetch;
 let server, vue, createPinia, routers, i18n, DisplaySettings, AccountSettings;
 let useDisplays, useRuntime, useAuth, useToasts, clientConnection, app;
 let requests = [];
+let csrfRequests = [], delayingCsrf = false;
 
 before(async () => {
   [vue, { createPinia }, routers, server] = await Promise.all([
@@ -34,6 +35,8 @@ before(async () => {
 async function flush() { await nextTurn(); await vue.nextTick(); await nextTurn(); await vue.nextTick(); }
 afterEach(async () => {
   app?.unmount(); app = undefined;
+  delayingCsrf = false;
+  for (const request of csrfRequests) request.resolve(csrfResponse({ csrfToken: 'cleanup-only' }));
   for (const request of requests) request.resolve(response(request.path));
   await flush(); browser.document.body.replaceChildren(); await browser.happyDOM.abort(); globalThis.fetch = originalFetch;
 });
@@ -48,11 +51,21 @@ function response(path) {
   return new Response(JSON.stringify(path.includes('displays') ? { success: true, sessions: [] } : { detail: '已保存' }),
     { status: 200, headers: { 'content-type': 'application/json' } });
 }
+/** :param payload: 令牌或受控错误。:param status: 状态。:returns: 与正式端点一致的JSON响应。 */
+function csrfResponse(payload, status = 200) {
+  return new Response(JSON.stringify(payload), { status, headers: { 'Content-Type': 'application/json' } });
+}
 /** :param account: 是否挂账户表单。:returns: 原组件、store和内存路由。 */
-async function mount(account = false) {
+async function mount(account = false, { holdCsrf = false } = {}) {
   requests = [];
+  csrfRequests = []; delayingCsrf = holdCsrf;
   globalThis.fetch = (input, options = {}) => new Promise(resolve => {
     const path = new URL(String(input), browser.location.href).pathname;
+    if (path === '/api/auth/csrf/') {
+      csrfRequests.push({ resolve });
+      if (!delayingCsrf) resolve(csrfResponse({ csrfToken: 'memory-only-current-token' }));
+      return;
+    }
     assert.ok(['/api/displays/select/', '/api/auth/change-password/'].includes(path), path);
     requests.push({ path, body: options.body && JSON.parse(options.body), resolve });
   });
@@ -116,6 +129,62 @@ for (const invalidation of ['host', 'account', 'unmount']) {
     await flush(); requests[0].resolve(response(requests[0].path)); await flush();
     assert.equal(toasts.items.length, 0);
     if (invalidation !== 'unmount') assert.ok(applyButton(root).disabled, '旧显示器选择必须失效');
+  });
+}
+
+test('修改密码成功后等待令牌同步，继续锁住表单且不重复POST', async () => {
+  const { root, toasts } = await mount(true, { holdCsrf: true }); await fillPasswords(root); submit(root); await flush();
+  requests[0].resolve(response(requests[0].path)); await flush();
+  assert.equal(csrfRequests.length, 1); assert.ok([...root.querySelectorAll('input')].every(input => input.disabled));
+  submit(root); await flush(); assert.equal(requests.length, 1);
+  csrfRequests[0].resolve(csrfResponse({ csrfToken: 'after-password' })); await flush();
+  assert.ok([...root.querySelectorAll('input')].every(input => input.value === '' && !input.disabled));
+  assert.match(toasts.items.at(-1)?.message ?? '', /密码已修改/);
+});
+
+test('密码已修改但CSRF失败显示独立警告并清空敏感字段，重试只同步会话', async () => {
+  const { root, toasts } = await mount(true, { holdCsrf: true }); await fillPasswords(root); submit(root); await flush();
+  requests[0].resolve(response(requests[0].path)); await flush();
+  assert.equal(csrfRequests.length, 1); csrfRequests[0].resolve(csrfResponse({ detail: '测试令牌同步失败' }, 503)); await flush();
+  assert.match(root.textContent, /密码已修改/); assert.match(root.textContent, /会话尚未同步/); assert.doesNotMatch(root.textContent, /无法修改密码/);
+  assert.ok([...root.querySelectorAll('input')].every(input => input.value === '')); await fillPasswords(root);
+  assert.ok(root.querySelector('button[type="submit"]').disabled, '会话未同步时不能再次改密'); assert.equal(toasts.items.length, 0);
+  const retry = [...root.querySelectorAll('button')].find(button => /重新同步会话/.test(button.textContent)); assert.ok(retry);
+  retry.click(); retry.click(); await flush(); assert.equal(csrfRequests.length, 2); assert.equal(requests.length, 1);
+  csrfRequests[1].resolve(csrfResponse({ csrfToken: 'retry-current' })); await flush();
+  assert.doesNotMatch(root.textContent, /会话尚未同步/); assert.match(toasts.items.at(-1)?.message ?? '', /会话已同步/);
+  assert.equal(root.querySelector('button[type="submit"]').disabled, false);
+});
+test('会话重试仍失败时保留已改密警告和原始安全事实，不自动重试', async () => {
+  const { root, toasts } = await mount(true, { holdCsrf: true }); await fillPasswords(root); submit(root); await flush();
+  requests[0].resolve(response(requests[0].path)); await flush();
+  csrfRequests[0].resolve(csrfResponse({ detail: '同步暂不可用' }, 503)); await flush();
+  [...root.querySelectorAll('button')].find(button => /重新同步会话/.test(button.textContent)).click(); await flush();
+  csrfRequests[1].resolve(csrfResponse({ detail: '同步仍不可用' }, 503)); await flush();
+  assert.match(root.textContent, /密码已修改/);assert.match(root.textContent, /会话尚未同步/);assert.doesNotMatch(root.textContent, /无法修改密码/);
+  assert.ok([...root.querySelectorAll('input')].every(input => input.value === ''));assert.equal(requests.length, 1);assert.equal(csrfRequests.length, 2);
+  assert.equal(toasts.items.at(-1)?.level, 'error');assert.match(toasts.items.at(-1)?.description ?? '', /密码已修改/);
+  const unrelated = toasts.error('不相关的持久错误');
+  [...root.querySelectorAll('button')].find(button => /重新同步会话/.test(button.textContent)).click(); await flush();
+  csrfRequests[2].resolve(csrfResponse({ csrfToken: 'recovered-current' })); await flush();
+  assert.ok(toasts.items.some(item => item.id === unrelated), '只关闭本表单持有的旧同步错误');
+  assert.ok(!toasts.items.some(item => item.message === '会话同步失败'), '恢复后不保留相反的旧同步通知');
+  assert.doesNotMatch(root.textContent, /会话尚未同步/);assert.equal(requests.length, 1);
+});
+
+for (const invalidation of ['host', 'account', 'unmount']) {
+  test(`会话同步重试${invalidation}后不发布旧反馈或重放密码`, async () => {
+    const { root, runtime, auth, toasts } = await mount(true, { holdCsrf: true }); await fillPasswords(root); submit(root); await flush();
+    requests[0].resolve(response(requests[0].path)); await flush(); assert.equal(csrfRequests.length, 1);
+    csrfRequests[0].resolve(csrfResponse({ detail: '同步失败' }, 503)); await flush();
+    const retry = [...root.querySelectorAll('button')].find(button => /重新同步会话/.test(button.textContent)); assert.ok(retry); retry.click(); await flush();
+    assert.equal(csrfRequests.length, 2);
+    if (invalidation === 'host') runtime.connectionGeneration++;
+    if (invalidation === 'account') auth.user = { id: 8, username: 'other', permissions: [] };
+    if (invalidation === 'unmount') { app.unmount(); app = undefined; }
+    await flush(); csrfRequests[1].resolve(csrfResponse({ csrfToken: 'stale' })); await flush();
+    assert.equal(toasts.items.length, 0); assert.equal(requests.length, 1);
+    if (invalidation !== 'unmount') {assert.doesNotMatch(root.textContent, /会话尚未同步/);assert.ok([...root.querySelectorAll('input')].every(input => input.value === ''));}
   });
 }
 

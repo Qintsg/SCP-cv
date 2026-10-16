@@ -46,6 +46,17 @@ test('持久错误可通过真实关闭入口移除',async()=>{
  const store=await mount(390);const close=browser.document.querySelector('.ant-notification-notice-close');assert.ok(close);
  close.click();await flush();assert.equal(store.items.length,0);
 });
+
+test('最后一条通知离场期间新提示进入，旧动画结束不能移除新提示',async()=>{
+ const store=await mount(390),closing=browser.document.querySelector('.console-toast');
+ closing.style.transitionProperty='opacity';closing.style.transitionDuration='10s';
+ store.clear();await flush();
+ assert.ok(closing.isConnected,'必须实际保留旧离场节点，不能把非交错样例当回归');
+ store.success('会话已恢复');await flush();
+ closing.dispatchEvent(new browser.Event('transitionend',{bubbles:true}));await flush();
+ await waitForDom(()=>[...browser.document.querySelectorAll('.console-toast')].some(node=>node.textContent.includes('会话已恢复')));
+ assert.match(browser.document.body.textContent,/会话已恢复/);assert.equal(store.items.length,1);
+});
 test('重试动作只执行一次并关闭原通知',async()=>{
  let count=0;const store=await mount(390,async()=>{count++;});
  const retry=[...browser.document.querySelectorAll('button')].find(b=>visibleText(b.textContent) === visibleText('重试'));assert.ok(retry);

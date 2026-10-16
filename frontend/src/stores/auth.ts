@@ -1,7 +1,7 @@
 /** 认证Store：保持原公开字段/动作，认证探测与请求结果按当前主机和会话寿命提交。 */
 import { defineStore } from 'pinia';
 import { computed, onScopeDispose, ref, watch } from 'vue';
-import { api, type AuthUser } from '@/services/api';
+import { api, clearApiSessionState, type AuthUser } from '@/services/api';
 import { clientConnection } from '@/platform/connection';
 import { bindAuthenticationScope, captureAuthenticationScope, assertAuthenticationScope } from '@/services/authenticationScope';
 
@@ -105,14 +105,26 @@ export const useAuthStore = defineStore('auth', () => {
     finally { if (current()) commit(null); }
   }
 
-  /** :param currentPassword: 当前密码。:param newPassword: 新密码。:returns: 当前归属密码修改完成。 */
-  async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  /** :returns: 显式重读本次主机的CSRF；不重放密码或其它业务写入。 */
+  async function synchronizeSession(): Promise<void> {
+    const current = currentScope();
+    assertAuthenticationScope(current);
+    await api.fetchCsrfToken();
+    assertAuthenticationScope(current);
+  }
+
+  /** :param currentPassword: 当前密码。:param newPassword: 新密码。:returns: 密码已改后，CSRF是否同步；false不代表密码失败。 */
+  async function changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
     const current = currentScope();
     assertAuthenticationScope(current);
     await api.changePassword({ current_password: currentPassword, new_password: newPassword });
     assertAuthenticationScope(current);
     // 服务端重签身份Cookie；即使用户ID不变，之前的响应也不能再处理401。
     revision++;
+    clearApiSessionState();
+    const synchronized = currentScope();
+    try { await synchronizeSession(); return true; }
+    catch { assertAuthenticationScope(synchronized); return false; }
   }
 
   /** :returns: 当前401触发的本地失效，不发送网络或重放业务请求。 */
@@ -126,5 +138,5 @@ export const useAuthStore = defineStore('auth', () => {
     initialized.value = false;
   }
 
-  return { user, initialized, isAuthenticated, username, ensureInitialized, probeCurrentServer, login, logout, changePassword, clearLocal, $reset };
+  return { user, initialized, isAuthenticated, username, ensureInitialized, probeCurrentServer, login, logout, changePassword, synchronizeSession, clearLocal, $reset };
 });
