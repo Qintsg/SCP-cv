@@ -150,6 +150,8 @@ export default {
     defaultHint: '首次部署请使用管理员提供的账号登录，并立即在“设置 → 账户”修改初始密码。',
     logoutOk: '已退出登录',
     logoutFail: '退出登录失败',
+    logoutLocalCleared: '页面登录状态已清除',
+    logoutUnconfirmed: '未能确认服务器退出，服务器上的登录可能仍然有效。{detail}',
     logoutAction: '退出登录',
     changeServer: '更换播放主机',
   },

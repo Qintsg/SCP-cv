@@ -73,3 +73,11 @@ T001→T002→T003→T004；US1与外壳设计在基础完成后分片推进，U
 - [x] T019 HIGH 补齐修改密码成功后的CSRF同步及真实结果反馈：保留按目标协议/主机隔离、跨源客户端缓存和T018寿命围栏；先用实际API/Auth与受控Cookie轮换重现后续写入使用旧令牌，再覆盖正常同步、失败/离页/换主机/换账号和同步重试。密码已修改而令牌同步失败时必须明确区分，不自动重放密码或其它业务写入、不误报密码失败；真实Ant账户表单及生产浏览器验证敏感字段清空、忙态、防重和后续操作。涉及`frontend/src/stores/auth.ts`、`services/api.ts`、`features/settings/tabs/AccountSettingsTab.vue`、`locales/zh-CN/settings.ts`与相关测试/文档，追溯FR-009/011/012、US3/AC3–4、plan认证/CSRF边界（partial，HIGH）。
 
 本机完整644/644、Web/App类型及构建、54SFC和规范校验通过；3组真实改密/同步失败/键盘重试恢复、原5段认证/10组操作/56组页面通过。另修复该恢复流程暴露的Ant旧通知离场删除新提示，真实DOM先红后绿；详细证据见[改密同步记录](verification/20261017-password-csrf.md)。未推送或部署。
+
+## Phase 10: Convergence
+
+2026-10-17复核FR-009/011、US3/AC3–4、账户/页面归属设计及宪章I/III，发现退出反馈HIGH partial：`AccountSettingsTab.logout`在await之后无条件发Toast/跳登录；API/Auth虽会拒绝旧响应，组件仍把归属失效当新页面的退出失败。当前退出网络失败还会清本地身份却停在旧受保护页面，不能把本地退出与服务端撤销混为一谈。原644不含账户页退出交错回归。
+
+- [x] T020 HIGH 为账户页退出补齐单次意图与页面/主机/认证完成归属；正常退出自身清用户不误判旧请求，离页/换账号/换主机的旧结果不串反馈或导航。区分本地身份已清与服务端退出确认：真实网络失败保留原说明，不假报服务端已退出、不自动重放。先以真实Auth/API/Ant表单和延迟HTTP覆盖正常、当前失败、当前401、迟到成功/失败、同ID重登、在途清理及防重，再用生产浏览器复验；涉及`frontend/src/features/settings/tabs/AccountSettingsTab.vue`、`stores/auth.ts`、账户文案及相关测试/文档，追溯FR-009/011/012、US3/AC3–4、plan认证寿命（partial，HIGH）。
+
+20项新增真实模块/组件回归、全量664/664、Web/App类型及构建、54SFC及规范校验通过；7组生产SPA退出先红后绿，原5段认证/3组改密/10组操作/56组页面复验通过，详见[退出完成记录](verification/20261017-logout-scope.md)。仅本地，未推送或部署。

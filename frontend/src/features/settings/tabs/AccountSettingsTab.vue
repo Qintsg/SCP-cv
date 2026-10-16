@@ -2,7 +2,7 @@
 /** 账户密码表单：原生提交、输入名称、错误关联及请求归属隔离。 */
 import { InputPassword as AInputPassword } from 'ant-design-vue/es/input';
 
-import { computed, ref, useId } from 'vue';
+import { computed, onScopeDispose, ref, useId } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import AAlert from 'ant-design-vue/es/alert';
@@ -14,11 +14,15 @@ import AInput from 'ant-design-vue/es/input';
 
 import { useToast } from '@/composables/useToast';
 import { useAuthStore } from '@/stores/auth';
+import { useRuntimeStore } from '@/stores/runtime';
+import { clientConnection, StaleConnectionResponseError } from '@/platform/connection';
+import { RequestScopeChangedError } from '@/services/authenticationScope';
 import { useSettingsRequestContext } from '../useSettingsRequestContext';
 
 const { t } = useI18n();
 const router = useRouter();
 const auth = useAuthStore();
+const runtime = useRuntimeStore();
 const toast = useToast();
 
 const currentPassword = ref('');
@@ -35,7 +39,11 @@ const hintId = useId();
 const canSave = computed(() => Boolean(currentPassword.value && newPassword.value && confirmPassword.value)
   && !saving.value && !loggingOut.value && !csrfPending.value && !synchronizing.value);
 let synchronizationError: number | null = null;
+let active = true, logoutRevision = 0;
+onScopeDispose(() => { active = false; });
 const captureContext = useSettingsRequestContext(() => {
+  logoutRevision++;
+  loggingOut.value = false;
   clearSynchronizationError();
   clearPasswords();
   errorMessage.value = '';
@@ -101,15 +109,26 @@ async function synchronizeSession(): Promise<void> {
 /** :returns: 密码提交完成后才允许显式退出当前账户。 */
 async function logout(): Promise<void> {
   if (saving.value || synchronizing.value || loggingOut.value) return;
+  const operation = ++logoutRevision;
+  // 退出自身会清用户；页面/主机单独捕获，身份由Auth完成凭据复核，不跳过身份保护。
+  const path = router.currentRoute.value.fullPath, generation = runtime.connectionGeneration;
+  const connection = clientConnection.captureGeneration();
+  const currentPage = () => active && path === router.currentRoute.value.fullPath
+    && generation === runtime.connectionGeneration && connection === clientConnection.captureGeneration();
   loggingOut.value = true;
   try {
-    await auth.logout();
-    toast.success(t('auth.logoutOk'));
+    const result = await auth.logout();
+    if (!currentPage() || !result.isCurrent()) return;
+    if (result.remoteSignedOut) toast.success(t('auth.logoutOk'));
+    else toast.push({ level: 'warning', duration: 0, message: t('auth.logoutLocalCleared'),
+      description: t('auth.logoutUnconfirmed', { detail: result.detail || t('common.retry') }) });
     await router.replace('/login');
   } catch (error) {
-    toast.error(t('auth.logoutFail'), error instanceof Error ? error.message : t('common.retry'));
+    if (currentPage() && !(error instanceof RequestScopeChangedError) && !(error instanceof StaleConnectionResponseError)) {
+      toast.error(t('auth.logoutFail'), error instanceof Error ? error.message : t('common.retry'));
+    }
   } finally {
-    loggingOut.value = false;
+    if (operation === logoutRevision) loggingOut.value = false;
   }
 }
 </script>

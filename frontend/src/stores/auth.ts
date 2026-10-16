@@ -5,6 +5,13 @@ import { api, clearApiSessionState, type AuthUser } from '@/services/api';
 import { clientConnection } from '@/platform/connection';
 import { bindAuthenticationScope, captureAuthenticationScope, assertAuthenticationScope } from '@/services/authenticationScope';
 
+/** 退出的短期完成凭据；只证明页面状态/本次HTTP结果，不保证网络层Cookie已删除。 */
+export interface LogoutResult {
+  remoteSignedOut: boolean;
+  detail: string;
+  isCurrent: () => boolean;
+}
+
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null);
   const initialized = ref(false);
@@ -98,11 +105,18 @@ export const useAuthStore = defineStore('auth', () => {
     return payload.user;
   }
 
-  /** :returns: 退出完成；网络失败仍只清本次本地身份，不声称服务端已撤销。 */
-  async function logout(): Promise<void> {
+  /** :returns: 本次退出后的身份凭据与服务器确认；过期结果不清新身份、不转为当前失败。 */
+  async function logout(): Promise<LogoutResult> {
     const current = begin(false);
-    try { await api.logout(); }
-    finally { if (current()) commit(null); }
+    let remoteSignedOut = false, detail = '';
+    try { await api.logout(); remoteSignedOut = true; }
+    catch (error) {
+      assertAuthenticationScope(current);
+      detail = error instanceof Error ? error.message : '';
+    }
+    assertAuthenticationScope(current);
+    commit(null);
+    return { remoteSignedOut, detail, isCurrent: currentScope() };
   }
 
   /** :returns: 显式重读本次主机的CSRF；不重放密码或其它业务写入。 */
