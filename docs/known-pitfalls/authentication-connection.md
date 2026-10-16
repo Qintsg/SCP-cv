@@ -2,6 +2,11 @@
 
 以下条目从根清单拆出，历史证据和编号保留，避免根文件继续超过500行。
 
+## 坑147 - API丢旧响应不等于UI缓冲不会向新环境续发（2026-10-17）
+
+- 首页未给通用Slider传scope/isActive，第一笔被API拒绝后，finally仍把48等旧缓冲交给当前Runtime，可能误投新环境。真实Dashboard/Ant测试7绿13红；接入主机/完整认证寿命，私有修订响应式化后20新增/全量795通过。
+- 不能让账户表单把自身改密/退出轮换误认为外来失效；首版9项回归失败由明确完成归属修正，不删断言。实际ControlHost仿真+Electron恢复仅2音量PATCH、真实改密及新密码登录通过；匿名CSRF读取会新建Cookie，不用“Cookie数必须0”误判清会话，详见[证据与限制](../../specs/014-ant-design-console/verification/20261017-dashboard-volume.md)。
+
 ## 坑146 - 连接页守卫不等于根组件和传输入口已静默（2026-10-17）
 
 - 真实Electron空配置已在连接页，App仍无条件Auth初始化；API从app://猜出http://scp-cv:8000，两个逻辑GET产生6条CSP错误。网页happy-dom默认模式与旧8000断言不会发现错误。

@@ -5,7 +5,7 @@
  *  - 不放预案调用、上传、窗口状态等明细能力；
  *  - 关机统一走 useDialog 二次确认。
  */
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AAlert from 'ant-design-vue/es/alert';
 import AButton from 'ant-design-vue/es/button';
@@ -21,6 +21,9 @@ import VideoWallMappingPanel from '@/features/runtime/VideoWallMappingPanel.vue'
 import { useDialog } from '@/composables/useDialog';
 import { useThrottledSlider } from '@/composables/useThrottledSlider';
 import { useToast } from '@/composables/useToast';
+import { useRequestContext } from '@/composables/useRequestContext';
+import { clientConnection } from '@/platform/connection';
+import { useAuthStore } from '@/stores/auth';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useDeviceStore } from '@/stores/devices';
 
@@ -29,10 +32,15 @@ const runtime = useRuntimeStore();
 const device = useDeviceStore();
 const toast = useToast();
 const dialog = useDialog();
+const auth = useAuthStore();
+const volumeScope = ref(0);
+useRequestContext(() => { volumeScope.value++; });
 
 const volume = useThrottledSlider(
   () => runtime.systemVolume.level,
   {
+    scope: () => volumeScope.value,
+    isActive: () => auth.isAuthenticated && !clientConnection.isSwitching,
     commit: (level: number) => runtime.setSystemVolume(level, runtime.systemVolume.muted),
     onError: (error) => {
       toast.error(t('dashboard.volumeFail'), error instanceof Error ? error.message : t('common.retry'));

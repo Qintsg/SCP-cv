@@ -24,11 +24,12 @@ export const useAuthStore = defineStore('auth', () => {
   const initialized = ref(false);
   const isAuthenticated = computed(() => user.value !== null);
   const username = computed(() => user.value?.username ?? '');
-  let revision = 0;
+  // 私有修订也须可观察：改密等操作未替换user，仍应立即清掉旧UI缓冲。
+  const revision = ref(0);
   // 公开State/$patch也能改变身份；记录历史，不能由ID改回原值产生ABA复活。
-  watch([user, () => user.value?.id], () => { revision++; }, { flush: 'sync' });
+  watch([user, () => user.value?.id], () => { revision.value++; }, { flush: 'sync' });
   let initialization: { promise: Promise<void>; isCurrent: () => boolean } | null = null;
-  const binding = bindAuthenticationScope(() => ({ revision, account: user.value, userId: user.value?.id }));
+  const binding = bindAuthenticationScope(() => ({ revision: revision.value, account: user.value, userId: user.value?.id }));
   onScopeDispose(binding.dispose);
 
   /** :returns: 捕获认证及主机，不能在旧CSRF失败后把旧密码继续发往新主机。 */
@@ -42,7 +43,7 @@ export const useAuthStore = defineStore('auth', () => {
     assertAuthenticationScope(binding.isCurrent);
     if (clientConnection.isSwitching) throw new ConnectionSwitchInProgressError();
     assertServerProfileSelected();
-    revision++;
+    revision.value++;
     initialization = null;
     if (clearUser) user.value = null;
     return currentScope();
@@ -50,7 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /** :param next: 已验证身份或明确未登录。:returns: 原子提交本地认证，丢弃此前请求。 */
   function commit(next: AuthUser | null): void {
-    revision++;
+    revision.value++;
     initialization = null;
     user.value = next;
     initialized.value = true;
@@ -156,7 +157,7 @@ export const useAuthStore = defineStore('auth', () => {
     await api.changePassword({ current_password: currentPassword, new_password: newPassword });
     assertAuthenticationScope(current);
     // 服务端重签身份Cookie；即使用户ID不变，之前的响应也不能再处理401。
-    revision++;
+    revision.value++;
     clearApiSessionState();
     const synchronized = currentScope();
     try { await synchronizeSession(); return true; }
@@ -168,7 +169,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   /** :returns: 保持旧Store reset接口；清空未知主机的本地身份并使旧探测失效。 */
   function $reset(): void {
-    revision++;
+    revision.value++;
     initialization = null;
     user.value = null;
     initialized.value = false;

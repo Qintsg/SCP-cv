@@ -41,6 +41,7 @@ const canSave = computed(() => Boolean(currentPassword.value && newPassword.valu
 let synchronizationError: number | null = null;
 let active = true, logoutRevision = 0;
 onScopeDispose(() => { active = false; });
+// 自身轮换认证修订由Auth完成围栏接管，不能提前解除忙态或丢掉正常改密反馈。
 const captureContext = useSettingsRequestContext(() => {
   logoutRevision++;
   loggingOut.value = false;
@@ -51,7 +52,7 @@ const captureContext = useSettingsRequestContext(() => {
   saving.value = false;
   csrfPending.value = false;
   synchronizing.value = false;
-});
+}, { authenticationLifetime: false });
 
 /** :returns: 仅撤下本表单的过期同步错误，不清其它业务通知。 */
 function clearSynchronizationError(): void {

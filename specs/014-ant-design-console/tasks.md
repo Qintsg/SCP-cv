@@ -100,3 +100,12 @@ T021已由51项新增回归使664→715；双构建/主进程编译、54SFC、6�
 - [x] T023 HIGH 修复封装端无主机配置时的自动认证探测和伪地址回退：保持连接页可操作、身份为未知，不向app://派生的假主机发请求，不以编译期默认地址替代用户明确选择；保留网页同源、正常已配主机、受控开发地址与HTTPS策略。先持久化真实app构建模式零派发红回归，再以当前Electron运行时、独立userData/session目录实测生产协议加载、沙箱/受限桥、配置保存读取及Cookie清理；用正常验证的回环HTTPS端点补认证/退出/切换，逐层记录真实系统与测试端点边界。涉及`frontend/src/App.vue`、`services/api.ts`、`stores/auth.ts`、`stores/runtime.ts`及原生/构建测试、安装与验收文档；不碰原用户资料/证书信任、不伪造退出、不发D4/设备命令，追溯FR-009/011/012、US3/AC3–4、Constitution I/III（partial，HIGH）。
 
 14项新增回归使761→775，双构建/主进程编译、54SFC、10组网页操作及56组页面通过。当前Electron44.2.0真实app://冷启动、HTTPS登录/退出、A→B切换、配置IPC保存读取/重载与原生Cookie清理通过；独立资料与正常TLS，无D4/业务写入，详见[原生冷启动验收](verification/20261017-native-cold-start.md)。
+
+## Phase 13: Convergence
+
+2026-10-17继续核对首页侧效应入口，发现CRITICAL contradicts与HIGH partial各一项：Dashboard系统音量使用useThrottledSlider却未提供scope/isActive，旧在途结束后的缓冲仍调用当前Runtime，可能转投新主机/账号；设备Store在旧API被寿命围栏拒绝后仍在catch/finally写新主机的错误/时间，Dashboard音量/电源反馈亦未复核页面与会话。已有775项未覆盖真实首页这些时序，不能据纯Slider支持scope认为调用方已经接线。
+
+- [x] T024 CRITICAL 为首页系统音量滑杆接入真实主机/账号/页面归属及可操作边界，变化时丢弃未发送缓冲，不把旧输入发往新目标；旧错误不提示，正常同域连续输入仍提交最终值。先持久化真实Dashboard/Ant/API延迟HTTP红回归，覆盖主机实际代次与投影、换账号/同ID重登、离页/卸载、切换中、恢复后新输入和正常心跳，再做生产浏览器验证。涉及`frontend/src/features/dashboard/DashboardView.vue`及可选同目录交互模块、`composables/useThrottledSlider.ts`调用接线与`frontend/scripts/`；不撤销已受理写入、不改声卡/设备协议或发现场命令。追溯Constitution I、FR-002/009/011、US3/AC2–4、plan请求归属（contradicts，CRITICAL）。
+- [ ] T025 HIGH 为首页电源/静音动作及设备Store结果补齐页面/主机/认证/单次操作归属：旧成功/错误/时间不污染新环境，同设备当前较新操作不被较旧完成反盖；正常成功/当前失败保持原说明，危险确认前后冻结目标，处理中防重且旧finally不解锁新动作。先用真实API/Auth/DeviceStore/Ant补迟到成功/失败、当前401、并发/恢复及重复点击红回归，再做生产浏览器与文档。涉及`frontend/src/stores/devices.ts`、`features/dashboard/`与相关测试，兼顾设置页共用Store但不改物理电源语义；追溯FR-004/009/011/012、US3/AC3–4、Constitution I/III、plan异步归属（partial，HIGH）。
+
+T024已完成20项新增真实首页回归（初轮7绿13红→全绿），全量795/795、双构建、54SFC、8/5/3/7/6组账户/连接流程、10组操作及56组页面通过；实际.NET ControlHost Simulation+Electron正常TLS验证受控会话恢复丢旧缓冲，并完成真实改密/新密码登录/退出及Cookie清理。见[首页音量与实际后端验收](verification/20261017-dashboard-volume.md)。T025仍待实现，未推送/部署。
