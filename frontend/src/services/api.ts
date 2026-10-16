@@ -187,9 +187,18 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
   }
 }
 
-/** :param url: API路由。:param init: 请求及上层取消。:param timeoutMs: 请求硬限。:param allowDuringSwitch: 仅固定logout的受管检查器。:returns: 认证/CSRF/主机围栏后的JSON。 */
-export async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS, allowDuringSwitch?: () => boolean): Promise<T> {
+/** 本地请求归属，不进入HTTP；清会话权限与响应消费是两个独立边界。 */
+interface RequestOwnership {
+  allowDuringSwitch?: () => boolean;
+  canConsume?: () => boolean;
+}
+
+/** :param url: API路由。:param init: 请求及上层取消。:param timeoutMs: 请求硬限。:param ownership: 冻结的本地归属检查。:returns: 认证/CSRF/主机/调用者围栏后的JSON。 */
+export async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS, ownership: RequestOwnership = {}): Promise<T> {
   const scope = captureApiRequestScope();
+  const { allowDuringSwitch, canConsume } = ownership;
+  const assertCurrent = () => { scope.assertCurrent(); if (canConsume) assertAuthenticationScope(canConsume); };
+  assertCurrent();
   const method = (init.method || 'GET').toUpperCase();
   // 仅Runtime持有的清会话logout可用本次检查器越过门禁；其它业务和密码不发往中间地址。
   const switchCleanup = Boolean(clientConnection.isSwitching && url === '/api/auth/logout/' && method === 'POST' && allowDuringSwitch?.());
@@ -214,9 +223,9 @@ export async function requestJson<T>(url: string, init: RequestInit = {}, timeou
       },
     }, timeoutMs);
     responseText = await response.text();
-  } catch (error) { scope.assertCurrent(); throw error; }
+  } catch (error) { assertCurrent(); throw error; }
   // 必须先复核，再解析或执行401回调；当前401清本地状态之后不再反向重判它。
-  scope.assertCurrent();
+  assertCurrent();
   const payload = parseJsonText<T>(responseText, response.status, response.headers.get('Content-Type') || '');
   if (response.status === 401) {
     // 旧主机清会话401只供切换流程处理，不能将当前连接页带走；普通当前401保持原行为。
@@ -294,18 +303,19 @@ export interface AuthUser {
 
 export const api = {
   // 鉴权：首次进入应用先触发 csrf cookie 下发；后续 login/logout/me 走同一会话。
-  fetchCsrfToken: async () => {
+  fetchCsrfToken: async (canConsume?: () => boolean) => {
     const scope = captureApiRequestScope();
-    const payload = await requestJson<{ csrfToken: string }>('/api/auth/csrf/');
+    const payload = await requestJson<{ csrfToken: string }>('/api/auth/csrf/', {}, REQUEST_TIMEOUT_MS, { canConsume });
     scope.assertCurrent();
+    if (canConsume) assertAuthenticationScope(canConsume);
     csrfRequestToken = payload.csrfToken;
     return payload;
   },
-  login: (payload: { username: string; password: string }) =>
-    requestJson<{ user: AuthUser }>('/api/auth/login/', { method: 'POST', body: JSON.stringify(payload) }),
-  logout: (allowDuringSwitch?: () => boolean) => requestJson<{ detail: string }>('/api/auth/logout/', { method: 'POST' }, REQUEST_TIMEOUT_MS, allowDuringSwitch),
+  login: (payload: { username: string; password: string }, canConsume?: () => boolean) =>
+    requestJson<{ user: AuthUser }>('/api/auth/login/', { method: 'POST', body: JSON.stringify(payload) }, REQUEST_TIMEOUT_MS, { canConsume }),
+  logout: (allowDuringSwitch?: () => boolean) => requestJson<{ detail: string }>('/api/auth/logout/', { method: 'POST' }, REQUEST_TIMEOUT_MS, { allowDuringSwitch }),
   fetchMe: () => requestJson<{ user: AuthUser }>('/api/auth/me/'),
-  fetchAuthStatus: () => requestJson<{ authenticated: boolean; user: AuthUser | null }>('/api/auth/status/'),
+  fetchAuthStatus: (canConsume?: () => boolean) => requestJson<{ authenticated: boolean; user: AuthUser | null }>('/api/auth/status/', {}, REQUEST_TIMEOUT_MS, { canConsume }),
   changePassword: (payload: { current_password: string; new_password: string }) =>
     requestJson<{ detail: string }>('/api/auth/change-password/', { method: 'POST', body: JSON.stringify(payload) }),
   listFolders: () => requestJson<{ success: boolean; folders: MediaFolderItem[] }>('/api/folders/'),

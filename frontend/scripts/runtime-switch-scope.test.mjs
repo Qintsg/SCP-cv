@@ -98,7 +98,7 @@ test('切换期间安静初始化不发CSRF或回写身份',async()=>{
 test('清会话例外只限固定logout，不接受其它读写路由的越权检查器',async()=>{
  setup();const hold=gate();browser.scpCvElectron={clearSession:()=>hold.promise,saveServerProfile:async value=>value};
  const switching=run(runtime.switchServer(profile('next')));await nextTurn();
- const result=await run(api.requestJson('/api/volume/',{method:'PATCH',body:'{}'},1000,()=>true));const count=requests.length;
+ const result=await run(api.requestJson('/api/volume/',{method:'PATCH',body:'{}'},1000,{allowDuringSwitch:()=>true}));const count=requests.length;
  hold.resolve();await switching;assert.ok(result.error&&/正在切换/.test(result.error.message));assert.equal(count,1);
 });
 test('实际Runtime反序原生清理保持串行，旧结果不覆写最新配置',async()=>{

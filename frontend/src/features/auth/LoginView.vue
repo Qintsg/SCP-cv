@@ -7,9 +7,9 @@
  */
 import { InputPassword as AInputPassword } from 'ant-design-vue/es/input';
 
-import { computed, ref } from 'vue';
+import { computed, onScopeDispose, ref, useId, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { RouterLink, useRoute, useRouter } from 'vue-router';
+import { onBeforeRouteLeave, onBeforeRouteUpdate, RouterLink, useRoute, useRouter } from 'vue-router';
 import AAlert from 'ant-design-vue/es/alert';
 import AButton from 'ant-design-vue/es/button';
 import ACard from 'ant-design-vue/es/card';
@@ -19,6 +19,9 @@ import AInput from 'ant-design-vue/es/input';
 
 import { useToast } from '@/composables/useToast';
 import { useAuthStore } from '@/stores/auth';
+import { useRuntimeStore } from '@/stores/runtime';
+import { clientConnection, ConnectionSwitchInProgressError, StaleConnectionResponseError } from '@/platform/connection';
+import { RequestScopeChangedError } from '@/services/authenticationScope';
 import FIcon from '@/design-system/FIcon.vue';
 import FPageHeader from '@/design-system/FPageHeader.vue';
 
@@ -27,11 +30,22 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const auth = useAuthStore();
+const runtime = useRuntimeStore();
 
 const username = ref('');
 const password = ref('');
 const submitting = ref(false);
 const errorMessage = ref('');
+const errorId = useId();
+let active = true, intent = 0;
+
+/** :returns: 清旧意图与界面密码，不假称撤销已发出的HTTP或擦除JS字符串内存。 */
+function invalidateIntent(): void { intent++; password.value = ''; submitting.value = false; errorMessage.value = ''; }
+onBeforeRouteLeave(invalidateIntent);
+onBeforeRouteUpdate(invalidateIntent);
+watch(() => [route.fullPath, runtime.connectionGeneration, runtime.serverProfile?.origin], invalidateIntent, { flush: 'sync' });
+const removeGenerationWatch = clientConnection.onGenerationChanged(invalidateIntent);
+onScopeDispose(() => { active = false; invalidateIntent(); removeGenerationWatch(); });
 
 const redirectTarget = computed<string>(() => {
   const raw = route.query.redirect;
@@ -39,21 +53,35 @@ const redirectTarget = computed<string>(() => {
   return '/dashboard';
 });
 
+/** :returns: 单次冻结提交；只有本页本次主机及完成认证仍有效才反馈、导航或解除忙态。 */
 async function submit(): Promise<void> {
+  if (!active || submitting.value) return;
   errorMessage.value = '';
   if (!username.value.trim() || !password.value) {
     errorMessage.value = t('auth.loginFail');
     return;
   }
+  const operation = ++intent, path = route.fullPath, generation = clientConnection.captureGeneration();
+  const projected = runtime.connectionGeneration, origin = clientConnection.profile?.origin, projectedOrigin = runtime.serverProfile?.origin;
+  const current = () => active && operation === intent && path === route.fullPath && generation === clientConnection.captureGeneration()
+    && projected === runtime.connectionGeneration && origin === clientConnection.profile?.origin && projectedOrigin === runtime.serverProfile?.origin;
+  const name = username.value.trim(), secret = password.value, destination = redirectTarget.value;
+  let committed = () => false;
   submitting.value = true;
   try {
-    const user = await auth.login(username.value.trim(), password.value);
+    const user = await auth.login(name, secret, { canContinue: current, onCommitted: owns => { committed = owns; } });
+    if (!current()) return;
+    password.value = '';
+    if (!committed()) return;
     toast.success(t('auth.loginSuccess', { name: user.username }));
-    await router.replace(redirectTarget.value);
+    await router.replace(destination);
   } catch (error) {
+    if (!current()) return;
+    if (error instanceof RequestScopeChangedError || error instanceof StaleConnectionResponseError) { password.value = ''; return; }
+    if (error instanceof ConnectionSwitchInProgressError) password.value = '';
     errorMessage.value = error instanceof Error ? error.message : t('auth.loginFail');
   } finally {
-    submitting.value = false;
+    if (current()) submitting.value = false;
   }
 }
 </script>
@@ -76,7 +104,7 @@ async function submit(): Promise<void> {
             :placeholder="t('auth.usernamePlaceholder')"
             :disabled="submitting"
             autocomplete="username"
-            v-bind="{ 'aria-label': t('auth.username') }"
+            v-bind="{ 'aria-label': t('auth.username'), 'aria-describedby': errorMessage ? errorId : undefined }"
           />
         </a-form-item>
         <a-form-item :label="t('auth.password')" required>
@@ -86,10 +114,10 @@ async function submit(): Promise<void> {
             :placeholder="t('auth.passwordPlaceholder')"
             :disabled="submitting"
             autocomplete="current-password"
-            v-bind="{ 'aria-label': t('auth.password') }"
+            v-bind="{ 'aria-label': t('auth.password'), 'aria-describedby': errorMessage ? errorId : undefined }"
           />
         </a-form-item>
-        <a-alert v-if="errorMessage" type="error" :message="t('auth.loginFail')"><template #description>
+        <a-alert v-if="errorMessage" :id="errorId" type="error" :message="t('auth.loginFail')"><template #description>
           {{ errorMessage }}
         </template></a-alert>
         <a-button

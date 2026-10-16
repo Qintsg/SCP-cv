@@ -244,3 +244,11 @@ test('修改密码成功使此前同ID请求失效，迟到401不能退出重签
  assert.equal(await auth.changePassword('memory-old','memory-new'),true);pending.resolve(json({detail:'改密前401'},401));await rejected;
  assert.equal(clears,0);assert.equal(auth.user.id,1);
 });
+test('HTTP调用归属检查器在派发时冻结，替换选项不能让旧401越过围栏',async()=>{
+ setup();const pending=gate();respond=()=>pending.promise;let active=true;const ownership={canConsume:()=>active};
+ const old=api.requestJson('/api/sources/',{},1000,ownership);const rejected=assert.rejects(old,/旧响应已丢弃/);
+ ownership.canConsume=()=>true;active=false;pending.resolve(json({detail:'旧调用401'},401));await rejected;assert.equal(clears,0);assert.equal(auth.user.id,1);
+});
+test('HTTP调用归属进入前失效则零网络',async()=>{
+ setup();await assert.rejects(api.requestJson('/api/sources/',{},1000,{canConsume:()=>false}),/旧响应已丢弃/);assert.equal(calls.length,0);
+});

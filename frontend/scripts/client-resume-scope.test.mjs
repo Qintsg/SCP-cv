@@ -73,3 +73,8 @@ test('当前未登录恢复仍去登录页，已卸载的晚到原生通知不�
  await setup();installNative();event('active');await flush();await flush();assert.equal(router.currentRoute.value.path,'/login');
  const old=event,count=requests.length;cleanup();old('active');await flush();assert.equal(requests.length,count);assert.equal(await back(),false);
 });
+for(const stage of ['csrf','status'])test(`原生失活后迟到${stage}401不先触发全局登录跳转`,async()=>{
+ await setup();const hold=gate(),fallback=respond;respond=(path,options)=>path===`/api/auth/${stage}/`?hold.promise:fallback(path,options);
+ installNative();event('active');await flush();event('inactive');hold.resolve(json({detail:'obsolete-resume-401'},401));await flush();await flush();
+ assert.equal(router.currentRoute.value.path,'/dashboard');assert.equal(sockets.length,0);assert.equal(toasts.items.length,0);assert.equal(auth.user,null);
+});

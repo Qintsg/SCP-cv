@@ -78,21 +78,21 @@ export const useAuthStore = defineStore('auth', () => {
 
   /** :param options: 调用页与完成归属，默认保留布尔合同。:returns: 当前主机探测结果。:raises Error: 原错误或明确归属失效。 */
   async function probeCurrentServer(options: AuthenticationOperationOptions = {}): Promise<boolean> {
-    const canContinue = options.canContinue ?? (() => true);
+    const { canContinue = () => true, onCommitted } = options;
     assertAuthenticationScope(canContinue);
     const authentication = begin(true);
     const current = () => authentication() && canContinue();
     initialized.value = false;
     const operation = (async () => {
-      try { await api.fetchCsrfToken(); }
+      try { await api.fetchCsrfToken(current); }
       catch (error) { if (!current()) throw error; }
       assertAuthenticationScope(current);
       try {
-        const payload = await api.fetchAuthStatus();
+        const payload = await api.fetchAuthStatus(current);
         assertAuthenticationScope(current);
         commit(payload.authenticated ? payload.user : null);
         const completed = currentScope();
-        options.onCommitted?.(() => canContinue() && completed());
+        onCommitted?.(() => canContinue() && completed());
         return user.value !== null;
       } catch (error) {
         if (current()) initialized.value = true;
@@ -106,16 +106,21 @@ export const useAuthStore = defineStore('auth', () => {
     finally { if (initialization?.promise === shared) initialization = null; }
   }
 
-  /** :param name: 用户名。:param password: 仅发往本次主机。:returns: 本次登录身份，旧链路不再提交。 */
-  async function login(name: string, password: string): Promise<AuthUser> {
-    const current = begin(true);
+  /** :param name: 冻结的用户名。:param password: 仅用于本次主机。:param options: 调用页及完成归属。:returns: 本次AuthUser，旧链路不提交。 */
+  async function login(name: string, password: string, options: AuthenticationOperationOptions = {}): Promise<AuthUser> {
+    const { canContinue = () => true, onCommitted } = options;
+    assertAuthenticationScope(canContinue);
+    const authentication = begin(true);
+    const current = () => authentication() && canContinue();
     initialized.value = true;
-    try { await api.fetchCsrfToken(); }
+    try { await api.fetchCsrfToken(current); }
     catch (error) { if (!current()) throw error; }
     assertAuthenticationScope(current);
-    const payload = await api.login({ username: name, password });
+    const payload = await api.login({ username: name, password }, current);
     assertAuthenticationScope(current);
     commit(payload.user);
+    const completed = currentScope();
+    onCommitted?.(() => canContinue() && completed());
     return payload.user;
   }
 
