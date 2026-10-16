@@ -1,112 +1,130 @@
-/*
- * 鉴权 store：缓存当前会话用户、暴露 login / logout / fetchMe 操作。
- * 与 services/api.ts 配合：
- *   - 进入应用时先拉一次 csrf cookie + me；
- *   - 登录成功后 user 入 store；
- *   - axios 401 全局回调（registerUnauthorizedHandler）会清 store 并跳 /login。
- */
+/** 认证Store：保持原公开字段/动作，认证探测与请求结果按当前主机和会话寿命提交。 */
 import { defineStore } from 'pinia';
-
+import { computed, onScopeDispose, ref, watch } from 'vue';
 import { api, type AuthUser } from '@/services/api';
+import { clientConnection } from '@/platform/connection';
+import { bindAuthenticationScope, captureAuthenticationScope, assertAuthenticationScope } from '@/services/authenticationScope';
 
-interface AuthState {
-  user: AuthUser | null;
-  /** 是否已完成首次 me 探活（成功/失败都会置 true）。 */
-  initialized: boolean;
-}
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<AuthUser | null>(null);
+  const initialized = ref(false);
+  const isAuthenticated = computed(() => user.value !== null);
+  const username = computed(() => user.value?.username ?? '');
+  let revision = 0;
+  // 公开State/$patch也能改变身份；记录历史，不能由ID改回原值产生ABA复活。
+  watch([user, () => user.value?.id], () => { revision++; }, { flush: 'sync' });
+  let initialization: Promise<void> | null = null;
+  const binding = bindAuthenticationScope(() => ({ revision, account: user.value, userId: user.value?.id }));
+  onScopeDispose(binding.dispose);
 
-export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    user: null,
-    initialized: false,
-  }),
-  getters: {
-    isAuthenticated(state): boolean {
-      return state.user !== null;
-    },
-    username(state): string {
-      return state.user?.username ?? '';
-    },
-  },
-  actions: {
-    /**
-     * 首屏调用：先取 CSRF cookie，再尝试 me 确认登录态。
-     * 失败（含 401）只把 initialized=true，user 保持 null。
-     * @return Promise<void>
-     */
-    async ensureInitialized(): Promise<void> {
-      if (this.initialized) return;
-      try {
-        await api.fetchCsrfToken();
-      } catch {
-        // CSRF 失败一般是后端尚未启动；不阻塞后续 me 调用。
-      }
-      // 使用公开 status 接口探测登录态，避免未登录时 /me 返回 401 产生控制台噪声。
+  /** :returns: 捕获认证及主机，不能在旧CSRF失败后把旧密码继续发往新主机。 */
+  function currentScope(): () => boolean {
+    const authentication = captureAuthenticationScope(), generation = clientConnection.captureGeneration();
+    return () => binding.isCurrent() && authentication() && generation === clientConnection.captureGeneration();
+  }
+
+  /** :param clearUser: 是否进入未知身份状态。:returns: 本次认证意图，后来的意图使它失效。 */
+  function begin(clearUser: boolean): () => boolean {
+    assertAuthenticationScope(binding.isCurrent);
+    revision++;
+    initialization = null;
+    if (clearUser) user.value = null;
+    return currentScope();
+  }
+
+  /** :param next: 已验证身份或明确未登录。:returns: 原子提交本地认证，丢弃此前请求。 */
+  function commit(next: AuthUser | null): void {
+    revision++;
+    initialization = null;
+    user.value = next;
+    initialized.value = true;
+  }
+
+  /** :returns: 共用在途启动探测；过期探测安静退出，不回写新登录或初始化标志。 */
+  async function ensureInitialized(): Promise<void> {
+    if (initialized.value) return;
+    if (initialization) return initialization;
+    const current = currentScope();
+    if (!current()) return;
+    const operation = (async () => {
+      try { await api.fetchCsrfToken(); }
+      catch { if (!current()) return; /* 保留原CSRF读取失败不阻塞公开状态探测的行为。 */ }
+      if (!current()) return;
       try {
         const payload = await api.fetchAuthStatus();
-        this.user = payload.authenticated ? payload.user : null;
-      } catch {
-        this.user = null;
-      }
-      this.initialized = true;
-    },
-    /** 切换主机后重新探测该主机；网络失败向连接页如实抛出。 */
-    async probeCurrentServer(): Promise<boolean> {
-      this.user = null;
-      this.initialized = false;
-      try {
-        await api.fetchCsrfToken();
-      } catch {
-        // status 探测才是 ControlHost 可达性的最终判据；CSRF 可在登录时重取。
-      }
+        if (current()) commit(payload.authenticated ? payload.user : null);
+      } catch { if (current()) commit(null); }
+    })();
+    initialization = operation;
+    try { await operation; }
+    finally { if (initialization === operation) initialization = null; }
+  }
+
+  /** :returns: 当前主机探测结果。:raises Error: 原网络/认证错误或明确归属失效。 */
+  async function probeCurrentServer(): Promise<boolean> {
+    const current = begin(true);
+    initialized.value = false;
+    const operation = (async () => {
+      try { await api.fetchCsrfToken(); }
+      catch (error) { if (!current()) throw error; }
+      assertAuthenticationScope(current);
       try {
         const payload = await api.fetchAuthStatus();
-        this.user = payload.authenticated ? payload.user : null;
-        this.initialized = true;
-        return this.user !== null;
+        assertAuthenticationScope(current);
+        commit(payload.authenticated ? payload.user : null);
+        return user.value !== null;
       } catch (error) {
-        this.initialized = true;
+        if (current()) initialized.value = true;
         throw error;
       }
-    },
-    /**
-     * 用户登录：username/password 经 /api/auth/login/ 建立 ControlHost 会话。
-     * @param username 用户名
-     * @param password 密码
-     * @return 解析后的用户信息
-     */
-    async login(username: string, password: string): Promise<AuthUser> {
-      // 登录前再确保 CSRF cookie 在身上（用户可能直接进了 /login 页）。
-      try {
-        await api.fetchCsrfToken();
-      } catch {
-        // 忽略：login 接口自身 csrf_exempt 可被回滚到 cookie，登录后会重新刷新。
-      }
-      const payload = await api.login({ username, password });
-      this.user = payload.user;
-      this.initialized = true;
-      return payload.user;
-    },
-    /**
-     * 用户登出：清 ControlHost 会话 + 本地状态。
-     * @return Promise<void>
-     */
-    async logout(): Promise<void> {
-      try {
-        await api.logout();
-      } finally {
-        this.user = null;
-      }
-    },
-    async changePassword(currentPassword: string, newPassword: string): Promise<void> {
-      await api.changePassword({ current_password: currentPassword, new_password: newPassword });
-    },
-    /**
-     * 由 401 全局回调触发的本地清场（不调网络）。
-     * @return void
-     */
-    clearLocal(): void {
-      this.user = null;
-    },
-  },
+    })();
+    // 路由的安静初始化复用显式探测；显式调用者仍收到原错误。
+    const shared = operation.then(() => undefined, () => undefined);
+    initialization = shared;
+    try { return await operation; }
+    finally { if (initialization === shared) initialization = null; }
+  }
+
+  /** :param name: 用户名。:param password: 仅发往本次主机。:returns: 本次登录身份，旧链路不再提交。 */
+  async function login(name: string, password: string): Promise<AuthUser> {
+    const current = begin(true);
+    initialized.value = true;
+    try { await api.fetchCsrfToken(); }
+    catch (error) { if (!current()) throw error; }
+    assertAuthenticationScope(current);
+    const payload = await api.login({ username: name, password });
+    assertAuthenticationScope(current);
+    commit(payload.user);
+    return payload.user;
+  }
+
+  /** :returns: 退出完成；网络失败仍只清本次本地身份，不声称服务端已撤销。 */
+  async function logout(): Promise<void> {
+    const current = begin(false);
+    try { await api.logout(); }
+    finally { if (current()) commit(null); }
+  }
+
+  /** :param currentPassword: 当前密码。:param newPassword: 新密码。:returns: 当前归属密码修改完成。 */
+  async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const current = currentScope();
+    assertAuthenticationScope(current);
+    await api.changePassword({ current_password: currentPassword, new_password: newPassword });
+    assertAuthenticationScope(current);
+    // 服务端重签身份Cookie；即使用户ID不变，之前的响应也不能再处理401。
+    revision++;
+  }
+
+  /** :returns: 当前401触发的本地失效，不发送网络或重放业务请求。 */
+  function clearLocal(): void { commit(null); }
+
+  /** :returns: 保持旧Store reset接口；清空未知主机的本地身份并使旧探测失效。 */
+  function $reset(): void {
+    revision++;
+    initialization = null;
+    user.value = null;
+    initialized.value = false;
+  }
+
+  return { user, initialized, isAuthenticated, username, ensureInitialized, probeCurrentServer, login, logout, changePassword, clearLocal, $reset };
 });

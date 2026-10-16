@@ -122,10 +122,10 @@ for(const[key,invoke]of Object.entries(mutations))test(`${key}换账号后的旧
  assert.deepEqual(store.sources.map(item=>item.name),['新账号媒体']);
  assert.equal(store.currentFolderId,1);
 });
-test('删除失败时换账号，不以恢复索引为由查询新账号',async()=>{
+test('旧账号删除响应在传输层丢弃，不恢复读取新账号',async()=>{
  const{store,auth}=setup();const pending=gate();respond=async(path,options)=>options.method?pending.promise:json(path==='/api/folders/'?{folders:[folder]}:{sources:[source]});
  const operation=store.deleteSource(1);auth.user={id:2};pending.resolve(json({detail:'原删除错误'},503));
- await assert.rejects(operation,/原删除错误/);assert.equal(calls.length,1);
+ await assert.rejects(operation,/旧响应已丢弃/);assert.equal(calls.length,1);
 });
 test('背景音乐旧账号的较新时间戳也不能覆盖新账号状态',async()=>{
  const{auth}=setup();const audio=useAudio(pinia);const pending=gate();respond=()=>pending.promise;
@@ -145,6 +145,11 @@ test('同ID重新认证后，旧完整读取不覆盖新会话索引',async()=>{
  const{store,auth}=setup();const pending=gate();respond=async path=>{await pending.promise;return json(path==='/api/folders/'?{folders:[folder]}:{sources:[source]});};
  const operation=store.refresh();auth.user={id:1,username:'re-authenticated'};
  store.sources=[{...source,name:'新会话媒体'}];store.folders=[{...folder,name:'新会话目录'}];
- pending.resolve();await operation;
+ pending.resolve();await assert.rejects(operation,/旧响应已丢弃/);
  assert.equal(store.sources[0].name,'新会话媒体');assert.equal(store.folders[0].name,'新会话目录');
+});
+test('当前账号删除失败仍恢复真实索引并保留原错误',async()=>{
+ const{store}=setup();respond=async(path,options)=>options.method?json({detail:'原删除错误'},503):json(path==='/api/folders/'?{folders:[folder]}:{sources:[]});
+ await assert.rejects(store.deleteSource(1),/原删除错误/);
+ assert.equal(calls.length,3);assert.deepEqual(store.sources,[]);assert.equal(store.folders[0].id,1);
 });

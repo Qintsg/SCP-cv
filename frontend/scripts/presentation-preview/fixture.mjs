@@ -32,6 +32,7 @@ export let PlaybackControl;
 export let PptFocusView;
 let useSessionStore;
 let useSourceStore;
+let useAuthStore;
 let i18n;
 let app;
 let requests;
@@ -48,6 +49,7 @@ before(async () => {
   ({ default: PptFocusView } = await server.ssrLoadModule('/src/features/pptFocus/PptFocusView.vue'));
   ({ useSessionStore } = await server.ssrLoadModule('/src/stores/sessions.ts'));
   ({ useSourceStore } = await server.ssrLoadModule('/src/stores/sources.ts'));
+  ({ useAuthStore } = await server.ssrLoadModule('/src/stores/auth.ts'));
   ({ i18n } = await server.ssrLoadModule('/src/locales/index.ts'));
 });
 
@@ -147,6 +149,12 @@ export async function mountPreview(component, { observation = {}, respondResourc
   // 路由页面更换时应用Pinia/通知仍存活；该外部框架接缝不能被新store掩盖。
   const pinia = reuseStoreScope && applicationPinia ? applicationPinia : createPinia();
   applicationPinia = pinia;
+  // 和生产入口一样，先建立认证归属再并行读取；不能让第二个读取中途创建Auth使第一个变旧。
+  const auth = useAuthStore(pinia);
+  if (!auth.initialized) {
+    auth.user = { id: 1, username: 'preview-memory-only', is_staff: true, is_superuser: true };
+    auth.initialized = true;
+  }
   const sessions = useSessionStore(pinia);
   await Promise.all([sessions.refresh(), useSourceStore(pinia).refresh()]);
   let ToastHost;

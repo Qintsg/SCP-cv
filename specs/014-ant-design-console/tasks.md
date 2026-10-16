@@ -62,4 +62,6 @@ T001→T002→T003→T004；US1与外壳设计在基础完成后分片推进，U
 
 2026-10-17进一步审计认证传输边界，新增一个CRITICAL contradicts：旧会话的401响应晚于新登录到达时，`api.requestJson`只复核主机代次，仍执行main的全局401回调并清除新用户。实际模块/内存HTTP红回归输出`unauthorizedCallbacks=1,currentUser=null`；当前401正对照通过。既有601不覆盖此时序，不提前推送或部署。
 
-- [ ] T018 CRITICAL 为JSON/XHR请求补齐认证寿命围栏并接入真实登录/退出/本地失效/初始化流程；旧401/成功响应不得清除或覆盖已成立的新登录、继续旧认证链路，当前401必须仍正常退出。先将本机真实模块红回归持久化，再覆盖迟到401/成功、当前401、XHR、同ID重新登录、初始化和认证操作交错；保留原CSRF/主机围栏/错误语义，不全局忽略401、不盲目重放或发现场指令。涉及`frontend/src/services/api.ts`、`stores/auth.ts`、`main.ts`及新增认证HTTP回归，追溯Constitution I、FR-009/011、US3/AC3–4（contradicts，CRITICAL）。
+- [x] T018 CRITICAL 为JSON/XHR请求补齐认证寿命围栏并接入真实登录/退出/本地失效/初始化流程；旧401/成功响应不得清除或覆盖已成立的新登录、继续旧认证链路，当前401必须仍正常退出。先将本机真实模块红回归持久化，再覆盖迟到401/成功、当前401、XHR、同ID重新登录、初始化和认证操作交错；保留原CSRF/主机围栏/错误语义，不全局忽略401、不盲目重放或发现场指令。涉及`frontend/src/services/api.ts`、`stores/auth.ts`、`main.ts`及新增认证HTTP回归，追溯Constitution I、FR-009/011、US3/AC3–4（contradicts，CRITICAL）。
+
+认证纯服务与真实Auth Store接线完成；全量628/628、Web/App类型及构建、54SFC通过。真实生产SPA旧版先重现误退出、修复后5段流程通过，当前401与错误密码仍保留原行为；56组页面及10组原操作流程复验见[认证响应记录](verification/20261017-auth-scope.md)。未改变main的当前401处理，没有推送或部署。

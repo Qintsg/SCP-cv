@@ -7,6 +7,7 @@ import {
 } from '@/platform/connection';
 import { csrfCookieName, resolveCsrfToken } from '@/platform/csrf';
 import { getClientBuildTarget } from '@/platform';
+import { captureAuthenticationScope, assertAuthenticationScope } from './authenticationScope';
 
 import type {
   ApiStatePayload, BackgroundAudioPayload, DeviceItem, DisplayTargetItem, MediaFolderItem, PlaybackCommandSnapshot,
@@ -146,6 +147,18 @@ function readCookie(name: string): string {
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
+/** :returns: 同时捕获主机与认证寿命，进度只查询，交付前明确抛出失效错误。 */
+function captureApiRequestScope(): { isCurrent: () => boolean; assertCurrent: () => void } {
+  const generation = clientConnection.captureGeneration(), authentication = captureAuthenticationScope();
+  return {
+    isCurrent: () => generation === clientConnection.captureGeneration() && authentication(),
+    assertCurrent: () => {
+      if (generation !== clientConnection.captureGeneration()) throw new StaleConnectionResponseError();
+      assertAuthenticationScope(authentication);
+    },
+  };
+}
+
 /** 服务端拒绝保留稳定错误码；业务按白名单翻译，不依赖自由文本推断原因。 */
 export class ApiRequestError extends Error {
   readonly code: string;
@@ -175,7 +188,7 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
 
 /** :param url: API路由。:param init: 请求及可选上层取消。:param timeoutMs: 请求硬限。:returns: 沿用认证/CSRF/主机代次校验的JSON结果。 */
 export async function requestJson<T>(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS): Promise<T> {
-  const requestGeneration = clientConnection.captureGeneration();
+  const scope = captureApiRequestScope();
   const absoluteUrl = buildBackendUrl(url);
   const method = (init.method || 'GET').toUpperCase();
   const csrfHeader: Record<string, string> = {};
@@ -183,21 +196,23 @@ export async function requestJson<T>(url: string, init: RequestInit = {}, timeou
     const token = resolveCsrfToken(csrfRequestToken, readCookie(csrfCookieName(absoluteUrl, window.location.href)));
     if (token) csrfHeader['X-CSRFToken'] = token;
   }
-  const response = await fetchWithTimeout(absoluteUrl, {
-    ...init,
-    // ControlHost 会话 Cookie 必须跟车，否则跨端口请求被识别为匿名用户。
-    credentials: 'include',
-    headers: {
-      Accept: 'application/json',
-      ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
-      ...csrfHeader,
-      ...(init.headers || {}),
-    },
-  }, timeoutMs);
-  const responseText = await response.text();
-  if (requestGeneration !== clientConnection.captureGeneration()) {
-    throw new StaleConnectionResponseError();
-  }
+  let response: Response, responseText: string;
+  try {
+    response = await fetchWithTimeout(absoluteUrl, {
+      ...init,
+      // ControlHost会话Cookie必须跟车，否则跨端口请求会被识别为匿名用户。
+      credentials: 'include',
+      headers: {
+        Accept: 'application/json',
+        ...(init.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+        ...csrfHeader,
+        ...(init.headers || {}),
+      },
+    }, timeoutMs);
+    responseText = await response.text();
+  } catch (error) { scope.assertCurrent(); throw error; }
+  // 必须先复核，再解析或执行401回调；当前401清本地状态之后不再反向重判它。
+  scope.assertCurrent();
   const payload = parseJsonText<T>(responseText, response.status, response.headers.get('Content-Type') || '');
   if (response.status === 401) {
     unauthorizedHandler?.();
@@ -211,19 +226,22 @@ export async function requestJson<T>(url: string, init: RequestInit = {}, timeou
 
 function uploadFormData<T>(url: string, formData: FormData, options: UploadOptions = {}): Promise<T> {
   return new Promise((resolve, reject) => {
+    const scope = captureApiRequestScope();
     const request = new XMLHttpRequest();
-    request.open('POST', buildBackendUrl(url));
+    const absoluteUrl = buildBackendUrl(url);
+    request.open('POST', absoluteUrl);
     // 文件上传走 multipart：必须同样携带会话 Cookie + CSRF token，否则被拦截。
     request.withCredentials = true;
-    const csrfToken = resolveCsrfToken(csrfRequestToken, readCookie(csrfCookieName(buildBackendUrl(url), window.location.href)));
+    const csrfToken = resolveCsrfToken(csrfRequestToken, readCookie(csrfCookieName(absoluteUrl, window.location.href)));
     if (csrfToken) request.setRequestHeader('X-CSRFToken', csrfToken);
     request.upload.onprogress = (event: ProgressEvent) => {
-      if (!event.lengthComputable) return;
+      if (!scope.isCurrent() || !event.lengthComputable) return;
       options.onProgress?.(Math.min(99, Math.round((event.loaded / event.total) * 100)));
     };
     request.onload = () => {
       let payload: T & ApiDetailPayload;
       try {
+        scope.assertCurrent();
         payload = parseJsonText<T>(request.responseText, request.status, request.getResponseHeader('Content-Type') || '');
       } catch (error) {
         reject(error instanceof Error ? error : new Error(t('api.parseFail')));
@@ -238,11 +256,17 @@ function uploadFormData<T>(url: string, formData: FormData, options: UploadOptio
         reject(new Error(payload.detail || t('api.requestFail', { status: request.status })));
         return;
       }
-      options.onProgress?.(100);
-      resolve(payload);
+      try {
+        options.onProgress?.(100);
+        scope.assertCurrent();
+        resolve(payload);
+      } catch (error) { reject(error); }
     };
-    request.onerror = () => reject(new Error(t('api.uploadNetFail')));
-    request.onabort = () => reject(new Error(t('api.uploadAborted')));
+    const fail = (message: string) => {
+      try { scope.assertCurrent(); reject(new Error(message)); } catch (error) { reject(error); }
+    };
+    request.onerror = () => fail(t('api.uploadNetFail'));
+    request.onabort = () => fail(t('api.uploadAborted'));
     request.send(formData);
   });
 }
@@ -265,7 +289,9 @@ export interface AuthUser {
 export const api = {
   // 鉴权：首次进入应用先触发 csrf cookie 下发；后续 login/logout/me 走同一会话。
   fetchCsrfToken: async () => {
+    const scope = captureApiRequestScope();
     const payload = await requestJson<{ csrfToken: string }>('/api/auth/csrf/');
+    scope.assertCurrent();
     csrfRequestToken = payload.csrfToken;
     return payload;
   },
