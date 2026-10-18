@@ -2,17 +2,16 @@
 <script setup lang="ts">
 import { tabsKeyboard as vTabsKeyboard } from '@/design-system/tabsKeyboard';
 import { tagColor } from '@/design-system/tagColor';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, ref } from 'vue';
 import AAlert from 'ant-design-vue/es/alert';
 import AButton from 'ant-design-vue/es/button';
 import ACard from 'ant-design-vue/es/card';
 import ATag from 'ant-design-vue/es/tag';
 import ATabs from 'ant-design-vue/es/tabs';
 import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
-import { microphoneVolume, venueApi, type VenueAudioResult, type VenueAudioSettings, type VenueCamera, type VenueState } from '@/services/venueApi';
-import { useRuntimeStore } from '@/stores/runtime';
+import type { VenueCamera } from '@/services/venueApi';
 import { useSourceStore } from '@/stores/sources';
-import { useAuthStore } from '@/stores/auth';
+import { useVenueState } from './useVenueState';
 import SourceOpenCard from '@/features/sources/SourceOpenCard.vue';
 import FPageHeader from '@/design-system/FPageHeader.vue';
 import type { MediaSourceItem } from '@/services/api';
@@ -20,56 +19,13 @@ import CameraControlPad from './CameraControlPad.vue';
 import VenueAudioCard from './VenueAudioCard.vue';
 import VenueSourceCard from './VenueSourceCard.vue';
 
-const runtime = useRuntimeStore();
 const sources = useSourceStore();
-const auth = useAuthStore();
-const state = ref<VenueState | null>(null);
-const busy = ref(false);
-const error = ref('');
-const volume = ref<number | null>(null);
-const audioSource = ref<VenueAudioSettings['source']>(null);
-const computer = ref<number | null>(null); const handheld = ref<number | null>(null); const headset = ref<number | null>(null);
-const cameraId = ref('center1'); const clockOffset = ref(0);
-const controlled = computed(() => state.value?.cameras.find(camera => camera.id === cameraId.value && camera.movable));
-const result = ref<VenueAudioResult | null>(null);
+const cameraId = ref('center1');
 const selected = ref<MediaSourceItem | null>(null);
 const open = ref(false);
 const workspace = ref('camera');
-let alive = true;
-
-/** :param action: 只读或显式发送。:returns: 当前连接的结果；切主机或离页后不接收旧响应。 */
-async function run(action: 'load' | 'read' | 'apply', settings?: VenueAudioSettings): Promise<void> {
-  if (busy.value) return;
-  const generation = runtime.connectionGeneration;
-  const user = auth.user?.id;
-  const current = () => alive && generation === runtime.connectionGeneration && user === auth.user?.id;
-  busy.value = true;
-  error.value = '';
-  try {
-    if (action !== 'load') {
-      if (action === 'apply' && !settings) return;
-      const response = action === 'read' ? await venueApi.readAudio() : await venueApi.applyAudio(settings!);
-      if (!current()) return;
-      result.value = response.audio;
-    }
-    const response = await venueApi.get();
-    if (!current()) return;
-    state.value = response.venue;
-    if (action === 'load' || action === 'read' || settings?.screen_volume != null) volume.value = response.venue.audio.screen_volume ?? null;
-    if (action === 'load' || settings?.computer_volume != null) computer.value = response.venue.audio.computer_volume ?? null;
-    if (action === 'load' || settings?.handheld_volume != null) handheld.value = response.venue.audio.handheld_volume ?? null;
-    if (action === 'load' || settings?.headset_volume != null) headset.value = microphoneVolume(response.venue.audio);
-    if (action === 'load' || settings?.source != null) audioSource.value = response.venue.audio.source ?? null;
-    clockOffset.value = response.venue.server_time_ms == null ? 0 : response.venue.server_time_ms - Date.now();
-    if (action === 'load') await sources.refresh();
-  } catch (failure) { if (current()) error.value = failure instanceof Error ? failure.message : '读取失败'; }
-  finally {
-    if (alive) {
-      busy.value = false;
-      if (!current()) void run('load');
-    }
-  }
-}
+const { state, result, error, volume, computer, handheld, headset, audioSource, clockOffset, busy, run } = useVenueState(() => { selected.value = null; open.value = false; });
+const controlled = computed(() => state.value?.cameras.find(camera => camera.id === cameraId.value && camera.movable));
 
 /** :param camera: 只读内置项。:returns: 选窗小卡片，实际播放以输出确认。 */
 function openCamera(camera: VenueCamera): void {
@@ -77,14 +33,6 @@ function openCamera(camera: VenueCamera): void {
   if (selected.value) open.value = true;
   else error.value = '摄像机目录尚未同步，请刷新。';
 }
-onMounted(() => { void run('load'); });
-watch(() => [runtime.connectionGeneration, auth.user?.id], () => {
-  state.value = null; volume.value = null; computer.value = null; handheld.value = null; headset.value = null; result.value = null;
-  audioSource.value = null;
-  error.value = ''; selected.value = null; open.value = false;
-  if (alive && !busy.value && auth.user) void run('load');
-});
-onBeforeUnmount(() => { alive = false; });
 </script>
 
 <template>

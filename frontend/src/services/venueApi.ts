@@ -1,5 +1,5 @@
 /* 现场设备合同：来源和话筒只有后端能力允许后才可编辑。 */
-import { requestJson } from './api';
+import { exclusiveWrite, readAfterWrite, requestJson } from './api';
 
 export interface VenueAudioSettings {
   screen_volume?: number | null;
@@ -33,11 +33,11 @@ export interface VenueState {
   server_time_ms?: number;
 }
 export const venueApi = {
-  get: () => requestJson<{ success: boolean; venue: VenueState }>('/api/venue/'),
-  readAudio: () => requestJson<{ success: boolean; audio: VenueAudioResult }>('/api/venue/audio/read/', { method: 'POST' }),
-  applyAudio: (audio: VenueAudioSettings) => requestJson<{ success: boolean; audio: VenueAudioResult }>('/api/venue/audio/',
-    { method: 'PUT', body: JSON.stringify(audio) }),
+  get: (canConsume: () => boolean = () => true) => readAfterWrite('venue-audio', () => requestJson<{ success: boolean; venue: VenueState }>('/api/venue/', {}, undefined, { canConsume }), canConsume),
+  readAudio: () => exclusiveWrite('venue-audio', () => requestJson<{ success: boolean; audio: VenueAudioResult }>('/api/venue/audio/read/', { method: 'POST' })),
+  applyAudio: (audio: VenueAudioSettings) => exclusiveWrite('venue-audio', () => requestJson<{ success: boolean; audio: VenueAudioResult }>('/api/venue/audio/',
+    { method: 'PUT', body: JSON.stringify(audio) })),
   motion: (id: string, request: CameraMotionRequest) => requestJson<{ success: boolean; camera: VenueCameraResult }>(`/api/venue/cameras/${encodeURIComponent(id)}/motion/`,
     { method: 'POST', body: JSON.stringify(request) }),
-  position: (id: string, position: number, action: 'call' | 'save') => requestJson<{ success: boolean; camera: VenueCameraResult }>(`/api/venue/cameras/${encodeURIComponent(id)}/positions/${position}/${action}/`, { method: 'POST', body: '{}' }),
+  position: (id: string, position: number, action: 'call' | 'save') => exclusiveWrite(`camera-position:${id}`, () => requestJson<{ success: boolean; camera: VenueCameraResult }>(`/api/venue/cameras/${encodeURIComponent(id)}/positions/${position}/${action}/`, { method: 'POST', body: '{}' })),
 };

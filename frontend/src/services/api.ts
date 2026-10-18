@@ -144,23 +144,28 @@ function readCookie(name: string): string {
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /** :param resource: 实际资源键。:param send: 原HTTP。:returns: 真实占用与结果归属分别保护，不将认证失效当请求结束。 */
-function exclusiveWrite<T>(resource: string, send: () => Promise<T>): Promise<T> {
+export function exclusiveWrite<T>(resource: string, send: () => Promise<T>): Promise<T> {
   const scope = captureApiRequestScope(), target = currentWriteTarget();
   return runExclusiveWrite(resource, () => { scope.assertCurrent(); return send(); }, target);
 }
 
-/** :returns: 等当前后端音量写入终端再读；旧等待或旧读响应不得覆盖新环境/新写入。 */
-async function readSystemVolume(canConsume: () => boolean = () => true) {
+/** :param resource: 相关资源键。:param read: 原目标读取。:param canConsume: 调用范围。:returns: 等真实写终端再读，旧等待读取/旧快照不能借用新范围或反盖新写。 */
+export async function readAfterWrite<T>(resource: string, read: () => Promise<T>, canConsume: () => boolean = () => true): Promise<T> {
   const scope = captureApiRequestScope(), target = currentWriteTarget();
   assertAuthenticationScope(canConsume);
-  do { await waitForWriteIdle('system-volume', target); } while (isWritePending('system-volume', target));
+  do { await waitForWriteIdle(resource, target); } while (isWritePending(resource, target));
   scope.assertCurrent();
   assertAuthenticationScope(canConsume);
-  const revision = writeRevision('system-volume', target);
-  const payload = await requestJson<{ success: boolean; volume: { level: number; muted: boolean; system_synced: boolean; backend: string } }>('/api/volume/', {}, REQUEST_TIMEOUT_MS, { canConsume });
+  const revision = writeRevision(resource, target);
+  const payload = await read();
   scope.assertCurrent();
-  assertAuthenticationScope(() => revision === writeRevision('system-volume', target));
+  assertAuthenticationScope(() => canConsume() && revision === writeRevision(resource, target));
   return payload;
+}
+
+/** :param canConsume: 恢复读取的页面归属。:returns: 当前系统音量，不覆盖新写入。 */
+function readSystemVolume(canConsume: () => boolean = () => true) {
+  return readAfterWrite('system-volume', () => requestJson<{ success: boolean; volume: { level: number; muted: boolean; system_synced: boolean; backend: string } }>('/api/volume/', {}, REQUEST_TIMEOUT_MS, { canConsume }), canConsume);
 }
 
 /** :returns: 同时捕获主机与认证寿命，进度只查询，交付前明确抛出失效错误。 */
