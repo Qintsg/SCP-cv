@@ -16,7 +16,11 @@ internal static class WebViewAudioOutputBinding
     private static readonly string Silence = CreateSilence();
 
     /// <summary>:param windowId: 唯一大屏窗口。:param endpoint: 可信端点。:returns: 明确配置时必须使用项目专用副本。</summary>
-    internal static string? Browser(int windowId, string? endpoint) => PrivateAudioEnginePaths.WebView(windowId, endpoint);
+    internal static string? Browser(int windowId, string? endpoint)
+    {
+        if (!string.IsNullOrWhiteSpace(endpoint)) NativeApplicationAudioPolicy.EnsureCurrentProcessIsolated();
+        return PrivateAudioEnginePaths.WebView(windowId, endpoint);
+    }
 
     /// <summary>:param core: 未加载用户内容的自有控件。:param environment: 自有环境。:param browser: 私有浏览器。:param endpoint: 明确输出。:param token: 原OPEN寿命。</summary>
     internal static async Task PrepareAsync(CoreWebView2 core, CoreWebView2Environment environment, string? browser,

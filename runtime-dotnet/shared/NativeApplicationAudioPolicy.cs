@@ -1,6 +1,7 @@
 // 项目私有引擎的Windows应用输出策略；不设置系统默认/总音量，不允许作用于原安装。
 // 接口ABI依据EarTrumpet公开互操作定义；仅已验证Win10/Win11变体，失配明确拒绝。
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -19,6 +20,7 @@ internal sealed class NativeApplicationAudioPolicy : IDisposable
     /// <summary>:returns: 已知ABI的当前线程策略接口；不猜测槽位或回退到注册表。</summary>
     internal NativeApplicationAudioPolicy()
     {
+        EnsureCurrentProcessIsolated();
         var version = new NativeVersion { Size = (uint)Marshal.SizeOf<NativeVersion>(), ServicePack = string.Empty };
         if (RtlGetVersion(ref version) != 0 || version.Major != 10 || version.Build < 17763)
             throw new NotSupportedException("当前Windows版本的应用声音绑定尚未验证。");
@@ -50,6 +52,7 @@ internal sealed class NativeApplicationAudioPolicy : IDisposable
         if (process.HasExited || process.SessionId != owner.SessionId ||
             !string.Equals(Path.GetFullPath(process.MainModule?.FileName ?? string.Empty), Path.GetFullPath(image), StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("实际声音进程不属于已验证的私有引擎。");
+        EnsureProcessIsolated(process);
         var before = new[] { Read(pid, 0), Read(pid, 1) };
         var target = @"\\?\SWD#MMDEVAPI#" + endpoint + "#{e6327cad-dcec-4949-ae8a-991e976a79d2}";
         try
@@ -64,6 +67,32 @@ internal sealed class NativeApplicationAudioPolicy : IDisposable
             catch (Exception rollback) { throw new InvalidOperationException("应用声音绑定失败且原策略恢复未确认。", new AggregateException(failure, rollback)); }
             throw;
         }
+    }
+
+    /// <summary>:returns: 仅支持无包独立进程；继承外部包身份时私有映像路径不构成音频策略隔离。</summary>
+    internal static void EnsureCurrentProcessIsolated()
+    {
+        using var process = Process.GetCurrentProcess();
+        EnsureProcessIsolated(process);
+    }
+
+    /// <summary>:param process: 已由调用者持有原句柄的自有进程。:returns: 身份可确认且无包，否则在策略读写前失败。</summary>
+    internal static void EnsureProcessIsolated(Process process)
+    {
+        var handle = process.Handle;
+        if (process.HasExited) throw new InvalidOperationException("声音进程已退出，无法确认独立身份。");
+        uint length = 0;
+        ValidatePackageResult(GetPackageFullName(handle, ref length, IntPtr.Zero));
+        if (process.HasExited) throw new InvalidOperationException("声音进程在身份验证期间退出。");
+    }
+
+    /// <summary>:param result: GetPackageFullName原返回码。:returns: 只有明确无包可以通过，失败不被当作无包。</summary>
+    internal static void ValidatePackageResult(int result)
+    {
+        if (result == 15700) return; // APPMODEL_ERROR_NO_PACKAGE。
+        if (result is 0 or 122) // 有包；读取长度即可判定，不读取或记录外部应用名称。
+            throw new InvalidOperationException("声音进程带有包身份，私有引擎路径不足以隔离应用输出；请从独立的无包桌面进程启动，未写入声音策略。");
+        throw new Win32Exception(result, "无法确认声音进程包身份，未写入声音策略。");
     }
 
     /// <summary>:param pid: 自有实际声音进程。:param role: console/multimedia。:returns: 配置读回，不是WASAPI活动端点。</summary>
@@ -104,6 +133,7 @@ internal sealed class NativeApplicationAudioPolicy : IDisposable
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate int SetEndpoint(IntPtr self, uint pid, int flow, int role, IntPtr value);
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate int GetEndpoint(IntPtr self, uint pid, int flow, int role, out IntPtr value);
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32), DllImport("ntdll.dll", CharSet = CharSet.Unicode, ExactSpelling = true)] private static extern int RtlGetVersion(ref NativeVersion info);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32), DllImport("kernel32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)] private static extern int GetPackageFullName(IntPtr process, ref uint length, IntPtr value);
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32), DllImport("combase.dll")] private static extern int RoInitialize(uint kind);
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32), DllImport("combase.dll")] private static extern void RoUninitialize();
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32), DllImport("combase.dll")] private static extern int RoGetActivationFactory(IntPtr classId, ref Guid iid, out IntPtr factory);

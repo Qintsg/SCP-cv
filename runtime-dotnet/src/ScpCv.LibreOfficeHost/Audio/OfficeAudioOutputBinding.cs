@@ -27,6 +27,7 @@ internal sealed class OfficeAudioOutputBinding(OfficeProcess process, UnoConnect
     {
         var configured = Environment.GetEnvironmentVariable(AudioOutputBinding.EnvironmentVariable);
         if (role == "converter" || string.IsNullOrWhiteSpace(configured)) return null;
+        NativeApplicationAudioPolicy.EnsureCurrentProcessIsolated();
         var window = role == "impress-1" ? 1 : role == "impress-2" ? 2 : throw new InvalidOperationException("声音绑定role无效。");
         var expected = PrivateAudioEnginePaths.Office(window, configured);
         if (!string.Equals(Path.GetFullPath(program), expected, StringComparison.OrdinalIgnoreCase))
