@@ -477,6 +477,8 @@
 
 坑152记录私有路径与继承包身份的音频隔离缺口、应用作用域默认值误判及只读对照，见[声音身份边界](known-pitfalls/directory-venue.md#坑152--私有路径不隔离继承包身份默认输出读取也有应用作用域)。
 
+坑153记录PowerShell数组中路径加法未括起导致发布保护误判、实际枚举与终端核验后重试，见[部署包装器边界](known-pitfalls/directory-venue.md#坑153--powershell数组里的路径加法必须先括起)。
+
 前端坑132–136记录配置与完成状态、部署核验、批量确认对象、主机/账号快照归属，以及旧响应式断点覆盖新布局的问题，见[前端体验记录](known-pitfalls/frontend-experience.md)。
 
 入口坑137记录HTTP跳转必须先于业务处理，以及方法/路径/端口和无循环验证，见[默认HTTPS入口](known-pitfalls/http-default-upgrade.md)。

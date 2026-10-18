@@ -202,3 +202,8 @@
 - 正式策略只核PID/会话/路径，未检查包身份。修复为激活前核宿主、Bind前另核实际进程，只有明确无包15700通过；有包/未知状态在策略写入前拒绝。WebView普通/共享、Office暖机及软件来源能力共同受门禁约束，未配置/转换保留旧行为。
 - 真实原生门禁先红，新增12项有包/无包均绿；全解含Framework编译及1615非Physical通过。无包正式Player两轮图片/网页/CLOSE、6原生退出0、系统基线及QA残留0另验；真实用户手势仍false，未更新D4。
 - 初始外部应用专属覆盖未记录原值，不猜精确恢复。取得用户明确授权后，只核确切应用和本轮目标并清空两指定角色、读回空值及独立系统基线保持；不调用清空全局策略或改通讯角色。详情及失败保留见[音频身份记录](../../specs/012-directory-camera-console/verification/20261018-audio-package-isolation.md)。
+
+## 坑153 — PowerShell数组里的路径加法必须先括起
+
+- 自有发布包装器写`@($package,$archive,$stage+'/manifest.json',...)`，PowerShell将stage和后缀分别作为项，导致已有stage被误判成“发布产物已存在”。保护检查安全拒绝，发布根/归档均未创建，不能归因产品或跳过已存在检查。
+- 改为`@($package,$archive,($stage+'/manifest.json'),...)`，先实际枚举验证值，再核原失败进程终端才启动新尝试；保留旧脚本/日志。D4新尝试完整967文件发布退出0，审计true/all/low，见[012l证据](../../specs/012-directory-camera-console/verification/20261018-runtime-012l.md)。
