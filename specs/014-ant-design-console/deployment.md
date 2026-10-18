@@ -1,5 +1,7 @@
 # 014 D4网页发布（2026-10-18）
 
+本日后续已发布012 T044/T045的前端安全补丁c2bcf0a，Ant布局与服务入口保持；最新网页以[接续发布记录](../012-directory-camera-console/verification/20261018-venue-web-deployment.md)为准。下文014/9594c19是本日较早阶段，备份与原证据保留。
+
 ## 结果与范围
 
 已按用户授权推送GitHub和内网GitLab，再在D4的`D:/SCP-cv`从干净工作区正常快进拉取。网页制品固定源码为`9594c19e4baa8f2d6b6ec08d020e320adfb3062c`；本机959/959前端测试、Web/App含类型构建、Electron主进程编译、54SFC、90次重点浏览器及原账户/连接/操作和56组页面通过。

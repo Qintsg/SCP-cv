@@ -2,7 +2,7 @@
 
 SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。配置HTTPS后，HTTP访问默认跳到同主机HTTPS并保留路径和查询；登录、控制及屏幕共享在HTTPS页面操作，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
-Ant控制台已部署D4：[HTTP入口（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前网页为014/9594c19，运行包仍为012k/06d342e；保留可信63号声音输出、私有网页/Office引擎、两块大屏目标及原数据。大屏布局一次应用；媒体/预设按路径浏览，摄像机84–88及固定76保持。软件声音、正常退出与一小时混合运行已有分层证据，机位、DSP和实体声音来源等缺口仍单列。使用说明见[现场控制台](docs/web-access.md)，最新网页验证见[014发布记录](specs/014-ant-design-console/deployment.md)，运行组与实体边界见[运行记录](specs/012-directory-camera-console/verification/d4-deployment.md)。
+Ant控制台已部署D4：[HTTP入口（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前网页为c2bcf0a（基于014的Ant界面），运行包仍为012k/06d342e；保留可信63号声音输出、私有网页/Office引擎、两块大屏目标及原数据。大屏布局一次应用；媒体/预设按路径浏览，摄像机84–88及固定76保持。软件声音、正常退出与一小时混合运行已有分层证据，机位、DSP和实体声音来源等缺口仍单列。使用说明见[现场控制台](docs/web-access.md)，最新网页验证见[最新网页发布](specs/012-directory-camera-console/verification/20261018-venue-web-deployment.md)，运行组与实体边界见[运行记录](specs/012-directory-camera-console/verification/d4-deployment.md)。
 
 ## 项目信息
 
