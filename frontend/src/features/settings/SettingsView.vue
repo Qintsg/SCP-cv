@@ -43,7 +43,8 @@ const portsCaption = computed(() => t('settings.ports', connectionPorts));
         <DisplaySettingsTab />
       </a-tab-pane>
       <a-tab-pane key="devices" :tab="t('settings.tabDevices')">
-        <DevicePowerSettingsTab />
+        <!-- 电源无本地表单草稿；离开页签释放交互归属，已发请求仍由共用Store收口。 -->
+        <DevicePowerSettingsTab v-if="activeTab === 'devices'" />
       </a-tab-pane>
       <a-tab-pane key="account" :tab="t('settings.tabAccount')">
         <AccountSettingsTab />

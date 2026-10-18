@@ -10,6 +10,7 @@ import { csrfCookieName, resolveCsrfToken } from '@/platform/csrf';
 import { getClientBuildTarget } from '@/platform';
 import { assertServerProfileSelected } from '@/platform/serverSelection';
 import { captureAuthenticationScope, assertAuthenticationScope } from './authenticationScope';
+import { currentWriteTarget, isWritePending, runExclusiveWrite, waitForWriteIdle, writeRevision } from './writeFlights';
 
 import type {
   ApiStatePayload, BackgroundAudioPayload, DeviceItem, DisplayTargetItem, MediaFolderItem, PlaybackCommandSnapshot,
@@ -141,6 +142,26 @@ function readCookie(name: string): string {
 }
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+/** :param resource: 实际资源键。:param send: 原HTTP。:returns: 真实占用与结果归属分别保护，不将认证失效当请求结束。 */
+function exclusiveWrite<T>(resource: string, send: () => Promise<T>): Promise<T> {
+  const scope = captureApiRequestScope(), target = currentWriteTarget();
+  return runExclusiveWrite(resource, () => { scope.assertCurrent(); return send(); }, target);
+}
+
+/** :returns: 等当前后端音量写入终端再读；旧等待或旧读响应不得覆盖新环境/新写入。 */
+async function readSystemVolume(canConsume: () => boolean = () => true) {
+  const scope = captureApiRequestScope(), target = currentWriteTarget();
+  assertAuthenticationScope(canConsume);
+  do { await waitForWriteIdle('system-volume', target); } while (isWritePending('system-volume', target));
+  scope.assertCurrent();
+  assertAuthenticationScope(canConsume);
+  const revision = writeRevision('system-volume', target);
+  const payload = await requestJson<{ success: boolean; volume: { level: number; muted: boolean; system_synced: boolean; backend: string } }>('/api/volume/', {}, REQUEST_TIMEOUT_MS, { canConsume });
+  scope.assertCurrent();
+  assertAuthenticationScope(() => revision === writeRevision('system-volume', target));
+  return payload;
+}
 
 /** :returns: 同时捕获主机与认证寿命，进度只查询，交付前明确抛出失效错误。 */
 function captureApiRequestScope(): { isCurrent: () => boolean; assertCurrent: () => void } {
@@ -348,8 +369,8 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ big_screen_mode: bigScreenMode }),
     }, RUNTIME_MODE_TIMEOUT_MS),
-  getSystemVolume: () => requestJson<{ success: boolean; volume: { level: number; muted: boolean; system_synced: boolean; backend: string } }>('/api/volume/'),
-  setSystemVolume: (level: number, muted?: boolean) => requestJson<{ success: boolean; volume: { level: number; muted: boolean; system_synced: boolean; backend: string } }>('/api/volume/', { method: 'PATCH', body: JSON.stringify({ level, ...(muted === undefined ? {} : { muted }) }) }),
+  getSystemVolume: readSystemVolume,
+  setSystemVolume: (level: number, muted?: boolean) => exclusiveWrite('system-volume', () => requestJson<{ success: boolean; volume: { level: number; muted: boolean; system_synced: boolean; backend: string } }>('/api/volume/', { method: 'PATCH', body: JSON.stringify({ level, ...(muted === undefined ? {} : { muted }) }) })),
   getBackgroundAudio: () => requestJson<BackgroundAudioPayload>('/api/background-audio/'),
   addBackgroundAudioSource: (sourceId: number) => requestJson<BackgroundAudioPayload>('/api/background-audio/playlist/', { method: 'POST', body: JSON.stringify({ source_id: sourceId }) }),
   removeBackgroundAudioItem: (itemId: number) => requestJson<BackgroundAudioPayload>(`/api/background-audio/playlist/${itemId}/`, { method: 'DELETE' }),
@@ -378,8 +399,8 @@ export const api = {
   listDisplays: () => requestJson<{ success: boolean; targets: DisplayTargetItem[] }>('/api/displays/'),
   selectDisplay: (payload: { window_id: number; display_mode: string; target_label: string }) => requestJson<ApiStatePayload>('/api/displays/select/', { method: 'POST', body: JSON.stringify(payload) }),
   listDevices: () => requestJson<{ success: boolean; devices: DeviceItem[] }>('/api/devices/'),
-  toggleDevice: (deviceType: string) => requestJson<{ success: boolean; device: DeviceItem }>(`/api/devices/${deviceType}/toggle/`, { method: 'POST' }),
-  powerDevice: (deviceType: string, action: 'on' | 'off') => requestJson<{ success: boolean; device: DeviceItem }>(`/api/devices/${deviceType}/power/${action}/`, { method: 'POST' }),
+  toggleDevice: (deviceType: string) => exclusiveWrite(`device:${deviceType}`, () => requestJson<{ success: boolean; device: DeviceItem }>(`/api/devices/${deviceType}/toggle/`, { method: 'POST' })),
+  powerDevice: (deviceType: string, action: 'on' | 'off') => exclusiveWrite(`device:${deviceType}`, () => requestJson<{ success: boolean; device: DeviceItem }>(`/api/devices/${deviceType}/power/${action}/`, { method: 'POST' })),
   listScenarios: () => requestJson<{ success: boolean; scenarios: ScenarioItem[] }>('/api/scenarios/'),
   createScenario: (payload: ScenarioPayload) => requestJson<{ success: boolean; scenario: ScenarioItem }>('/api/scenarios/', { method: 'POST', body: JSON.stringify(payload) }),
   updateScenario: (scenarioId: number, payload: ScenarioPayload) => requestJson<{ success: boolean; scenario: ScenarioItem }>(`/api/scenarios/${scenarioId}/`, { method: 'PATCH', body: JSON.stringify(payload) }),

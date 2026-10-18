@@ -71,6 +71,28 @@ function fixture() {
  */
 async function flush() { await vue.nextTick(); await nextTurn(); await vue.nextTick(); }
 
+test('只读busy覆盖在途和最终缓冲，直到本域全部输入完成', async () => {
+  const { calls, slider } = fixture();
+  assert.equal(vue.isReadonly(slider.busy), true); assert.equal(slider.busy.value, false);
+  slider.handleInput(10); slider.handleChange(20); assert.equal(slider.busy.value, true);
+  calls[0].complete(); await flush(); assert.equal(calls.length, 2); assert.equal(slider.busy.value, true);
+  calls[1].complete(); await flush(); assert.equal(slider.busy.value, false);
+});
+
+test('旧作用域完成不解除新输入busy', async () => {
+  const { state, calls, slider } = fixture(); slider.handleInput(10);
+  state.scope = 'B'; assert.equal(slider.busy.value, false);
+  slider.handleInput(20); calls[0].complete(); await flush(); assert.equal(slider.busy.value, true);
+  calls[1].complete(); await flush(); assert.equal(slider.busy.value, false);
+});
+
+test('不可操作或卸载清busy，不续发旧输入', async () => {
+  const { state, calls, slider } = fixture(); slider.handleInput(10); slider.handleChange(20);
+  state.online = false; assert.equal(slider.busy.value, false); calls[0].complete(); await flush(); assert.equal(calls.length, 1);
+  state.online = true; slider.handleInput(30); assert.equal(slider.busy.value, true);
+  app.unmount(); app = undefined; assert.equal(slider.busy.value, false); calls[1].complete(); await flush();
+});
+
 test('同一事件中的变更及重复收尾不重复提交同值', async () => {
   const { calls, slider } = fixture();
   slider.handleInput(49); slider.handleChange(49); slider.handleChange(49);

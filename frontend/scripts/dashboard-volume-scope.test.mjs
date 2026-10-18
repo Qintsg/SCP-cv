@@ -47,7 +47,7 @@ async function mountDashboard() {
   respond = async (path, options) => json(path === '/api/video-wall/layout/' ? { layout: { draft: null } }
     : path === '/api/auth/csrf/' ? { csrfToken: 'memory-token' }
       : path === '/api/auth/status/' ? { authenticated: true, user: { id: 1, username: 'memory' } }
-        : path === '/api/volume/' ? volume(JSON.parse(options.body).level) : { success: true });
+        : path === '/api/volume/' ? volume(JSON.parse(options.body || '{"level":50}').level) : { success: true });
   globalThis.fetch = (url, options = {}) => {
     const path = new URL(String(url), browser.location.href).pathname;
     requests.push({ url: String(url), path, method: options.method || 'GET', body: options.body });
@@ -72,7 +72,7 @@ function writes() { return requests.filter(item => item.path === '/api/volume/' 
 /** :param status: 首次响应状态。:returns: 已挂起第一笔并缓冲第二笔的真实UI。 */
 async function startBuffered(status = 200) {
   await mountDashboard(); const hold = gate(), fallback = respond;
-  respond = (path, options) => path === '/api/volume/' && writes().length === 1 ? hold.promise : fallback(path, options);
+  respond = (path, options) => path === '/api/volume/' && options.method === 'PATCH' && writes().length === 1 ? hold.promise : fallback(path, options);
   await decrease(); await decrease(); assert.equal(writes().length, 1);
   return async () => { hold.resolve(json(status === 200 ? volume(49) : { detail: '原音量写入失败' }, status)); await flush(); await flush(); };
 }
@@ -106,7 +106,7 @@ test('真实切换在途不接新输入，结束后新输入可以发送', async
   hold.resolve(); await switching; runtime.connectionGeneration = client.captureGeneration(); await decrease();
   assert.equal(writes().length, 1); assert.ok(writes()[0].url.startsWith('https://next-memory.invalid/'));
 });
-test('会话更新后新输入可立即发送，旧finally不解锁或覆盖新缓冲', async () => {
-  const finish = await startBuffered(); auth.user = { id: 1, username: 'new-session' }; await decrease();
+test('切到不同后端后新输入可立即发送，旧finally不解锁或覆盖新缓冲', async () => {
+  const finish = await startBuffered(); client.restoreProfile({ origin: 'https://new-memory.invalid', displayName: '新主机' }); await decrease();
   const before = writes().length; await finish(); assert.equal(before, 2); assert.equal(writes().length, 2);
 });

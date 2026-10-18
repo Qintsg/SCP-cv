@@ -14,7 +14,7 @@
  * @Author : Qintsg
  * @Date : 2026-09-29
  */
-import { onBeforeUnmount, ref, watch, type Ref } from 'vue';
+import { onBeforeUnmount, readonly, ref, watch, type Ref } from 'vue';
 
 /** 调用方需要提供的提交回调与节流参数。 */
 export interface ThrottledSliderOptions {
@@ -32,6 +32,8 @@ export interface ThrottledSliderOptions {
 
 /** 暴露给视图绑定的接口：value 用于显示，handleInput/handleChange 用于事件。 */
 export interface ThrottledSliderHandle {
+  /** 本域仍有在途/未发送输入；只观测，不允许调用方释放或推进队列。 */
+  busy: Readonly<Ref<boolean>>;
   /** 绑定Ant Slider的value；拖动期间立即更新，服务端响应不覆盖。 */
   value: Ref<number>;
   /** 绑定Ant Slider的change：拖动中触发，节流上报。 */
@@ -52,6 +54,7 @@ export function useThrottledSlider(
 ): ThrottledSliderHandle {
   const throttleMs = options.throttleMs ?? 120;
   const value = ref<number>(getRemoteValue());
+  const busy = ref(false);
 
   // 拖动锁：用户按住滑块期间，禁止任何外部 watch 同步覆盖本地值。
   let dragging = false;
@@ -87,6 +90,7 @@ export function useThrottledSlider(
     pendingValue = null;
     dragging = false;
     inFlight = false;
+    busy.value = false;
     lastSentAt = 0;
     clearThrottleTimer();
     value.value = getRemoteValue();
@@ -148,7 +152,7 @@ export function useThrottledSlider(
       if (pendingValue !== null) {
         // 回程时仍有新值；若节流间隔尚未走完，flush 内部会自动改用 timer。
         void flush();
-      }
+      } else busy.value = false;
     }
   }
 
@@ -160,6 +164,7 @@ export function useThrottledSlider(
   function schedule(next: number): void {
     if (!canCommit()) return;
     pendingValue = next;
+    busy.value = true;
     value.value = next;
     void flush();
   }
@@ -196,6 +201,7 @@ export function useThrottledSlider(
       pendingValue = next;
       value.value = next;
     }
+    busy.value = inFlight || pendingValue !== null;
     if (inFlight) return;
     void flush();
   }
@@ -205,5 +211,5 @@ export function useThrottledSlider(
     discardPending();
   });
 
-  return { value, handleInput, handleChange };
+  return { value, busy: readonly(busy), handleInput, handleChange };
 }

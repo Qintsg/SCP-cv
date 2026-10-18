@@ -5,7 +5,7 @@
  *  - 不放预案调用、上传、窗口状态等明细能力；
  *  - 关机统一走 useDialog 二次确认。
  */
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AAlert from 'ant-design-vue/es/alert';
 import AButton from 'ant-design-vue/es/button';
@@ -18,85 +18,20 @@ import FPageHeader from '@/design-system/FPageHeader.vue';
 import DashboardWindows from './DashboardWindows.vue';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
 import VideoWallMappingPanel from '@/features/runtime/VideoWallMappingPanel.vue';
-import { useDialog } from '@/composables/useDialog';
-import { useThrottledSlider } from '@/composables/useThrottledSlider';
-import { useToast } from '@/composables/useToast';
-import { useRequestContext } from '@/composables/useRequestContext';
-import { clientConnection } from '@/platform/connection';
-import { useAuthStore } from '@/stores/auth';
+import { useDevicePowerActions } from '@/composables/useDevicePowerActions';
+import { useDashboardAudio } from './useDashboardAudio';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useDeviceStore } from '@/stores/devices';
 
 const { t } = useI18n();
 const runtime = useRuntimeStore();
 const device = useDeviceStore();
-const toast = useToast();
-const dialog = useDialog();
-const auth = useAuthStore();
-const volumeScope = ref(0);
-useRequestContext(() => { volumeScope.value++; });
-
-const volume = useThrottledSlider(
-  () => runtime.systemVolume.level,
-  {
-    scope: () => volumeScope.value,
-    isActive: () => auth.isAuthenticated && !clientConnection.isSwitching,
-    commit: (level: number) => runtime.setSystemVolume(level, runtime.systemVolume.muted),
-    onError: (error) => {
-      toast.error(t('dashboard.volumeFail'), error instanceof Error ? error.message : t('common.retry'));
-    },
-  },
-);
-
-const muteToggle = computed({
-  get: () => runtime.systemVolume.muted,
-  set: async (next: boolean) => {
-    try {
-      await runtime.setSystemVolume(volume.value.value, next);
-    } catch (error) {
-      toast.error(t('dashboard.muteFail'), error instanceof Error ? error.message : t('common.retry'));
-    }
-  },
-});
+const { volume, muteToggle, muteBusy, volumeBlocked, transportBusy, recoveryBusy } = useDashboardAudio();
+const { powerOnSplice, powerOffSplice, toggleTv, isPending, isLoading } = useDevicePowerActions('dashboard');
 
 const heroSubtitle = computed(() => {
   return t('dashboard.heroCaption');
 });
-
-async function powerOnSplice(): Promise<void> {
-  try {
-    await device.power('splice_screen', 'on');
-    toast.success(t('dashboard.spliceOnOk'));
-  } catch (error) {
-    toast.error(t('dashboard.spliceOnFail'), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
-
-async function powerOffSplice(): Promise<void> {
-  const current = dialog.captureContext();
-  const confirmed = await dialog.danger({
-    title: t('dashboard.spliceOffTitle'),
-    description: t('dashboard.spliceOffDesc'),
-    confirmLabel: t('dashboard.spliceOffConfirm'),
-    cancelLabel: t('common.cancel'),
-  });
-  if (!confirmed || !current()) return;
-  try {
-    await device.power('splice_screen', 'off');
-    toast.warning(t('dashboard.spliceOffOk'), t('dashboard.spliceOffOkDetail'));
-  } catch (error) {
-    toast.error(t('dashboard.spliceOffFail'), error instanceof Error ? error.message : t('dashboard.spliceOffFailDetail'));
-  }
-}
-
-async function toggleTv(deviceType: 'tv_left' | 'tv_right', label: string): Promise<void> {
-  try {
-    await device.toggle(deviceType);
-    toast.success(t('dashboard.tvToggleOk', { label }), t('dashboard.tvToggleOkDetail'));
-  } catch (error) {
-    toast.error(t('dashboard.tvToggleFail', { label }), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
 
 const hasDeviceError = computed(() =>
   Object.values(device.lastActionResult).some((status) => status === 'error'),
@@ -128,13 +63,14 @@ const hasDeviceError = computed(() =>
           :value="volume.value.value"
           :min="0"
           :max="100"
+          :disabled="volumeBlocked"
           :aria-label="t('dashboard.volumeAria')"
           @change="value => { if (typeof value === 'number') volume.handleInput(value); }"
           @afterChange="volume.handleChange(volume.value.value)"
         />
         <div class="dashboard__mute-row">
           <span>{{ t('dashboard.enableSystemMute') }}</span>
-          <a-switch v-model:checked="muteToggle" :aria-label="t('dashboard.enableSystemMute')" />
+          <a-switch v-model:checked="muteToggle" :disabled="muteBusy || volume.busy.value || transportBusy || recoveryBusy" :loading="muteBusy || recoveryBusy" :aria-label="t('dashboard.enableSystemMute')" />
         </div>
       </a-card>
 
@@ -144,25 +80,26 @@ const hasDeviceError = computed(() =>
         </template>
         <div class="dashboard__power-row">
           <span class="dashboard__power-label">{{ t('dashboard.splice') }}</span>
-          <a-button type="primary" @click="powerOnSplice">
+          <a-button type="primary" :disabled="isPending('splice_screen')" :loading="isLoading('splice_screen', 'on')" @click="powerOnSplice">
             <template #icon><FIcon name="power_24_regular" /></template>
             {{ t('dashboard.powerOn') }}
           </a-button>
-          <a-button danger @click="powerOffSplice">
+          <!-- 本次关机loading保留原生焦点；aria-disabled、Ant loading及意图锁共同防重。 -->
+          <a-button danger :disabled="isPending('splice_screen') && !isLoading('splice_screen', 'off')" :aria-disabled="isPending('splice_screen')" :loading="isLoading('splice_screen', 'off')" @click="powerOffSplice">
             <template #icon><FIcon name="plug_disconnected_24_regular" /></template>
             {{ t('dashboard.powerOff') }}
           </a-button>
         </div>
         <div class="dashboard__power-row">
           <span class="dashboard__power-label">{{ t('dashboard.tvLeft') }}</span>
-          <a-button @click="toggleTv('tv_left', t('dashboard.tvLeft'))">
+          <a-button :disabled="isPending('tv_left')" :loading="isLoading('tv_left', 'toggle')" @click="toggleTv('tv_left', t('dashboard.tvLeft'))">
             <template #icon><FIcon name="arrow_swap_24_regular" /></template>
             {{ t('dashboard.toggleState') }}
           </a-button>
         </div>
         <div class="dashboard__power-row">
           <span class="dashboard__power-label">{{ t('dashboard.tvRight') }}</span>
-          <a-button @click="toggleTv('tv_right', t('dashboard.tvRight'))">
+          <a-button :disabled="isPending('tv_right')" :loading="isLoading('tv_right', 'toggle')" @click="toggleTv('tv_right', t('dashboard.tvRight'))">
             <template #icon><FIcon name="arrow_swap_24_regular" /></template>
             {{ t('dashboard.toggleState') }}
           </a-button>

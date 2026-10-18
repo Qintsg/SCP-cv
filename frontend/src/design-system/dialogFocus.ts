@@ -1,4 +1,5 @@
 /** 弹层交接焦点：忽略关闭缓存，不让旧离场回调抢走新弹层的键盘位置。 */
+import { nextTick } from 'vue';
 
 /** :param element: 入口或弹层。:returns: 祖先链未被隐藏或关闭。 */
 function visible(element: HTMLElement): boolean {
@@ -20,4 +21,10 @@ export function restoreDialogFocus(trigger: HTMLElement | null, closing: Element
   } else if (others.length && !others.some(layer => layer.contains(document.activeElement))) {
     others.at(-1)?.focus({ preventScroll: true });
   }
+}
+
+/** :param trigger: 忙态前的实际入口。:param current: 操作/页面仍归属当前。:returns: 仅焦点已退回body时恢复，不抢用户新焦点。 */
+export async function restoreActionFocus(trigger: HTMLElement | null, current: () => boolean): Promise<void> {
+  await nextTick();
+  if (current() && document.activeElement === document.body) restoreDialogFocus(trigger, null);
 }

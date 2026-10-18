@@ -9,48 +9,12 @@ import AButton from 'ant-design-vue/es/button';
 import ACard from 'ant-design-vue/es/card';
 
 import FIcon from '@/design-system/FIcon.vue';
-import { useDialog } from '@/composables/useDialog';
-import { useToast } from '@/composables/useToast';
+import { useDevicePowerActions } from '@/composables/useDevicePowerActions';
 import { useDeviceStore } from '@/stores/devices';
 
 const { t } = useI18n();
 const device = useDeviceStore();
-const toast = useToast();
-const dialog = useDialog();
-
-async function powerOnSplice(): Promise<void> {
-  try {
-    await device.power('splice_screen', 'on');
-    toast.success(t('settings.spliceOnOk'));
-  } catch (error) {
-    toast.error(t('settings.spliceOnFail'), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
-
-async function powerOffSplice(): Promise<void> {
-  const current = dialog.captureContext();
-  const confirmed = await dialog.danger({
-    title: t('settings.spliceOffTitle'),
-    description: t('settings.spliceOffDesc'),
-    confirmLabel: t('settings.spliceOffConfirm'),
-  });
-  if (!confirmed || !current()) return;
-  try {
-    await device.power('splice_screen', 'off');
-    toast.warning(t('settings.spliceOffOk'), t('settings.spliceOffOkDetail'));
-  } catch (error) {
-    toast.error(t('settings.spliceOffFail'), error instanceof Error ? error.message : t('settings.spliceOffFailDetail'));
-  }
-}
-
-async function toggleTv(deviceType: 'tv_left' | 'tv_right', label: string): Promise<void> {
-  try {
-    await device.toggle(deviceType);
-    toast.success(t('settings.tvToggleOk', { label }));
-  } catch (error) {
-    toast.error(t('settings.tvToggleFail', { label }), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
+const { powerOnSplice, powerOffSplice, toggleTv, isPending, isLoading } = useDevicePowerActions('settings');
 
 function lastActionLabel(deviceType: string): string {
   const at = device.lastActionAt[deviceType];
@@ -66,11 +30,12 @@ function lastActionLabel(deviceType: string): string {
     <a-card :title="t('settings.splice')">
       <p class="settings-view__hint">{{ t('settings.spliceHint') }}</p>
       <div class="settings-view__row">
-        <a-button type="primary" @click="powerOnSplice">
+        <a-button type="primary" :disabled="isPending('splice_screen')" :loading="isLoading('splice_screen', 'on')" @click="powerOnSplice">
           <template #icon><FIcon name="power_24_regular" /></template>
           {{ t('settings.powerOn') }}
         </a-button>
-        <a-button danger @click="powerOffSplice">
+        <!-- 保留本次关机入口供Modal回焦；loading与意图锁仍拒绝重复发送。 -->
+        <a-button danger :disabled="isPending('splice_screen') && !isLoading('splice_screen', 'off')" :aria-disabled="isPending('splice_screen')" :loading="isLoading('splice_screen', 'off')" @click="powerOffSplice">
           <template #icon><FIcon name="plug_disconnected_24_regular" /></template>
           {{ t('settings.powerOff') }}
         </a-button>
@@ -84,11 +49,11 @@ function lastActionLabel(deviceType: string): string {
     <a-card :title="t('settings.tv')">
       <p class="settings-view__hint">{{ t('settings.tvHint') }}</p>
       <div class="settings-view__row">
-        <a-button @click="toggleTv('tv_left', t('settings.devLeft'))">
+        <a-button :disabled="isPending('tv_left')" :loading="isLoading('tv_left', 'toggle')" @click="toggleTv('tv_left', t('settings.devLeft'))">
           <template #icon><FIcon name="arrow_swap_24_regular" /></template>
           {{ t('settings.tvLeftToggle') }}
         </a-button>
-        <a-button @click="toggleTv('tv_right', t('settings.devRight'))">
+        <a-button :disabled="isPending('tv_right')" :loading="isLoading('tv_right', 'toggle')" @click="toggleTv('tv_right', t('settings.devRight'))">
           <template #icon><FIcon name="arrow_swap_24_regular" /></template>
           {{ t('settings.tvRightToggle') }}
         </a-button>

@@ -6,6 +6,8 @@ import { defineStore } from 'pinia';
 
 import { api, type DeviceItem } from '@/services/api';
 import { t } from '@/locales';
+import { beginDeviceCommand, isDeviceCommandPending, resetDeviceCommands } from './deviceCommandScope';
+import { isWritePending } from '@/services/writeFlights';
 
 interface DeviceState {
   devices: DeviceItem[];
@@ -29,6 +31,11 @@ export const useDeviceStore = defineStore('devices', {
       state.devices.find((d) => d.device_type === 'splice_screen'),
     tvLeft: (state): DeviceItem | undefined => state.devices.find((d) => d.device_type === 'tv_left'),
     tvRight: (state): DeviceItem | undefined => state.devices.find((d) => d.device_type === 'tv_right'),
+    /** :returns: 当前设备操作的实时忙态，不把旧主机的pending当作当前锁。 */
+    isPending(state): (deviceType: string) => boolean {
+      return deviceType => isWritePending(`device:${deviceType}`)
+        || (state.lastActionResult[deviceType] === 'pending' && isDeviceCommandPending(this, deviceType));
+    },
   },
   actions: {
     async refresh(): Promise<void> {
@@ -37,32 +44,49 @@ export const useDeviceStore = defineStore('devices', {
     },
     /** 拼接屏：开机/关机；电视：toggle 切换不读真实状态。 */
     async power(deviceType: string, action: 'on' | 'off'): Promise<void> {
+      const operation = beginDeviceCommand(this, deviceType);
       this.lastActionResult[deviceType] = 'pending';
       try {
+        operation.assertCurrent();
         await api.powerDevice(deviceType, action);
+        operation.assertCurrent();
         this.lastActionResult[deviceType] = 'success';
         this.lastActionDetail[deviceType] = action === 'on' ? t('settings.powerOnSent') : t('settings.powerOffSent');
       } catch (error) {
-        this.lastActionResult[deviceType] = 'error';
-        this.lastActionDetail[deviceType] = error instanceof Error ? error.message : t('settings.deviceCmdFail');
+        if (operation.isCurrent()) {
+          this.lastActionResult[deviceType] = 'error';
+          this.lastActionDetail[deviceType] = error instanceof Error ? error.message : t('settings.deviceCmdFail');
+        }
         throw error;
       } finally {
-        this.lastActionAt[deviceType] = Date.now();
+        if (operation.isCurrent()) this.lastActionAt[deviceType] = Date.now();
+        operation.release();
       }
     },
     async toggle(deviceType: string): Promise<void> {
+      const operation = beginDeviceCommand(this, deviceType);
       this.lastActionResult[deviceType] = 'pending';
       try {
+        operation.assertCurrent();
         await api.toggleDevice(deviceType);
+        operation.assertCurrent();
         this.lastActionResult[deviceType] = 'success';
         this.lastActionDetail[deviceType] = t('settings.cmdSent');
       } catch (error) {
-        this.lastActionResult[deviceType] = 'error';
-        this.lastActionDetail[deviceType] = error instanceof Error ? error.message : t('settings.deviceToggleFail');
+        if (operation.isCurrent()) {
+          this.lastActionResult[deviceType] = 'error';
+          this.lastActionDetail[deviceType] = error instanceof Error ? error.message : t('settings.deviceToggleFail');
+        }
         throw error;
       } finally {
-        this.lastActionAt[deviceType] = Date.now();
+        if (operation.isCurrent()) this.lastActionAt[deviceType] = Date.now();
+        operation.release();
       }
+    },
+    /** :returns: 清空投影并使旧操作失效；旧finally不能释放reset后新建的锁。 */
+    $reset(): void {
+      resetDeviceCommands(this);
+      this.$patch({ devices: [], lastActionAt: {}, lastActionResult: {}, lastActionDetail: {} });
     },
   },
 });

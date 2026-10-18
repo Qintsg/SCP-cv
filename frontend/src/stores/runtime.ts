@@ -98,8 +98,9 @@ export const useRuntimeStore = defineStore('runtime', {
       this.runtime = payload.runtime;
     },
     /** 拉取系统音量。 */
-    async refreshSystemVolume(): Promise<void> {
-      const payload = await api.getSystemVolume();
+    async refreshSystemVolume(canConsume: () => boolean = () => true): Promise<void> {
+      const payload = await api.getSystemVolume(canConsume);
+      assertAuthenticationScope(canConsume);
       this.applyVolume(payload.volume);
     },
     applyVolume(volume: { level: number; muted: boolean; system_synced: boolean; backend: string }): void {

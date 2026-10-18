@@ -108,6 +108,7 @@ export class ClientConnectionCoordinator {
   private pendingSwitches = 0;
   private mutationTail: Promise<void> = Promise.resolve();
   private readonly generationListeners = new Set<(generation: number) => void>();
+  private readonly profileListeners = new Set<() => void>();
 
   status: ClientConnectionStatus = 'disconnected';
 
@@ -132,6 +133,18 @@ export class ClientConnectionCoordinator {
     return () => { this.generationListeners.delete(listener); };
   }
 
+  /** :param listener: 实际地址提交后的只读观察者。:returns: 取消订阅；代次失效不等同地址已提交。 */
+  onProfileChanged(listener: () => void): () => void {
+    this.profileListeners.add(listener);
+    return () => { this.profileListeners.delete(listener); };
+  }
+
+  /** :param profile: 已规范化的实际目标。:returns: 提交地址后同步通知本地占用视图。 */
+  private commitProfile(profile: ServerProfile): void {
+    this.currentProfile = profile;
+    for (const listener of [...this.profileListeners]) listener();
+  }
+
   /** :returns: 先失效原身份再同步通知资源所有者，不能等异步清会话结束。 */
   private advanceGeneration(): number {
     const generation = ++this.generation;
@@ -144,7 +157,7 @@ export class ClientConnectionCoordinator {
 
   /** :param profile: 已验证的本地配置。:returns: 本次恢复代次，不借用回调重入后的新代次。 */
   restoreProfile(profile: ServerProfile): number {
-    this.currentProfile = normalizeServerProfile(profile);
+    this.commitProfile(normalizeServerProfile(profile));
     this.status = 'disconnected';
     return this.advanceGeneration();
   }
@@ -178,7 +191,7 @@ export class ClientConnectionCoordinator {
         assertCurrent();
         dependencies.clearStores?.(scope);
         assertCurrent();
-        this.currentProfile = normalized;
+        this.commitProfile(normalized);
         await dependencies.saveProfile?.(normalized, scope);
         assertCurrent();
         return generation;
