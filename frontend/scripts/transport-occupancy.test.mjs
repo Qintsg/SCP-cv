@@ -76,12 +76,15 @@ test('较旧GET晚于新音量写入返回，不覆盖新写入快照',async()=>
 
 test('恢复GET在途时更新音量，旧恢复不反盖或提示归属错误',async()=>{
  await mount();const writeHold=gate(),readHold=gate();let writes=0;
- respondWith((path,options)=>options.method==='PATCH'?(++writes===1?writeHold.promise:Promise.resolve(json(volume(JSON.parse(options.body))))):readHold.promise);
+ // 布局块在新认证后独立GET；每个请求必须有自己的Response，不能共用音量流正文。
+ respondWith((path,options)=>path!=='/api/volume/'?Promise.resolve(json(path==='/api/video-wall/layout/'?{layout:{draft:null}}:{success:true}))
+  :options.method==='PATCH'?(++writes===1?writeHold.promise:Promise.resolve(json(volume(JSON.parse(options.body))))):readHold.promise);
  await decrease();await invalidate('relogin');writeHold.resolve(json(volume({level:49})));await flush();await flush();
  assert.equal(muteSwitch().disabled,true,'当前恢复GET完成前不能使用过期音量继续静音');
  assert.equal((await run(runtime.setSystemVolume(49,true))).error,undefined);assert.equal(runtime.systemVolume.muted,true);
  readHold.resolve(json(volume({level:49,muted:false})));await flush();await flush();
- assert.equal(runtime.systemVolume.muted,true);assert.equal(toasts.items.length,0);
+ assert.equal(runtime.systemVolume.muted,true);assert.deepEqual(toasts.items,[]);
+ assert.equal(calls.filter(item=>item.path==='/api/volume/'&&item.method==='GET').length,1);
 });
 
 test('同后端原音量仍在途，认证变化后不能交错静音造成界面与服务端相反',async()=>{

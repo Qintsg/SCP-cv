@@ -17,16 +17,16 @@ for (const name of names) Object.defineProperty(globalThis,name,{
   configurable:true,writable:true,
 });
 const originalFetch=globalThis.fetch;
-let server,vue,createPinia,i18n,Component,apiModule,app,requests,pinia,useRuntime,useAuth;
+let server,vue,createPinia,disposePinia,i18n,Component,apiModule,app,requests,pinia,useRuntime,useAuth;
 before(async()=>{
-  [vue,{createPinia},server]=await Promise.all([import('vue'),import('pinia'),createDomTestServer()]);
+  [vue,{createPinia,disposePinia},server]=await Promise.all([import('vue'),import('pinia'),createDomTestServer()]);
   ({default:Component}=await server.ssrLoadModule('/src/features/runtime/VideoWallMappingPanel.vue'));
   ({i18n}=await server.ssrLoadModule('/src/locales/index.ts'));
   apiModule=await server.ssrLoadModule('/src/services/api.ts');
   ({useRuntimeStore:useRuntime}=await server.ssrLoadModule('/src/stores/runtime.ts'));
   ({useAuthStore:useAuth}=await server.ssrLoadModule('/src/stores/auth.ts'));
 });
-afterEach(async()=>{app?.unmount();app=undefined;browser.document.body.replaceChildren();await browser.happyDOM.abort();globalThis.fetch=originalFetch;});
+afterEach(async()=>{app?.unmount();app=undefined;if(pinia)disposePinia(pinia);browser.document.body.replaceChildren();await browser.happyDOM.abort();globalThis.fetch=originalFetch;});
 after(async()=>{await server?.close();await browser.happyDOM.close();for(const[name,d]of old){if(d)Object.defineProperty(globalThis,name,d);else delete globalThis[name];}});
 /** :returns: 当前渲染和异步回调完成。 */
 async function flush(){await vue.nextTick();await nextTurn();await vue.nextTick();}
@@ -61,7 +61,8 @@ async function mount(kinds=['window_1','window_2'],hooks={}){
     return json({success:true,layout:state});
   };
   const host=browser.document.createElement('div');browser.document.body.append(host);
-  pinia=createPinia();app=vue.createApp(Component);app.use(pinia);app.use(i18n);app.mount(host);await flush();
+  pinia=createPinia();useAuth(pinia).user={id:1,username:'memory'};
+  app=vue.createApp(Component);app.use(pinia);app.use(i18n);app.mount(host);await flush();
 }
 /** :param label: 单屏或双屏。:returns: 通过真实radio改变编排。 */
 async function chooseLayout(label){

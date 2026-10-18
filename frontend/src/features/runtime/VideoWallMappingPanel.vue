@@ -11,7 +11,9 @@ import ASegmented from 'ant-design-vue/es/segmented';
 import ASelect from 'ant-design-vue/es/select';
 import FIcon from '@/design-system/FIcon.vue';
 import { useToast } from '@/composables/useToast';
+import { useRequestContext } from '@/composables/useRequestContext';
 import { api, type VideoWallInputKind, type VideoWallLayoutItem, type VideoWallMappingItem } from '@/services/api';
+import { clientConnection } from '@/platform/connection';
 import { useRuntimeStore } from '@/stores/runtime';
 import { useAuthStore } from '@/stores/auth';
 
@@ -23,7 +25,19 @@ const layout = ref<'fullscreen' | 'split'>('split');
 const full = ref<InputChoice>('window_1'), left = ref<InputChoice>('window_1'), right = ref<InputChoice>('window_2');
 const fullIp = ref(''), leftIp = ref(''), rightIp = ref('');
 const loading = ref(false), applying = ref(false), ready = ref(false), error = ref('');
-let alive = true;
+const audioWarning = ref('');
+let alive = true, reload = 0;
+const captureContext = useRequestContext(() => {
+  const ticket = ++reload;
+  loading.value = false; applying.value = false; ready.value = false; error.value = ''; audioWarning.value = '';
+  name.value = t('videoWall.defaultName'); layout.value = 'split';
+  full.value = 'window_1'; left.value = 'window_1'; right.value = 'window_2';
+  fullIp.value = ''; leftIp.value = ''; rightIp.value = '';
+  // 恢复只属于新范围；旧finally不续读，也不把旧预检/布局借给后来登录。
+  queueMicrotask(() => {
+    if (alive && ticket === reload && auth.isAuthenticated && !clientConnection.isSwitching) void load();
+  });
+});
 const busy = computed(() => loading.value || applying.value);
 const options = computed(() => [
   { label: t('videoWall.window1'), value: 'window_1' },
@@ -56,16 +70,8 @@ const validation = computed(() => !name.value.trim() ? t('videoWall.invalidName'
   : !mappings.value.length ? t('videoWall.emptyRegion')
     : mappings.value.some(item => item.input.kind === 'ip_stream' && !isIpv4(item.input.ip_address || ''))
       ? t('videoWall.invalidIp') : '');
-const audioWarning = computed(() => runtime.venueAudioResult && !['confirmed', 'simulated', 'unchanged'].includes(runtime.venueAudioResult.status)
-  ? runtime.venueAudioResult.detail : '');
 const selection = computed(() => JSON.stringify({ name: name.value, mappings: mappings.value }));
 watch(selection, () => { if (!busy.value) error.value = ''; });
-
-/** :returns: 锁定连接、账户及本组件寿命，旧响应不能延续到另一主机。 */
-function currentScope(): () => boolean {
-  const generation = runtime.connectionGeneration, userId = auth.user?.id, signedIn = auth.isAuthenticated;
-  return () => alive && generation === runtime.connectionGeneration && userId === auth.user?.id && signedIn === auth.isAuthenticated;
-}
 
 /** :param value: 服务器保存值。:returns: 恢复当前布局，另一布局的本地选择保持。 */
 function restore(value: VideoWallLayoutItem): void {
@@ -82,8 +88,8 @@ function restore(value: VideoWallLayoutItem): void {
 
 /** :returns: 只读取布局；读取失败可重试，绝不随页面加载下发设备命令。 */
 async function load(): Promise<void> {
-  if (busy.value) return;
-  const current = currentScope();
+  if (!alive || busy.value || !auth.isAuthenticated || clientConnection.isSwitching) return;
+  const current = captureContext();
   loading.value = true; error.value = ''; ready.value = false;
   try {
     const response = await api.getVideoWallLayout();
@@ -91,13 +97,13 @@ async function load(): Promise<void> {
     if (response.layout.draft) restore(response.layout.draft);
     ready.value = true;
   } catch (failure) { if (current()) error.value = failure instanceof Error ? failure.message : t('videoWall.loadFail'); }
-  finally { if (alive) loading.value = false; }
+  finally { if (current()) loading.value = false; }
 }
 
 /** :returns: 一次点击依次预检和应用本次修订；失败、冲突或离页不重试/补发。 */
 async function apply(): Promise<void> {
-  if (busy.value || !ready.value || validation.value) return;
-  const current = currentScope();
+  if (!alive || busy.value || !ready.value || validation.value || !auth.isAuthenticated || clientConnection.isSwitching) return;
+  const current = captureContext();
   const submitted = { name: name.value.trim(), mappings: mappings.value.map(item => ({ region: item.region, input: { ...item.input } })) };
   applying.value = true; error.value = '';
   try {
@@ -106,13 +112,16 @@ async function apply(): Promise<void> {
     if (!checked.layout.draft?.can_apply) throw new Error(checked.layout.draft?.unavailable_reason || t('videoWall.pendingFrames'));
     // 使用本次预检返回的修订号；其它客户端插入修改由后端拒绝，不借用后来布局。
     await runtime.applySavedVideoWallLayout(checked.layout.draft_revision);
-    if (current()) toast.success(t('videoWall.applied'));
+    if (!current()) return;
+    const audio = runtime.venueAudioResult;
+    audioWarning.value = audio && !['confirmed', 'simulated', 'unchanged'].includes(audio.status) ? audio.detail : '';
+    toast.success(t('videoWall.applied'));
   } catch (failure) { if (current()) error.value = failure instanceof Error ? failure.message : t('videoWall.applyFail'); }
-  finally { if (alive) applying.value = false; }
+  finally { if (current()) applying.value = false; }
 }
 
 onMounted(() => { void load(); });
-onBeforeUnmount(() => { alive = false; });
+onBeforeUnmount(() => { alive = false; reload++; });
 </script>
 
 <template>
