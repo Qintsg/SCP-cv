@@ -33,6 +33,8 @@
 
 后续只读取证已更正上述“系统默认改变”的未证实解释：两轮不继承外部包身份的同一dotnet映像均读到原886端点及空应用策略；继承包身份的上下文读到29d覆盖。新T046在策略激活/写入前拒绝共享包身份；无包正式Player接口切换/关闭已另外通过，仍未验证真实用户手势。原result=false和未做操作的事实不改写，详见[包身份隔离与后续验证](20261018-audio-package-isolation.md)。
 
+再后续，用户在新的本机独立窗口亲自点击一次；实际trusted输入、媒体推进与非默认端点活动、两轮切换/CLOSE及6浏览器原退出0通过，见[真人补证](20261018-human-web-gesture.md)。这是新运行，不将本页初轮未操作结果改判成功；D4完整T033仍未完成。
+
 ## 证据
 
 本机忽略目录`.validation/web-gesture-012-20261018/`下保留`build-final2.log`、`copy-r2-result.json`及`copy-r2.out.log`。本次结果位于`runs/20261018-032706-1d44d84c83354ef7ae5569b3b4823eb4/`，包含`ready.json`、`current.json`、`result.json`与独立profile。它们不是可发布包或完整验收证据。

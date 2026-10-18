@@ -50,6 +50,8 @@ Microsoft说明Windows默认输出选择会优先考虑应用偏好，再考虑�
 
 D4原10项仍包括普通网页真实用户手势、人工共享质量、暂挂摄像机/既有位置、DSP与真实来源；本轮没有关闭这些任务或扩大部署授权。
 
+后续新的本机运行已由用户本人点击，trusted事件/实际媒体推进/指定非默认会话及两轮切换/关闭通过，见[真人点击验证](20261018-human-web-gesture.md)。本页API-only运行的genuineGesturePassed=false保持原样，D4普通网页真手势仍未验。
+
 ## 原始证据位置
 
 忽略根`.validation/web-gesture-012-20261018/`：

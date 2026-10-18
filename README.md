@@ -6,7 +6,7 @@ Ant控制台已部署D4：[HTTP入口（自动跳转）](http://192.168.5.194/)�
 
 ## 项目信息
 
-本机接续已修复显式软件声音绑定的继承包身份隔离缺口，尚未部署D4；完整后端1615项及正常绑定/切换/退出验证见[T046记录](specs/012-directory-camera-console/verification/20261018-audio-package-isolation.md)。普通网页真实手势与原现场欠账仍未完成。
+本机接续已修复显式软件声音绑定的继承包身份隔离缺口，尚未部署D4；完整后端1615项及正常绑定/切换/退出验证见[T046记录](specs/012-directory-camera-console/verification/20261018-audio-package-isolation.md)，本机[真人点击网页播放](specs/012-directory-camera-console/verification/20261018-human-web-gesture.md)已补证。D4真实手势与原现场欠账仍未完成。
 
 | 项目 | 内容 |
 | --- | --- |
