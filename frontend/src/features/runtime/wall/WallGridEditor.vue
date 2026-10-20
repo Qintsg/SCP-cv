@@ -98,8 +98,8 @@ function edit(index: number): void { editing.value = index; picker.value = true;
         </button>
       </a-popover>
     </div>
-    <div class="wall-grid__footer">
-      <span class="wall-grid__hint" role="status">{{ message || (pending ? `已选 ${pending.columns}列 × ${pending.rows}行` : '在空白区域拖选矩形') }}</span>
+    <div v-if="message || pending" class="wall-grid__footer">
+      <span class="wall-grid__hint" role="status">{{ message || (pending ? `已选 ${pending.columns}列 × ${pending.rows}行` : '') }}</span>
     </div>
     <WallInputPicker v-model:open="picker" :value="editing === null ? undefined : value[editing]?.input" @choose="choose" />
   </div>

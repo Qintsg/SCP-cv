@@ -24,7 +24,8 @@ function pointer(type,x,y,target){target.dispatchEvent(new browser.PointerEvent(
 /** :returns: 为内存DOM提供精确几何；不是系统窗口。 */
 function gridGeometry(){const grid=browser.document.querySelector('.wall-grid');grid.getBoundingClientRect=()=>({left:0,top:0,width:1000,height:500,right:1000,bottom:500});return grid;}
 test('拖选矩形→选择来源→块预览→删除回到空格，无网络',async()=>{
-  await mount();const grid=gridGeometry();pointer('pointerdown',10,10,grid);pointer('pointermove',290,290,grid);pointer('pointerup',290,290,grid);await flush();
+  await mount();assert.doesNotMatch(browser.document.body.textContent,/在空白区域拖选矩形/);assert.equal(browser.document.querySelector('.wall-grid__footer'),null);
+  const grid=gridGeometry();pointer('pointerdown',10,10,grid);pointer('pointermove',290,290,grid);pointer('pointerup',290,290,grid);await flush();
   assert.match(browser.document.body.textContent,/已选 3列 × 3行/);button('选择窗口').click();await flush();button('确定').click();await flush();
   assert.deepEqual(JSON.parse(JSON.stringify(value.value)),[{region:'grid',rect:{column:0,row:0,columns:3,rows:3},input:{kind:'window_1',ip_address:''}}]);
   browser.document.querySelector('.wall-grid__block').click();await flush();button('删除显示块').click();await flush();assert.equal(value.value.length,0);assert.equal(browser.document.querySelectorAll('.wall-grid__cell:disabled').length,0);

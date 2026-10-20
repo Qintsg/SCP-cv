@@ -15,7 +15,7 @@ import { RouterView, useRoute, useRouter } from 'vue-router';
 
 import AppNavigation from './AppNavigation.vue';
 import AppTopBar from './AppTopBar.vue';
-import brandLogo from '@/assets/sspu-ailab.png';
+import AppBrand from './AppBrand.vue';
 import ALayout from 'ant-design-vue/es/layout';
 import { LayoutSider as ALayoutSider } from 'ant-design-vue/es/layout';
 import {
@@ -100,7 +100,7 @@ onBeforeUnmount(() => {
     :data-nav="navVariant"
   >
     <a-layout-sider v-if="!isCompact" :width="228" :collapsed-width="76" :collapsed="!isLargeUp" class="console-sider" theme="dark">
-      <div class="console-brand"><img :src="brandLogo" alt="SSPU AILAB" class="console-brand__logo" /><div v-if="isLargeUp"><strong>SCP-cv</strong><small>28#108 · 现场控制台</small></div></div>
+      <AppBrand :collapsed="!isLargeUp" />
       <AppNavigation
         v-model:more-open="moreOpen"
         :compact="false"

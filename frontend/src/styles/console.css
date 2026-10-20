@@ -7,8 +7,11 @@
   --console-text:#182338;
   --console-muted:#52627a;
   --console-border:#e2e8f0;
-  --console-nav:#111c32;
-  --console-nav-text:#a9b8d0;
+  --console-nav:#e8eef7;
+  --console-nav-foreground:#213650;
+  --console-nav-text:#506480;
+  --console-nav-selected:#1264d1;
+  --console-logo-filter:none;
   --console-brand-tint:#eaf3ff;
 }
 :root[data-theme='dark'] {
@@ -19,11 +22,17 @@
   --console-muted:#a3b1c6;
   --console-border:#2c3a4f;
   --console-brand-tint:#173458;
+  --console-nav:#23364b;
+  --console-nav-foreground:#edf3fb;
+  --console-nav-text:#c0cede;
+  --console-logo-filter:invert(1) hue-rotate(180deg);
 }
 @media(prefers-color-scheme:dark) {
   :root:not([data-theme='light']) {
     --console-canvas:#101722;--console-surface:#182231;--console-subtle:#1d293b;
     --console-text:#e6edf7;--console-muted:#a3b1c6;--console-border:#2c3a4f;--console-brand-tint:#173458;
+    --console-nav:#23364b;--console-nav-foreground:#edf3fb;--console-nav-text:#c0cede;
+    --console-logo-filter:invert(1) hue-rotate(180deg);
   }
 }
 /* 旧业务样式只保留语义变量名，实际视觉由控制台/Ant令牌统一拥有。 */
@@ -46,25 +55,29 @@
 }
 .console-shell.ant-layout { height:var(--app-height,100dvh); min-height:0; flex-direction:row; background:var(--console-canvas); }
 .console-shell__workspace.ant-layout { min-width:0; min-height:0; height:100%; background:var(--console-canvas); }
-.console-sider.ant-layout-sider { background:var(--console-nav); }
+.console-sider.ant-layout-sider { background:var(--console-nav); border-right:1px solid var(--console-border); }
 .console-sider .ant-layout-sider-children { display:flex; flex-direction:column; height:100%; min-height:0; }
-.console-brand { display:flex; align-items:center; gap:12px; padding:24px 22px 28px; color:var(--colorNeutralForegroundInverted); min-height:96px; }
+.console-brand { display:flex; flex-shrink:0; align-items:center; gap:12px; padding:20px 22px; color:var(--console-nav-foreground); min-height:84px; text-decoration:none; }
+.console-brand:hover { color:var(--console-nav-foreground); text-decoration:none; }
+.console-brand:focus-visible { outline:2px solid var(--console-primary); outline-offset:-4px; border-radius:6px; }
+.console-brand--collapsed { justify-content:center; padding-inline:10px; }
 .console-brand>span { display:grid; place-items:center; flex-shrink:0; width:32px; height:32px; border:1px solid var(--console-nav-text); border-radius:7px; font:600 21px Consolas,monospace; }
 .console-brand strong { display:block; font-size:20px; letter-spacing:.02em; }
-.console-brand__logo { flex:none; width:40px; height:40px; object-fit:contain; background:var(--console-surface); padding:3px; border-radius:6px; }
+.console-brand__logo { flex:none; width:44px; height:40px; object-fit:contain; filter:var(--console-logo-filter); }
 .console-brand>div { min-width:0; }
 .console-brand small { display:block; margin-top:3px; color:var(--console-nav-text); font-size:11px; white-space:nowrap; }
 .console-navigation { flex:1; min-height:0; overflow:auto; }
-.console-navigation .ant-menu { background:var(--console-nav); border:0; font-size:14px; }
+.console-navigation .ant-menu { background:var(--console-nav); color:var(--console-nav-foreground); border:0; font-size:14px; }
 .console-navigation .ant-menu-root { display:flex; flex-direction:column; min-height:100%; }
-.console-navigation .ant-menu-root>.ant-menu-item-group:last-child { margin-top:auto; padding-top:24px; }
-.console-navigation .ant-menu-item-group-title { font-size:11px; letter-spacing:.08em; padding:20px 24px 8px; color:var(--console-nav-text); }
-.console-navigation .ant-menu-item { margin:3px 12px; width:calc(100% - 24px); height:44px; line-height:44px; border-radius:6px; }
-.console-navigation .ant-menu-item-selected { background:var(--console-primary); }
+.console-navigation .ant-menu-root>.ant-menu-item-group:last-child { margin-top:auto; padding-top:12px; }
+.console-navigation .ant-menu-item-group-title { font-size:11px; letter-spacing:.08em; padding:14px 24px 6px; color:var(--console-nav-text); }
+.console-navigation .ant-menu-item { margin:2px 12px; width:calc(100% - 24px); height:42px; line-height:42px; border-radius:6px; color:var(--console-nav-foreground); }
+.console-navigation .ant-menu-item-selected { background:var(--console-nav-selected); color:#fff; }
+.console-navigation .ant-menu-item:not(.ant-menu-item-selected):hover { background:var(--console-brand-tint); color:var(--console-nav-foreground); }
 .console-navigation .ant-menu-title-content>a { color:inherit; display:block; }
 .console-navigation .ant-menu-inline-collapsed .ant-menu-item-group-title { height:16px; padding:0; font-size:0; }
 .console-navigation .ant-menu-inline-collapsed .ant-menu-item { margin-inline:8px; width:60px; padding-inline:20px; }
-.console-sider__footer { padding:20px 24px; color:var(--console-nav-text); font-size:12px; line-height:1.8; }
+.console-sider__footer { flex-shrink:0; padding:12px 24px; color:var(--console-nav-text); font-size:12px; line-height:1.8; }
 .console-sider__footer span { display:block; opacity:.7; font-size:11px; }
 .console-shell .app-shell__bar { min-height:64px; padding:12px 28px; background:var(--console-surface); border-bottom:1px solid var(--console-border); flex-shrink:0; box-shadow:none; }
 .console-context { display:flex; align-items:center; gap:12px; min-width:0; font-size:13px; color:var(--console-muted); }
@@ -119,6 +132,14 @@
   .console-shell .app-shell__content { padding:20px; }
   .console-shell .display-view__columns { grid-template-columns:minmax(0,1fr); }
   .console-shell .display-view__playback { position:static; }
+}
+/* 矮桌面收紧装饰留白而非隐藏菜单；超出仍由navigation自身滚动。 */
+@media(min-width:768px) and (max-height:800px) {
+  .console-brand { min-height:68px; padding-block:12px; }
+  .console-navigation .ant-menu-item-group-title { padding-top:8px; padding-bottom:4px; }
+  .console-navigation .ant-menu-item { height:38px; line-height:38px; margin-block:1px; }
+  .console-navigation .ant-menu-root>.ant-menu-item-group:last-child { padding-top:8px; }
+  .console-sider__footer { padding-block:8px; }
 }
 @media(max-width:767px) {
   .console-shell .app-shell__bar { min-height:56px; padding:8px 12px; gap:8px; }

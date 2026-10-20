@@ -8,6 +8,7 @@ import MoreSheet from './MoreSheet.vue';
 import { DESKTOP_SECONDARY_NAV, MOBILE_TAB_BAR } from './navItems';
 import type { NavItemDef } from './types';
 import FIcon from '@/design-system/FIcon.vue';
+import { useTheme } from '@/composables/useTheme';
 
 const props = defineProps<{
   compact: boolean; navVariant: 'bottom' | 'rail' | 'drawer'; primaryItems: NavItemDef[];
@@ -19,6 +20,7 @@ const emit = defineEmits<{
 }>();
 const { t } = useI18n();
 const router = useRouter();
+const { dark } = useTheme();
 const all = computed(() => [...props.primaryItems, ...DESKTOP_SECONDARY_NAV]);
 const selected = computed(() => all.value.filter(item => props.isActive(item.path)).map(item => item.path));
 const groups = computed(() => [
@@ -37,7 +39,7 @@ function navigate({ key, domEvent }: { key: string | number; domEvent?: Event })
 </script>
 <template>
   <nav v-if="!compact" class="console-navigation" :aria-label="t('app.primaryNav')">
-    <a-menu mode="inline" theme="dark" :selected-keys="selected" @click="navigate">
+    <a-menu mode="inline" :theme="dark ? 'dark' : 'light'" :selected-keys="selected" @click="navigate">
       <a-menu-item-group v-for="group in groups" :key="group.key" :title="group.label">
         <a-menu-item v-for="item in group.children" :key="item.path" :title="item.label">
           <template #icon><FIcon :name="item.icon" :size="19" /></template>

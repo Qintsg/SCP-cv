@@ -48,7 +48,6 @@ const hasDeviceError = computed(() =>
 
     <section class="dashboard__grid" :aria-label="t('dashboard.topCommands')">
       <div class="dashboard__main">
-        <div class="console-section-heading"><h2>播放输出</h2><span>选择窗口，管理当前媒体与播放</span></div>
         <DashboardWindows />
         <VideoWallMappingPanel class="dashboard__card" />
       </div>
@@ -114,7 +113,7 @@ const hasDeviceError = computed(() =>
 .dashboard {
   display: flex;
   flex-direction: column;
-  gap: var(--spacingVerticalXXL);
+  gap: var(--spacingVerticalL);
   max-width: 1280px;
 }
 
