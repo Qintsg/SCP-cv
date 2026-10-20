@@ -56,7 +56,7 @@ export function backendTargets(env: Record<string, string | undefined>): { http:
 /** :param targets: 分协议上游。:returns: 每请求副本分流，不修改Vite共享options；HTTPS始终验证。 */
 export function protocolProxy(targets: ReturnType<typeof backendTargets>): ProxyOptions {
   return {
-    target: targets.http, changeOrigin: false, secure: true,
+    target: targets.http, changeOrigin: false, secure: true, ws: true,
     configure(proxy) {
       const select = (req: { socket: unknown }, _res: unknown, options: Pick<ProxyOptions, 'target' | 'secure'>): void => {
         const encrypted = Boolean((req.socket as TLSSocket).encrypted);

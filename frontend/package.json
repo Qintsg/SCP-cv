@@ -35,6 +35,7 @@
     "electron": "44.2.0",
     "electron-builder": "26.15.3",
     "happy-dom": "20.14.5",
+    "mpegts.js": "1.8.2",
     "ant-design-vue": "4.2.6",
     "pinia": "4.0.2",
     "tailwindcss": "4.3.3",

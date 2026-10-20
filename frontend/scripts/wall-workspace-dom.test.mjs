@@ -9,8 +9,8 @@ const names=['window','document','navigator','HTMLElement','HTMLInputElement','H
 const globals=new Map(names.map(name=>[name,Object.getOwnPropertyDescriptor(globalThis,name)]));
 for(const name of names)Object.defineProperty(globalThis,name,{configurable:true,writable:true,value:typeof browser[name]==='function'&&/^[a-z]/.test(name)?browser[name].bind(browser):browser[name]});
 const originalFetch=globalThis.fetch;
-let server,vue,Grid,Composer,codec,app,value;
-before(async()=>{vue=await import('vue');server=await createDomTestServer();({default:Grid}=await server.ssrLoadModule('/src/features/runtime/wall/WallGridEditor.vue'));({default:Composer}=await server.ssrLoadModule('/src/features/runtime/wall/WallLayoutComposer.vue'));codec=await server.ssrLoadModule('/src/features/runtime/wall/layoutCode.ts');});
+let server,vue,pinia,Grid,Composer,codec,app,value;
+before(async()=>{vue=await import('vue');pinia=await import('pinia');server=await createDomTestServer();({default:Grid}=await server.ssrLoadModule('/src/features/runtime/wall/WallGridEditor.vue'));({default:Composer}=await server.ssrLoadModule('/src/features/runtime/wall/WallLayoutComposer.vue'));codec=await server.ssrLoadModule('/src/features/runtime/wall/layoutCode.ts');});
 afterEach(async()=>{app?.unmount();await flush();browser.document.body.replaceChildren();await browser.happyDOM.abort();globalThis.fetch=originalFetch;});
 after(async()=>{await server.close();await browser.happyDOM.close();for(const[name,descriptor]of globals){if(descriptor)Object.defineProperty(globalThis,name,descriptor);else delete globalThis[name];}});
 /** :returns: 完成Vue与HTTP微任务。 */
@@ -18,7 +18,7 @@ async function flush(){await vue.nextTick();await nextTurn();await vue.nextTick(
 /** :param text: 公开按钮文字。:returns: 真实Ant/原生按钮。 */
 function button(text){return [...browser.document.querySelectorAll('button')].find(node=>visibleText(node.textContent)===visibleText(text));}
 /** :param kind: 网格或完整编辑器。:param initial: 本地数据。:returns: 正式组件，任何网络均失败测试。 */
-async function mount(kind='grid',initial=[]){value=vue.ref(initial);globalThis.fetch=()=>{assert.fail('此编辑不应请求设备/Host');};const host=browser.document.createElement('div');browser.document.body.append(host);app=vue.createApp({render:()=>vue.h(kind==='grid'?Grid:Composer,{modelValue:value.value,'onUpdate:modelValue':next=>{value.value=next;}})});app.mount(host);await flush();}
+async function mount(kind='grid',initial=[]){value=vue.ref(initial);globalThis.fetch=()=>{assert.fail('此编辑不应请求设备/Host');};const host=browser.document.createElement('div');browser.document.body.append(host);app=vue.createApp({render:()=>vue.h(kind==='grid'?Grid:Composer,{modelValue:value.value,'onUpdate:modelValue':next=>{value.value=next;}})});app.use(pinia.createPinia());app.mount(host);await flush();}
 /** :param x: 横坐标。:param y: 纵坐标。:returns: 本地指针参数。 */
 function pointer(type,x,y,target){target.dispatchEvent(new browser.PointerEvent(type,{bubbles:true,button:0,pointerId:1,clientX:x,clientY:y}));}
 /** :returns: 为内存DOM提供精确几何；不是系统窗口。 */

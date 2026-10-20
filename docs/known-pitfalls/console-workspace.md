@@ -8,7 +8,7 @@
 
 ## 坑157 - Chromium不能直接拉RTSP，进程替身也发现不了FFmpeg参数错误
 
-普通网页/Electron直接设置rtsp video.src不构成实现，D4代拉违背用户要求。本机桥只监听loopback并验证Origin/token，明示可选依赖。首次真实回环发现RTSP demuxer不接受rw_timeout；改用其timeout参数（RTMP使用rw_timeout）后两档出帧及共享/释放通过。替身测试不替代真实解码器。Windows以signal结束时exitCode仍为null，终端检查还必须看signalCode，不能假报进程残留或漏清理。
+016时用户要求本机直拉，因此当时D4代拉违背范围；018用户明确改为服务端按需共享FLV，旧本机桥已退役。普通网页/Electron直接设置rtsp video.src仍不构成实现。历史本机桥只监听loopback并验证Origin/token；真实回环发现RTSP demuxer不接受rw_timeout，改用其timeout参数（RTMP使用rw_timeout）。替身测试不替代真实解码器。Windows以signal结束时exitCode仍为null，终端检查还必须看signalCode。
 
 ## 坑158 - Ant原有几何与CSS网格直接叠加会造成错位
 
@@ -21,3 +21,12 @@
 016首次全量发现IReadOnlyDictionary无法直接反序列化；明确映射到Dictionary/List后保存/读取/编辑/移动/删除通过。准备阶段仅暂存，失败索引回滚；提交后逐文件原子发布失败必须报告不完整，不宣称全部保存。激活检查同一配置快照，已确认的旧头戴/悬挂别名和0/null机位必须规范化比较。保留SourceId而不把动态SourceName变化当作意图变化；不覆盖身份不符文件或符号链接。
 
 这些本机证据不替代D4输出、现场预览流或任意余数矩形的硬件确认。
+
+## 018追加 - 转协议、网络让路与真实浏览器不是同一层
+
+- MediaMTX本身不输出HTTP-FLV／WS-FLV；只增加Vue播放器不能让浏览器直连RTMP TCP。018复用已有MediaMTX按需上游，单FFmpeg编码、ControlHost有界GOP扇出，观看端无需工具。
+- 只丢完整GOP，不随机丢字节／P帧；降档重启保留连接并重映射时间戳。人数突增后不把旧高码率缓存塞给全部新读者，否则降码率后仍被旧数据堵住。
+- 首次真实Chromium0帧，而ffprobe两档都可解码；根因是Blob Worker无法解析`/preview018.flv`相对URL。主线程转绝对URL后26帧、1280／320、0错误；不以关闭Worker或压制错误绕过。
+- 同账号直接重登可能保留CSRF；预览Owner绑定加密会话票据摘要，不能只看用户ID／CSRF。跨站GET不能创建流，先POST授权租约再消费。
+- Idle仅CPU优先级；输出转码只节省出站，入站需低清源。全机网络优先级依赖额外系统／交换机QoS，不能误标共享MediaMTX／ControlHost全部流量为低优先。
+- 新Live测试为显式Physical：只启动回环MTX、合成RTMP与自有Job，65观看者、一上游／一编码、HTTP／WS实际解码、动态尺寸与释放；不替代真实摄像机、D4或现场QoS确认。

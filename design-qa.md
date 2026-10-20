@@ -1,4 +1,21 @@
-# 017 紧凑仪表盘与品牌导航验收
+# 018 共享预览与017紧凑控制台验收
+
+final result: passed
+
+日期：2026-10-20，仅本机，不部署D4。017版式延续，新增服务端FLV观看组件。
+
+- 最终48组实际组件／样式只读截图：浅深主题、8尺寸、单／双／密集自定义，0页面／控制台错误，无水平溢出；常见4档桌面仪表盘与侧栏无滚动，矮屏可完整访问。
+- 真实Chromium生产mpegts适配器解码网关捕获视频26帧，1280→320；正式Vue预览组件33帧、video可见、0错误。只读网络为自有回环GET，API申请在夹具内存中替代，不伪造浏览器用户输入。
+- 无流普通空态、失败卡内一行、最后画面标非实时；没有本机令牌或安装工具入口。窗口3/4仍预留，原设备／声音控制未更改。
+- 根因证据：Worker相对URL首次0帧，主线程绝对URL修复；正式组件复测，不用底层播放器出画冒充整个组件可用。
+- 截图／媒体证据：`.validation/preview018/{browser-decoded,component-decoded}.{png,json}`；布局日志同目录`browser-layout-final.log`及`.validation/console017/`。API／65并发／真实原生解码边界另见[018验证](specs/018-shared-flv-preview/verification.md)。
+- Web／App／Electron-main构建和前端1090／.NET非Physical1685通过。全机QoS、现场D4/WSS、封装客户端真实播放未代验；不是视觉失败，也不冒称已部署。
+
+以下为017及016的阶段历史。
+
+---
+
+# 017 紧凑仪表盘与品牌导航验收（历史）
 
 final result: passed
 

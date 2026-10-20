@@ -2,7 +2,7 @@
 
 **Feature Branch**: `main`（沿用当前工作区）
 **Created**: 2026-10-20
-**Status**: In Progress（仅本机；未接入生产端点，未部署）
+**Status**: Implemented（本机应用层方案；未推送／部署，现场网络与全机QoS未代验）
 **Input**: 用户要求复用D4现有MediaMTX将RTMP转换为HTTP-FLV／WebSocket-FLV；观看端不安装Node／FFmpeg；不能持续拉所有流，同流并发共享上游；预览流量优先级低于正式播放与其它服务，拥塞时降码率／帧率尽量不断。继续仅本机实现，不更改部署。
 
 ## User Scenarios & Testing *(mandatory)*

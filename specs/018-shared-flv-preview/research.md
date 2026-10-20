@@ -14,6 +14,7 @@
 - Supervisor/Runtime/MediaMtxProcess.cs仅负责现有进程组，不应在预览失败时重启它。
 - CameraCatalog已确认84–88及76；墙面输入63／64／81；3/4仍预留。
 - RequireSessionAndCsrf只验证写入，故GET不可直接创建拉流；先POST短租约并验证精确Origin。
+- 进一步读代码发现登录只EnsureToken而不一定轮换CSRF。最终Owner使用框架CookieManager合并的加密会话票据摘要＋用户＋协议，同账号直接重登的旧租约拒绝；自动续签也安全失效旧预览并重连，不修改认证合同。
 - 当前没有UseWebSockets，Vite协议代理也未ws:true，需明确接通两端。
 - PresentationProcessJob可借鉴挂job再放行，但原Launch重定向NUL，不可直接用于FLV stdout。
 

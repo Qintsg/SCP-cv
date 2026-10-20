@@ -48,7 +48,7 @@ runtime-dotnet/src/ScpCv.ControlHost/StreamPreview/
 runtime-dotnet/src/ScpCv.ControlHost/Endpoints/StreamPreviewEndpoints.cs
 runtime-dotnet/tests/ScpCv.ControlHost.Tests/StreamPreview*.cs
 frontend/src/features/preview/
-  ClientStreamPreview.vue previewClient.ts previewAddress.ts
+  ClientStreamPreview.vue previewClient.ts previewPlayer.ts previewTarget.ts
 frontend/src/features/settings/tabs/ClientPreviewSettings.vue
 frontend/config/dualProtocol.ts
 docs/openapi.yaml
@@ -58,7 +58,7 @@ docs/openapi.yaml
 
 ## Runtime Design
 
-- POST请求仅含source_id或墙面input及quality，不接受URL。租约绑定用户＋入口协议＋登录时轮换的CSRF Cookie摘要，避免同账号重登复用旧租约。
+- POST请求仅含source_id或墙面input及quality，不接受URL。租约绑定用户＋入口协议＋加密会话票据摘要，避免同账号重登复用旧租约；不能只用可能未轮换的CSRF。
 - 创建只登记需求，实际FLV消费连接才启动；单租约仅一消费连接。续租经CSRF每10秒一次，30秒到期；最后读者宽限≤3秒。
 - 上游键含完整规范化URI（含凭据，仅服务端摘要）；固定墙面流优先RTMP1935/live/chn1，小窗／高清为不同实际通道；自定义地址受现场网段和输入规则限制，预留3/4返回无流。
 - 动态路径命名含随机Host实例前缀，只增删已拥有路径；sourceOnDemand=true，读者消失即停止设备拉流；不改all_others或writeQueueSize。

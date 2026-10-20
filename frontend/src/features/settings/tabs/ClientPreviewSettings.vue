@@ -1,24 +1,26 @@
-<!-- 本机预览显式连接：临时令牌只在当前标签页保存，不发送给播放主机。 -->
+<!-- 服务端共享直播预览状态：仅只读诊断，不再要求观看端安装工具或填写本机令牌。 -->
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import ACard from 'ant-design-vue/es/card';
-import AInput from 'ant-design-vue/es/input';
 import AButton from 'ant-design-vue/es/button';
-import { configurePreview, previewToken } from '@/features/preview/previewAddress';
-import { getClientBuildTarget } from '@/platform';
-const token = ref(previewToken()), connected = ref(!!token.value);
-const supported = getClientBuildTarget() === 'web' && ['http:', 'https:'].includes(window.location.protocol);
-const command = `node tools/client-preview/server.mjs --origin=${window.location.origin}`;
-/** :returns: 仅写当前标签页临时配置，是否拉流成功由卡片自己报告。 */
-function connect(): void { configurePreview(token.value); connected.value = true; token.value = ''; }
-/** :returns: 撤销本标签页所有预览连接，不操作D4或系统服务。 */
-function disconnect(): void { configurePreview(''); token.value = ''; connected.value = false; }
+import { requestJson } from '@/services/api';
+import { useRequestContext } from '@/composables/useRequestContext';
+interface PreviewStatus { lease_count: number; upstream_count: number; max_upstreams: number; egress_kbps: number }
+const status = ref<PreviewStatus>(), busy = ref(false), detail = ref('');
+const capture = useRequestContext(() => { status.value = undefined; detail.value = ''; });
+/** :returns: 只读取原主机诊断，不探测或启动媒体流。 */
+async function refresh(): Promise<void> {
+  if (busy.value) return; const current = capture(); busy.value = true; detail.value = '';
+  try { const result = await requestJson<PreviewStatus>('/api/stream-previews/status/', {}, 8000, { canConsume: current }); if (current()) status.value = result; }
+  catch { if (current()) detail.value = '暂时无法读取预览状态'; }
+  finally { busy.value = false; }
+}
+onMounted(refresh);
 </script>
-<template><a-card title="本机直播预览"><div class="client-preview-settings">
-  <p>预览由正在使用网页的这台电脑拉取，不经过 D4。需要在本机安装 FFmpeg 并启动预览工具。</p>
-  <p v-if="!supported">当前封装客户端尚未接入本机预览，请通过浏览器使用。</p>
-  <code>{{ command }}</code><p>将工具给出的临时连接码填入；仅当前标签页有效，预览不播放声音。</p>
-  <a-input v-model:value="token" type="password" autocomplete="off" aria-label="本机预览临时连接码" placeholder="临时连接码" />
-  <div><a-button type="primary" :disabled="!supported || !/^[a-f0-9]{48}$/.test(token)" @click="connect">连接本机预览</a-button><a-button :disabled="!connected" @click="disconnect">断开</a-button></div>
+<template><a-card title="直播预览"><div class="client-preview-settings">
+  <p>由播放主机按需提供，观看电脑无需安装 Node 或 FFmpeg。相同流共享拉取，离开页面后释放；预览没有声音。</p>
+  <p>网络拥塞时降低预览画质与帧率，优先保留正式播放资源。</p>
+  <div v-if="status" class="client-preview-settings__status"><span>{{ status.upstream_count }} / {{ status.max_upstreams }} 路预览</span><span>{{ status.lease_count }} 个观看会话</span><span>出站预算 {{ status.egress_kbps }} kbps</span></div>
+  <p v-if="detail">{{ detail }}</p><a-button :loading="busy" @click="refresh">刷新预览状态</a-button>
 </div></a-card></template>
-<style scoped>.client-preview-settings{display:grid;gap:12px}.client-preview-settings p{font-size:12px;color:var(--console-muted);margin:0;line-height:1.7}.client-preview-settings code{font-size:12px;background:var(--console-subtle);padding:10px;overflow-wrap:anywhere}.client-preview-settings>div{display:flex;gap:8px;flex-wrap:wrap}</style>
+<style scoped>.client-preview-settings{display:grid;gap:12px}.client-preview-settings p{font-size:12px;color:var(--console-muted);margin:0;line-height:1.7}.client-preview-settings__status{display:flex;gap:8px 16px;flex-wrap:wrap;font-size:12px}.client-preview-settings>.ant-btn{justify-self:start}</style>
