@@ -170,7 +170,7 @@ function setMute(muted: boolean): Promise<void> {
 
 <template>
   <div class="background-audio">
-    <FPageHeader :title="t('backgroundAudio.title')" :description="t('backgroundAudio.subtitle')">
+    <FPageHeader :title="t('backgroundAudio.title')">
       <template #actions>
         <a-button :loading="busyAction === 'refresh'" @click="refreshAll">
           <template #icon><FIcon name="arrow_clockwise_20_regular" /></template>
@@ -186,12 +186,6 @@ function setMute(muted: boolean): Promise<void> {
     <section class="background-audio__deck">
       <a-card class="background-audio__player" :body-style="{ padding: '0' }">
         <div class="background-audio__player-surface">
-          <div class="background-audio__disc" :class="{ 'background-audio__disc--playing': audioStore.isPlaying }">
-            <FIcon name="music_note_2_24_regular" />
-          </div>
-          <div class="background-audio__wave" aria-hidden="true">
-            <span v-for="bar in 18" :key="bar" />
-          </div>
           <div class="background-audio__now">
             <a-tag  :color="tagColor(currentState?.playback_state === 'error' ? 'error' : 'info')">{{ statusLabel }}</a-tag>
             <h3>{{ currentSource?.name || t('backgroundAudio.standbyTitle') }}</h3>
@@ -216,7 +210,7 @@ function setMute(muted: boolean): Promise<void> {
             @click="() => runAction('prev', () => audioStore.control('prev'))">
             <template #icon><FIcon name="previous_24_regular" /></template>
           </a-button>
-          <a-button shape="circle" type="primary" size="large" :aria-label="playPauseAria"
+          <a-button shape="circle" type="primary" :aria-label="playPauseAria"
             :disabled="playlist.length === 0"
             :loading="busyAction === 'play-toggle'" @click="playOrPause">
             <template #icon><FIcon :name="audioStore.isPlaying ? 'pause_24_filled' : 'play_24_filled'" /></template>

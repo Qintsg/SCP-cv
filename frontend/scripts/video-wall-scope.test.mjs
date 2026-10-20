@@ -86,7 +86,8 @@ test('真实连接先于runtime投影变化时立即撤销旧布局就绪，新�
   assert.deepEqual(writes(), [], '恢复不能自发预检或切墙');
   hold.resolve(json(layout('新主机布局'))); await flush();
   assert.equal(button().disabled, false);
-  assert.equal(browser.document.querySelector('input[aria-label="布局名称"]').value, '新主机布局');
+  assert.equal(browser.document.querySelector('input[aria-label="布局名称"]'), null, '布局名称编辑按新需求移除');
+  button().click(); await flush(); assert.equal(JSON.parse(writes()[0].body).name, '新主机布局', '新应用仍须采用新GET的归属数据');
 });
 
 /** :param change: 正式认证/连接或页面寿命边界。:returns: 不调用布局模块私有方法。 */
@@ -121,8 +122,9 @@ test('新同ID登录独立加载，旧GET的finally不能解锁新GET', async ()
   first.resolve(json(layout('旧读取布局'))); await flush();
   assert.notEqual(button()?.disabled, false); assert.equal(browser.document.body.textContent.includes('旧读取布局'), false);
   latest.resolve(json(layout('新登录布局'))); await flush();
-  assert.equal(button().disabled, false); assert.equal(browser.document.querySelector('input[aria-label="布局名称"]').value, '新登录布局');
+  assert.equal(button().disabled, false); assert.equal(browser.document.querySelector('input[aria-label="布局名称"]'), null);
   assert.deepEqual(writes(), []);
+  button().click(); await flush(); assert.equal(JSON.parse(writes()[0].body).name, '新登录布局');
 });
 
 test('不同主机的新应用不被旧POST的finally解锁或提示', async () => {

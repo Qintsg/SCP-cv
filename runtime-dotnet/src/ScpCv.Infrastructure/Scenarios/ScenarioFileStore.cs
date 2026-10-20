@@ -66,6 +66,11 @@ public sealed class ScenarioFileStore(string dataRoot) : IWriteProjection
             Cleanup(staged.Select(item => item.Stage).Concat(staging is null ? [] : new[] { Path.Combine(staging, "index.json") }), staging);
             throw;
         }
+        catch (ScenarioServiceException)
+        {
+            Cleanup(staged.Select(item => item.Stage).Concat(staging is null ? [] : new[] { Path.Combine(staging, "index.json") }), staging);
+            throw;
+        }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException or YamlException or MediaServiceException)
         {
             Cleanup(staged.Select(item => item.Stage).Concat(staging is null ? [] : new[] { Path.Combine(staging, "index.json") }), staging);

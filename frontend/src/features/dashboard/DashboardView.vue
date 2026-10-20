@@ -40,7 +40,7 @@ const hasDeviceError = computed(() =>
 
 <template>
   <div class="dashboard">
-    <FPageHeader :title="t('nav.dashboard')" :description="heroSubtitle" />
+    <FPageHeader :title="t('nav.dashboard')" />
 
     <a-alert v-if="hasDeviceError" type="error" :message="t('dashboard.deviceErrorTitle')"><template #description>
       {{ t('dashboard.deviceErrorBody') }}
@@ -217,7 +217,7 @@ const hasDeviceError = computed(() =>
   gap: var(--spacingHorizontalS);
   margin-bottom: var(--spacingVerticalS);
 }
-.dashboard__power-row:not(:first-child) .ant-btn { grid-column:2/4; justify-self:end; }
+.dashboard__power-row:not(:first-child) .ant-btn { grid-column:2/4; justify-self:stretch; }
 
 .dashboard__power-label {
   flex: 1 1 100px;

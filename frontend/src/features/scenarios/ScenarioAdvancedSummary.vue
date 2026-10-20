@@ -6,7 +6,7 @@ import type { ScenarioAdvanced } from '@/services/apiTypes';
 import { microphoneAliasesConflict, microphoneVolume } from '@/services/venueApi';
 const props = defineProps<{ advanced?: ScenarioAdvanced }>();
 const names: Record<string, string> = { rear: '后摄像机', center1: '中摄像机1', center2: '中摄像机2', left: '左摄像机', right: '右摄像机' };
-const positions = computed(() => Object.entries(props.advanced?.camera_positions ?? {}).filter(([, value]) => value != null));
+const positions = computed(() => Object.entries(props.advanced?.camera_positions ?? {}).filter(([, value]) => value != null && value > 0));
 const audio = computed(() => props.advanced?.audio);
 const microphone = computed(() => microphoneVolume(audio.value));
 const microphoneConflict = computed(() => microphoneAliasesConflict(audio.value));

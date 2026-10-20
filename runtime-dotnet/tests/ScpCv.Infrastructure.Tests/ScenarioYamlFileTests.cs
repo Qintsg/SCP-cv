@@ -88,4 +88,24 @@ public sealed class ScenarioYamlFileTests
             var prepared = await files.PrepareAsync(database, cancellationToken); action(); return prepared;
         }
     }
+
+    [Fact]
+    public async Task InvalidLegacyBusinessConfigurationRollsBackAndCleansOwnedStaging()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"scp-cv-yaml-legacy-{Guid.NewGuid():N}");
+        try
+        {
+            var factory = new ControlDbContextFactory(new DataRootOptions { RootPath = root }, root); await new DatabaseInitializer(factory).InitializeAsync();
+            using var writes = new WriteCoordinator(factory); var files = new ScenarioFileStore(root);
+            var service = new ScenarioService(factory, writes, new CommandCoordinator(new CommandRepository(writes), new NullCommandWakeNotifier()), scenarioFiles: files);
+            await service.CreateAsync(new("第一份", "", "unset", "single", "unset", 100, []));
+            var broken = await service.CreateAsync(new("历史冲突", "", "unset", "single", "unset", 100, []));
+            await writes.ExecuteAsync(async (db, token) => { var value = await db.Scenarios.SingleAsync(item => item.Id == broken.Id, token);
+                value.AdvancedJson = "{\"audio\":{\"headset_volume\":20,\"hanging_volume\":30}}"; });
+            await Assert.ThrowsAsync<ScenarioServiceException>(() => service.CreateAsync(new("不能提交", "", "unset", "single", "unset", 100, [])));
+            Assert.Empty(Directory.EnumerateDirectories(Path.Combine(root, "scenarios", ".staging")));
+            Assert.Equal(2, (await service.ListAsync()).Count);
+        }
+        finally { SqliteConnection.ClearAllPools(); if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
 }

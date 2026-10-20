@@ -31,7 +31,7 @@ const portsCaption = computed(() => t('settings.ports', connectionPorts));
 
 <template>
   <div class="settings-view">
-    <FPageHeader title="设置" description="管理运行服务、显示器、设备电源和当前账户。">
+    <FPageHeader title="设置">
       <template #context><p class="settings-view__brand-caption">{{ portsCaption }}</p></template>
     </FPageHeader>
 

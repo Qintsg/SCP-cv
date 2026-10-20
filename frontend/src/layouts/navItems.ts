@@ -13,6 +13,8 @@ export const DESKTOP_PRIMARY_NAV: NavItemDef[] = [
   { path: '/dashboard', label: t('nav.dashboard'), icon: 'home_24_regular', iconSelected: 'home_24_filled' },
   { path: '/display/big-left', label: t('videoWall.window1'), icon: 'tv_24_regular', iconSelected: 'tv_24_filled' },
   { path: '/display/big-right', label: t('videoWall.window2'), icon: 'tv_24_regular', iconSelected: 'tv_24_filled' },
+  { path: '/display/window-3', label: '窗口 3 · 预留', icon: 'tv_24_regular' },
+  { path: '/display/window-4', label: '窗口 4 · 预留', icon: 'tv_24_regular' },
   { path: '/sources', label: t('nav.sources'), icon: 'library_24_regular', iconSelected: 'library_24_filled' },
   { path: '/background-audio', label: t('nav.backgroundAudio'), icon: 'music_note_2_24_regular' },
   { path: '/devices', label: t('nav.devices'), icon: 'camera_24_regular' },
@@ -42,5 +44,7 @@ export const MOBILE_TAB_BAR: NavItemDef[] = [
 export function resolveDisplayLabel(path: string, _isDoubleScreen: boolean, _isCustom = false): string {
   if (path === '/display/big-left') return t('videoWall.window1');
   if (path === '/display/big-right') return t('videoWall.window2');
+  if (path === '/display/window-3') return '窗口 3 · 预留';
+  if (path === '/display/window-4') return '窗口 4 · 预留';
   return '';
 }

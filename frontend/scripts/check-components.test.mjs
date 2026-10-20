@@ -64,7 +64,7 @@ test('空闲窗口只展示一次操作提示', () => {
 test('媒体列表溢出时可横向滚动，导航不会被表格挤窄', () => {
   const sources = readFileSync(join(sourceRoot, 'features/sources/SourcesView.vue'), 'utf8');
   assert.match(sources, /overflowX: 'auto'/);
-  assert.match(sources, /<a-table[\s\S]*?:scroll="\{ x: 760 \}"/);
+  assert.match(sources, /<a-table[\s\S]*?:scroll="\{ x: 800 \}"/);
   const shell = readFileSync(join(sourceRoot, 'layouts/AppShell.vue'), 'utf8');
   assert.match(shell, /<a-layout-sider[\s\S]*?:width="228"/);
 });

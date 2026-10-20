@@ -5,8 +5,8 @@ properties:
     type: string
     nullable: true
     maxLength: 480
-    pattern: '^[A-Za-z0-9]+$'
-    description: 可解析完整布局的v1短码；不建数据库码表。配置后优先于旧单/双屏字段，保存可含预留输入，激活前全量预检
+    pattern: '^[A-Za-z0-9]*$'
+    description: 可解析完整布局的v1短码；null或空串不覆盖旧布局字段，不建数据库码表。配置后优先于旧单/双屏字段，保存可含预留输入，激活前全量预检
   camera_positions:
     type: object
     additionalProperties:

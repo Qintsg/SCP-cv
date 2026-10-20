@@ -2,7 +2,7 @@
 
 **Feature Branch**: `main`（沿用当前分支）
 **Created**: 2026-10-20
-**Status**: Draft
+**Status**: Implemented（本机验证完成，未部署D4）
 **Input**: 用户十二张标注截图、4K适配、50格布局/短码、本机直播预览、目录与预案编辑。
 
 ## User Scenarios & Testing *(mandatory)*

@@ -1,26 +1,10 @@
-/* 墙面编排的屏幕比例与就地选源，诊断信息不占据主操作空间。 */
-.wall-map { min-width: 0; }
-.wall-map__title { display: inline-flex; align-items: center; gap: 10px; }
-.wall-map__input-hint { color: var(--colorNeutralForeground3); font: 12px Consolas, monospace; }
-.wall-map__toolbar { margin-bottom: 18px; }
-.wall-map__screen { display: grid; grid-template-columns: minmax(0,1fr); min-height: 180px; padding: 8px; border: 1px solid var(--colorNeutralStroke1); border-radius: 8px; background-color: var(--colorNeutralBackground2); background-image: linear-gradient(var(--colorNeutralStroke3) 1px,transparent 1px),linear-gradient(90deg,var(--colorNeutralStroke3) 1px,transparent 1px); background-size: 10% 20%; }
-.wall-map__screen--split { grid-template-columns: repeat(2,minmax(0,1fr)); }
-.wall-map__region { display:flex; min-width:0; flex-direction:column; justify-content:center; gap:12px; padding:20px; }
-.wall-map__region + .wall-map__region { border-left:1px dashed var(--colorNeutralStroke1); }
-.wall-map__region-label { font-size:13px; font-weight:600; color:var(--colorNeutralForeground2); }
-.wall-map__region--empty { opacity:.65; }
-.wall-map__actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
-.wall-map__actions .ant-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; }
-.wall-map__options { margin-top:18px; padding-top:14px; border-top:1px solid var(--colorNeutralStroke2); color:var(--colorNeutralForeground3); font-size:12px; }
-.wall-map__options summary { cursor:pointer; width:fit-content; padding:4px 0; }
-.wall-map__options label { display:grid; grid-template-columns:80px minmax(0,1fr); align-items:center; gap:12px; margin-top:12px; }
-.wall-map__options p { margin:8px 0 0; line-height:1.6; }
-.wall-map__validation { margin:12px 0 0; color:var(--colorStatusWarningForeground1); }
-.wall-map .ant-alert { margin-top:12px; }
-@media(max-width:767px) {
-  .wall-map__input-hint { display:none; }
-  .wall-map__region { padding:14px 8px; gap:10px; }
-  .wall-map__screen { min-height:160px; padding:4px; }
-  .wall-map__actions .ant-btn { min-height:44px; width:100%; }
-  .wall-map__options summary { display:flex; align-items:center; min-height:44px; }
-}
+/* 大屏编排容器：保留32:9工作区与可见应用入口，不保留旧草稿选项样式。 */
+.wall-map{min-width:0}
+.wall-map :deep(.ant-card-body){padding:16px}
+.wall-map__title{display:inline-flex;align-items:center;gap:10px}
+.wall-map__input-hint{color:var(--colorNeutralForeground3);font:12px Consolas,monospace}
+.wall-map__actions{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;padding:8px 0;position:sticky;bottom:0;z-index:3;pointer-events:none}
+.wall-map__actions .ant-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;pointer-events:auto}
+.wall-map__validation{margin:12px 0 0;color:var(--colorStatusWarningForeground1);font-size:12px}
+.wall-map .ant-alert{margin-top:12px}
+@media(max-width:767px){.wall-map__input-hint{display:none}.wall-map__actions .ant-btn{min-height:44px;width:100%}}

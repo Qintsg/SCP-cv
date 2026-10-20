@@ -1,5 +1,6 @@
 type: object
-description: grid区域必填，10列5行，零起点、正跨度、不越界不重叠；不能与旧区域混用
+nullable: true
+description: grid区域必须非null，10列5行，零起点、正跨度、不越界不重叠；旧区域响应可省略或为null，不能与旧区域混用非空坐标
 required: [column, row, columns, rows]
 additionalProperties: false
 properties:

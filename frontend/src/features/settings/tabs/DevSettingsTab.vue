@@ -22,7 +22,7 @@ const portsCaption = computed(() =>
 </script>
 
 <template>
-  <section class="settings-view__grid">
+  <section class="developer-workspace">
     <PresentationSettings />
     <a-card :title="t('settings.apiEndpoints')">
       <ul class="settings-view__api-list">
@@ -46,3 +46,10 @@ const portsCaption = computed(() =>
 
   </section>
 </template>
+<style scoped>
+.developer-workspace{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+.developer-workspace>:first-child{grid-column:1/-1}.developer-workspace :deep(.ant-card-body){overflow-wrap:anywhere}
+.developer-workspace :deep(.presentation-settings__components){grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.developer-workspace :deep(.presentation-settings__components li){border:1px solid var(--console-border);padding:12px;border-radius:var(--borderRadiusMedium)}
+@media(max-width:767px){.developer-workspace,.developer-workspace :deep(.presentation-settings__components){grid-template-columns:minmax(0,1fr)}}
+</style>

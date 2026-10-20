@@ -46,6 +46,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/dashboard', component: DashboardView, meta: { titleKey: 'nav.dashboard' } },
   { path: '/display/tv-left', redirect: '/display/big-left' },
   { path: '/display/tv-right', redirect: '/display/big-left' },
+  { path: '/display/window-3', component: () => import('@/features/display/ReservedWindowView.vue'), meta: { title: '窗口 3 · 预留' } },
+  { path: '/display/window-4', component: () => import('@/features/display/ReservedWindowView.vue'), meta: { title: '窗口 4 · 预留' } },
   {
     path: '/display/:target',
     component: DisplayControlView,

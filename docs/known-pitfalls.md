@@ -464,11 +464,11 @@
 - **症状**：Windows动画实际读回关闭，浏览器仍显示no-preference；真200%后的fullPage截图只捕获半张视口，容易被当成产品溢出。
 - **根因与现状**：Playwright默认模拟no-preference，需显式`reduced_motion='null'`恢复系统值；Chrome的page zoom/DPR、CSS视口、原生像素与pinch scale不是同一概念。用Chrome公开缩放控件和独立指标证明200%，截图用无clip原生视口，不改生产CSS或关闭断言。最终121组/10组交互通过，系统原值恢复，失败保留，见[缩放/系统偏好验收](../specs/013-frontend-experience/verification/20261017-zoom-motion.md)。
 
-### 坑140 - 媒体反馈围栏也必须覆盖索引续读与键盘开窗（2026-10-17）
+### 坑140、156–159 - 媒体反馈与控制工作区
 
-- 只隐藏旧Toast不够：旧目录PATCH后仍可能刷新新账号，旧音频较大时间戳也可能污染新账号快照；同ID重新认证必须识别认证对象变化。Store与页面分别围栏，页面离开不续读，删除恢复保留原错误，不承诺撤销已受理服务器动作。
-- 目录重命名使用原生prompt会绕开统一表单/错误/焦点。改Ant后，Enter打开弹窗的keyup又会误提交；使用输入框pressEnter按下并跳过IME组合/229/重复，菜单先返还可见入口再开窗，afterClose必须接真实回调。601回归与真实手机/200%通过，见[接续证据](../specs/014-ant-design-console/verification/20261017-directory-scope.md)。
+认证/目录续读、名称编辑的IME/Enter和焦点收尾，见[前端体验记录](known-pitfalls/frontend-experience.md)。
 
+源/目标分辨率、本机解码器实测、组件网格与预案文件一致性，见[工作区边界](known-pitfalls/console-workspace.md)。
 ### 坑141–151 - 认证、主机切换与控制归属
 
 旧401、改密CSRF、退出、切主机、验收断言、app空配置、旧音量缓冲、设备结果/焦点、真实占用及云台/现场声音归属的症状、修复和分层验证见[认证与连接记录](known-pitfalls/authentication-connection.md)。保留原始失败；本机浏览器/后端仿真与Electron补验不替代现场验收。

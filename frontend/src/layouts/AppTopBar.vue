@@ -25,7 +25,7 @@ const { t } = useI18n();
 const runtime = useRuntimeStore();
 const sessions = useSessionStore();
 const route = useRoute();
-const pageTitle = computed(() => route.meta.titleKey ? t(String(route.meta.titleKey)) : '现场控制台');
+const pageTitle = computed(() => route.meta.titleKey ? t(String(route.meta.titleKey)) : typeof route.meta.title === 'string' ? route.meta.title : '现场控制台');
 
 type StatusTone = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
 

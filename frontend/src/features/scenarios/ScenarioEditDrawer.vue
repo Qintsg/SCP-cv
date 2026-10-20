@@ -23,7 +23,7 @@ import ASlider from 'ant-design-vue/es/slider';
 import ASwitch from 'ant-design-vue/es/switch';
 import type { SelectProps } from 'ant-design-vue';
 
-import { useToast } from '@/composables/useToast';
+import { useRequestContext } from '@/composables/useRequestContext';
 import { sliderAriaLabel as vSliderAriaLabel } from '@/design-system/sliderAriaLabel';
 import { useScenarioStore } from '@/stores/scenarios';
 import { useSourceStore } from '@/stores/sources';
@@ -38,6 +38,8 @@ import {
 } from './scenarioModel';
 import type { MediaSourceItem, ScenarioItem } from '@/services/api';
 import ScenarioAdvancedSettings from './ScenarioAdvancedSettings.vue';
+import ScenarioWallSettings from './ScenarioWallSettings.vue';
+import AAutoComplete from 'ant-design-vue/es/auto-complete';
 import { directoryPath, sourcePath } from '../directories/directoryPath';
 import { nullableNumber } from '@/design-system/controlValue';
 
@@ -58,12 +60,16 @@ const emit = defineEmits<{
 const { t } = useI18n();
 const sourceStore = useSourceStore();
 const scenarioStore = useScenarioStore();
-const toast = useToast();
 
 const draft = ref<ScenarioDraft>(createEmptyDraft());
 const errorMessage = ref('');
 const saving = ref(false);
+let editRevision = 0;
+const captureSave = useRequestContext(() => { saving.value = false; errorMessage.value = ''; emit('update:open', false); });
 const confirmRetiredTargetRemoval = ref(false);
+const folderPathInput = ref('/');
+const folderOptions = computed(() => [{ value: '/' }, ...scenarioStore.folders.map(folder => ({ value: directoryPath(folder.id,scenarioStore.folders) }))]
+  .filter(option => option.value.toLocaleLowerCase().includes(folderPathInput.value.toLocaleLowerCase())));
 
 const isOpen = computed({
   get: () => props.open,
@@ -73,17 +79,20 @@ const isOpen = computed({
 watch(
   () => [props.open, props.scenario, props.prefillFromState] as const,
   ([isOpenVal, scenario, prefill]) => {
+    editRevision++; saving.value = false;
     if (!isOpenVal) return;
     if (scenario) {
       draft.value = fromScenarioItem(scenario);
     } else if (prefill) {
       draft.value = JSON.parse(JSON.stringify(prefill));
     } else {
-      draft.value = createEmptyDraft();
+      draft.value = { ...createEmptyDraft(), bigScreenModeState: 'set' };
     }
     errorMessage.value = '';
+    folderPathInput.value = directoryPath(draft.value.folderId, scenarioStore.folders);
     confirmRetiredTargetRemoval.value = false;
   },
+  { immediate: true },
 );
 
 const sourceOptionsByCategory = computed<NonNullable<SelectProps['options']>>(() => {
@@ -114,26 +123,10 @@ const sourceOptionsByCategory = computed<NonNullable<SelectProps['options']>>(()
   return options;
 });
 
-const visibleWindows = computed<ScenarioWindowDraft[]>(() => {
-  if (draft.value.bigScreenModeState !== 'unset' && draft.value.bigScreenMode === 'single') {
-    return draft.value.windows.filter((win) => win.windowId !== 2);
-  }
-  return draft.value.windows;
-});
+const visibleWindows = computed<ScenarioWindowDraft[]>(() => draft.value.windows);
 
-function windowLabel(windowId: number): string {
-  if (draft.value.bigScreenModeState !== 'unset' && draft.value.bigScreenMode === 'single' && windowId === 1) {
-    return t('scenarios.edit.winBig');
-  }
-  switch (windowId) {
-    case 1:
-      return t('scenarios.edit.winBigLeft');
-    case 2:
-      return t('scenarios.edit.winBigRight');
-    default:
-      return t('scenarios.edit.winFallback', { id: windowId });
-  }
-}
+/** :param windowId: 逻辑播放窗口。:returns: 不按墙面左右/全屏改名或隐藏。 */
+function windowLabel(windowId: number): string { return t('scenarios.edit.window', { id: windowId }); }
 
 function isVolumeEditable(window: ScenarioWindowDraft): boolean {
   if (window.sourceState !== 'set' || !window.sourceId) return false;
@@ -151,30 +144,17 @@ function showLoopToggle(window: ScenarioWindowDraft): boolean {
   return cat === 'video';
 }
 
-function setBigScreenMode(value: ScenarioWindowMode): void {
-  if (value === 'unset') {
-    draft.value.bigScreenModeState = 'unset';
-    return;
-  }
-  draft.value.bigScreenModeState = 'set';
-  draft.value.bigScreenMode = value === 'empty' ? 'single' : 'double';
-  if (draft.value.bigScreenMode === 'single') {
-    const winTwo = draft.value.windows.find((win) => win.windowId === 2);
-    if (winTwo) winTwo.sourceState = 'unset';
-  }
-}
-
-const bigScreenSegmentValue = computed<ScenarioWindowMode>({
-  get: (): ScenarioWindowMode => {
-    if (draft.value.bigScreenModeState === 'unset') return 'unset';
-    return draft.value.bigScreenMode === 'single' ? 'empty' : 'set';
-  },
-  set: (value: ScenarioWindowMode) => setBigScreenMode(value),
-});
 
 async function save(): Promise<void> {
+  if (saving.value || !props.open) return;
+  const scope = captureSave(), revision = editRevision;
+  const current = () => scope() && props.open && revision === editRevision;
   errorMessage.value = validateName(draft.value.name);
   if (errorMessage.value) return;
+  const enteredPath = folderPathInput.value.trim().replace(/\/+$/, '') || '/';
+  const folder = scenarioStore.folders.find(item => directoryPath(item.id,scenarioStore.folders) === enteredPath);
+  if (enteredPath !== '/' && !folder) { errorMessage.value = '目录不存在，请选择已有目录或先在列表中新建目录'; return; }
+  draft.value.folderId = folder?.id ?? null;
   if (draft.value.retiredTargets.length > 0 && !confirmRetiredTargetRemoval.value) {
     errorMessage.value = t('scenarios.edit.legacyConfirmRequired');
     return;
@@ -193,13 +173,13 @@ async function save(): Promise<void> {
     const saved = draft.value.id
       ? await scenarioStore.update(draft.value.id, payload)
       : await scenarioStore.create(payload);
-    toast.success(draft.value.id ? t('scenarios.edit.updated') : t('scenarios.edit.created'));
+    if (!current()) return;
     emit('saved', saved);
     emit('update:open', false);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : t('scenarios.edit.saveFail');
+    if (current()) errorMessage.value = error instanceof Error ? error.message : t('scenarios.edit.saveFail');
   } finally {
-    saving.value = false;
+    if (current()) saving.value = false;
   }
 }
 
@@ -211,7 +191,6 @@ function close(): void {
 <template>
   <ControlDrawer role="dialog" aria-modal="true" :aria-label="scenario ? t('scenarios.edit.titleEdit') : t('scenarios.edit.titleCreate')" :title="scenario ? t('scenarios.edit.titleEdit') : t('scenarios.edit.titleCreate')" v-model:open="isOpen" width="min(520px, 100vw)" placement="right">
 
-      <p class="scenario-edit__desc">{{ t('scenarios.edit.desc') }}</p>
 
       <a-alert v-if="draft.retiredTargets.length" type="warning" :message="t('scenarios.edit.legacyTitle')" class="scenario-edit__card"><template #description>
         {{ t('scenarios.edit.legacyDescription', { windows: draft.retiredTargets.map((target) => target.window_id).join('、') }) }}
@@ -224,17 +203,12 @@ function close(): void {
         <a-form-item :label="t('scenarios.edit.name')" required>
           <a-input v-model:value="draft.name" :placeholder="t('scenarios.edit.namePlaceholder')" :aria-label="t('scenarios.edit.name')" />
         </a-form-item>
-        <a-form-item label="预设目录"><a-select v-select-aria-label="'预设目录'" :value="draft.folderId ?? 0" :options="[{label:'/',value:0},...scenarioStore.folders.map(folder=>({label:directoryPath(folder.id,scenarioStore.folders),value:folder.id}))]"
-          aria-label="预设目录" @update:value="draft.folderId = nullableNumber($event) || null" /></a-form-item>
-        <a-form-item :label="t('scenarios.edit.remark')" :extra="t('scenarios.edit.remarkHint')">
+        <a-form-item label="预案目录"><a-auto-complete v-model:value="folderPathInput" :options="folderOptions" style="width:100%"><a-input aria-label="预案目录路径" placeholder="/" /></a-auto-complete></a-form-item>
+        <a-form-item :label="t('scenarios.edit.remark')">
             <a-textarea v-model:value="draft.description" :rows="2" :placeholder="t('scenarios.edit.remarkPlaceholder')" :aria-label="t('scenarios.edit.remark')" />
         </a-form-item>
-        <a-form-item :label="t('scenarios.edit.bigScreenMode')" :extra="t('scenarios.edit.bigScreenHint')">
-          <a-radio-group v-model:value="bigScreenSegmentValue">
-            <a-radio value="unset">{{ t('scenarios.edit.keep') }}</a-radio>
-            <a-radio value="empty">{{ t('scenarios.edit.single') }}</a-radio>
-            <a-radio value="set">{{ t('scenarios.edit.double') }}</a-radio>
-          </a-radio-group>
+        <a-form-item :label="t('scenarios.edit.bigScreenMode')">
+          <ScenarioWallSettings v-if="isOpen" v-model="draft" />
         </a-form-item>
         <a-form-item :label="t('scenarios.edit.systemVolume')" :extra="t('scenarios.edit.systemVolumeHint')">
           <div class="scenario-edit__field-stack">
@@ -254,7 +228,6 @@ function close(): void {
           <a-card v-for="window in visibleWindows" :key="window.windowId" size="small" >
             <template #title>
               <div>
-                <span class="scenario-edit__eyebrow">{{ windowLabel(window.windowId) }}</span>
                 <h4 class="scenario-edit__window-title">{{ t('scenarios.edit.window', { id: window.windowId }) }}</h4>
               </div>
             </template>
@@ -263,13 +236,7 @@ function close(): void {
               <a-radio value="empty">{{ t('scenarios.edit.blackout') }}</a-radio>
               <a-radio value="set">{{ t('scenarios.edit.switch') }}</a-radio>
             </a-radio-group>
-            <p v-if="window.sourceState === 'unset'" class="scenario-edit__hint">
-              {{ t('scenarios.edit.keepHint') }}
-            </p>
-            <p v-else-if="window.sourceState === 'empty'" class="scenario-edit__hint">
-              {{ t('scenarios.edit.blackoutHint') }}
-            </p>
-            <template v-else>
+            <template v-if="window.sourceState === 'set'">
               <a-form-item :label="t('scenarios.edit.sourceSelect')" required>
                 <a-select
                   v-select-aria-label="windowLabel(window.windowId) + t('scenarios.edit.sourceSelect')"

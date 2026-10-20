@@ -51,9 +51,13 @@
 .console-brand { display:flex; align-items:center; gap:12px; padding:24px 22px 28px; color:var(--colorNeutralForegroundInverted); min-height:96px; }
 .console-brand>span { display:grid; place-items:center; flex-shrink:0; width:32px; height:32px; border:1px solid var(--console-nav-text); border-radius:7px; font:600 21px Consolas,monospace; }
 .console-brand strong { display:block; font-size:20px; letter-spacing:.02em; }
+.console-brand__logo { flex:none; width:40px; height:40px; object-fit:contain; background:var(--console-surface); padding:3px; border-radius:6px; }
+.console-brand>div { min-width:0; }
 .console-brand small { display:block; margin-top:3px; color:var(--console-nav-text); font-size:11px; white-space:nowrap; }
 .console-navigation { flex:1; min-height:0; overflow:auto; }
 .console-navigation .ant-menu { background:var(--console-nav); border:0; font-size:14px; }
+.console-navigation .ant-menu-root { display:flex; flex-direction:column; min-height:100%; }
+.console-navigation .ant-menu-root>.ant-menu-item-group:last-child { margin-top:auto; padding-top:24px; }
 .console-navigation .ant-menu-item-group-title { font-size:11px; letter-spacing:.08em; padding:20px 24px 8px; color:var(--console-nav-text); }
 .console-navigation .ant-menu-item { margin:3px 12px; width:calc(100% - 24px); height:44px; line-height:44px; border-radius:6px; }
 .console-navigation .ant-menu-item-selected { background:var(--console-primary); }
@@ -81,6 +85,10 @@
 .console-shell .ant-input,.console-shell .ant-select { max-width:100%; }
 .console-shell .ant-select { min-width:0; }
 .console-shell .ant-btn { max-width:100%; }
+:where(.console-shell,.ant-modal,.ant-drawer) .ant-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; vertical-align:middle; }
+:where(.console-shell,.ant-modal,.ant-drawer) .ant-btn>.f-icon { vertical-align:middle; font-size:1.1em; }
+:where(.console-shell,.ant-modal,.ant-drawer) .ant-btn>.f-icon+span { margin-inline-start:0; }
+.console-shell .ant-radio-wrapper,.ant-drawer .ant-radio-wrapper,.ant-modal .ant-radio-wrapper { align-items:center; }
 .console-shell .ant-btn>span { white-space:normal; }
 .console-shell .ant-form-item { margin-bottom:20px; }
 .console-shell .ant-form-item-label>label { font-weight:500; }

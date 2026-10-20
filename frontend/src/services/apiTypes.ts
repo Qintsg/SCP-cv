@@ -201,11 +201,13 @@ export interface DisplayTargetItem {
 
 export type PlaybackWindowId = 1 | 2;
 
-export type VideoWallInputKind = 'window_1' | 'window_2' | 'laptop' | 'ip_stream';
-export type VideoWallRegion = 'fullscreen' | 'left' | 'right';
+export type VideoWallInputKind = 'window_1' | 'window_2' | 'laptop' | 'ip_stream' | 'window_3' | 'window_4';
+export type VideoWallRegion = 'fullscreen' | 'left' | 'right' | 'grid';
+export interface VideoWallRect { column: number; row: number; columns: number; rows: number }
 
 export interface VideoWallMappingItem {
   region: VideoWallRegion;
+  rect?: VideoWallRect;
   input: { kind: VideoWallInputKind; ip_address?: string };
 }
 
@@ -321,6 +323,7 @@ export interface ScenarioPayload {
 
 /** 可选的现场高级配置；空字段保持当前设备状态。 */
 export interface ScenarioAdvanced {
+  wall_layout_code?: string | null;
   camera_positions?: Record<string, number | null>;
   audio?: import('./venueApi').VenueAudioSettings | null;
 }

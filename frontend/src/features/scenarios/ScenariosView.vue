@@ -30,6 +30,7 @@ import { useSessionStore } from '@/stores/sessions';
 import { formatRelativeTime } from '@/design-system/utils';
 import type { ScenarioItem } from '@/services/api';
 import ScenarioDirectoryTools from './ScenarioDirectoryTools.vue';
+import ScenarioFileTable from './ScenarioFileTable.vue';
 import { inDirectory } from '../directories/directoryPath';
 
 const { t } = useI18n();
@@ -50,6 +51,8 @@ const editingScenario = ref<ScenarioItem | null>(null);
 const prefillDraft = ref<ScenarioDraft | undefined>(undefined);
 
 const folderId = ref<number | null>(null), search = ref(''), selected = ref<number[]>([]);
+const childFolders = computed(() => scenarioStore.folders.filter(folder => (folder.parent_id ?? null) === folderId.value &&
+  (!search.value.trim() || folder.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))));
 const sortedScenarios = computed(() => scenarioStore.sorted.filter(item =>
   inDirectory(item.folder_id ?? null, folderId.value, scenarioStore.folders, !!search.value.trim()) &&
   (!search.value.trim() || `${item.name} ${item.path ?? ''} ${item.description}`.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))));
@@ -80,6 +83,7 @@ function openPreview(scenario: ScenarioItem, event: MouseEvent): void {
 function openCreate(): void {
   editingScenario.value = null;
   prefillDraft.value = { ...createEmptyDraft(), folderId: folderId.value };
+  prefillDraft.value.bigScreenModeState = 'set';
   editOpen.value = true;
 }
 
@@ -153,7 +157,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
 
 <template>
   <div class="scenarios-view">
-    <FPageHeader :title="t('scenarios.title')" :description="t('scenarios.caption')">
+    <FPageHeader :title="t('scenarios.title')">
       <template #actions>
         <a-button :loading="isLoading" :aria-label="t('scenarios.refreshAria')" @click="refresh">
           <template #icon><FIcon name="arrow_clockwise_20_regular" /></template>
@@ -175,91 +179,13 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
       <p>{{ scenarioStore.loadError }}<template v-if="scenarioStore.scenarios.length"> · 下方保留上次读取的内容。</template></p>
       <a-button :loading="isLoading" @click="refresh">重新读取</a-button>
     </template></a-alert>
-    <section class="scenarios-view__grid" :aria-busy="isLoading || batchBusy">
-      <template v-if="isLoading && sortedScenarios.length === 0">
-        <a-card v-for="i in 4" :key="i" size="small">
-          <a-skeleton text width="50%" />
-          <a-skeleton text width="80%" />
-          <a-skeleton text width="35%" />
-        </a-card>
-      </template>
-
-      <template v-else-if="sortedScenarios.length === 0 && !scenarioStore.loadError">
-        <FEmptyState :title="search.trim() ? '没有匹配的预设' : '当前目录没有预设'" :description="search.trim() ? '试试其他名称，或清除搜索条件。' : t('scenarios.emptyDesc')">
-          <a-button v-if="search.trim()" @click="search = ''">清除搜索</a-button>
-          <template v-else>
-            <a-button type="primary" @click="openCreate">
-              <template #icon><FIcon name="add_24_regular" /></template>
-              {{ t('scenarios.create') }}
-            </a-button>
-            <a-button  @click="captureFromCurrent">
-              <template #icon><FIcon name="document_24_regular" /></template>
-              {{ t('scenarios.captureFromState') }}
-            </a-button>
-          </template>
-        </FEmptyState>
-      </template>
-
-      <template v-else-if="sortedScenarios.length">
-        <a-card
-          v-for="scenario in sortedScenarios"
-          :key="scenario.id"
-          size="small"
-          hoverable
-          :class="{ 'scenarios-view__card--pinned': scenario.sort_order > 0 }"
-          @click="openPreview(scenario, $event)"
-        >
-          <template #title>
-            <div class="scenarios-view__card-header">
-              <span v-if="scenario.sort_order > 0" class="scenarios-view__pinned">
-                <FIcon name="pin_24_filled" /> {{ t('scenarios.pinned') }}
-              </span>
-              <span v-else class="scenarios-view__eyebrow">{{ t('scenarios.label') }}</span>
-              <h3 class="scenarios-view__card-title"><button type="button" class="scenarios-view__preview-button"
-                :aria-label="`查看预设 ${scenario.name}`" @click.stop="openPreview(scenario, $event)">{{ scenario.name }}</button></h3>
-            </div>
-          </template>
-          <template #extra>
-            <div class="scenarios-view__card-actions" @click.stop>
-              <a-checkbox :checked="selected.includes(scenario.id)" :disabled="batchBusy" :aria-label="'选择'+scenario.name"
-                @update:checked="selected = $event ? [...selected,scenario.id] : selected.filter(id=>id!==scenario.id)" />
-              <a-button
-                type="text"
-                size="small"
-                :aria-label="scenario.sort_order > 0 ? t('scenarios.unpinAria') : t('scenarios.pinAria')"
-                :loading="pendingPinId === scenario.id"
-                @click="togglePin(scenario)"
-              >
-                <template #icon>
-                  <FIcon :name="scenario.sort_order > 0 ? 'pin_off_24_regular' : 'pin_24_regular'" />
-                </template>
-              </a-button>
-              <a-button
-                type="primary"
-                size="small"
-                :loading="pendingActivateId === scenario.id"
-                @click="activateScenario(scenario)"
-              >
-                <template #icon><FIcon name="play_24_regular" /></template>
-                {{ t('scenarios.activate') }}
-              </a-button>
-            </div>
-          </template>
-
-          <p class="scenarios-view__meta">
-            <a-tag :color="tagColor(scenario.big_screen_mode_state === 'unset' ? 'default' : 'info')"  >
-              {{ scenario.big_screen_mode_state === 'unset' ? t('scenarios.keepScreenMode') : scenario.big_screen_mode_label }}
-            </a-tag>
-            <a-tag :color="tagColor(scenario.volume_state === 'unset' ? 'default' : 'info')"  >
-              {{ scenario.volume_state === 'unset' ? t('scenarios.keepVolume') : t('scenarios.volumeValue', { n: scenario.volume_level }) }}
-            </a-tag>
-          </p>
-          <p v-if="scenario.description" class="scenarios-view__desc">{{ scenario.description }}</p>
-          <p class="scenarios-view__desc">{{ scenario.path ?? '/'+scenario.name }}</p>
-          <p class="scenarios-view__updated">{{ t('scenarios.updatedAt', { time: formatRelativeTime(scenario.updated_at) }) }}</p>
-        </a-card>
-      </template>
-    </section>
+    <div v-if="isLoading && !sortedScenarios.length" role="status">正在读取预案…</div>
+    <FEmptyState v-else-if="!sortedScenarios.length && !childFolders.length && !scenarioStore.loadError" :title="search.trim() ? '没有匹配的预案' : '当前目录没有预案'">
+      <a-button v-if="search.trim()" @click="search = ''">清除搜索</a-button><a-button v-else type="primary" @click="openCreate">新建预案</a-button>
+    </FEmptyState>
+    <ScenarioFileTable v-else :scenarios="sortedScenarios" :folders="childFolders" v-model:selected="selected"
+      :busy="batchBusy" :pending-activate="pendingActivateId" :pending-pin="pendingPinId"
+      @navigate="folderId = $event" @preview="openPreview" @edit="openEdit" @activate="activateScenario" @pin="togglePin" />
 
     </ScenarioDirectoryTools>
     <ScenarioPreviewDrawer v-model:open="previewOpen" :scenario="previewScenario" @edit="openEdit"

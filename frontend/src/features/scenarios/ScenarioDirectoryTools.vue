@@ -12,8 +12,7 @@ import { directoryPath } from '../directories/directoryPath';
 import { scenarioDirectoryApi } from '@/services/scenarioDirectoryApi';
 import { useScenarioStore } from '@/stores/scenarios';
 import { useDialog } from '@/composables/useDialog';
-import { clientConnection } from '@/platform/connection';
-import { useAuthStore } from '@/stores/auth';
+import { useRequestContext } from '@/composables/useRequestContext';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { nullableNumber } from '@/design-system/controlValue';
 
@@ -22,13 +21,17 @@ const selected = defineModel<number[]>('selected', { required: true });
 const search = defineModel<string>('search', { required: true });
 const props = defineProps<{ visibleIds: number[] }>();
 const emit = defineEmits<{ (event: 'update:busy', value: boolean): void }>();
-const store = useScenarioStore(), dialog = useDialog(), auth = useAuthStore();
+const store = useScenarioStore(), dialog = useDialog();
 const { isMobile } = useBreakpoint();
 const busy = ref(false), error = ref(''), results = ref<string[]>([]), modal = ref(false);
 const editing = ref<number | null>(null), name = ref(''), parent = ref<number | null>(null), destination = ref<number>(0);
 const currentFolder = computed(() => store.folders.find(folder => folder.id === folderId.value));
 const options = computed(() => [{ label: '/', value: 0 }, ...store.folders.map(folder => ({ label: directoryPath(folder.id, store.folders), value: folder.id }))]);
 let alive = true, scopeRevision = 0;
+const captureContext = useRequestContext(() => {
+  scopeRevision++; selected.value = []; error.value = ''; results.value = []; modal.value = false;
+  // 真实请求未终端前保留busy，旧finally不能借新认证启动另一批；只撤销后续发送意图。
+});
 onBeforeUnmount(() => { alive = false; });
 watch(busy, value => emit('update:busy', value), { flush: 'sync' });
 /** :returns: 筛选或目录改变时清理隐藏选择，已确认批次独立保留。 */
@@ -50,8 +53,8 @@ function editFolder(edit: boolean): void {
 /** :param action: 显式操作。:returns: 当前主机逐项结果；代次变化停止后续发送。 */
 async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Promise<void> {
   if (busy.value) return;
-  const generation = clientConnection.captureGeneration(), user = auth.user?.id;
-  const current = () => alive && generation === clientConnection.captureGeneration() && user === auth.user?.id;
+  const scope = captureContext();
+  const current = () => alive && scope();
   pruneSelection();
   const batch = selected.value.map(id => ({ id, path: store.scenarios.find(item => item.id === id)?.path
     ?? `/${store.scenarios.find(item => item.id === id)?.name ?? id}` }));
@@ -97,10 +100,11 @@ async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Pr
   <div class="scenario-directories">
     <DirectoryNavigator v-model:folder-id="folderId" :folders="store.folders" :compact="isMobile" />
     <section class="scenario-library-content">
-    <div class="tools"><a-input v-model:value="search" allow-clear placeholder="在当前目录及子目录搜索预设" v-bind="{ 'aria-label': '搜索预设' }" />
+    <div class="tools scenario-directory-bar"><span class="scenario-directory-path">{{ directoryPath(folderId,store.folders) }}</span>
       <a-button :disabled="busy" @click="editFolder(false)">新建目录</a-button>
       <a-button v-if="folderId !== null" :disabled="busy" @click="editFolder(true)">编辑目录</a-button>
       <a-button v-if="folderId !== null" :disabled="busy" @click="execute('folder-delete')">删除空目录</a-button></div>
+    <div class="tools"><a-input v-model:value="search" allow-clear placeholder="搜索名称或路径（含子目录）" v-bind="{ 'aria-label': '搜索预设' }" /><span class="scenario-directory-count">{{ visibleIds.length }} 项</span></div>
     <div v-if="selected.length" class="tools"><span>已选 {{ selected.length }} 项</span>
       <a-select v-select-aria-label="'预设移动目标'" v-model:value="destination" :options="options" :disabled="busy" aria-label="预设移动目标" style="width:240px" />
       <a-button :disabled="busy" @click="execute('move')">移动到…</a-button><a-button danger  :disabled="busy" @click="execute('delete')">删除所选</a-button>
@@ -120,5 +124,6 @@ async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Pr
 </template>
 <style scoped>
 .scenario-directories{display:grid;grid-template-columns:220px minmax(0,1fr);gap:20px;align-items:start}.scenario-library-content{display:grid;gap:16px;min-width:0}.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.tools>.ant-input{flex:1;min-width:180px}
+.scenario-directory-path{flex:1;min-width:0;overflow-wrap:anywhere;font:12px Consolas,monospace;color:var(--console-muted)}.scenario-directory-bar{padding-bottom:12px;border-bottom:1px solid var(--console-border)}.scenario-directory-count{font-size:12px;color:var(--console-muted)}
 @media(max-width:767px){.scenario-directories{grid-template-columns:minmax(0,1fr);gap:16px}.tools>.ant-input{min-width:0;flex-basis:100%}}
 </style>

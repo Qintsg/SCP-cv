@@ -23,6 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\third-party-notices\YamlDotNet-LICENSE.txt" Link="third-party-notices\YamlDotNet-LICENSE.txt"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ScpCv.Contracts\ScpCv.Contracts.csproj" />
     <ProjectReference Include="..\ScpCv.Domain\ScpCv.Domain.csproj" />
   </ItemGroup>

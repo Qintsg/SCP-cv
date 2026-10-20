@@ -23,7 +23,7 @@ const all = computed(() => [...props.primaryItems, ...DESKTOP_SECONDARY_NAV]);
 const selected = computed(() => all.value.filter(item => props.isActive(item.path)).map(item => item.path));
 const groups = computed(() => [
   { key: 'operate', label: '现场操作', children: props.primaryItems.filter(item =>
-    ['/dashboard', '/display/big-left', '/display/big-right', '/devices'].includes(item.path)) },
+    ['/dashboard', '/display/big-left', '/display/big-right', '/display/window-3', '/display/window-4', '/devices'].includes(item.path)) },
   { key: 'content', label: '内容资源', children: props.primaryItems.filter(item =>
     ['/sources', '/background-audio', '/scenarios'].includes(item.path)) },
   { key: 'system', label: '系统', children: DESKTOP_SECONDARY_NAV },

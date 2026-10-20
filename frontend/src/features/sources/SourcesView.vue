@@ -62,7 +62,7 @@ function clearFilters(): void {
   void nextTick(() => searchInput.value?.focus());
 }
 const categoryOptions = computed(() => ['all','ppt','video','audio','image','web','stream'].map(value => ({ value, label: t(`sources.cat.${value}Label`) })));
-const columns = [{ key: 'selection', width: 48 }, { title: '名称与路径', key: 'name' },
+const columns = [{ key: 'selection', width: 48 }, { title: '名称', key: 'name' }, { title: '播放状态', key: 'status', width: 165 },
   { title: '类型', key: 'category', width: 150 }, { title: '大小', key: 'size', width: 100 }, { title: '操作', key: 'actions', width: 168 }];
 const { selected, busy, destination, results, allSelected, destinations, toggle, toggleAll, execute } = useSourceSelection();
 const mediaRows = computed(() => new Map(sourceStore.filtered.map(source => [source.id, source])));
@@ -86,6 +86,11 @@ const { newFolderDialogOpen, newFolderName, folderNameError, creatingFolder,
   deleteFolderTarget, deleteFolderContents, deletingFolder, deleteFolderDialogOpen,
   childFolders, navigateToFolder, openFolderDialog, createFolder,
   executeFolderDelete, buildFolderMenu, buildMoveToFolderOptions } = useSourceFolders(refresh, isLoading);
+const visibleFolders = computed(() => childFolders.value.filter(folder => !searchModel.value.trim() ||
+  `${folder.name} ${directoryPath(folder.id,sourceStore.folders)}`.toLocaleLowerCase().includes(searchModel.value.trim().toLocaleLowerCase())));
+const tableRows = computed(() => [...visibleFolders.value.map(folder => ({ id: -folder.id })), ...sourceStore.filtered]);
+/** :param id: 表格唯一键，负数为目录。:returns: 当前目录对象，不与正数媒体ID混淆。 */
+function folderRow(id: unknown) { return typeof id === 'number' && id < 0 ? visibleFolders.value.find(folder => folder.id === -id) : undefined; }
 /** :param source: 普通源。:returns: 打开编辑器，不编辑内置配置。 */
 function startEdit(source: MediaSourceItem): void { if (!source.is_protected) { editingSource.value = source; editDrawerOpen.value = true; } }
 /** :param source: 当前明确选择。:returns: 展示两目标卡片，不立即替换输出。 */
@@ -103,7 +108,7 @@ function activeWindowLabel(id: number): string {
 
 <template>
   <div class="sources-view">
-    <FPageHeader title="媒体文件" description="按目录管理文件，选好媒体后打开到窗口1或窗口2。">
+    <FPageHeader title="媒体文件">
       <template #actions>
         <a-button :loading="isLoading" aria-label="刷新媒体文件" @click="refresh"><template #icon><FIcon name="arrow_clockwise_20_regular" /></template></a-button>
         <a-button type="primary" :disabled="protectedDirectory || busy" @click="drawerOpen = true">上传或添加</a-button>
@@ -122,15 +127,8 @@ function activeWindowLabel(id: number): string {
           <a-select v-select-aria-label="'媒体类型筛选'" v-model:value="categoryModel" :options="categoryOptions" aria-label="媒体类型筛选" style="width:150px" />
           <a-checkbox v-model:checked="sourceStore.searchSubfolders">搜索包含子目录</a-checkbox>
           <a-button v-if="hasFilters" type="text" size="small" @click="clearFilters">清除筛选</a-button>
-          <span class="sources-view__caption" role="status">{{ sourceStore.filtered.length }} 项</span>
+          <span class="sources-view__caption" role="status">{{ tableRows.length }} 项</span>
           <span v-if="protectedDirectory" class="sources-view__caption">内置目录 · 配置只读</span>
-        </div>
-        <div v-if="childFolders.length" class="sources-view__folders">
-          <div v-for="folder in childFolders" :key="folder.id" class="sources-view__folder-card">
-            <button type="button" class="sources-view__folder-open" @click="navigateToFolder(folder.id)"><FIcon name="folder_24_regular" :size="26" /><span class="sources-view__folder-name">{{ folder.name }}</span></button>
-            <a-tag v-if="folder.is_protected" >内置</a-tag>
-            <ActionMenu v-else  :options="buildFolderMenu(folder)" @select="handleMenuSelect"><a-button type="text" shape="circle" size="small" :aria-label="`目录 ${folder.name} 的操作`"><template #icon><FIcon name="more_horizontal_20_regular" /></template></a-button></ActionMenu>
-          </div>
         </div>
         <div v-if="selected.length" class="sources-view__batch" role="region" aria-label="批量操作">
           <span>已选 {{ selected.length }} 项</span>
@@ -146,20 +144,25 @@ function activeWindowLabel(id: number): string {
         <a-card :body-style="{ padding: 0, overflowX: 'auto' }" :aria-busy="isLoading || busy">
           <FEmptyState v-if="loadError" title="媒体列表读取失败" :description="loadError"><a-button @click="refresh">重新读取</a-button></FEmptyState>
           <div v-else-if="isLoading && !sourceStore.filtered.length" class="sources-view__loading" role="status">正在读取媒体文件…</div>
-          <FEmptyState v-else-if="!sourceStore.filtered.length" :title="hasFilters ? '没有匹配的媒体' : '当前目录没有媒体文件'"
+          <FEmptyState v-else-if="!tableRows.length" :title="hasFilters ? '没有匹配的媒体' : '当前目录没有媒体文件'"
             :description="hasFilters ? '试试其他名称，或清除筛选条件。' : protectedDirectory ? '这里的内容由系统维护。' : '上传文件，或添加网页和直播流。'">
             <a-button v-if="hasFilters" @click="clearFilters">清除筛选</a-button>
             <a-button v-else-if="!protectedDirectory" type="primary" :disabled="busy" @click="drawerOpen = true">上传或添加</a-button>
           </FEmptyState>
-          <a-table v-else-if="!isMobile" class="sources-view__table" :columns="columns" :data-source="sourceStore.filtered" row-key="id" :pagination="false" :scroll="{ x: 760 }">
+          <a-table v-else-if="!isMobile" class="sources-view__table" :columns="columns" :data-source="tableRows" row-key="id" :pagination="false" :scroll="{ x: 800 }">
             <template #headerCell="{ column }"><a-checkbox v-if="column.key === 'selection'" :checked="allSelected" :disabled="busy || protectedDirectory" :aria-disabled="busy || protectedDirectory" aria-label="全选当前普通媒体" @update:checked="toggleAll" /><template v-else>{{ column.title }}</template></template>
             <template #bodyCell="{ column, record }">
+              <template v-for="folder in [folderRow(record.id)]" :key="folder?.id"><template v-if="folder">
+                <button v-if="column.key === 'name'" type="button" class="sources-view__folder-open" @click="navigateToFolder(folder.id)"><FIcon name="folder_24_regular" :size="28" /><span class="sources-view__name sources-view__folder-name">{{ folder.name }}</span><a-tag v-if="folder.is_protected">内置</a-tag></button>
+                <span v-else-if="column.key === 'category'">文件夹</span><span v-else-if="column.key === 'size'">—</span>
+                <ActionMenu v-else-if="column.key === 'actions' && !folder.is_protected" :options="buildFolderMenu(folder)" @select="handleMenuSelect"><a-button type="text" shape="circle" :aria-label="`目录 ${folder.name} 的操作`"><template #icon><FIcon name="more_horizontal_20_regular" /></template></a-button></ActionMenu>
+              </template></template>
               <template v-for="source in [mediaRow(record.id)]" :key="source?.id"><template v-if="source">
               <a-checkbox v-if="column.key === 'selection'" :checked="selected.includes(source.id)" :disabled="busy || source.is_protected" :aria-disabled="busy || !!source.is_protected" :aria-label="`选择 ${source.name}`" @update:checked="toggle(source.id,$event)" />
               <div v-else-if="column.key === 'name'" class="sources-view__name-cell"><SourceThumbnail :source="source" size="comfortable" /><div>
-                <p class="sources-view__name">{{ source.name }}</p><p class="sources-view__uri">{{ sourcePath(source,sourceStore.folders) }}</p>
-                <a-tag v-if="activeWindowLabel(source.id)" color="success" >{{ activeWindowLabel(source.id) }}</a-tag>
+                <p class="sources-view__name">{{ source.name }}</p>
               </div></div>
+              <template v-else-if="column.key === 'status'"><a-tag v-if="activeWindowLabel(source.id)" color="success">{{ activeWindowLabel(source.id) }}</a-tag><span v-else>—</span></template>
               <template v-else-if="column.key === 'category'"><a-tag :color="tagColor(sourceCategoryTone(source))" >{{ sourceCategoryLabel(source) }}</a-tag><a-tag v-if="source.is_protected" >内置</a-tag>
                 <p v-if="!source.is_available" class="sources-view__caption">{{ sourceAvailabilityLabel(source) }}</p></template>
               <template v-else-if="column.key === 'size'">{{ source.file_size ? formatBytes(source.file_size) : '—' }}</template>
@@ -171,9 +174,11 @@ function activeWindowLabel(id: number): string {
             </template>
           </a-table>
           <div v-else class="sources-view__cards">
+            <a-card v-for="folder in visibleFolders" :key="`f-${folder.id}`" size="small"><div class="sources-view__row-actions"><button type="button" class="sources-view__folder-open" @click="navigateToFolder(folder.id)"><FIcon name="folder_24_regular" :size="26" /><span>{{ folder.name }}</span><a-tag v-if="folder.is_protected">内置</a-tag></button>
+              <ActionMenu v-if="!folder.is_protected" :options="buildFolderMenu(folder)" @select="handleMenuSelect"><a-button type="text" :aria-label="`目录 ${folder.name} 的操作`">更多</a-button></ActionMenu></div></a-card>
             <a-card v-for="source in sourceStore.filtered" :key="source.id" size="small">
               <template #title><div class="sources-view__card-title"><a-checkbox :checked="selected.includes(source.id)" :disabled="busy || source.is_protected" :aria-disabled="busy || !!source.is_protected" :aria-label="`选择 ${source.name}`" @update:checked="toggle(source.id,$event)" /><SourceThumbnail :source="source" /><span>{{ source.name }}</span></div></template>
-              <p class="sources-view__uri">{{ sourcePath(source,sourceStore.folders) }}</p>
+              <a-tag v-if="activeWindowLabel(source.id)" color="success">{{ activeWindowLabel(source.id) }}</a-tag>
               <div class="sources-view__row-actions"><a-tag :color="tagColor(sourceCategoryTone(source))" >{{ sourceCategoryLabel(source) }}</a-tag>
                 <a-button v-if="source.source_type !== 'audio'" size="small" :disabled="!source.is_available" @click="showOpen(source)">打开到…</a-button>
                 <ActionMenu  :options="buildRowMenu(source)" @select="handleMenuSelect"><a-button type="text" :aria-label="`媒体 ${source.name} 的操作`">更多</a-button></ActionMenu>

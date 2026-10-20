@@ -1,5 +1,7 @@
 # .NET 播控运行时
 
+016本机新版将63/64源尺寸设为4K、81和墙节点保留独立1080P；扩展网格映射与预案YAML（YamlDotNet 18.1.0，MIT）。不部署、不改Windows显示设置，见[工作区边界](../docs/console-workspace-016.md)。
+
 AudioWorker在同一Worker执行循环的空闲路径只读报告当前成功源的实际时钟，不靠重复控制刷新进度。
 自然Ended/stopped留给Finished列表推进或显式STOP结果，失败OPEN使旧采样身份失效；有限D4证据见[周期音频进度](../specs/008-libreoffice-playback/verification/audio-idle-progress-20261004.md)。
 

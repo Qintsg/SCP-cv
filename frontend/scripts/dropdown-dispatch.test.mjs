@@ -165,7 +165,7 @@ async function openSourceMove() {
  * :returns: 已渲染的根目录目标项。
  */
 async function openFolderMove() {
-  browser.document.querySelector('.sources-view__folder-card button[aria-label]').click();
+  browser.document.querySelector('button[aria-label^="目录 "][aria-label$=" 的操作"]').click();
   await flushUi();
   await waitForDom(()=>[...browser.document.querySelectorAll('[role="menuitem"]')].some(item=>visibleText(item.textContent)==='移动文件夹到…'));
   menuItem('移动文件夹到…').dispatchEvent(new browser.MouseEvent('mouseenter', { bubbles: true }));
