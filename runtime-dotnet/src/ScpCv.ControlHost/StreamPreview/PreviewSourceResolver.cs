@@ -41,7 +41,7 @@ public sealed class PreviewSourceResolver(
     public async Task<PreviewSource> ResolveAsync(PreviewRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if ((request.SourceId is null) == (request.Input is null) || request.Quality is not ("low" or "high"))
+        if ((request.SourceId is null) == (request.Input is null) || request.SourceId is <= 0 || request.Quality is not ("low" or "high"))
             throw new PreviewException("请选择一个有效的预览来源", "invalid_preview_input", 400);
         if (request.SourceId is { } id)
         {

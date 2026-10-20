@@ -24,7 +24,7 @@ public sealed partial class OpenApiCoverageTests
             BaseAddress = new Uri("https://localhost"),
         });
 
-        // Build the route catalog without relying on handler names or source layout.
+        // 独立枚举正式路由，不依赖handler命名或源码布局。
         var runtimeOperations = factory.Services.GetServices<EndpointDataSource>()
             .SelectMany(source => source.Endpoints)
             .OfType<RouteEndpoint>()
@@ -159,7 +159,15 @@ public sealed partial class OpenApiCoverageTests
         Parameter().Replace(endpointPath.StartsWith("/api/", StringComparison.Ordinal) ? endpointPath[4..] : endpointPath, "{}");
 
     private static string MaterializePath(string path) => Parameter().Replace(path, parameter =>
-        parameter.Value is "{command_id}" or "{share_id}" ? "bf71fb1b-c3ea-44ea-a479-25478c0b59b3" : "1");
+        parameter.Value is "{command_id}" or "{share_id}" || parameter.Value == "{id}" && path.StartsWith("/stream-previews/", StringComparison.Ordinal)
+            ? "bf71fb1b-c3ea-44ea-a479-25478c0b59b3" : "1");
+
+    [Fact]
+    public void PreviewLeaseIdMaterializesAsGuidWithoutChangingDeviceIdParameters()
+    {
+        Assert.Equal("/stream-previews/bf71fb1b-c3ea-44ea-a479-25478c0b59b3/stream.flv", MaterializePath("/stream-previews/{id}/stream.flv"));
+        Assert.Equal("/venue/cameras/1/motion/", MaterializePath("/venue/cameras/{id}/motion/"));
+    }
     private static string KeyText(OperationKey key) => $"{key.Method} {key.Path}";
 
     [GeneratedRegex("^  (?<path>/[^:]+):$")]

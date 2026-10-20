@@ -1,0 +1,96 @@
+# 018无声预览的来源与租约合同，不含原始地址或凭据。
+Request:
+  oneOf:
+    - $ref: '#/SourceRequest'
+    - $ref: '#/InputRequest'
+SourceRequest:
+  type: object
+  additionalProperties: false
+  required: [source_id]
+  properties:
+    source_id:
+      type: integer
+      format: int64
+      minimum: 1
+      description: 已登记的RTSP或RTMP媒体源
+    quality:
+      $ref: '#/Quality'
+InputRequest:
+  type: object
+  additionalProperties: false
+  required: [input]
+  properties:
+    input:
+      type: object
+      additionalProperties: false
+      required: [kind]
+      properties:
+        kind:
+          type: string
+          enum: [window_1, window_2, laptop, window_3, window_4, ip_stream]
+          description: 3/4尚未接入预览，返回preview_no_stream，不猜地址
+        ip_address:
+          type: string
+          nullable: true
+          description: 仅ip_stream使用，须由服务端显式登记许可
+    quality:
+      $ref: '#/Quality'
+Quality:
+  type: string
+  enum: [low, high]
+  default: low
+  description: 观看意图；实际输出仍受共享预算与拥塞约束
+Created:
+  type: object
+  required: [id, expires_at, http_path, ws_path]
+  properties:
+    id:
+      type: string
+      format: uuid
+    expires_at:
+      type: string
+      format: date-time
+    http_path:
+      type: string
+      description: 同Host的完整/api/stream-previews/{id}/stream.flv相对路径；播放器须先解析为绝对URL
+    ws_path:
+      type: string
+      description: 同Host的完整/api/stream-previews/{id}/stream.ws相对路径
+Lease:
+  type: object
+  required: [id, expiresAt, connected, status]
+  properties:
+    id:
+      type: string
+      format: uuid
+    expiresAt:
+      type: string
+      format: date-time
+    connected:
+      type: boolean
+      description: 已有消费连接，不等于浏览器已实际解码
+    status:
+      type: string
+      enum: [idle, connecting, live, reconnecting, unavailable]
+Status:
+  type: object
+  required: [lease_count, upstream_count, max_upstreams, egress_kbps, mode, detail]
+  properties:
+    lease_count:
+      type: integer
+      minimum: 0
+      description: 含尚未消费的短租约，不是实际观看人数
+    upstream_count:
+      type: integer
+      minimum: 0
+      description: 含关闭中的共享项数量，不是设备在线数量
+    max_upstreams:
+      type: integer
+    egress_kbps:
+      type: integer
+      description: 配置的预览总出站上限，不是当前吞吐或系统QoS保证
+    mode:
+      type: string
+      enum: [server_flv]
+    detail:
+      type: string

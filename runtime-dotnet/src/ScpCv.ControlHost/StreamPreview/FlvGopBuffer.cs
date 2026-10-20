@@ -1,7 +1,7 @@
 // 完整关键帧组缓存：所有订阅共享不可变字节，慢消费者只跳完整GOP。
 namespace ScpCv.ControlHost.StreamPreview;
 
-public sealed record PreviewGop(byte[] Bytes, uint Timestamp, int TagCount);
+public sealed record PreviewGop(byte[] Bytes, uint Timestamp, int TagCount, PreviewEncoding? Encoding = null);
 
 public sealed class FlvGopBuffer(int maximumBytes = 2 * 1024 * 1024)
 {

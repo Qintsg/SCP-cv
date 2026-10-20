@@ -15,6 +15,7 @@ using ScpCv.ControlHost.Media;
 using ScpCv.ControlHost.Runtime;
 using ScpCv.ControlHost.Commands;
 using ScpCv.ControlHost.ScreenSharing;
+using ScpCv.ControlHost.StreamPreview;
 using ScpCv.Contracts.Presentations.Dependencies;
 using ScpCv.Infrastructure.Auth;
 using ScpCv.Infrastructure.Audio;
@@ -174,6 +175,7 @@ else
 }
 builder.Services.AddSingleton<DeviceService>();
 builder.Services.AddScpCvAuthentication(builder.Configuration);
+builder.Services.AddStreamPreview(builder.Configuration, safetyMode);
 builder.Services.AddHealthChecks()
     .AddCheck<ControlDatabaseHealthCheck>("control_database", tags: ["ready"]);
 
@@ -204,6 +206,7 @@ app.Use(async (context, next) =>
     await next().ConfigureAwait(false);
 });
 app.UseCors(AuthServiceCollectionExtensions.CorsPolicyName);
+app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(20) });
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -226,6 +229,7 @@ app.MapAuthEndpoints();
 app.MapMediaEndpoints();
 app.MapPlaybackEndpoints();
 app.MapScreenShareEndpoints();
+app.MapStreamPreviewEndpoints();
 app.MapScreenShareReceiverEndpoints();
 app.MapVideoWallLayoutEndpoints();
 app.MapPresentationSettingsEndpoints();

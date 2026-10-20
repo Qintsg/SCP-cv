@@ -37,6 +37,8 @@ tags:
     description: 窗口播放、切换、重置和物理冒烟测试
   - name: screen-sharing
     description: 临时网页屏幕共享的发布和原生私有信令；受理不等于出画
+  - name: stream-preview
+    description: 按需共享的无声FLV预览；先申请短租约再观看，不暴露原始设备凭据
   - name: background-audio
     description: 背景音乐播放列表、播放控制与状态查询
   - name: runtime
@@ -59,6 +61,18 @@ security:
   - sessionAuthHttp: []
 
 paths:
+  /stream-previews/:
+    $ref: './paths/stream-preview.yaml#/Create'
+  /stream-previews/status/:
+    $ref: './paths/stream-preview.yaml#/Status'
+  /stream-previews/{id}/:
+    $ref: './paths/stream-preview.yaml#/Lease'
+  /stream-previews/{id}/heartbeat/:
+    $ref: './paths/stream-preview.yaml#/Heartbeat'
+  /stream-previews/{id}/stream.flv:
+    $ref: './paths/stream-preview.yaml#/HttpFlv'
+  /stream-previews/{id}/stream.ws:
+    $ref: './paths/stream-preview.yaml#/WebSocketFlv'
   /venue/:
     $ref: './paths/venue-directory.yaml#/Venue'
   /venue/audio/read/:

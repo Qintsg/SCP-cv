@@ -1,0 +1,204 @@
+# 018短租约、只读诊断与二进制FLV；所有写入沿用当前协议Cookie与CSRF。
+Create:
+  post:
+    tags: [stream-preview]
+    operationId: createStreamPreview
+    summary: 申请本人短期观看租约，不立即拉流
+    description: >-
+      只接受登记媒体ID或受限设备输入。有效观看消费后才注册MediaMTX按需路径；相同实际URI和凭据共享一份上游及编码。
+      租约绑定加密会话票据摘要、入口协议及Origin；同账号重新登录也不可使用旧租约。未消费的租约到期不会启动上游。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+      - sessionAuthHttp: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/StreamPreview.yaml#/Request'
+          example:
+            input: {kind: window_1}
+            quality: low
+    responses:
+      '201':
+        description: 已登记观看意图；不表示设备在线或已出画
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/StreamPreview.yaml#/Created'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '422':
+        description: preview_no_stream；无流、预留3/4或未登记输入，卡片显示普通空态
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/ErrorResponse.yaml'
+      '429':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '503':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Status:
+  get:
+    tags: [stream-preview]
+    operationId: getStreamPreviewStatus
+    summary: 读取预览预算与共享项数量，不探测设备
+    responses:
+      '200':
+        description: 只读内存摘要，不代表依赖或实际画面已确认
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/StreamPreview.yaml#/Status'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Lease:
+  parameters:
+    - $ref: '#/Id'
+  get:
+    tags: [stream-preview]
+    operationId: getStreamPreviewLease
+    summary: 读取本人同登录代次租约
+    responses:
+      '200':
+        description: 当前租约
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/StreamPreview.yaml#/Lease'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '410':
+        $ref: '../components/responses/ErrorResponse.yaml'
+  delete:
+    tags: [stream-preview]
+    operationId: closeStreamPreviewLease
+    summary: 释放本人租约与其消费连接
+    security:
+      - sessionAuth: []
+        csrfToken: []
+      - sessionAuthHttp: []
+        csrfToken: []
+    responses:
+      '204':
+        description: 此租约已释放；最后消费者离开后有限宽限释放共享上游
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '410':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Heartbeat:
+  parameters:
+    - $ref: '#/Id'
+  post:
+    tags: [stream-preview]
+    operationId: heartbeatStreamPreview
+    summary: 续期本人有效租约，不复活已过期会话
+    description: 网页每10秒续租，30秒失联到期；源修订改变时释放并返回410。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+      - sessionAuthHttp: []
+        csrfToken: []
+    responses:
+      '200':
+        description: 已续租
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/StreamPreview.yaml#/Lease'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '410':
+        $ref: '../components/responses/ErrorResponse.yaml'
+HttpFlv:
+  parameters:
+    - $ref: '#/Id'
+  get:
+    tags: [stream-preview]
+    operationId: readStreamPreviewHttpFlv
+    summary: 消费已有本人租约的HTTP-FLV
+    description: >-
+      一租约只允许一个连接。先等待有效完整关键帧组再发送200；首帧等待最多12秒。
+      Cache-Control为no-store；无音轨。200只证明开始发送FLV，不证明浏览器已解码。
+      慢客户端只追赶完整GOP，全局限速、降码率与帧率；流开始后故障关闭连接，前端内联重连。
+    responses:
+      '200':
+        description: 持续二进制FLV文件头与完整tag，不是JSON
+        content:
+          video/x-flv:
+            schema: {type: string, format: binary}
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '410':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '429':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '503':
+        $ref: '../components/responses/ErrorResponse.yaml'
+WebSocketFlv:
+  parameters:
+    - $ref: '#/Id'
+  get:
+    tags: [stream-preview]
+    operationId: readStreamPreviewWebSocketFlv
+    summary: 升级为本人租约的WebSocket-FLV
+    description: >-
+      必须有效Cookie、精确Origin和WebSocket升级。二进制消息承载连续FLV，不接受文字控制命令。
+      无查询串token；HTTP与HTTPS会话隔离，WSS证书验证不可关闭。
+    parameters:
+      - name: Origin
+        in: header
+        required: true
+        schema: {type: string}
+    responses:
+      '101':
+        description: 切换协议，后续二进制WebSocket消息为FLV字节
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '410':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '429':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '503':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Id:
+  name: id
+  in: path
+  required: true
+  schema:
+    type: string
+    format: uuid
