@@ -27,6 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="..\..\scripts\start-deployed.ps1"
+          Link="scripts\start-deployed.ps1"
+          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\scripts\runtime.ps1"
           Link="scripts\runtime.ps1"
           CopyToOutputDirectory="PreserveNewest" />

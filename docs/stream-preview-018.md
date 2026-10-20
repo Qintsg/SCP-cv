@@ -40,6 +40,14 @@ MediaMTX v1.17.1本身不输出FLV，因此补充的是ControlHost内的薄转�
 
 ## 服务端准备与配置
 
+### 018部署的一键启动入口
+
+`runtime-dotnet/scripts/start-deployed.ps1 -ConfigurationPath <部署生成的startup.json>`只接受当前主机的两个固定计划任务，核对动作及启动脚本摘要，再在全局互斥锁内启动未运行任务。启动成功需后端健康、原生两播放器在线和正常TLS网页可达；不能只看计划任务已受理。
+
+部署会在D4当前用户桌面生成`SCP-cv 一键启动.cmd`，通过正常UAC确认运行固定启动脚本，不含密码、不使用执行策略Bypass。重复点击不会重启在线运行组；停机后保留Host的空组可由已稳定运行的原任务经正常认证API恢复。新登录任务正在冷启动时不并发提交第二次restart。部分成员残留／身份不符明确失败，不杀进程。它只启动软件，不开启拼接屏或电视电源，不切墙、不修改系统分辨率、音量或摄像机。
+
+`-CheckOnly -NoPause`可只读检查配置；自动运维加`-NoPause`避免等待回车。配置仅保存既有凭据文件路径，不保存口令；凭据沿用受限ACL。部署结果和最终路径以[018部署记录](../specs/018-shared-flv-preview/deployment.md)为准。
+
 观看端无依赖，服务器需已有MediaMTX和含libx264的FFmpeg。未自动下载、安装或向D4写入文件。建议配置真实FFmpeg exe绝对路径，避免全局shim／非项目命令混用；不启动PowerPoint或其它用户窗口。
 
 ControlHost配置示例：
