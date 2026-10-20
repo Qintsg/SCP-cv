@@ -1,3 +1,4 @@
+<!-- .NET集中依赖版本；YAML预案使用开源YamlDotNet。 -->
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -21,5 +22,6 @@
     <PackageVersion Include="VideoLAN.LibVLC.Windows" Version="3.0.23" />
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 </Project>

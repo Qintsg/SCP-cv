@@ -22,7 +22,9 @@ public sealed partial class ScenarioService(
     VideoWallOperationGate? wallGate = null,
     ScreenSharePlaybackProjection? screenSharePlayback = null,
     VenueDeviceService? venueDevices = null,
-    VenueCameraController? venueCameras = null)
+    VenueCameraController? venueCameras = null,
+    VideoWallProtocolOptions? wallProtocol = null,
+    ScenarioFileStore? scenarioFiles = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
@@ -77,7 +79,7 @@ public sealed partial class ScenarioService(
                 await database.SaveChangesAsync(token).ConfigureAwait(false);
                 return (await MapAsync(database, [scenario], token).ConfigureAwait(false))[0];
             },
-            cancellationToken);
+            scenarioFiles, cancellationToken);
 
     public Task<ScenarioDto> UpdateAsync(
         long scenarioId,
@@ -115,7 +117,7 @@ public sealed partial class ScenarioService(
                 await database.SaveChangesAsync(token).ConfigureAwait(false);
                 return (await MapAsync(database, [scenario], token).ConfigureAwait(false))[0];
             },
-            cancellationToken);
+            scenarioFiles, cancellationToken);
 
     public Task DeleteAsync(long scenarioId, CancellationToken cancellationToken = default) =>
         writes.ExecuteAsync(
@@ -127,7 +129,7 @@ public sealed partial class ScenarioService(
                     ?? throw new ScenarioServiceException($"预案 id={scenarioId} 不存在", isNotFound: true);
                 database.Scenarios.Remove(scenario);
             },
-            cancellationToken);
+            scenarioFiles, cancellationToken);
 
     public Task<ScenarioDto> TogglePinAsync(long scenarioId, CancellationToken cancellationToken = default) =>
         writes.ExecuteAsync(
@@ -144,7 +146,7 @@ public sealed partial class ScenarioService(
                 await database.SaveChangesAsync(token).ConfigureAwait(false);
                 return (await MapAsync(database, [scenario], token).ConfigureAwait(false))[0];
             },
-            cancellationToken);
+            scenarioFiles, cancellationToken);
 
     public Task<ScenarioDto> CaptureAsync(
         string name,
@@ -196,7 +198,7 @@ public sealed partial class ScenarioService(
                 await database.SaveChangesAsync(token).ConfigureAwait(false);
                 return (await MapAsync(database, [scenario], token).ConfigureAwait(false))[0];
             },
-            cancellationToken);
+            scenarioFiles, cancellationToken);
 
     public async Task<IReadOnlyList<PlaybackSessionDto>> ActivateAsync(
         long scenarioId,
@@ -207,6 +209,7 @@ public sealed partial class ScenarioService(
         {
             scenario = await database.Scenarios.AsNoTracking().SingleOrDefaultAsync(item => item.Id == scenarioId, cancellationToken).ConfigureAwait(false)
                 ?? throw new ScenarioServiceException($"预案 id={scenarioId} 不存在", isNotFound: true);
+            if (scenarioFiles is not null) scenarioFiles.Verify((await MapAsync(database, [scenario], cancellationToken).ConfigureAwait(false))[0]);
         }
 
         var targets = DeserializeTargets(scenario.TargetsJson);
@@ -370,7 +373,7 @@ public sealed partial class ScenarioService(
         _ => type.ToString().ToLowerInvariant(),
     };
 
-    private static async Task<IReadOnlyList<ScenarioDto>> MapAsync(
+    internal static async Task<IReadOnlyList<ScenarioDto>> MapAsync(
         ControlDbContext database,
         IReadOnlyList<Scenario> scenarios,
         CancellationToken cancellationToken)

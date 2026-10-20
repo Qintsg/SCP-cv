@@ -2,6 +2,8 @@
 using System.Text.Json;
 using ScpCv.Contracts.Http;
 using ScpCv.Infrastructure.Devices;
+using ScpCv.Domain.Rules;
+using ScpCv.Infrastructure.VideoWall;
 
 namespace ScpCv.Infrastructure.Scenarios;
 
@@ -17,11 +19,17 @@ public sealed partial class ScenarioService
     private static string ValidateAdvanced(ScenarioAdvancedDto advanced)
     {
         if (advanced.CameraPositions is null) throw new ScenarioServiceException("camera_positions必须为对象。");
+        if (!string.IsNullOrEmpty(advanced.WallLayoutCode))
+        {
+            try { _ = WallLayoutCode.Decode(advanced.WallLayoutCode); }
+            catch (ArgumentException) { throw new ScenarioServiceException("预案布局代码无效。", code: "scenario_advanced_invalid"); }
+        }
         foreach (var position in advanced.CameraPositions)
         {
-            if (position.Key is not ("rear" or "center1" or "center2" or "left" or "right") || position.Value is < 1 or > 255)
+            if (position.Key is not ("rear" or "center1" or "center2" or "left" or "right") || position.Value is < 0 or > 255)
                 throw new ScenarioServiceException("摄像机位置必须为五个内置可移动摄像机及1–255，未配置用null。");
         }
+        advanced = advanced with { CameraPositions = advanced.CameraPositions.ToDictionary(pair => pair.Key, pair => pair.Value == 0 ? null : pair.Value) };
         if (advanced.Audio is { } audio)
         {
             if (audio.Source is not (null or "ip81" or "scp_cv") ||
@@ -36,7 +44,13 @@ public sealed partial class ScenarioService
     private async Task PreflightAdvancedAsync(ScenarioAdvancedDto advanced, CancellationToken token)
     {
         _ = ValidateAdvanced(advanced);
-        foreach (var position in advanced.CameraPositions.Where(pair => pair.Value is not null))
+        if (!string.IsNullOrEmpty(advanced.WallLayoutCode))
+        {
+            try { _ = VideoWallLayoutPlanner.Build(WallLayoutCode.Decode(advanced.WallLayoutCode), wallProtocol ?? new()); }
+            catch (Exception exception) when (exception is ArgumentException or VideoWallException)
+            { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_unavailable"); }
+        }
+        foreach (var position in advanced.CameraPositions.Where(pair => pair.Value is > 0))
         {
             if (venueCameras is null) throw new ScenarioServiceException("云台服务未装配，预设未执行。", code: "scenario_advanced_unavailable");
             try { VenueCameraController.ValidatePosition(position.Key, position.Value!.Value, "call"); }
@@ -56,7 +70,7 @@ public sealed partial class ScenarioService
         var unconfirmed = new List<string>();
         try
         {
-            foreach (var position in advanced.CameraPositions.Where(pair => pair.Value is not null))
+            foreach (var position in advanced.CameraPositions.Where(pair => pair.Value is > 0))
             {
                 var camera = await venueCameras!.PositionAsync(position.Key, position.Value!.Value, "call", cancellationToken).ConfigureAwait(false);
                 if (camera.Status != "simulated") unconfirmed.Add(camera.Detail);

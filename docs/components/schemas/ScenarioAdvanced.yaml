@@ -1,13 +1,19 @@
 type: object
 description: 保存是意图，不保证设备可执行；激活前检查全部绑定。空值保持，不调用默认位置。
 properties:
+  wall_layout_code:
+    type: string
+    nullable: true
+    maxLength: 480
+    pattern: '^[A-Za-z0-9]+$'
+    description: 可解析完整布局的v1短码；不建数据库码表。配置后优先于旧单/双屏字段，保存可含预留输入，激活前全量预检
   camera_positions:
     type: object
     additionalProperties:
       type: integer
       nullable: true
-      minimum: 1
+      minimum: 0
       maximum: 255
-    description: 键仅rear/center1/center2/left/right；固定监控拒绝
+    description: 键仅rear/center1/center2/left/right；0或null保持（保存归一null）；固定监控拒绝，实际可调用位置由能力校验
   audio:
     $ref: ./VenueAudioSettings.yaml

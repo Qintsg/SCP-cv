@@ -8,6 +8,7 @@ public sealed class WriteCoordinator(IDbContextFactory<ControlDbContext> context
 
     public async Task<TResult> ExecuteAsync<TResult>(
         Func<ControlDbContext, CancellationToken, Task<TResult>> operation,
+        IWriteProjection? projection,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -18,7 +19,9 @@ public sealed class WriteCoordinator(IDbContextFactory<ControlDbContext> context
             await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
             var result = await operation(context, cancellationToken).ConfigureAwait(false);
             await context.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            using var prepared = projection is null ? null : await projection.PrepareAsync(context, cancellationToken).ConfigureAwait(false);
             await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            if (prepared is not null) await prepared.PublishAsync().ConfigureAwait(false);
             return result;
         }
         finally
@@ -29,6 +32,7 @@ public sealed class WriteCoordinator(IDbContextFactory<ControlDbContext> context
 
     public async Task ExecuteAsync(
         Func<ControlDbContext, CancellationToken, Task> operation,
+        IWriteProjection? projection,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(operation);
@@ -38,9 +42,15 @@ public sealed class WriteCoordinator(IDbContextFactory<ControlDbContext> context
                     await operation(context, token).ConfigureAwait(false);
                     return true;
                 },
-                cancellationToken)
+                projection, cancellationToken)
             .ConfigureAwait(false);
     }
+
+    public Task<TResult> ExecuteAsync<TResult>(Func<ControlDbContext, CancellationToken, Task<TResult>> operation,
+        CancellationToken cancellationToken = default) => ExecuteAsync(operation, null, cancellationToken);
+
+    public Task ExecuteAsync(Func<ControlDbContext, CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default) => ExecuteAsync(operation, null, cancellationToken);
 
     public void Dispose()
     {

@@ -542,7 +542,8 @@
           "Microsoft.EntityFrameworkCore.Sqlite": "[10.0.8, )",
           "NAudio": "[2.2.1, )",
           "ScpCv.Contracts": "[1.0.0, )",
-          "ScpCv.Domain": "[1.0.0, )"
+          "ScpCv.Domain": "[1.0.0, )",
+          "YamlDotNet": "[18.1.0, )"
         }
       },
       "scpcv.presentation.protocol": {
@@ -602,6 +603,12 @@
         "requested": "[2.1.13, )",
         "resolved": "2.1.13",
         "contentHash": "D2UAuiGxFYBqeRXjjjGgvJ5UQifzn6wefmSqeKU7XcNGKLbJRP6X7kcPZ6opOBJGdCIlgbSxTvDpBbLvsN594A=="
+      },
+      "YamlDotNet": {
+        "type": "CentralTransitive",
+        "requested": "[18.1.0, )",
+        "resolved": "18.1.0",
+        "contentHash": "5K+9KFg2TdTl7VXv88Qzi/0lqK6JFoNP3lRuImPYGRV7K/QYklDyTrj4+A+KAki1JsQi6qKY+hDyY7d6WRqjrw=="
       }
     }
   }

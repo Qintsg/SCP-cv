@@ -2,6 +2,7 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
+using ScpCv.Domain.Rules;
 using ScpCv.Infrastructure.Playback;
 using ScpCv.Infrastructure.VideoWall;
 
@@ -22,7 +23,7 @@ public sealed partial class ScenarioService
         {
             await ApplyRuntimeCoreAsync(scenario, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception) when (scenario.BigScreenModeState == ScenarioValueState.Set)
+        catch (Exception) when (HasWallChange(scenario))
         {
             try
             {
@@ -45,12 +46,16 @@ public sealed partial class ScenarioService
     /// <summary>墙面与声卡副作用在数据库提交之前执行，失败禁止派发媒体命令。</summary>
     private async Task ApplyRuntimeCoreAsync(Scenario scenario, CancellationToken cancellationToken)
     {
-        if (scenario.BigScreenModeState == ScenarioValueState.Set)
+        var code = ReadAdvanced(scenario.AdvancedJson).WallLayoutCode;
+        var layout = !string.IsNullOrEmpty(code) ? WallLayoutCode.Decode(code) :
+            scenario.BigScreenModeState == ScenarioValueState.Set ? VideoWallLayoutPlanner.Preset(EnumName(scenario.BigScreenMode)) : null;
+        if (layout is not null)
         {
             // 保留旧预案语义：墙面失败即中止，网络重试不能持有数据库写锁。
             try
             {
-                await _videoWall.DispatchAsync(EnumName(scenario.BigScreenMode), cancellationToken).ConfigureAwait(false);
+                if (!string.IsNullOrEmpty(code)) await _videoWall.DispatchLayoutAsync(layout, cancellationToken).ConfigureAwait(false);
+                else await _videoWall.DispatchAsync(EnumName(scenario.BigScreenMode), cancellationToken).ConfigureAwait(false);
             }
             catch (VideoWallException exception)
             {
@@ -66,7 +71,7 @@ public sealed partial class ScenarioService
             appliedVolume = _systemAudio.Apply(scenario.VolumeLevel, null);
             if (!appliedVolume.Available)
                 throw new ScenarioServiceException(
-                    (scenario.BigScreenModeState == ScenarioValueState.Set ? "墙面已下发；运行状态未提交、媒体命令未派发。" : string.Empty)
+                    (layout is not null ? "墙面已下发；运行状态未提交、媒体命令未派发。" : string.Empty)
                     + appliedVolume.Detail,
                     code: "system_audio_unavailable");
         }
@@ -79,11 +84,11 @@ public sealed partial class ScenarioService
                 var sessions = await database.PlaybackSessions
                     .Where(item => item.WindowId <= WindowId.Maximum).ToListAsync(token).ConfigureAwait(false);
                 var runtimeChanged = false;
-                if (scenario.BigScreenModeState == ScenarioValueState.Set)
+                if (layout is not null)
                 {
                     VideoWallStateProjection.Record(runtime,
-                        VideoWallLayoutPlanner.Preset(EnumName(scenario.BigScreenMode)), 0, _videoWall.IsHardware);
-                    var mutedWindows = scenario.BigScreenMode == BigScreenMode.Single ? new HashSet<int> { 2 } : [];
+                        layout, 0, _videoWall.IsHardware);
+                    var mutedWindows = VideoWallStateProjection.MutedWindows(layout).ToHashSet();
                     foreach (var session in sessions) session.IsMuted = mutedWindows.Contains(session.WindowId);
                     runtimeChanged = true;
                 }
@@ -99,11 +104,14 @@ public sealed partial class ScenarioService
         catch (Exception exception) when (exception is DbUpdateException or DbException or InvalidOperationException)
         {
             // 提交回执异常不证明事务未提交；不擅自补偿声卡或墙面，也不继续派发媒体命令。
-            var completed = (scenario.BigScreenModeState == ScenarioValueState.Set && _videoWall.IsHardware ? "墙面已下发；" : string.Empty)
+            var completed = (layout is not null && _videoWall.IsHardware ? "墙面已下发；" : string.Empty)
                 + (appliedVolume is not null ? "系统音量已下发；" : string.Empty);
             throw new ScenarioServiceException(
                 $"{completed}运行状态提交未确认，媒体命令未派发，请核对实际状态。{exception.Message}",
                 code: "scenario_state_persistence_failed");
         }
     }
+
+    private static bool HasWallChange(Scenario scenario) => scenario.BigScreenModeState == ScenarioValueState.Set ||
+        !string.IsNullOrEmpty(ReadAdvanced(scenario.AdvancedJson).WallLayoutCode);
 }

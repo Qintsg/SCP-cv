@@ -154,6 +154,7 @@ builder.Services.AddSingleton<VideoWallLayoutService>();
 builder.Services.AddSingleton<PresentationCoordinator>();
 builder.Services.AddSingleton<IPresentationDependencySnapshotReader, WindowsPresentationDependencySnapshotReader>();
 builder.Services.AddSingleton<IPresentationDependencyProbe, PresentationDependencyProbe>();
+builder.Services.AddSingleton(new ScenarioFileStore(controlDbFactory.Layout.RootPath));
 builder.Services.AddSingleton<ScenarioService>();
 builder.Services.AddSingleton<ScenarioFolderService>();
 builder.Services.AddSingleton<BackgroundAudioService>();

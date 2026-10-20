@@ -7,7 +7,7 @@ using ScpCv.Infrastructure.Persistence;
 
 namespace ScpCv.Infrastructure.Scenarios;
 
-public sealed class ScenarioFolderService(IDbContextFactory<ControlDbContext> contexts, WriteCoordinator writes)
+public sealed class ScenarioFolderService(IDbContextFactory<ControlDbContext> contexts, WriteCoordinator writes, ScenarioFileStore? scenarioFiles = null)
 {
     public async Task<IReadOnlyList<MediaFolderDto>> ListAsync(CancellationToken cancellationToken = default)
     {
@@ -44,7 +44,7 @@ public sealed class ScenarioFolderService(IDbContextFactory<ControlDbContext> co
             if (id is null) { db.ScenarioFolders.Add(folder); folders.Add(folder); }
             await db.SaveChangesAsync(token).ConfigureAwait(false);
             return ToDto(folder, folders);
-        }, cancellationToken);
+        }, scenarioFiles, cancellationToken);
 
     public Task DeleteAsync(long id, CancellationToken cancellationToken = default) => writes.ExecuteAsync(async (db, token) =>
     {
@@ -54,7 +54,7 @@ public sealed class ScenarioFolderService(IDbContextFactory<ControlDbContext> co
             await db.Scenarios.AnyAsync(item => item.FolderId == id, token).ConfigureAwait(false))
             throw new ScenarioServiceException("目录非空，请先移动或删除其中的预设和子目录。");
         db.ScenarioFolders.Remove(folder);
-    }, cancellationToken);
+    }, scenarioFiles, cancellationToken);
 
     public static async Task ValidateParentAsync(ControlDbContext db, long? parentId, CancellationToken token)
     {
