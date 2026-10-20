@@ -5,6 +5,8 @@ required:
 properties:
   region:
     type: string
-    enum: [fullscreen, left, right]
+    enum: [fullscreen, left, right, grid]
   input:
     $ref: ./VideoWallInput.yaml
+  rect:
+    $ref: ./VideoWallRect.yaml

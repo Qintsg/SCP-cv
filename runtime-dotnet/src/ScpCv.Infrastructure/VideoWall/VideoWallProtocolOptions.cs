@@ -47,9 +47,9 @@ public sealed class VideoWallProtocolOptions
         UnicastAddress = $"192.168.5.{number}",
         MulticastAddress = $"224.1.1.{number}",
         Port = 5000,
-        // 63/64已确认1080P；2026-10-13另行读取81的实际SPS也为1080P，各输入仍可独立配置。
-        Width = 1920,
-        Height = 1080,
+        // 016按用户要求适配D4两路4K；IP81维持已读SPS的1080P，不修改系统分辨率。
+        Width = number is 63 or 64 ? 3840 : 1920,
+        Height = number is 63 or 64 ? 2160 : 1080,
         UnicastPort = 59993,
     };
 }

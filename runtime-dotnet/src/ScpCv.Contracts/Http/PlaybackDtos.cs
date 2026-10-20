@@ -180,6 +180,21 @@ public sealed record VideoWallMappingDto
 
     [JsonPropertyName("input")]
     public VideoWallInputDto Input { get; init; } = new();
+
+    [JsonPropertyName("rect")]
+    public VideoWallRectDto? Rect { get; init; }
+}
+
+public sealed record VideoWallRectDto
+{
+    [JsonPropertyName("column")]
+    public int Column { get; init; }
+    [JsonPropertyName("row")]
+    public int Row { get; init; }
+    [JsonPropertyName("columns")]
+    public int Columns { get; init; }
+    [JsonPropertyName("rows")]
+    public int Rows { get; init; }
 }
 
 public sealed record VideoWallLayoutDto

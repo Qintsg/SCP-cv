@@ -17,7 +17,7 @@ public sealed class VideoWallLayoutPlannerTests
         options.Inputs["laptop"].Width = 3840; options.Inputs["laptop"].Height = 2160;
         options.Inputs["laptop"].Validate();
         Assert.Equal(3840, options.Inputs["laptop"].Width);
-        Assert.Equal(1920, options.Inputs["window_1"].Width);
+        Assert.Equal(3840, options.Inputs["window_1"].Width);
     }
 
     public static IEnumerable<object[]> Combinations()
@@ -56,9 +56,9 @@ public sealed class VideoWallLayoutPlannerTests
             Assert.Equal(U16(packet, 8), U16(packet, 24));
             Assert.Equal(right is null ? 1 : 2, U16(packet, 34));
             Assert.Equal(right is null ? row * 10 + col + 1 : row * 5 + col % 5 + 1, U16(packet, 36));
-            // 独立于产品默认值：63/64为用户/实测确认，81由本轮实际SPS确认1080P。
-            var sourceWidth = 1920;
-            var sourceHeight = 1080;
+            // 016只适配用户指定63/64的4K；81的独立1080P不得跟改。
+            var sourceWidth = source == WallInputKind.Laptop ? 1920 : 3840;
+            var sourceHeight = source == WallInputKind.Laptop ? 1080 : 2160;
             var width = sourceWidth / (right is null ? 10 : 5);
             var height = sourceHeight / 5;
             Assert.Equal((right is null ? col : col % 5) * width, U16(packet, 26));

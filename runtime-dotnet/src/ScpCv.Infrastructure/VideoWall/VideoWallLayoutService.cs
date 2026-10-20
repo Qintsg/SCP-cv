@@ -121,12 +121,16 @@ public sealed class VideoWallLayoutService(
             Mappings = layout.Mappings.Select(mapping => new VideoWallMappingDto
             {
                 Region = mapping.Region.ToString().ToLowerInvariant(),
+                Rect = mapping.Rect is { } rect ? new VideoWallRectDto
+                { Column = rect.Column, Row = rect.Row, Columns = rect.Columns, Rows = rect.Rows } : null,
                 Input = new VideoWallInputDto
                 {
                     Kind = mapping.Input.Kind switch
                     {
                         WallInputKind.Window1 => "window_1",
                         WallInputKind.Window2 => "window_2",
+                        WallInputKind.Window3 => "window_3",
+                        WallInputKind.Window4 => "window_4",
                         WallInputKind.Laptop => "laptop",
                         _ => "ip_stream",
                     },

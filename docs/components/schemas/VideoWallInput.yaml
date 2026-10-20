@@ -4,7 +4,8 @@ required:
 properties:
   kind:
     type: string
-    enum: [window_1, window_2, laptop, ip_stream]
+    enum: [window_1, window_2, laptop, ip_stream, window_3, window_4]
+    description: 窗口3/4仅前端规划预留，服务端拒绝实体应用，未绑定猜测的输入地址
   ip_address:
     type: string
     format: ipv4

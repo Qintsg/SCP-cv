@@ -8,6 +8,8 @@ namespace ScpCv.PlayerWorker;
 public partial class PlayerWindow : Window
 {
     private (int X, int Y, int Width, int Height)? _pendingBounds;
+    /// <summary>实际目标显示器物理像素，仅用于渲染尺寸，不修改系统显示设置。</summary>
+    public (int Width, int Height) OutputPixelSize => _pendingBounds is { } bounds ? (bounds.Width, bounds.Height) : (3840, 2160);
 
     public PlayerWindow()
     {

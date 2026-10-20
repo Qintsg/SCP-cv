@@ -6,6 +6,7 @@ public enum WallRegion
     Fullscreen,
     Left,
     Right,
+    Grid,
 }
 
 public enum WallInputKind
@@ -14,10 +15,14 @@ public enum WallInputKind
     Window2,
     Laptop,
     IpStream,
+    Window3,
+    Window4,
 }
 
 public sealed record WallInput(WallInputKind Kind, string IpAddress = "");
 
-public sealed record WallMapping(WallRegion Region, WallInput Input);
+public sealed record WallRect(int Column, int Row, int Columns, int Rows);
+
+public sealed record WallMapping(WallRegion Region, WallInput Input, WallRect? Rect = null);
 
 public sealed record WallLayout(string Name, IReadOnlyList<WallMapping> Mappings);

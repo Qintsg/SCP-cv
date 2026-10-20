@@ -228,12 +228,13 @@ public sealed partial class PlayerRuntimeHost(
     }
 
 
-    private static async Task<SurfaceResource> OpenPdfAsync(
+    private async Task<SurfaceResource> OpenPdfAsync(
         string uri,
         int initialPage,
         CancellationToken cancellationToken)
     {
-        var adapter = new PdfPlaybackAdapter();
+        var pixels = _window.OutputPixelSize;
+        var adapter = new PdfPlaybackAdapter(pixels.Width, pixels.Height);
         await adapter.OpenAsync(LocalPath(uri), Math.Max(1, initialPage), cancellationToken);
         var image = new System.Windows.Controls.Image
         {

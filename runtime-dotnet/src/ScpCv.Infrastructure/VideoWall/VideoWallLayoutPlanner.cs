@@ -19,23 +19,25 @@ public static class VideoWallLayoutPlanner
 
         var result = new List<VideoWallSendItem>();
         AddControl("clear", 0x61FF);
-        foreach (var mapping in layout.Mappings.OrderBy(item => item.Region))
+        var signIndex = 0;
+        foreach (var mapping in layout.Mappings.OrderBy(item => WallLayoutPolicy.Rectangle(item).Row)
+            .ThenBy(item => WallLayoutPolicy.Rectangle(item).Column))
         {
             var input = Resolve(mapping.Input, options);
-            var full = mapping.Region == WallRegion.Fullscreen;
-            var startColumn = mapping.Region == WallRegion.Right ? 5 : 0;
-            var columns = full ? 10 : 5;
+            var rect = WallLayoutPolicy.Rectangle(mapping);
+            var startColumn = rect.Column;
+            var columns = rect.Columns;
             // 此受限路径要求整除且4像素对齐，避免猜测原程序未充分验证的余数分支。
-            if (input.Width % (columns * 4) != 0 || input.Height % 20 != 0)
+            if (input.Width % (columns * 4) != 0 || input.Height % (rect.Rows * 4) != 0)
                 throw new VideoWallException("该输入尺寸尚无已验证的整除裁剪规则，未向设备发送命令。");
             var fragment = 0;
-            var sign = mapping.Region == WallRegion.Right ? 2 : 1;
-            for (var row = 0; row < 5; row++)
+            var sign = mapping.Region == WallRegion.Right ? 2 : mapping.Region == WallRegion.Left ? 1 : ++signIndex;
+            for (var row = rect.Row; row < rect.Row + rect.Rows; row++)
             {
                 for (var column = startColumn; column < startColumn + columns; column++)
                 {
                     var source = new VideoWallRectangle((column - startColumn) * input.Width / columns,
-                        row * input.Height / 5, input.Width / columns, input.Height / 5);
+                        (row - rect.Row) * input.Height / rect.Rows, input.Width / columns, input.Height / rect.Rows);
                     var packets = VideoWallPacketCodec.Mapping(input, new(0, 0, 1920, 1080), source,
                         sign, sign, layout.Mappings.Count, ++fragment, row * 10 + column + 1, options);
                     foreach (var packet in packets)
@@ -65,6 +67,8 @@ public static class VideoWallLayoutPlanner
 
     private static VideoWallInputDescriptor Resolve(WallInput input, VideoWallProtocolOptions options)
     {
+        if (input.Kind is WallInputKind.Window3 or WallInputKind.Window4)
+            throw new VideoWallException("窗口3/4仅前端预留，尚未接入实体输出，不能应用。");
         var key = input.Kind switch
         {
             WallInputKind.Window1 => "window_1",

@@ -38,11 +38,12 @@ public static class VideoWallLayoutEndpoints
         {
             var submitted = await request.ReadFromJsonAsync<VideoWallLayoutDto>(cancellationToken).ConfigureAwait(false)
                 ?? throw new VideoWallLayoutException("缺少大屏布局内容。", "layout_invalid");
-            if (submitted.Mappings is null || submitted.Mappings.Any(mapping => mapping.Input is null))
+            if (submitted.Mappings is null || submitted.Mappings.Any(mapping => mapping is null || mapping.Input is null))
                 throw new VideoWallLayoutException("大屏映射内容不完整。", "layout_invalid");
             var layout = new WallLayout(submitted.Name, submitted.Mappings.Select(mapping =>
                 new WallMapping(ParseRegion(mapping.Region), new WallInput(
-                    ParseInput(mapping.Input.Kind), mapping.Input.IpAddress))).ToArray());
+                    ParseInput(mapping.Input.Kind), mapping.Input.IpAddress), mapping.Rect is { } rect
+                        ? new WallRect(rect.Column, rect.Row, rect.Columns, rect.Rows) : null)).ToArray());
             return Results.Ok(new { success = true, layout = await layouts.SaveDraftAsync(layout, cancellationToken).ConfigureAwait(false) });
         }
         catch (JsonException exception)
@@ -119,6 +120,7 @@ public static class VideoWallLayoutEndpoints
         "fullscreen" => WallRegion.Fullscreen,
         "left" => WallRegion.Left,
         "right" => WallRegion.Right,
+        "grid" => WallRegion.Grid,
         _ => throw new VideoWallLayoutException($"未知的大屏区域：{value}。", "layout_invalid"),
     };
 
@@ -126,6 +128,8 @@ public static class VideoWallLayoutEndpoints
     {
         "window_1" => WallInputKind.Window1,
         "window_2" => WallInputKind.Window2,
+        "window_3" => WallInputKind.Window3,
+        "window_4" => WallInputKind.Window4,
         "laptop" => WallInputKind.Laptop,
         "ip_stream" => WallInputKind.IpStream,
         _ => throw new VideoWallLayoutException($"未知的大屏输入：{value}。", "layout_invalid"),
