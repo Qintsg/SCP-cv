@@ -1,12 +1,12 @@
 # SCP-cv
 
-本机改版（未部署）：4K适配、32:9／50格布局码、目录／YAML预案、紧凑仪表盘与主题品牌导航；直播预览改为[服务端按需共享FLV](docs/stream-preview-018.md)，观看电脑无需Node／FFmpeg。另见[工作区说明](docs/console-workspace-016.md)；不自动改D4显示设置，窗口3/4仍仅网页预留。
+2026-10-20已部署D4：015–018的直播凭据、4K适配、32:9／50格布局码、目录／YAML预案、紧凑仪表盘与主题品牌导航；直播预览使用[服务端按需共享FLV](docs/stream-preview-018.md)，观看电脑无需Node／FFmpeg。D4桌面新增`SCP-cv 一键启动.cmd`；双仓推送、冷备与验收见[018部署记录](specs/018-shared-flv-preview/deployment.md)。不自动改Windows显示设置，窗口3/4仍仅网页预留。
 
-2026-10-20本机新增直播凭据支持（尚未部署）：RTSP、HTTP(S)、RTMP可直接填写带用户名/密码的地址，默认隐藏输入及常规摘要中的秘密。使用格式与转义见[使用文档](docs/使用文档.md)，范围见[015规范](specs/015-stream-credentials/spec.md)。本轮不推送或改变D4部署。
+直播凭据支持已随018部署：RTSP、HTTP(S)、RTMP可直接填写带用户名/密码的地址，默认隐藏输入及常规摘要中的秘密。使用格式与转义见[使用文档](docs/使用文档.md)，范围见[015规范](specs/015-stream-credentials/spec.md)。部署不代表所有真实流或设备已逐一测试。
 
 SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。配置HTTPS后，HTTP访问默认跳到同主机HTTPS并保留路径和查询；登录、控制及屏幕共享在HTTPS页面操作，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
-Ant控制台已部署D4：[HTTP入口（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前网页为531c61f（基于014的Ant界面，补齐首页布局完整归属），运行包仍012l/da1bf87；保留可信63号声音输出、私有网页/Office引擎、两块大屏目标及原数据。大屏布局一次应用；换主机/登录后清旧选择并只读恢复。媒体/预设按路径浏览，摄像机84–88及固定76保持。软件声音、正常退出与此前012k一小时混合运行已有分层证据，机位、DSP和实体音源等缺口仍单列。使用说明见[现场控制台](docs/web-access.md)，最新网页验证见[网页发布](specs/012-directory-camera-console/verification/20261018-wall-web-deployment.md)，运行组与实体边界见[012l发布](specs/012-directory-camera-console/verification/20261018-runtime-012l.md)。
+Ant控制台入口：[HTTP（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前网页与运行包均为018/643da4b；原数据、63号声音输出、私有网页/Office引擎及DISPLAY2/3保留。两窗按部署前状态保持空闲，没有自动打开历史来源。当前验收见[018部署](specs/018-shared-flv-preview/deployment.md)；此前播放、真人手势和实体欠账仍分别保留，不能据部署称全部现场功能通过。
 
 ## 项目信息
 

@@ -1,6 +1,6 @@
 # 免安装的直播预览（018）
 
-本轮仅本机实现与验证，**未推送、未部署D4**。017的仪表盘、侧栏和Logo调整也只在本机。实际现场服务仍以最后部署版本为准。
+2026-10-20已连同015–017推送双仓并部署D4，网页与完整运行包固定为018/643da4b，桌面新增一键启动入口。[部署记录](../specs/018-shared-flv-preview/deployment.md)包含冷备、任务、TLS与两播放器身份验收；真实设备流解码／WSS端到端和现场QoS没有在部署轮代验。
 
 ## 使用者需要做什么
 
@@ -48,7 +48,7 @@ MediaMTX v1.17.1本身不输出FLV，因此补充的是ControlHost内的薄转�
 
 `-CheckOnly -NoPause`可只读检查配置；自动运维加`-NoPause`避免等待回车。配置仅保存既有凭据文件路径，不保存口令；凭据沿用受限ACL。部署结果和最终路径以[018部署记录](../specs/018-shared-flv-preview/deployment.md)为准。
 
-观看端无依赖，服务器需已有MediaMTX和含libx264的FFmpeg。未自动下载、安装或向D4写入文件。建议配置真实FFmpeg exe绝对路径，避免全局shim／非项目命令混用；不启动PowerPoint或其它用户窗口。
+观看端无依赖，服务器需已有MediaMTX和含libx264的FFmpeg。D4已配置本轮私有`D:/SCP-cv/.validation/deploy-018-20261020/ffmpeg/ffmpeg.exe`（9.0.2，摘要和原生version已核）；不改全局PATH。维护时使用真实exe绝对路径，避免全局shim／非项目命令混用；不启动PowerPoint或其它用户窗口。
 
 ControlHost配置示例：
 

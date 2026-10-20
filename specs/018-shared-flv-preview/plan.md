@@ -4,7 +4,7 @@
 
 ## Summary
 
-ControlHost新增经过认证／CSRF的短租约与同源FLV出口。每个规范化上游URI只注册一条现有MediaMTX动态sourceOnDemand路径，一份自有FFmpeg从本机RTSP读入，转H.264无声FLV。Vue使用mpegts.js，按可见性订阅／续租，按完整GOP共享缓存、扇出与追赶。替代016用户本机桥；不另启MediaMTX，不改变D4部署。
+ControlHost新增经过认证／CSRF的短租约与同源FLV出口。每个规范化上游URI只注册一条现有MediaMTX动态sourceOnDemand路径，一份自有FFmpeg从本机RTSP读入，转H.264无声FLV。Vue使用mpegts.js，按可见性订阅／续租，按完整GOP共享缓存、扇出与追赶。替代016用户本机桥；不另启MediaMTX。原本机阶段不改变D4部署；后续用户授权的部署见增量与deployment.md。
 
 ## Technical Context
 
@@ -15,7 +15,7 @@ ControlHost新增经过认证／CSRF的短租约与同源FLV出口。每个规�
 **Target Platform**: Windows x64播放Host；共享Web／Electron／Android控制台（实际解码仅验证支持MSE的本机浏览器）。
 **Project Type**: ASP.NET Core服务内薄预览模块＋共享Vue组件。
 **Performance Goals**: 默认8Mbps预览总出站、最多6上游、128租约、每客户端2个完整GOP；实际按人数和拥塞降档，默认无音频。
-**Constraints**: 原始入站码率不能靠输出转码降低；严格全机QoS需额外系统／网络支持；仅本机，无computer use，不连接现场。
+**Constraints**: 原始入站码率不能靠输出转码降低；严格全机QoS需额外系统／网络支持；无computer use，原本机阶段不连接现场，部署阶段仅服务生命周期与只读验收。
 **Scale/Scope**: 认证端点、私有MediaMTX API、独占转换子进程、有界FLV共享、Vue生命周期、维护文档。
 
 ## Constitution Check
