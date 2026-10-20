@@ -25,6 +25,7 @@ import { useToast } from '@/composables/useToast';
 import { useSourceStore } from '@/stores/sources';
 import type { MediaSourceItem, MediaSourceUpdate } from '@/services/api';
 import { pptPreparationStateLabel, pptPreparationSummary } from './sourcePresentation';
+import StreamAddressInput from './StreamAddressInput.vue';
 
 const props = defineProps<{
   open: boolean;
@@ -195,8 +196,9 @@ function close(): void {
         <template v-if="isUrlSource">
           <a-form-item :label="isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url')" required
             :extra="isStreamSource ? t('sources.editDrawer.streamUrlHint') : t('sources.editDrawer.urlHint')">
-            <a-input v-model:value="draftUri" :placeholder="isStreamSource ? 'rtsp:// 或 srt://' : 'https://'"
-              :disabled="saving" v-bind="{ 'aria-label': isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url') }" />
+            <StreamAddressInput v-if="isStreamSource" :key="source.id" v-model:value="draftUri" placeholder="rtsp:// 或 srt://"
+              :disabled="saving" :active="open" :label="t('sources.add.streamUrl')" />
+            <a-input v-else v-model:value="draftUri" placeholder="https://" :disabled="saving" :aria-label="t('sources.editDrawer.url')" />
           </a-form-item>
         </template>
 

@@ -20,6 +20,7 @@ import ATabs from 'ant-design-vue/es/tabs';
 import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
 
 import FIcon from '@/design-system/FIcon.vue';
+import StreamAddressInput from './StreamAddressInput.vue';
 import { useToast } from '@/composables/useToast';
 import { useWindowSizeClass } from '@/composables/useWindowSizeClass';
 import { useSourceStore } from '@/stores/sources';
@@ -296,8 +297,8 @@ async function addStreamSource(): Promise<void> {
               :aria-label="t('sources.add.streamProtocol')" :disabled="uploading" />
           </a-form-item>
           <a-form-item :label="t('sources.add.streamUrl')" required>
-            <a-input v-model:value="streamUrl" :placeholder="streamUrlPlaceholder"
-              v-bind="{ 'aria-label': t('sources.add.streamUrl') }" :disabled="uploading" />
+            <StreamAddressInput v-model:value="streamUrl" :placeholder="streamUrlPlaceholder"
+              :label="t('sources.add.streamUrl')" :disabled="uploading" :active="open && activeTab === 'stream'" />
           </a-form-item>
           <a-form-item :label="t('sources.add.displayName')">
             <a-input v-model:value="streamName" :placeholder="t('sources.add.streamNamePlaceholder')"

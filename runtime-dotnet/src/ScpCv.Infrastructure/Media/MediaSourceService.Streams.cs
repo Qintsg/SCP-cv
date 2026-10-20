@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Http;
 using ScpCv.Domain.Model;
+using ScpCv.Infrastructure.Diagnostics;
 
 namespace ScpCv.Infrastructure.Media;
 
@@ -32,7 +33,7 @@ public sealed partial class MediaSourceService
             {
                 SourceType = kind,
                 Name = string.IsNullOrWhiteSpace(displayName)
-                    ? normalized[..Math.Min(normalized.Length, 80)]
+                    ? SafeStreamName(normalized)
                     : ValidateName(displayName, "显示名称不能为空"),
                 Uri = normalized,
                 IsAvailable = true,
@@ -51,14 +52,24 @@ public sealed partial class MediaSourceService
     private static string ValidateStreamUrl(string url, string scheme)
     {
         var trimmed = url.Trim();
-        if (!Uri.TryCreate(trimmed, UriKind.Absolute, out var parsed) ||
+        if (trimmed.Any(char.IsControl) || !Uri.TryCreate(trimmed, UriKind.Absolute, out var parsed) ||
             !(scheme.Length == 0
                 ? CustomStreamSchemes.Contains(parsed.Scheme, StringComparer.OrdinalIgnoreCase)
                 : parsed.Scheme.Equals(scheme, StringComparison.OrdinalIgnoreCase)) ||
-            string.IsNullOrWhiteSpace(parsed.Host) || parsed.UserInfo.Length > 0)
+            string.IsNullOrWhiteSpace(parsed.Host))
             throw new MediaServiceException(scheme.Length == 0
-                ? "自定义媒体流仅支持 http(s)、udp、rtp 或 rtmp 主机地址，且不能内嵌凭据。"
-                : $"直播源地址必须是无内嵌凭据的 {scheme}:// 主机地址。");
+                ? "自定义媒体流仅支持 http(s)、udp、rtp 或 rtmp 主机地址。"
+                : $"直播源地址必须是有效的 {scheme}:// 主机地址。");
+        if (parsed.UserInfo.Length > 0 &&
+            (parsed.Scheme is not ("rtsp" or "http" or "https" or "rtmp") || parsed.UserInfo[0] == ':'))
+            throw new MediaServiceException("该直播协议不支持内嵌凭据，或凭据缺少用户名。RTSP、HTTP(S)、RTMP可使用用户名:密码@主机。");
         return parsed.AbsoluteUri;
+    }
+
+    /// <summary>:param address: 真实保存地址。:returns: 仅生成名称时脱敏，不修改播放器收到的URI。</summary>
+    private static string SafeStreamName(string address)
+    {
+        var label = (string)LogRedaction.Value("source_uri", address)!;
+        return label[..Math.Min(label.Length, 80)];
     }
 }

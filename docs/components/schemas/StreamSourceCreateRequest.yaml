@@ -15,10 +15,13 @@ properties:
     format: uri
     description: |
       RTSP 源使用 rtsp://，SRT 源使用 srt://；自定义流当前支持
-      http(s)://、udp://、rtp:// 或 rtmp:// 主机地址。内嵌用户名和密码会被拒绝。
+      http(s)://、udp://、rtp:// 或 rtmp:// 主机地址。
+      RTSP、HTTP(S)、RTMP可内嵌用户名和密码，例如rtsp://operator:example-pass@192.0.2.188/live；
+      凭据内特殊字符需百分号编码。SRT/UDP/RTP不支持非空userinfo，SRT仍使用自身查询参数。
+      完整地址保存在授权媒体合同中，不能当作对已登录操作员保密或加密存储。
   name:
     type: string
-    description: 操作员可识别的名称；省略时以地址作为名称
+    description: 操作员可识别的名称；省略时以脱敏地址作为名称，不含凭据或已知敏感查询值
   folder_id:
     type: integer
     nullable: true

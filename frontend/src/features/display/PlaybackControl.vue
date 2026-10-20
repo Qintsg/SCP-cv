@@ -14,6 +14,7 @@
  * @Date : 2026-09-29
  */
 import { tagColor } from '@/design-system/tagColor';
+import { displayMediaAddress } from '@/services/mediaAddress';
 
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -413,7 +414,7 @@ const errorBarDescription = computed(() => {
     </section>
 
     <section v-else-if="category === 'image' || category === 'web'" class="playback-control__section">
-      <p v-if="session.source_uri" class="playback-control__uri">{{ session.source_uri }}</p>
+      <p v-if="session.source_uri" class="playback-control__uri">{{ displayMediaAddress(session.source_uri) }}</p>
       <p v-else class="playback-control__uri">{{ t('playback.uriMissing') }}</p>
       <a-button v-if="category === 'web'" size="small" :disabled="playbackControlsDisabled" @click="refreshWebSource">
         <template #icon><FIcon name="arrow_clockwise_24_regular" /></template>
@@ -425,7 +426,7 @@ const errorBarDescription = computed(() => {
       <a-tag :color="tagColor(controlsDisabled ? 'warning' : stateType)"  >
         {{ streamStatusLabel }}
       </a-tag>
-      <p v-if="session.source_uri" class="playback-control__uri">{{ session.source_uri }}</p>
+      <p v-if="session.source_uri" class="playback-control__uri">{{ displayMediaAddress(session.source_uri) }}</p>
       <a-button size="small" :disabled="playbackControlsDisabled" @click="refreshWebSource">
         <template #icon><FIcon name="arrow_clockwise_24_regular" /></template>
         {{ t('playback.refresh') }}

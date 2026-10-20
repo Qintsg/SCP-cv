@@ -207,3 +207,8 @@
 
 - 自有发布包装器写`@($package,$archive,$stage+'/manifest.json',...)`，PowerShell将stage和后缀分别作为项，导致已有stage被误判成“发布产物已存在”。保护检查安全拒绝，发布根/归档均未创建，不能归因产品或跳过已存在检查。
 - 改为`@($package,$archive,($stage+'/manifest.json'),...)`，先实际枚举验证值，再核原失败进程终端才启动新尝试；保留旧脚本/日志。D4新尝试完整967文件发布退出0，审计true/all/low，见[012l证据](../../specs/012-directory-camera-console/verification/20261018-runtime-012l.md)。
+
+## 坑155 — 放行直播凭据时同步处理名称与展示
+
+- 原验证器统一拒绝userinfo；仅删除限制会把完整URI复制到自动名称、公开路径和屏控摘要。LogRedaction原来也只识别HTTP(S)，不能用其旧测试宣称RTSP安全。
+- 创建/编辑统一放行有认证语义的协议，原URI留给授权编辑/播放；自动名称先脱敏、地址默认密码输入、普通摘要单独脱敏。RTSP/RTMP/SRT等结构化URI与passphrase规则有红绿；真实回环401挑战验证转义凭据，不把保存成功当设备连通。见[015](../../specs/015-stream-credentials/spec.md)。

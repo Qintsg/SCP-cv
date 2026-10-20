@@ -1,3 +1,4 @@
+// 结构化日志值脱敏：包含媒体协议凭据和已知敏感查询，不改变播放/存储地址。
 using System.Collections.ObjectModel;
 using System.Text;
 
@@ -26,6 +27,8 @@ public static class LogRedaction
         "refresh_token",
         "claim_token",
         "secret",
+        "passphrase",
+        "srt-passphrase",
         "api_key",
     };
 
@@ -62,7 +65,7 @@ public static class LogRedaction
     private static string RedactUri(string value)
     {
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
-            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            uri.Scheme is not ("http" or "https" or "rtsp" or "rtmp" or "srt" or "udp" or "rtp"))
         {
             return value;
         }

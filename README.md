@@ -1,5 +1,7 @@
 # SCP-cv
 
+2026-10-20本机新增直播凭据支持（尚未部署）：RTSP、HTTP(S)、RTMP可直接填写带用户名/密码的地址，默认隐藏输入及常规摘要中的秘密。使用格式与转义见[使用文档](docs/使用文档.md)，范围见[015规范](specs/015-stream-credentials/spec.md)。本轮不推送或改变D4部署。
+
 SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。配置HTTPS后，HTTP访问默认跳到同主机HTTPS并保留路径和查询；登录、控制及屏幕共享在HTTPS页面操作，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
 
 Ant控制台已部署D4：[HTTP入口（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前网页为531c61f（基于014的Ant界面，补齐首页布局完整归属），运行包仍012l/da1bf87；保留可信63号声音输出、私有网页/Office引擎、两块大屏目标及原数据。大屏布局一次应用；换主机/登录后清旧选择并只读恢复。媒体/预设按路径浏览，摄像机84–88及固定76保持。软件声音、正常退出与此前012k一小时混合运行已有分层证据，机位、DSP和实体音源等缺口仍单列。使用说明见[现场控制台](docs/web-access.md)，最新网页验证见[网页发布](specs/012-directory-camera-console/verification/20261018-wall-web-deployment.md)，运行组与实体边界见[012l发布](specs/012-directory-camera-console/verification/20261018-runtime-012l.md)。

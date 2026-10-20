@@ -477,6 +477,8 @@
 
 单次API防旧响应不替代整次预检/下发/反馈的归属；真实连接先变、同ID重登及旧finally需分别验证，见[布局意图边界](known-pitfalls/video-wall-mapping.md)。
 
+坑155：放行直播userinfo还须处理自动名称、摘要及结构化URI脱敏，不能只删验证条件；见[直播凭据边界](known-pitfalls/directory-venue.md)。
+
 ## 3. 相关沉淀点（不在这里重复）
 
 坑152记录私有路径与继承包身份的音频隔离缺口、应用作用域默认值误判及只读对照，见[声音身份边界](known-pitfalls/directory-venue.md#坑152--私有路径不隔离继承包身份默认输出读取也有应用作用域)。

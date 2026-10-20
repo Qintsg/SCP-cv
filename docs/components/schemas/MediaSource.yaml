@@ -32,6 +32,7 @@ properties:
     type: string
   uri:
     type: string
+    description: 授权编辑/播放使用的完整地址，直播URI可能含凭据；普通界面/日志必须脱敏，不得将脱敏展示值回写
   is_available:
     type: boolean
     description: >-

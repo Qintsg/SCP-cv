@@ -113,3 +113,13 @@ test('视频空输出或实际图片时禁用播放停止循环和进度，确�
   await observe(sessions, { actual_source_id: 41, actual_adapter_kind: 'vlc', pending_command: '', playback_state: 'paused' });
   assert.equal(controls().every((item) => !item.disabled), true);
 });
+
+test('直播摘要隐藏凭据及查询秘密，但会话保留原地址', async () => {
+  const uri = 'rtsp://fixture-user:fixture-pass@192.0.2.188:554/live?token=fixture-token&channel=5';
+  const sessions = await mountOutput('rtsp_stream', { source_uri: uri });
+  const summary = browser.document.querySelector('.playback-control__uri')?.textContent;
+  assert.ok(summary?.includes('192.0.2.188'));
+  for (const secret of ['fixture-user', 'fixture-pass', 'fixture-token']) assert.equal(summary.includes(secret), false);
+  assert.equal(sessions.byWindowId(1).source_uri, uri);
+  assert.equal(recordedRequests().some(request => request.method !== 'GET'), false);
+});
