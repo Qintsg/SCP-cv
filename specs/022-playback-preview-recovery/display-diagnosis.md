@@ -4,7 +4,7 @@
 
 ## 已取得的现场证据
 
-1. DISPLAY2–5当前均为1920×1080，连接NVIDIA RTX A4000；控制桌面DISPLAY1为1920×1200，连接ASPEED。四路输入63–66的611A读回也均为1920×1080。此前15:01–15:10的系统与输入读回确实为3840×2160。
+1. 19:42读回DISPLAY2–5均为1920×1080，连接NVIDIA RTX A4000；控制桌面DISPLAY1为1920×1200，连接ASPEED。此前19:18及19:25四路输入63–66的611A读回也均为1920×1080。此前15:01–15:10的系统与输入读回确实为3840×2160。
 2. System日志在17:00:11及17:30:22各记录一次Display/4101：`nvlddmkm`停止响应并成功恢复。对应NVIDIA原始事件包含`Resetting TDR`、`Reset TDR`和`Restarting TDR`，GPUID为3b00；`nvidia-smi`确认A4000的PCI地址为3B:00.0。
 3. Application日志的Windows Error Reporting同时记录两组`LiveKernelEvent 117`，故障模块为`nvlddmkm.sys_Ampere`；16:52另有`LiveKernelEvent 193`。117表示显示驱动超时，不能据此认定发生蓝屏。
 4. 17:25:32的User32/1074记录由admin的RuntimeBroker发起系统重启；操作系统于17:31:57.5重新启动。该次系统重启早于本轮服务部署。日志不能证明系统重启由GPU故障自动触发。
@@ -29,6 +29,8 @@
 ## 服务与保留状态
 
 本轮没有修改显示模式、注册表、显卡或远程驱动，没有发送墙面、电视、电源或云台控制。项目服务已经完成部署和重启。19:42只读复核七个核心进程身份保持、两个播放器在线且均为空闲；没有重放此前已停止的142号来源。
+
+19:44文档同步后的只读复核显示DISPLAY2已经3840×2160，DISPLAY3–5仍1920×1080；窗口1正在播放来源144，窗口2空闲。七个核心进程身份均未变化。本轮在这段时间只执行只读诊断与文档快进，没有提交显示模式修改或来源打开请求；该状态变化不能作为自动回退已修复的证明。
 
 本机忽略目录`.validation/deploy-022-20261021/`保存`display-environment.json`、`display-system-events.json`、`display-detailed-events.json`、`display-mode-summary.json`、`display-saved-modes.json`、`display-crash-reports.json`、`display-driver-metadata.json`及`display-final-runtime.json`。原始证据不提交公开仓库。
 
