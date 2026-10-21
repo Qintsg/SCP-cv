@@ -62,3 +62,14 @@ T001/T002→T003/T004；US1按T005→T006→T007，US2按T008→T009，US3按T01
 ## Phase 8: Convergence
 
 - [ ] T017 [US1] 在runtime-dotnet/src/ScpCv.ControlHost/Ipc/与ScpCv.Supervisor/使用当前角色和消息诊断，结合独立DataRoot的实际进程复现原始IPC超时后整组退出；确定最先停止进展的环节后修复并重复验证，在specs/022-playback-preview-recovery/verification.md记录触发条件、真实退出和当前媒体恢复，完成T005/T006；来源FR-001、FR-005（partial，HIGH）。
+
+## Phase 9: 双仓部署与启动核验
+
+- [x] T018 将已验证提交推送origin和gitlab，在D4的D:/SCP-cv正常快进源码；用独立完整运行包及网页更新服务、冷备数据、重启项目服务，恢复停机前当前合法媒体和声音配置，记录到specs/022-playback-preview-recovery/deployment.md。
+- [x] T019 核对D4桌面入口、计划任务、固定脚本和摘要，实际执行一键启动的冷启动及重复启动，比较系统显示模式、输入读回和原进程身份，确认其是否涉及当前故障；记录到specs/022-playback-preview-recovery/deployment.md。
+- [x] T020 将本轮部署与启动验证更新到当前维护文档、变更记录及specs/022-playback-preview-recovery/deployment.md，提交并同步两个仓库及D4源码，不重放实体布局或设备电源命令。
+
+## Phase 10: 显示模式回退调查
+
+- [x] T021 只读核验D4的Windows显示模式、显卡/显示器身份、推荐模式、保存配置、GPU超时事件及启动前后结果，在specs/022-playback-preview-recovery/display-diagnosis.md区分确证事实与尚未复现的触发路径；不修改系统显示配置或驱动。
+- [ ] T022 取得4K自动切换到1080p瞬间的模式和GPU证据，确认显示描述、驱动恢复或其它具体调用的作用；按明确维护范围完成受控复现及验证后，才能认定分辨率回退原因已经解决。
