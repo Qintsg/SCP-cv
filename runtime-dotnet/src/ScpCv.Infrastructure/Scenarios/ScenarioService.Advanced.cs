@@ -4,6 +4,7 @@ using ScpCv.Contracts.Http;
 using ScpCv.Infrastructure.Devices;
 using ScpCv.Domain.Rules;
 using ScpCv.Infrastructure.VideoWall;
+using ScpCv.Infrastructure.DisplayRouting;
 
 namespace ScpCv.Infrastructure.Scenarios;
 
@@ -18,6 +19,8 @@ public sealed partial class ScenarioService
     /// <summary>:param advanced: 要保存的值。:returns: 仅结构合法，保存不等于实体可执行。</summary>
     private static string ValidateAdvanced(ScenarioAdvancedDto advanced)
     {
+        try { ScenarioTelevisionPolicy.Validate(advanced.Televisions); }
+        catch (DisplayRoutingException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_invalid"); }
         if (advanced.CameraPositions is null) throw new ScenarioServiceException("camera_positions必须为对象。");
         if (!string.IsNullOrEmpty(advanced.WallLayoutCode))
         {
@@ -44,6 +47,12 @@ public sealed partial class ScenarioService
     private async Task PreflightAdvancedAsync(ScenarioAdvancedDto advanced, CancellationToken token)
     {
         _ = ValidateAdvanced(advanced);
+        foreach (var (target, input) in ScenarioTelevisionPolicy.Changes(advanced.Televisions))
+        {
+            if (displayRouting is null) throw new ScenarioServiceException("电视路由服务未装配，预案未执行。", code: "scenario_advanced_unavailable");
+            try { _ = displayRouting.Preflight(target, input); }
+            catch (DisplayRoutingException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_unavailable"); }
+        }
         if (!string.IsNullOrEmpty(advanced.WallLayoutCode))
         {
             try { _ = VideoWallLayoutPlanner.Build(WallLayoutCode.Decode(advanced.WallLayoutCode), wallProtocol ?? new()); }

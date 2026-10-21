@@ -13,6 +13,22 @@ public sealed class VenueJoinProtocolTests
     public void DigitalMatchesOriginalButtonEncoding(int join, bool pressed, string expected) =>
         Assert.Equal(expected, VenueJoinProtocol.Digital(join, pressed));
 
+    /// <summary>:param join: CameraBOX中源代码的按钮码（不是README漏字节样例）。:returns: 按下与松开严格九字节。</summary>
+    [Theory]
+    [InlineData(31, "1F")]
+    [InlineData(32, "20")]
+    [InlineData(33, "21")]
+    [InlineData(34, "22")]
+    [InlineData(35, "23")]
+    [InlineData(36, "24")]
+    [InlineData(39, "27")]
+    [InlineData(45, "2D")]
+    public void CameraBoxSourceNineByteGoldenFrames(int join, string code)
+    {
+        Assert.Equal($"FF06010A00{code}0001FA", VenueJoinProtocol.Digital(join, true));
+        Assert.Equal($"FF06010A00{code}0000FA", VenueJoinProtocol.Digital(join, false));
+    }
+
     [Theory]
     [InlineData(0, "FF06020A00020000FA")]
     [InlineData(1, "FF06020A00020000FA")]

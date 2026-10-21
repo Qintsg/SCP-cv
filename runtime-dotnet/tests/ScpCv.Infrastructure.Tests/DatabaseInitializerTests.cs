@@ -193,6 +193,7 @@ public sealed class DatabaseInitializerTests
             Assert.Equal(BigScreenMode.Double, runtime.BigScreenMode);
             Assert.Equal(77, runtime.VolumeLevel);
             Assert.Equal("{}", runtime.WallLayoutDraftJson);
+            Assert.Equal("{}", runtime.DisplayRoutingJson);
             Assert.Equal(0, runtime.WallLayoutDraftRevision);
         }
         finally

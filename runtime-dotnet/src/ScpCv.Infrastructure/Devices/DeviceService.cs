@@ -1,6 +1,8 @@
+// 电源仍用独立8889链路；已知电源动作期间失效输出逻辑记录，避免预案错误去重。
 using System.Collections.Concurrent;
 using System.Net.Sockets;
 using ScpCv.Contracts.Http;
+using ScpCv.Infrastructure.DisplayRouting;
 
 namespace ScpCv.Infrastructure.Devices;
 
@@ -111,8 +113,9 @@ public sealed class DeviceService
     private readonly IReadOnlyList<DeviceEndpointOptions> _orderedDevices;
     private readonly Dictionary<string, DeviceEndpointOptions> _devices;
     private readonly IDeviceCommandTransport _transport;
+    private readonly DisplayRoutingService? _displayRouting;
 
-    public DeviceService(DeviceOptions options, IDeviceCommandTransport transport)
+    public DeviceService(DeviceOptions options, IDeviceCommandTransport transport, DisplayRoutingService? displayRouting = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(transport);
@@ -138,6 +141,7 @@ public sealed class DeviceService
             throw new InvalidOperationException("Devices:Endpoints 包含重复的 device_type。", exception);
         }
         _transport = transport;
+        _displayRouting = displayRouting;
     }
 
     public IReadOnlyList<DeviceDto> List() =>
@@ -180,9 +184,17 @@ public sealed class DeviceService
         TimeSpan interFrameDelay,
         CancellationToken cancellationToken)
     {
-        await _transport.SendAsync(
-            new DeviceCommand(device.DeviceType, device.Host, device.Port, frames, interFrameDelay),
-            cancellationToken).ConfigureAwait(false);
+        var command = new DeviceCommand(device.DeviceType, device.Host, device.Port, frames, interFrameDelay);
+        if (_displayRouting is null) await _transport.SendAsync(command, cancellationToken).ConfigureAwait(false);
+        else
+        {
+            try
+            {
+                await _displayRouting.WithInvalidatedOutputAsync(device.DeviceType == "splice_screen" ? "wall" : device.DeviceType,
+                    () => _transport.SendAsync(command, cancellationToken), cancellationToken).ConfigureAwait(false);
+            }
+            catch (DisplayRoutingException exception) { throw new DeviceServiceException(exception.Message, exception); }
+        }
         return ToDto(device, action);
     }
 

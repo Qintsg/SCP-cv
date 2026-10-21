@@ -27,14 +27,23 @@ public sealed class VideoWallGridPlannerTests
     }
 
     [Theory]
-    [InlineData(WallInputKind.Window3, 5, 5)]
-    [InlineData(WallInputKind.Window4, 5, 5)]
     [InlineData(WallInputKind.Window1, 7, 5)]
     [InlineData(WallInputKind.Window2, 9, 5)]
     [InlineData(WallInputKind.Laptop, 5, 4)]
-    public void ReservedOrUnverifiedRemainderCannotProducePlan(WallInputKind input, int columns, int rows) =>
+    public void UnverifiedRemainderCannotProducePlan(WallInputKind input, int columns, int rows) =>
         Assert.Throws<VideoWallException>(() => VideoWallLayoutPlanner.Build(new("拒发",
             [new(WallRegion.Grid, new(input), new(0, 0, columns, rows))]), new()));
+
+    /// <summary>:param input: D4后两路受信输入。:returns: 允许矩阵映射，不新增PlayerWorker。</summary>
+    [Theory]
+    [InlineData(WallInputKind.Window3)]
+    [InlineData(WallInputKind.Window4)]
+    public void RegisteredRearOutputsCanMapWithoutAddingNativeWindows(WallInputKind input)
+    {
+        var plan = VideoWallLayoutPlanner.Build(new("后路", [new(WallRegion.Grid, new(input), new(0, 0, 5, 5))]), new());
+        Assert.Equal(25, plan.Count(item => item.Phase == "mapping_1"));
+        Assert.Equal(2, WindowId.Maximum);
+    }
 
     private static int Number(VideoWallSendItem item, int offset) => BinaryPrimitives.ReadUInt16BigEndian(item.Packet.AsSpan(offset, 2));
 }

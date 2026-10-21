@@ -6,6 +6,8 @@ namespace ScpCv.ControlHost.Logging;
 
 internal static partial class ControlHostLog
 {
+    [LoggerMessage(EventId = 1013, Level = LogLevel.Error, Message = "内置工作站目录未同步：{Detail}")]
+    public static partial void WorkstationCatalogUnavailable(ILogger logger, string detail);
     [LoggerMessage(EventId = 1012, Level = LogLevel.Error, Message = "内置摄像机目录未同步：{Detail}")]
     public static partial void CameraCatalogUnavailable(ILogger logger, string detail);
     [LoggerMessage(

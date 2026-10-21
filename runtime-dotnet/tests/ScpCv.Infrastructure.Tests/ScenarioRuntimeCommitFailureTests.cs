@@ -66,6 +66,23 @@ public sealed class ScenarioRuntimeCommitFailureTests
         Assert.Equal(100, (await store.Runtime.GetSystemVolumeAsync()).Level);
     }
 
+    /// <summary>020发送前记账事务失败时没有外部动作；不能沿旧测试假设先切墙再失败。</summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DispatchingPersistenceFailureStopsBeforeAnyExternalAction(bool afterCommit)
+    {
+        using var store = await TestStore.CreateAsync();
+        var scenario = await store.Scenarios.CreateAsync(new("首包前提交失败", "", "set", "double", "set", 42, []));
+        var factory = new InterceptingFactory(store.Factory.Layout.DatabasePath,
+            afterCommit ? new FailCommitReceipt(1) : new FailSave(1));
+        using var writes = new WriteCoordinator(factory); var wall = new FakeWall(); var audio = new FakeAudio();
+        var error = await Assert.ThrowsAsync<ScenarioServiceException>(() => CreateScenarios(factory, writes, wall, audio).ActivateAsync(scenario.Id));
+        Assert.Equal("scenario_state_persistence_failed", error.Code);
+        Assert.Contains("发送前", error.Message); Assert.Empty(wall.Modes); Assert.Empty(audio.Requests);
+        Assert.All(await store.Runtime.GetSessionsAsync(), session => Assert.Empty(session.PendingCommand));
+    }
+
     /// <summary>仅替换 SQLite 与外部硬件接口，业务链路保持真实。</summary>
     private static ScenarioService CreateScenarios(
         IDbContextFactory<ControlDbContext> factory, WriteCoordinator writes, IVideoWallController wall, ISystemAudioController audio) =>
@@ -102,20 +119,22 @@ public sealed class ScenarioRuntimeCommitFailureTests
         }
     }
 
-    private sealed class FailSave : SaveChangesInterceptor
+    private sealed class FailSave(int failAt = 2) : SaveChangesInterceptor
     {
+        private int _saves;
         /// <summary>在 SQLite 提交前注入失败。</summary>
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
             DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default) =>
-            throw new DbUpdateException("故障注入：运行状态提交前失败");
+            ++_saves == failAt ? throw new DbUpdateException("故障注入：运行状态提交前失败") : new(result);
     }
 
-    private sealed class FailCommitReceipt : DbTransactionInterceptor
+    private sealed class FailCommitReceipt(int failAt = 2) : DbTransactionInterceptor
     {
+        private int _commits;
         /// <summary>模拟 SQLite 已提交但提交完成回执异常。</summary>
         public override Task TransactionCommittedAsync(
             DbTransaction transaction, TransactionEndEventData eventData, CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("故障注入：运行状态已提交但回执失败");
+            ++_commits == failAt ? throw new InvalidOperationException("故障注入：运行状态已提交但回执失败") : Task.CompletedTask;
     }
 
     private sealed class InterceptingFactory(string path, IInterceptor interceptor) : IDbContextFactory<ControlDbContext>

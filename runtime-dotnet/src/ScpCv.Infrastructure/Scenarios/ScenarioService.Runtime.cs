@@ -1,10 +1,11 @@
-// 预案墙面与系统音量先下发、运行态原子提交及部分失败报告。
+// 预案逐输出判重、墙面/电视/系统音量下发与部分失败报告。
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Domain.Rules;
 using ScpCv.Infrastructure.Playback;
 using ScpCv.Infrastructure.VideoWall;
+using ScpCv.Infrastructure.DisplayRouting;
 
 namespace ScpCv.Infrastructure.Scenarios;
 
@@ -19,11 +20,12 @@ public sealed partial class ScenarioService
     private async Task ApplyRuntimeAsync(Scenario scenario, CancellationToken cancellationToken)
     {
         using var operation = await _wallGate.EnterAsync(cancellationToken).ConfigureAwait(false);
+        var wallAttempted = false;
         try
         {
-            await ApplyRuntimeCoreAsync(scenario, cancellationToken).ConfigureAwait(false);
+            await ApplyRuntimeCoreAsync(scenario, () => wallAttempted = true, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception) when (HasWallChange(scenario))
+        catch (Exception) when (wallAttempted)
         {
             try
             {
@@ -31,6 +33,7 @@ public sealed partial class ScenarioService
                 {
                     var state = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
                     state.WallLayoutDispatchStatus = "uncertain";
+                    DisplayRoutingState.Invalidate(state, "wall", "uncertain", _timeProvider.GetUtcNow());
                     state.WallLayoutDispatchDetail = "预案中墙面动作未完整确认；保留上次布局记录，请核对实体画面，不要自动重放。";
                     state.UpdatedAt = _timeProvider.GetUtcNow();
                 }, CancellationToken.None).ConfigureAwait(false);
@@ -44,24 +47,47 @@ public sealed partial class ScenarioService
     }
 
     /// <summary>墙面与声卡副作用在数据库提交之前执行，失败禁止派发媒体命令。</summary>
-    private async Task ApplyRuntimeCoreAsync(Scenario scenario, CancellationToken cancellationToken)
+    private async Task ApplyRuntimeCoreAsync(Scenario scenario, Action onWallAttempted, CancellationToken cancellationToken)
     {
         var code = ReadAdvanced(scenario.AdvancedJson).WallLayoutCode;
         var layout = !string.IsNullOrEmpty(code) ? WallLayoutCode.Decode(code) :
             scenario.BigScreenModeState == ScenarioValueState.Set ? VideoWallLayoutPlanner.Preset(EnumName(scenario.BigScreenMode)) : null;
+        var wallDispatched = false;
+        var shouldDispatch = false;
         if (layout is not null)
+        {
+            string fingerprint;
+            try { fingerprint = DisplayRoutingState.WallFingerprint(layout, wallProtocol ?? new()); }
+            catch (VideoWallException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_unavailable"); }
+            await using var snapshot = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+            var state = await snapshot.RuntimeStates.AsNoTracking().SingleAsync(cancellationToken).ConfigureAwait(false);
+            shouldDispatch = !DisplayRoutingState.Matches(state, "wall", fingerprint, _videoWall.IsHardware);
+        }
+        if (layout is not null && shouldDispatch)
         {
             // 保留旧预案语义：墙面失败即中止，网络重试不能持有数据库写锁。
             try
             {
+                await writes.ExecuteAsync(async (database, token) =>
+                {
+                    var state = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
+                    state.WallLayoutDispatchStatus = "dispatching";
+                    DisplayRoutingState.Invalidate(state, "wall", "dispatching", _timeProvider.GetUtcNow());
+                }, cancellationToken).ConfigureAwait(false);
+                onWallAttempted();
                 if (!string.IsNullOrEmpty(code)) await _videoWall.DispatchLayoutAsync(layout, cancellationToken).ConfigureAwait(false);
                 else await _videoWall.DispatchAsync(EnumName(scenario.BigScreenMode), cancellationToken).ConfigureAwait(false);
+                wallDispatched = true;
             }
             catch (VideoWallException exception)
             {
                 throw new ScenarioServiceException(exception.Message);
             }
+            catch (Exception exception) when (exception is DbUpdateException or DbException or InvalidOperationException)
+            { throw new ScenarioServiceException("发送前状态提交未确认，媒体命令未派发。" + exception.Message, code: "scenario_state_persistence_failed"); }
         }
+
+        await ApplyTelevisionsLockedAsync(ReadAdvanced(scenario.AdvancedJson), cancellationToken).ConfigureAwait(false);
 
         cancellationToken.ThrowIfCancellationRequested();
         SystemAudioSnapshot? appliedVolume = null;
@@ -84,11 +110,13 @@ public sealed partial class ScenarioService
                 var sessions = await database.PlaybackSessions
                     .Where(item => item.WindowId <= WindowId.Maximum).ToListAsync(token).ConfigureAwait(false);
                 var runtimeChanged = false;
+                var now = _timeProvider.GetUtcNow();
                 if (layout is not null)
                 {
-                    VideoWallStateProjection.Record(runtime,
-                        layout, 0, _videoWall.IsHardware);
-                    var mutedWindows = VideoWallStateProjection.MutedWindows(layout).ToHashSet();
+                    runtime.UpdatedAt = now;
+                    if (wallDispatched) VideoWallStateProjection.Record(runtime,
+                        layout, 0, _videoWall.IsHardware, wallProtocol ?? new());
+                    var mutedWindows = VideoWallStateProjection.MutedWindows(layout, wallProtocol ?? new()).ToHashSet();
                     foreach (var session in sessions) session.IsMuted = mutedWindows.Contains(session.WindowId);
                     runtimeChanged = true;
                 }
@@ -112,6 +140,4 @@ public sealed partial class ScenarioService
         }
     }
 
-    private static bool HasWallChange(Scenario scenario) => scenario.BigScreenModeState == ScenarioValueState.Set ||
-        !string.IsNullOrEmpty(ReadAdvanced(scenario.AdvancedJson).WallLayoutCode);
 }

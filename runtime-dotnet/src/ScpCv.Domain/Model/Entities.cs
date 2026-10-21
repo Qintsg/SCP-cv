@@ -110,6 +110,7 @@ public sealed class RuntimeState
     public string WallLayoutDispatchStatus { get; set; } = "none";
     public string WallLayoutDispatchDetail { get; set; } = string.Empty;
     public string VenueAudioJson { get; set; } = "{}";
+    public string DisplayRoutingJson { get; set; } = "{}";
     public DateTimeOffset UpdatedAt { get; set; }
 }
 

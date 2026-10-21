@@ -6,6 +6,7 @@ namespace ScpCv.Contracts.Http;
 public sealed record ScenarioAdvancedDto
 {
     [JsonPropertyName("wall_layout_code")] public string? WallLayoutCode { get; init; }
+    [JsonPropertyName("televisions")] public ScenarioTelevisionsDto Televisions { get; init; } = new();
     [JsonPropertyName("camera_positions")] public IReadOnlyDictionary<string, int?> CameraPositions { get; init; } = new Dictionary<string, int?>();
     [JsonPropertyName("audio")] public VenueAudioSettings? Audio { get; init; }
 }

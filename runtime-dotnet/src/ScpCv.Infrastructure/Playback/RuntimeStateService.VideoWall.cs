@@ -5,6 +5,7 @@ using ScpCv.Contracts.Http;
 using ScpCv.Domain.Model;
 using ScpCv.Domain.Rules;
 using ScpCv.Infrastructure.VideoWall;
+using ScpCv.Infrastructure.DisplayRouting;
 
 namespace ScpCv.Infrastructure.Playback;
 
@@ -32,6 +33,7 @@ public sealed partial class RuntimeStateService
                 if (revision > 0 && state.WallLayoutDraftRevision != revision)
                     throw new VideoWallLayoutException("布局草稿已更新，请重新读取后应用。", "layout_revision_conflict");
                 state.WallLayoutDispatchStatus = "dispatching";
+                DisplayRoutingState.Invalidate(state, "wall", "dispatching", _timeProvider.GetUtcNow());
                 state.WallLayoutDispatchDetail = "正在发送控制帧；尚未确认实体画面。";
             }, cancellationToken).ConfigureAwait(false);
             var preset = WallLayoutPolicy.CapturedPreset(layout);
@@ -41,12 +43,12 @@ public sealed partial class RuntimeStateService
                 await _videoWall.DispatchAsync(preset == BigScreenMode.Single ? "single" : "double", cancellationToken).ConfigureAwait(false);
             else
                 hardware = (await _videoWall.DispatchLayoutAsync(layout, cancellationToken).ConfigureAwait(false)).IsHardware;
-            var muted = VideoWallStateProjection.MutedWindows(layout).ToHashSet();
+            var muted = VideoWallStateProjection.MutedWindows(layout, _wallProtocol).ToHashSet();
             var changed = await writes.ExecuteAsync(async (database, token) =>
             {
                 var state = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
-                VideoWallStateProjection.Record(state, layout, revision, hardware);
                 state.UpdatedAt = _timeProvider.GetUtcNow();
+                VideoWallStateProjection.Record(state, layout, revision, hardware, _wallProtocol);
                 var sessions = await database.PlaybackSessions.Where(item => item.WindowId <= WindowId.Maximum)
                     .ToListAsync(token).ConfigureAwait(false);
                 return sessions.Where(item => item.IsMuted != muted.Contains(item.WindowId))
@@ -87,6 +89,7 @@ public sealed partial class RuntimeStateService
             {
                 var state = await database.RuntimeStates.SingleAsync(token).ConfigureAwait(false);
                 state.WallLayoutDispatchStatus = "uncertain";
+                DisplayRoutingState.Invalidate(state, "wall", "uncertain", _timeProvider.GetUtcNow());
                 state.WallLayoutDispatchDetail = detail;
                 state.UpdatedAt = _timeProvider.GetUtcNow();
             }, cancellationToken).ConfigureAwait(false);

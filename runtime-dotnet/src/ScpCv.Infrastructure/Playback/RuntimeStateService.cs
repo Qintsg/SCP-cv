@@ -1,5 +1,5 @@
+// 运行态、声卡与墙面投影；外部动作完成和持久回执分开，不把逻辑记录当实体读回。
 using Microsoft.EntityFrameworkCore;
-// 两块大屏的运行状态、媒体命令与硬件输出意图协调。
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ScpCv.Contracts.Http;
@@ -376,11 +376,11 @@ public sealed partial class RuntimeStateService(
         return screenSharePlayback?.Project(snapshot) ?? snapshot;
     }
 
-    private static RuntimeStateDto ToRuntimeDto(RuntimeState runtime) => new()
+    private RuntimeStateDto ToRuntimeDto(RuntimeState runtime) => new()
     {
         BigScreenMode = EnumName(runtime.BigScreenMode),
         VolumeLevel = runtime.VolumeLevel,
-        MutedWindows = VideoWallStateProjection.MutedWindows(runtime),
+        MutedWindows = VideoWallStateProjection.MutedWindows(runtime, _wallProtocol),
     };
 
 

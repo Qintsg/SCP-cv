@@ -1,4 +1,4 @@
-// 正式Host装配的网格DTO/修订/预留拒发回归；仅Simulation，不访问实体墙。
+// 正式Host装配的网格DTO/修订/65与未知输入回归；仅Simulation，不访问实体墙。
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -8,7 +8,7 @@ namespace ScpCv.ControlHost.Tests;
 public sealed class VideoWallGridEndpointTests
 {
     [Fact]
-    public async Task GridRoundTripsAndReservedInputIsSavedButNeverApplied()
+    public async Task GridRoundTripsAndRegisteredRearInputCanBeApplied()
     {
         using var factory = new ControlHostApplicationFactory(); using var client = factory.CreateHttpsClient();
         client.DefaultRequestHeaders.Add("X-CSRFToken", await ScreenShareEndpointTests.LoginAsync(client));
@@ -27,10 +27,23 @@ public sealed class VideoWallGridEndpointTests
         using var reserved = await client.PutAsJsonAsync("/api/video-wall/layout/", new { name = "预留", mappings = new[]
         { new { region = "grid", rect = new { column = 0, row = 0, columns = 10, rows = 5 }, input = new { kind = "window_3" } } } });
         reserved.EnsureSuccessStatusCode(); using var rejectedBody = JsonDocument.Parse(await reserved.Content.ReadAsStringAsync());
-        var state = rejectedBody.RootElement.GetProperty("layout"); Assert.False(state.GetProperty("draft").GetProperty("can_apply").GetBoolean());
+        var state = rejectedBody.RootElement.GetProperty("layout"); Assert.True(state.GetProperty("draft").GetProperty("can_apply").GetBoolean());
+        using var rejected = await client.PostAsJsonAsync("/api/video-wall/layout/apply/", new { expected_revision = state.GetProperty("draft_revision").GetInt64() });
+        Assert.Equal(HttpStatusCode.OK, rejected.StatusCode);
+        using var current = JsonDocument.Parse(await client.GetStringAsync("/api/video-wall/layout/"));
+        Assert.Equal(state.GetProperty("draft_revision").GetInt64(), current.RootElement.GetProperty("layout").GetProperty("applied_revision").GetInt64());
+    }
+
+    [Fact]
+    public async Task UnlistedInputCanBeSavedButNeverApplied()
+    {
+        using var factory = new ControlHostApplicationFactory(); using var client = factory.CreateHttpsClient();
+        client.DefaultRequestHeaders.Add("X-CSRFToken", await ScreenShareEndpointTests.LoginAsync(client));
+        using var saved = await client.PutAsJsonAsync("/api/video-wall/layout/", new { name = "未知输入", mappings = new[]
+        { new { region = "fullscreen", input = new { kind = "ip_stream", ip_address = "192.168.5.75" } } } });
+        saved.EnsureSuccessStatusCode(); using var body = JsonDocument.Parse(await saved.Content.ReadAsStringAsync());
+        var state = body.RootElement.GetProperty("layout"); Assert.False(state.GetProperty("draft").GetProperty("can_apply").GetBoolean());
         using var rejected = await client.PostAsJsonAsync("/api/video-wall/layout/apply/", new { expected_revision = state.GetProperty("draft_revision").GetInt64() });
         Assert.Equal(HttpStatusCode.Conflict, rejected.StatusCode);
-        using var current = JsonDocument.Parse(await client.GetStringAsync("/api/video-wall/layout/"));
-        Assert.Equal(revision, current.RootElement.GetProperty("layout").GetProperty("applied_revision").GetInt64());
     }
 }

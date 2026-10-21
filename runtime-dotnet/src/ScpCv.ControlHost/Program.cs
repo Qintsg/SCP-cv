@@ -22,6 +22,7 @@ using ScpCv.Infrastructure.Audio;
 using ScpCv.Infrastructure.Commands;
 using ScpCv.Infrastructure.Configuration;
 using ScpCv.Infrastructure.Devices;
+using ScpCv.Infrastructure.DisplayRouting;
 using ScpCv.Infrastructure.Media;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Infrastructure.Playback;
@@ -62,6 +63,13 @@ builder.Services.AddSingleton(bigScreenOutputs);
 builder.Services.AddSingleton(deviceOptions);
 builder.Services.AddSingleton(builder.Configuration.GetSection(VenueOptions.SectionName).Get<VenueOptions>() ?? new());
 builder.Services.AddSingleton<CameraCatalog>();
+var inputDiscoveryOptions = builder.Configuration.GetSection("InputDiscovery").Get<InputDiscoveryOptions>() ?? new();
+inputDiscoveryOptions.Validate();
+builder.Services.AddSingleton(inputDiscoveryOptions);
+builder.Services.AddSingleton<WorkstationCatalog>();
+if (safetyMode.IsSimulation) builder.Services.AddSingleton<IInputReachabilityProbe, SimulationInputReachabilityProbe>();
+else builder.Services.AddSingleton<IInputReachabilityProbe, TcpInputReachabilityProbe>();
+builder.Services.AddSingleton<InputDiscovery>();
 builder.Services.AddSingleton<VenueDeviceService>();
 if (safetyMode.IsSimulation) builder.Services.AddSingleton<IVenueSoftwareAudioBinding, UnavailableVenueSoftwareAudioBinding>();
 else builder.Services.AddSingleton<IVenueSoftwareAudioBinding, WindowsVenueSoftwareAudioBinding>();
@@ -133,6 +141,7 @@ if (safetyMode.IsSimulation)
     builder.Services.AddSingleton<IDisplayTopologyProvider, SimulationDisplayTopologyProvider>();
     builder.Services.AddSingleton<ISystemAudioController, SimulationSystemAudioController>();
     builder.Services.AddSingleton<IVideoWallController, SimulationVideoWallController>();
+    builder.Services.AddSingleton<ITelevisionController, SimulationTelevisionController>();
 }
 else
 {
@@ -141,8 +150,10 @@ else
     builder.Services.AddSingleton<IVideoWallTransport, TcpVideoWallTransport>();
     builder.Services.AddSingleton(new VideoWallDispatchOptions());
     builder.Services.AddSingleton<IVideoWallController, TcpVideoWallController>();
+    builder.Services.AddSingleton<ITelevisionController, TcpTelevisionController>();
 }
 builder.Services.AddSingleton<RuntimeStateService>();
+builder.Services.AddSingleton<DisplayRoutingService>();
 builder.Services.AddSingleton<ScreenSharePlaybackProjection>();
 builder.Services.AddSingleton(ScreenShareOptions.FromConfiguration(builder.Configuration));
 builder.Services.AddSingleton<ScreenShareRegistry>();
@@ -185,6 +196,12 @@ await app.Services.GetRequiredService<DatabaseInitializer>()
     .InitializeAsync(app.Lifetime.ApplicationStopping);
 try { await app.Services.GetRequiredService<CameraCatalog>().SynchronizeAsync(app.Lifetime.ApplicationStopping); }
 catch (VenueDeviceException exception) { ControlHostLog.CameraCatalogUnavailable(app.Logger, exception.Message); }
+if (!safetyMode.IsSimulation)
+{
+    try { await app.Services.GetRequiredService<WorkstationCatalog>().SynchronizeAsync(
+        app.Services.GetRequiredService<InputDiscovery>().Snapshot, app.Lifetime.ApplicationStopping); }
+    catch (VenueDeviceException exception) { ControlHostLog.WorkstationCatalogUnavailable(app.Logger, exception.Message); }
+}
 await using (var seedScope = app.Services.CreateAsyncScope())
 {
     await seedScope.ServiceProvider.GetRequiredService<DevelopmentAccountSeeder>()
@@ -238,6 +255,8 @@ app.MapScenarioEndpoints();
 app.MapScenarioFolderEndpoints();
 app.MapSystemEndpoints();
 app.MapVenueDeviceEndpoints();
+app.MapInputCatalogEndpoints();
+app.MapDisplayRoutingEndpoints();
 app.MapBackgroundAudioEndpoints();
 app.MapSseEventEndpoints();
 

@@ -9,6 +9,7 @@ using ScpCv.Infrastructure.Presentations;
 using ScpCv.Infrastructure.Commands;
 using ScpCv.Infrastructure.VideoWall;
 using ScpCv.Infrastructure.Devices;
+using ScpCv.Infrastructure.DisplayRouting;
 
 namespace ScpCv.Infrastructure.Scenarios;
 
@@ -24,7 +25,8 @@ public sealed partial class ScenarioService(
     VenueDeviceService? venueDevices = null,
     VenueCameraController? venueCameras = null,
     VideoWallProtocolOptions? wallProtocol = null,
-    ScenarioFileStore? scenarioFiles = null)
+    ScenarioFileStore? scenarioFiles = null,
+    DisplayRoutingService? displayRouting = null)
 {
     private readonly TimeProvider _timeProvider = timeProvider ?? TimeProvider.System;
     private readonly CommandCoordinator _commands = commands;
@@ -189,11 +191,13 @@ public sealed partial class ScenarioService(
                 scenario.Name = nextName;
                 scenario.Description = description.Trim();
                 // 旧预案合同只承载两个预设，手动布局快照不静默变为错误的单/双屏。
-                scenario.BigScreenModeState = runtime.BigScreenMode == BigScreenMode.Custom ? ScenarioValueState.Unset : ScenarioValueState.Set;
+                scenario.BigScreenModeState = runtime.BigScreenMode == BigScreenMode.Custom ||
+                    runtime.WallLayoutDispatchStatus is not ("sent_unconfirmed" or "simulated") ? ScenarioValueState.Unset : ScenarioValueState.Set;
                 scenario.BigScreenMode = runtime.BigScreenMode == BigScreenMode.Custom ? BigScreenMode.Single : runtime.BigScreenMode;
                 scenario.VolumeState = ScenarioValueState.Set;
                 scenario.VolumeLevel = runtime.VolumeLevel;
                 scenario.TargetsJson = JsonSerializer.Serialize(targets);
+                scenario.AdvancedJson = CaptureOutputRouting(runtime, ReadAdvanced(scenario.AdvancedJson));
                 scenario.UpdatedAt = NextTimestamp(scenario.UpdatedAt);
                 await database.SaveChangesAsync(token).ConfigureAwait(false);
                 return (await MapAsync(database, [scenario], token).ConfigureAwait(false))[0];

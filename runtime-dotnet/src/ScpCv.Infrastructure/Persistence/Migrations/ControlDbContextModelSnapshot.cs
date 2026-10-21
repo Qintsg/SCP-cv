@@ -683,6 +683,10 @@ namespace ScpCv.Infrastructure.Persistence.Migrations
                     b.Property<bool>("VolumeMuted")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("DisplayRoutingJson")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("WallLayoutAppliedJson")
                         .IsRequired()
                         .HasColumnType("TEXT");

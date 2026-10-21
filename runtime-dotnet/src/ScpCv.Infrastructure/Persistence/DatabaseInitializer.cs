@@ -2,6 +2,7 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
+using ScpCv.Infrastructure.DisplayRouting;
 
 namespace ScpCv.Infrastructure.Persistence;
 
@@ -85,6 +86,7 @@ public sealed class DatabaseInitializer(
         else
         {
             var runtime = await context.RuntimeStates.SingleAsync(cancellationToken).ConfigureAwait(false);
+            if (DisplayRoutingState.Recover(runtime, now)) runtime.UpdatedAt = now;
             if (runtime.WallLayoutDispatchStatus == "dispatching")
             {
                 // 进程重启不证明设备回滚；保留最后发送布局，不自动重放。

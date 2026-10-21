@@ -1,6 +1,7 @@
 // 受限10×5均匀墙的左右/全屏计划；旧预设保留黄金包兼容路径。
 using ScpCv.Domain.Model;
 using ScpCv.Domain.Rules;
+using ScpCv.Infrastructure.Devices;
 
 namespace ScpCv.Infrastructure.VideoWall;
 
@@ -67,16 +68,8 @@ public static class VideoWallLayoutPlanner
 
     private static VideoWallInputDescriptor Resolve(WallInput input, VideoWallProtocolOptions options)
     {
-        if (input.Kind is WallInputKind.Window3 or WallInputKind.Window4)
-            throw new VideoWallException("窗口3/4仅前端预留，尚未接入实体输出，不能应用。");
-        var key = input.Kind switch
-        {
-            WallInputKind.Window1 => "window_1",
-            WallInputKind.Window2 => "window_2",
-            WallInputKind.Laptop => "laptop",
-            _ => input.IpAddress,
-        };
-        if (options.Inputs.TryGetValue(key, out var source) && source is not null) return source;
+        var source = SiteInputCatalog.ResolveDescriptor(input, options);
+        if (source is not null) return source;
         throw new VideoWallException("该输入缺少已确认的设备流描述，当前只能保存和预览。");
     }
 

@@ -27,7 +27,9 @@ public sealed partial class MediaSourceService(
         CancellationToken cancellationToken = default)
     {
         await using var database = await contextFactory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
-        var query = database.MediaSources.AsNoTracking().Include(source => source.PptResources).AsQueryable();
+        // 离线内置工作站保留稳定ID供预案引用，但目录只展示服务可达项；普通媒体不被此过滤隐藏。
+        var query = database.MediaSources.AsNoTracking().Include(source => source.PptResources)
+            .Where(source => !source.SystemKey.StartsWith("workstation:") || source.IsAvailable).AsQueryable();
         if (!string.IsNullOrWhiteSpace(sourceType))
         {
             var parsedType = ParseSourceType(sourceType);

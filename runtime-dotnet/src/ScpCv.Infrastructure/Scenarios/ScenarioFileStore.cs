@@ -7,6 +7,7 @@ using ScpCv.Contracts.Http;
 using ScpCv.Infrastructure.Media;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Infrastructure.Devices;
+using ScpCv.Infrastructure.DisplayRouting;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -108,9 +109,11 @@ public sealed class ScenarioFileStore(string dataRoot) : IWriteProjection
             {
                 Audio = item.Advanced.Audio is { } audio ? VenueAudioAliases.Normalize(audio) : null,
                 CameraPositions = item.Advanced.CameraPositions.ToDictionary(pair => pair.Key, pair => pair.Value == 0 ? null : pair.Value),
+                Televisions = ScenarioTelevisionPolicy.Validate(item.Advanced.Televisions),
             };
         }
-        catch (VenueDeviceException exception) { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_invalid"); }
+        catch (Exception exception) when (exception is VenueDeviceException or DisplayRoutingException)
+        { throw new ScenarioServiceException(exception.Message, code: "scenario_advanced_invalid"); }
         return item with
         {
             Advanced = advanced,
