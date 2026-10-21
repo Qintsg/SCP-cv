@@ -29,3 +29,7 @@
 Windows控制台StreamReader.ReadLineAsync(token)不能可靠打断阻塞管道。将截止Timer与读stdin分离，不等待无法取消的读取，独占Job控制自有FFmpeg；真实EOF／心跳／helper强杀／Electron父强杀分别验零残留。RTSP使用专有timeout，不能套RTMP的rw_timeout。
 
 Electron默认CLI的多组独立位置参数曾让探针在用户代码前退出，不能凭退出码、NotSigned或测试报告缺失猜执行策略。最小CJS包、参数增量定位后，把仅探针合成参数放环境变量，正常沙箱与TLS不改。最终以真实44.2 app协议帧和强杀后的进程证据验收，不以Node Request替身代验。
+
+## 部署必须连代理预检一起验，不能只测直接后端或POST
+
+D4直接18443的OPTIONS已精确允许app://scp-cv及凭据，网页443的同一请求却返回无Allow-Origin／Credentials的204；登录POST本身可成功，仍不证明renderer可先通过预检。根因为Vite默认cors在代理前截获所有OPTIONS，即使不允许该Origin也结束请求。dev/preview设cors:false，把/api策略唯一交给ControlHost；回环两模式红绿测试要求真抵达假后端，伪造来源保持403。生产复核同两层请求，不使用cors:true、通配反射或关闭webSecurity。

@@ -48,6 +48,8 @@ export default defineConfig(({ mode, command }) => {
       host: '0.0.0.0',
       port: frontendPort,
       strictPort: true,
+      // API跨站策略只由ControlHost精确配置；Vite默认CORS会先吞OPTIONS，使Electron登录预检缺凭据许可。
+      cors: false,
       fs: { deny: ['.env', '.env.*', '*.{crt,pem,key}', '**/.git/**'] },
       proxy: {
         '/api': proxyRule,
@@ -62,6 +64,7 @@ export default defineConfig(({ mode, command }) => {
       host: '0.0.0.0',
       port: frontendPort,
       strictPort: true,
+      cors: false,
       proxy: {
         '/api': proxyRule,
         '/events': proxyRule,
