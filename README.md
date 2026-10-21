@@ -1,14 +1,14 @@
 # SCP-cv
 
-2026-10-21本机新增[020输入路由与直连预览](docs/input-routing-preview-020.md)：正式A二级输入菜单、工作站目录、65/66预览、摄像机当前预览、右侧电视单源及预案逐输出去重；Electron随包直拉RTSP／RTMP，普通网页保持服务端FLV。本轮未推送／未部署D4，下面018仍为现场版本。
+2026-10-21已双仓推送并部署D4：[020输入路由与直连预览](docs/input-routing-preview-020.md)含正式A输入菜单、工作站目录、65/66与当前摄像机预览、右侧电视单源及预案去重；Electron本机直拉，普通网页保持服务端FLV。完整运行包6c528ad、网页及代理92769c0，桌面一键入口已更新，恰两播放器在线；冷备、正常TLS、CORS与未验边界见[020部署记录](specs/020-input-routing-preview/deployment.md)。下方018为历史阶段。
 
 2026-10-20已部署D4：015–018的直播凭据、4K适配、32:9／50格布局码、目录／YAML预案、紧凑仪表盘与主题品牌导航；直播预览使用[服务端按需共享FLV](docs/stream-preview-018.md)，观看电脑无需Node／FFmpeg。D4桌面新增`SCP-cv 一键启动.cmd`；双仓推送、冷备与验收见[018部署记录](specs/018-shared-flv-preview/deployment.md)。不自动改Windows显示设置，窗口3/4仍仅网页预留。
 
 直播凭据支持已随018部署：RTSP、HTTP(S)、RTMP可直接填写带用户名/密码的地址，默认隐藏输入及常规摘要中的秘密。使用格式与转义见[使用文档](docs/使用文档.md)，范围见[015规范](specs/015-stream-credentials/spec.md)。部署不代表所有真实流或设备已逐一测试。
 
-SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。配置HTTPS后，HTTP访问默认跳到同主机HTTPS并保留路径和查询；登录、控制及屏幕共享在HTTPS页面操作，详见[屏幕共享与入口配置](docs/screen-sharing.md)。播放器仅占用大屏左、右两块输出；两台小电视保留电源控制，不再有播放窗口。
+SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。配置HTTPS后，HTTP访问默认跳到同主机HTTPS并保留路径和查询；登录、控制及屏幕共享在HTTPS页面操作，详见[屏幕共享与入口配置](docs/screen-sharing.md)。原生播放器仅占两块大屏输出；两台电视保留独立电源和矩阵单源选源，不创建额外播放窗口。
 
-Ant控制台入口：[HTTP（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前网页与运行包均为018/643da4b；原数据、63号声音输出、私有网页/Office引擎及DISPLAY2/3保留。两窗按部署前状态保持空闲，没有自动打开历史来源。当前验收见[018部署](specs/018-shared-flv-preview/deployment.md)；此前播放、真人手势和实体欠账仍分别保留，不能据部署称全部现场功能通过。
+Ant控制台入口：[HTTP（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前为020，原数据、63号声音输出、私有网页/Office引擎及DISPLAY2/3保留。两窗按部署前状态保持空闲，没有自动打开历史来源。当前验收见[020部署](specs/020-input-routing-preview/deployment.md)；此前播放、真人手势和实体欠账仍分别保留，不能据部署称全部现场功能通过。
 
 ## 项目信息
 
