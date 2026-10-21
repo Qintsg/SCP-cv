@@ -41,6 +41,12 @@ public sealed class TelevisionPacketCodecTests
     {
         foreach (var item in SiteInputCatalog.All)
         {
+            if (item.Width == 0 || item.Height == 0)
+            {
+                Assert.Equal(84, item.IpSuffix);
+                Assert.Throws<DisplayRoutingException>(() => TelevisionPacketCodec.Build(item.Descriptor(), new()));
+                continue;
+            }
             var packet = TelevisionPacketCodec.Build(item.Descriptor(), new())[1];
             Assert.Equal(22, packet.Length);
             Assert.Equal(0, packet[5]);

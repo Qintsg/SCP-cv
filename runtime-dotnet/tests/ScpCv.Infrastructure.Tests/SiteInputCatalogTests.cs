@@ -18,7 +18,12 @@ public sealed class SiteInputCatalogTests
         Assert.Equal("D6-4", stations[^1].Name);
         Assert.Null(SiteInputCatalog.ByAddress("192.168.5.75"));
         Assert.Equal("camera:fixed", SiteInputCatalog.ByAddress("192.168.5.76")!.Id);
-        Assert.All(SiteInputCatalog.All.Where(item => item.IpSuffix != 81), item => { Assert.Equal(3840, item.Width); Assert.Equal(2160, item.Height); });
+        var fourK = new[] { 51, 52, 53, 54, 55, 56, 57, 58, 61, 63, 64, 65, 66, 67, 68, 69, 70, 73 };
+        var fullHd = new[] { 59, 60, 62, 71, 72, 74, 76, 81, 85, 86, 87, 88 };
+        Assert.Equal(fourK, SiteInputCatalog.All.Where(item => item.Width == 3840).Select(item => item.IpSuffix).Order());
+        Assert.Equal(fullHd, SiteInputCatalog.All.Where(item => item.Width == 1920).Select(item => item.IpSuffix).Order());
+        Assert.All(SiteInputCatalog.All, item => Assert.Equal(item.Width * 9 / 16, item.Height));
+        Assert.Equal([84], SiteInputCatalog.All.Where(item => item.Width == 0).Select(item => item.IpSuffix));
     }
 
     [Theory]
