@@ -44,6 +44,13 @@
 - [x] T016 在docs/openapi.yaml及对应paths/schema同步输入/显示/native/预案合同，用Redocly校验；登记新副作用路径和维护/使用/许可资料。
 - [x] T017 运行相关与完整非Physical.NET、frontend/类型/Web/App/Electron构建、规范检查，实际合成媒体/本机Electron/只读布局分层验收并记verification.md，不以未验项收口。
 
+## Phase 9: 追加授权的推送／D4部署（2026-10-21）
+
+- [ ] T018 在本机与D4核对仓库／运行配置、保存只读快照，正常推送GitHub及内网GitLab，由D4原origin pull --ff-only；保留用户改动和凭据边界。
+- [ ] T019 在D4新独占目录构建完整运行包、打包本机正式网页并逐文件校验；不提前停原服务或覆盖旧包。
+- [ ] T020 协作停机／原身份核验／数据库三文件冷备与旧网页任务保留后，部署新任务和原桌面一键入口，启动并确认恰两播放器在线，不发送实体控制。
+- [ ] T021 正常TLS全网页／只读API／数据与配置保持／无观看无拉流／重复启动验收，更新deployment.md及用户文档并同步最终记录到两个仓库和D4。
+
 ## Dependencies & Execution Order
 
 T001→T002→T003/T004；T005依赖输入合同。T006/T007与T012/T013按共享preview契约并行，Native端点由T007提供。T008/T009共用TV agent目录避免冲突，T011后续转同TV agent完成，root集成T010；T014复用共享池。T015–T017收口。
