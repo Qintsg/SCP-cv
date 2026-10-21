@@ -4,15 +4,15 @@ export interface PreviewPlayer { destroy(): void }
 export type PreviewPlayerFactory = (video: HTMLVideoElement, url: string, frame: () => void, failed: () => void) => Promise<PreviewPlayer>;
 export const PREVIEW_PLAYER_FACTORY: InjectionKey<PreviewPlayerFactory> = Symbol('preview-player-factory');
 export class PreviewUnsupportedError extends Error {}
-/** :param video: 本组件video。:param url: 原Host租约流。:param frame: 实际解码帧回调。:param failed: 固定状态回调，不传原始异常。:returns: 无额外工具依赖的浏览器播放器。 */
+/** :param video: 共享池自有video。:param url: 原Host/受限原生租约流。:param frame: 实际解码帧回调。:param failed: 固定状态回调，不传原始异常。:returns: 无额外工具依赖的浏览器播放器。 */
 export const createPreviewPlayer: PreviewPlayerFactory = async (video, url, frame, failed) => {
   const { default: mpegts } = await import('mpegts.js');
   if (!mpegts.getFeatureList().mseLivePlayback) throw new PreviewUnsupportedError('此浏览器不支持直播预览');
   video.muted = true; video.volume = 0;
   const absoluteUrl = new URL(url, window.location.href).href;
   const player = mpegts.createPlayer({ type: 'flv', url: absoluteUrl, isLive: true, hasAudio: false, hasVideo: true, withCredentials: true }, {
-    enableWorker: true, lazyLoad: false, liveBufferLatencyChasing: true, liveBufferLatencyMaxLatency: 3,
-    liveBufferLatencyMinRemain: 1, autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: 10, autoCleanupMinBackwardDuration: 3,
+    enableWorker: true, enableStashBuffer: false, lazyLoad: false, liveBufferLatencyChasing: true, liveBufferLatencyMaxLatency: 1.5,
+    liveBufferLatencyMinRemain: .4, autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: 10, autoCleanupMinBackwardDuration: 3,
   });
   let active = true, callback = 0, lastTime = -1;
   let fallback: ReturnType<typeof setInterval> | undefined;

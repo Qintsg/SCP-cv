@@ -64,11 +64,11 @@ public sealed class PreviewProducer(MediaMtxPreviewClient relay, PreviewOptions 
             !PreviewEncoding.Levels.Contains(encoding))
             throw new PreviewException("预览转换参数无效", "invalid_preview_input", 400);
         var rate = encoding.KilobitsPerSecond.ToString(CultureInfo.InvariantCulture);
-        var frames = encoding.FramesPerSecond.ToString(CultureInfo.InvariantCulture);
+        var keyframes = Math.Max(2, (int)Math.Ceiling(encoding.FramesPerSecond / 2d)).ToString(CultureInfo.InvariantCulture);
         var filter = FormattableString.Invariant($"scale={encoding.Width}:{encoding.Height}:force_original_aspect_ratio=decrease:force_divisible_by=2,fps={encoding.FramesPerSecond},format=yuv420p");
         return ["-nostdin", "-hide_banner", "-loglevel", "error", "-max_alloc", "67108864", "-threads", "1", "-rtsp_transport", "tcp", "-timeout", "8000000", "-i", localRtspUri,
             "-map", "0:v:0", "-an", "-sn", "-dn", "-vf", filter, "-filter_threads", "1", "-c:v", "libx264", "-threads", "1",
-            "-preset", "ultrafast", "-tune", "zerolatency", "-profile:v", "baseline", "-bf", "0", "-g", frames, "-keyint_min", frames,
+            "-preset", "ultrafast", "-tune", "zerolatency", "-profile:v", "baseline", "-bf", "0", "-g", keyframes, "-keyint_min", keyframes,
             "-sc_threshold", "0", "-b:v", rate + "k", "-maxrate", rate + "k", "-bufsize", rate + "k",
             "-f", "flv", "-flvflags", "no_duration_filesize", "-flush_packets", "1", "pipe:1"];
     }

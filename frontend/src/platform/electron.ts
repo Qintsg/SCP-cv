@@ -1,3 +1,4 @@
+/** Electron平台薄适配：原生预览只暴露受限租约，不传媒体凭据和程序路径。 */
 import type {
   ClientLifecycleState,
   PlatformAdapter,
@@ -5,6 +6,7 @@ import type {
   SaveFileRequest,
 } from './index';
 import type { ServerProfile } from './connection';
+import type { NativePreviewAdapter } from './previewTypes';
 
 interface ElectronSelectedFile {
   name: string;
@@ -14,6 +16,7 @@ interface ElectronSelectedFile {
 
 export interface ElectronBridge {
   readonly platform: 'electron';
+  readonly preview?: NativePreviewAdapter;
   pickFile(accept?: readonly string[]): Promise<ElectronSelectedFile | null>;
   saveFile(request: { suggestedName: string; mimeType: string; bytes: Uint8Array }): Promise<boolean>;
   clearSession(): Promise<void>;
@@ -38,6 +41,7 @@ export function createElectronPlatformAdapter(bridge: ElectronBridge = requireBr
   return {
     platform: 'electron',
     isPackaged: true,
+    preview: bridge.preview,
     onBackRequested(handler) {
       return bridge.onBackRequested(() => { void handler(); });
     },

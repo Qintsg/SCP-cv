@@ -43,6 +43,23 @@ public sealed class StreamPreviewRegistry(PreviewOptions options, IPreviewProduc
         }
     }
 
+    /// <summary>:param owner: 完整会话归属。:param origin: 精确来源。:param id: 消费租约。:param aliases: 已独立验证的非消费别名。:returns: 只在同实际流内选择仍有效来源，不接受跨流重绑定。</summary>
+    public PreviewLeaseSnapshot HeartbeatShared(string owner, string origin, Guid id, IReadOnlyList<Guid> aliases)
+    {
+        ArgumentNullException.ThrowIfNull(aliases);
+        lock (_sync)
+        {
+            var lease = Owned(owner, origin, id);
+            if (aliases.Count is < 1 or > 64 || aliases.Distinct().Count() != aliases.Count || aliases.Contains(id))
+                throw new PreviewException("预览别名列表无效", "invalid_preview_aliases", 400);
+            var verified = aliases.Select(alias => Owned(owner, origin, alias)).ToArray();
+            if (verified.Any(alias => alias.Feed is not null || alias.Source.Key != lease.Source.Key))
+                throw new PreviewException("预览别名不属于同一实际流", "invalid_preview_aliases", 400);
+            lease.Source = verified[0].Source; lease.ExpiresAt = clock.GetUtcNow().AddSeconds(options.LeaseSeconds);
+            return Snapshot(lease);
+        }
+    }
+
     /// <summary>:param owner: 当前身份。:param origin: 精确来源。:param id: 已创建租约。:returns: 单消费者有界队列；并发同流只有一份生产者。</summary>
     public PreviewSubscription Open(string owner, string origin, Guid id)
     {
@@ -139,7 +156,7 @@ public sealed class StreamPreviewRegistry(PreviewOptions options, IPreviewProduc
         public Guid Id { get; } = id;
         public string Owner { get; } = owner;
         public string Origin { get; } = origin;
-        public PreviewSource Source { get; } = source;
+        public PreviewSource Source { get; set; } = source;
         public DateTimeOffset ExpiresAt { get; set; } = expiresAt;
         public SharedPreviewFeed? Feed { get; set; }
         public CancellationTokenSource Lifetime { get; } = new();

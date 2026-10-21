@@ -1,3 +1,4 @@
+/** 打包客户端的路径、CSP和主机信任边界。 */
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 export const APP_SCHEME = 'app';
@@ -7,8 +8,9 @@ export const APP_ORIGIN = `${APP_SCHEME}://${APP_HOST}`;
 export const PACKAGED_CSP = [
   "default-src 'self'",
   "script-src 'self'",
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
-  "connect-src https: wss: http://127.0.0.1:* http://localhost:*",
+  "connect-src 'self' https: wss: http://127.0.0.1:* http://localhost:*",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
   "font-src 'self' data:",

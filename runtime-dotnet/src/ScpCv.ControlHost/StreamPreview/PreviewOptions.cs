@@ -41,6 +41,9 @@ public sealed record PreviewInput(
     [property: JsonPropertyName("kind")] string Kind,
     [property: JsonPropertyName("ip_address")] string? IpAddress = null);
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record PreviewHeartbeatRequest([property: JsonPropertyName("aliases")] Guid[] Aliases);
+
 public sealed class PreviewException(string detail, string code = "preview_unavailable", int statusCode = 503) : Exception(detail)
 {
     public string Code { get; } = code;

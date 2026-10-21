@@ -1,3 +1,4 @@
+/** Electron安全入口：本地资源、受限平台桥及客户端专有预览生命周期。 */
 import { readFile, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
@@ -13,6 +14,7 @@ import {
 } from 'electron';
 
 import { IPC } from './channels.js';
+import { setupNativePreview, type NativePreviewServices } from './preview/mainPreview.js';
 import {
   APP_HOST,
   APP_ORIGIN,
@@ -42,6 +44,7 @@ const developmentUrl = validateDevelopmentUrl(process.env.SCP_CV_ELECTRON_DEV_UR
 const controlPartition = 'persist:scp-cv-control';
 const MAX_BRIDGE_FILE_BYTES = 256 * 1024 * 1024;
 let mainWindow: BrowserWindow | null = null;
+let nativePreview: NativePreviewServices | undefined;
 
 function assertTrustedCaller(event: IpcMainInvokeEvent): void {
   const senderUrl = event.senderFrame?.url ?? '';
@@ -71,6 +74,7 @@ function registerAppProtocol(): void {
   // 仅注册默认 session 会导致打包客户端导航到 app:// 时得到空白页。
   session.fromPartition(controlPartition).protocol.handle(APP_SCHEME, async (request) => {
     try {
+      if (new URL(request.url).pathname.startsWith('/__preview/')) return nativePreview?.stream(request) ?? new Response('Unavailable', { status: 503 });
       const assetPath = safeResolveAppAsset(rendererRoot, request.url);
       return new Response(readFileSync(assetPath), {
         headers: {
@@ -142,6 +146,7 @@ function setupIpc(): void {
 
   ipcMain.handle(IPC.clearSession, async (event) => {
     assertTrustedCaller(event);
+    await nativePreview?.invalidate();
     await event.sender.session.clearStorageData({ storages: ['cookies'] });
   });
 
@@ -149,7 +154,9 @@ function setupIpc(): void {
     assertTrustedCaller(event);
     try {
       const raw = await readFile(join(app.getPath('userData'), 'server-profile.json'), 'utf8');
-      return normalizeStoredServerProfile(JSON.parse(raw) as StoredServerProfile);
+      const selected = normalizeStoredServerProfile(JSON.parse(raw) as StoredServerProfile);
+      await nativePreview?.setProfile(selected);
+      return selected;
     } catch {
       return null;
     }
@@ -159,6 +166,7 @@ function setupIpc(): void {
     assertTrustedCaller(event);
     const normalized = normalizeStoredServerProfile(profile);
     await writeFile(join(app.getPath('userData'), 'server-profile.json'), `${JSON.stringify(normalized, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+    await nativePreview?.setProfile(normalized);
     return normalized;
   });
 }
@@ -197,12 +205,17 @@ function createWindow(): BrowserWindow {
   window.on('focus', () => window.webContents.send(IPC.lifecycle, 'active'));
   window.on('blur', () => window.webContents.send(IPC.lifecycle, 'inactive'));
   window.once('ready-to-show', () => window.show());
-  window.on('closed', () => { mainWindow = null; });
+  window.webContents.on('render-process-gone', () => { void nativePreview?.invalidate().catch(() => {}); });
+  window.webContents.on('did-start-navigation', (_event, _url, inPlace, mainFrame) => {
+    if (mainFrame && !inPlace) void nativePreview?.invalidate().catch(() => {});
+  });
+  window.on('closed', () => { mainWindow = null; void nativePreview?.invalidate().catch(() => {}); });
   void window.loadURL(developmentUrl || `${APP_ORIGIN}/`);
   return window;
 }
 
 app.whenReady().then(async () => {
+  nativePreview = setupNativePreview(session.fromPartition(controlPartition), () => mainWindow, assertTrustedCaller);
   registerAppProtocol();
   setupSessionSecurity();
   setupIpc();
@@ -210,6 +223,12 @@ app.whenReady().then(async () => {
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow();
   });
+});
+
+app.once('before-quit', event => {
+  if (!nativePreview) return;
+  event.preventDefault();
+  void nativePreview.dispose().then(() => app.quit(), () => { console.error('native_preview_cleanup_pending'); app.quit(); });
 });
 
 app.on('window-all-closed', () => app.quit());

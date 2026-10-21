@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
+using ScpCv.Infrastructure.Devices;
 using ScpCv.Infrastructure.Persistence;
 using ScpCv.Infrastructure.VideoWall;
 
@@ -49,29 +50,44 @@ public sealed class PreviewSourceResolver(
             var source = await database.MediaSources.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken).ConfigureAwait(false);
             if (source is null || source.SourceType is not (MediaSourceType.RtspStream or MediaSourceType.CustomStream))
                 throw new PreviewException("此来源没有预览流", "preview_no_stream", 422);
-            var uri = source.Uri;
-            // 仅本项目已确认Camera路径可按chn0/1调整，不猜测用户登记流的通道结构。
-            if (source.SystemKey.StartsWith("camera:", StringComparison.Ordinal) && uri.EndsWith("/live/chn0", StringComparison.Ordinal) && request.Quality == "low")
-                uri = uri[..^1] + "1";
-            return new(uri, request.Quality, source.Id, source.SourceRevision);
+            return Snapshot(source, request.Quality);
         }
         var input = request.Input!;
         string address;
-        if (input.Kind == "ip_stream")
+        var descriptor = SiteInputCatalog.ResolveDescriptor(input.Kind, input.IpAddress, wall);
+        if (descriptor is not null) address = descriptor.UnicastAddress;
+        else if (input.Kind == "ip_stream")
         {
             address = input.IpAddress ?? string.Empty;
             if (!options.AllowedWallInputAddresses.Contains(address, StringComparer.Ordinal) &&
                 !wall.Inputs.Values.Any(item => item.UnicastAddress == address))
                 throw new PreviewException("此设备尚未登记预览地址", "preview_no_stream", 422);
         }
-        else if (input.Kind is "window_1" or "window_2" or "laptop" && wall.Inputs.TryGetValue(input.Kind, out var descriptor) && string.IsNullOrEmpty(input.IpAddress))
-            address = descriptor.UnicastAddress;
         else throw new PreviewException("此窗口暂未接入预览流", "preview_no_stream", 422);
         if (!IPAddress.TryParse(address, out var ip) || ip.AddressFamily != AddressFamily.InterNetwork ||
             ip.ToString() != address || ip.GetAddressBytes()[0] is 0 or >= 224)
             throw new PreviewException("设备预览地址无效", "invalid_preview_input", 400);
-        return new($"rtmp://{address}:1935/live/chn{(request.Quality == "high" ? 0 : 1)}", request.Quality);
+        var known = SiteInputCatalog.ByAddress(address);
+        if (known is not null && !string.IsNullOrEmpty(known.SystemKey))
+        {
+            await using var database = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+            var saved = await database.MediaSources.AsNoTracking().SingleOrDefaultAsync(item => item.SystemKey == known.SystemKey, cancellationToken).ConfigureAwait(false);
+            if (saved is not null) return Snapshot(saved, request.Quality);
+        }
+        return new(SystemChannel(known?.DefaultPreviewUri ?? $"rtmp://{address}:1935/live/chn0", request.Quality), request.Quality);
     }
+
+    /// <summary>:param source: 已保存来源，包含设备自有凭据。:param quality: 观看意图。:returns: 目录别名使用原URI/修订，非系统来源绝不猜测通道。</summary>
+    private static PreviewSource Snapshot(MediaSource source, string quality)
+    {
+        var uri = SiteInputCatalog.All.Any(item => item.SystemKey.Length > 0 && item.SystemKey == source.SystemKey)
+            ? SystemChannel(source.Uri, quality) : source.Uri;
+        return new(uri, quality, source.Id, source.SourceRevision);
+    }
+
+    /// <summary>:param uri: 目录登记或保存地址。:param quality: 观看意图。:returns: 只有已确认的完整chn0结尾才切低清，不改查询参数/任意路径。</summary>
+    private static string SystemChannel(string uri, string quality) =>
+        quality == "low" && uri.EndsWith("/live/chn0", StringComparison.Ordinal) ? uri[..^1] + "1" : uri;
 
     /// <summary>:param source: 创建时源快照。:param cancellationToken: 本次取消。:returns: 登记媒体仍为原修订；不通过旧租约继续暴露已修改来源。</summary>
     public async Task<bool> IsCurrentAsync(PreviewSource source, CancellationToken cancellationToken)

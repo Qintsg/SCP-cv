@@ -10,6 +10,11 @@ const IPC = Object.freeze({
   saveServerProfile: 'scp-cv:server-profile:save',
   lifecycle: 'scp-cv:lifecycle',
   backRequested: 'scp-cv:back-requested',
+  previewAcquire: 'scp-cv:preview:acquire',
+  previewHeartbeat: 'scp-cv:preview:heartbeat',
+  previewRelease: 'scp-cv:preview:release',
+  previewFallback: 'scp-cv:preview:fallback',
+  previewInvalidate: 'scp-cv:preview:invalidate',
 });
 
 type StoredServerProfile = {
@@ -39,6 +44,13 @@ const bridge = Object.freeze({
   clearSession: () => ipcRenderer.invoke(IPC.clearSession),
   loadServerProfile: () => ipcRenderer.invoke(IPC.loadServerProfile),
   saveServerProfile: (profile: StoredServerProfile) => ipcRenderer.invoke(IPC.saveServerProfile, profile),
+  preview: Object.freeze({
+    acquire: (request: unknown) => ipcRenderer.invoke(IPC.previewAcquire, request),
+    heartbeat: (id: string, aliases?: readonly string[]) => ipcRenderer.invoke(IPC.previewHeartbeat, id, aliases),
+    release: (id: string) => ipcRenderer.invoke(IPC.previewRelease, id),
+    fallback: (id: string) => ipcRenderer.invoke(IPC.previewFallback, id),
+    invalidate: () => ipcRenderer.invoke(IPC.previewInvalidate),
+  }),
   onLifecycleChanged: (listener: (state: LifecycleState) => void) => {
     const wrapped = (_event: Electron.IpcRendererEvent, state: LifecycleState) => listener(state);
     ipcRenderer.on(IPC.lifecycle, wrapped);

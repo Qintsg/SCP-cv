@@ -1,4 +1,6 @@
+/** 共享客户端平台边界；业务页不直接依赖Node或桌面运行时。 */
 import { createWebHashHistory, createWebHistory, type RouterHistory } from 'vue-router';
+import type { NativePreviewAdapter } from './previewTypes';
 
 export type ClientBuildTarget = 'web' | 'app';
 export type ClientPlatform = 'web' | 'electron' | 'android';
@@ -26,6 +28,7 @@ export interface SaveFileRequest {
 export interface PlatformAdapter {
   readonly platform: ClientPlatform;
   readonly isPackaged: boolean;
+  readonly preview?: NativePreviewAdapter;
   onBackRequested(handler: () => boolean | Promise<boolean>): () => void;
   onLifecycleChanged(handler: (state: ClientLifecycleState) => void): () => void;
   pickFile(accept?: readonly string[]): Promise<PlatformFile | null>;

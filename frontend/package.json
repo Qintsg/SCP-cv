@@ -9,14 +9,17 @@
   "type": "module",
   "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
   "scripts": {
-    "demo:inputs": "node scripts/serve-input-prototype.mjs",
+    "native:prepare": "node scripts/prepare-client-preview.mjs",
+    "native:check-assets": "node scripts/check-client-preview-assets.mjs",
+    "native:verify-lifecycle": "node scripts/verify-client-preview-native.mjs --assets ../.validation/client-preview-020/assets",
+    "native:verify-electron": "node scripts/verify-client-preview-electron.mjs --assets ../.validation/client-preview-020/assets",
     "dev": "vite --mode web",
     "dev:web": "vite --mode web",
     "build": "pnpm run build:web",
     "build:web": "vue-tsc --noEmit -p tsconfig.json && vite build --mode web",
     "build:app": "vue-tsc --noEmit -p tsconfig.json && vite build --mode app",
     "build:electron-main": "tsc -p tsconfig.electron.json",
-    "build:electron": "pnpm run build:app && pnpm run build:electron-main && electron-builder --dir",
+    "build:electron": "pnpm run native:check-assets && pnpm run build:app && pnpm run build:electron-main && node scripts/build-electron.mjs --development-only true",
     "cap:sync": "pnpm run build:app && cap sync android",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "test": "node --test scripts/*.test.mjs",
@@ -51,6 +54,13 @@
     "appId": "cn.edu.sspu.scpcv.control",
     "productName": "SCP-cv Control",
     "asar": true,
+    "extraResources": [
+      {
+        "from": "../.validation/client-preview-020/assets",
+        "to": "client-preview",
+        "filter": ["**/*"]
+      }
+    ],
     "files": [
       "dist-app/**/*",
       "electron-dist/**/*",

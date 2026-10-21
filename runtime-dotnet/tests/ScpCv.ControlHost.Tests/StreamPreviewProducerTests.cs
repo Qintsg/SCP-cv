@@ -11,6 +11,12 @@ public sealed class StreamPreviewProducerTests
         var args = PreviewProducer.BuildArguments("rtsp://127.0.0.1:8554/scp-preview-test", PreviewEncoding.Levels[1]);
         Assert.Contains("-an", args); Assert.Contains("-nostdin", args); Assert.Contains("libx264", args);
         Assert.Contains("300k", args); Assert.Contains("no_duration_filesize", args);
+        Assert.Equal("4", args[args.ToList().IndexOf("-g") + 1]);
+        foreach (var profile in PreviewEncoding.Levels)
+        {
+            var parameters = PreviewProducer.BuildArguments("rtsp://127.0.0.1:8554/scp-preview-test", profile);
+            Assert.Equal(Math.Max(2, (int)Math.Ceiling(profile.FramesPerSecond / 2d)).ToString(System.Globalization.CultureInfo.InvariantCulture), parameters[parameters.ToList().IndexOf("-g") + 1]);
+        }
         Assert.Throws<PreviewException>(() => PreviewProducer.BuildArguments("rtsp://192.0.2.1/scp-preview-test", PreviewEncoding.Levels[0]));
         Assert.Throws<PreviewException>(() => PreviewProducer.BuildArguments("rtsp://127.0.0.1/official", PreviewEncoding.Levels[0]));
         Assert.Throws<PreviewException>(() => PreviewProducer.BuildArguments("rtsp://127.0.0.1/scp-preview-test", new(9999, 9999, 120, 1000000)));

@@ -9,7 +9,7 @@ public static class StreamPreviewRegistration
     public static IServiceCollection AddStreamPreview(this IServiceCollection services, IConfiguration configuration, SafetyModeOptions safety)
     {
         var options = configuration.GetSection(PreviewOptions.SectionName).Get<PreviewOptions>() ?? new(); options.Validate();
-        services.AddSingleton(options); services.AddSingleton<PreviewSourceResolver>();
+        services.AddSingleton(options); services.AddSingleton<PreviewSourceResolver>(); services.AddSingleton<PreviewSharingIdentity>();
         services.AddHttpClient("preview-relay", client => client.Timeout = TimeSpan.FromSeconds(3))
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { UseProxy = false, AllowAutoRedirect = false });
         services.AddSingleton(provider => new MediaMtxPreviewClient(provider.GetRequiredService<IHttpClientFactory>().CreateClient("preview-relay"), options));
