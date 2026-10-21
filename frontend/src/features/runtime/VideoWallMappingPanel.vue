@@ -32,7 +32,7 @@ const validation = computed(() => {
   if (!mappings.value.length) return '请至少配置一个显示块';
   try { validateBlocks(mappings.value); }
   catch (failure) { return failure instanceof Error ? failure.message : '布局无效'; }
-  return mappings.value.some(m => m.input.kind === 'window_3' || m.input.kind === 'window_4') ? '窗口3/4仅预留，当前布局暂不能应用到实体大屏' : '';
+  return '';
 });
 watch(() => JSON.stringify(mappings.value), () => { if (!busy.value) error.value = ''; });
 /** :returns: 只读恢复，不随页面挂载发送物理指令。 */

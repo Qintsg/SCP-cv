@@ -1,12 +1,14 @@
 /** 从实际播放快照生成独立预案草稿；未知窗口保持原状，不保存失败请求或发送命令。 */
 import type { RuntimeSnapshot, SessionSnapshot } from '@/services/api';
 import { createEmptyDraft, type ScenarioDraft } from './scenarioModel';
+import type { DisplayRoutingOutput } from '@/services/displayRoutingApi';
 
 interface CaptureInput {
   sessions: readonly SessionSnapshot[];
   runtime: Pick<RuntimeSnapshot, 'big_screen_mode'> | null;
   volume: { level: number; systemSynced: boolean };
   folderId: number | null;
+  outputs?: Partial<Record<'wall' | 'tv_left' | 'tv_right', DisplayRoutingOutput>>;
 }
 
 interface CaptureResult {
@@ -24,8 +26,19 @@ export function captureScenarioState(input: CaptureInput): CaptureResult {
 
   const draft = createEmptyDraft();
   draft.folderId = input.folderId;
+  const trusted = (output?: DisplayRoutingOutput) => output?.status === 'sent_unconfirmed' || output?.status === 'simulated';
+  const wall = input.outputs?.wall;
+  if (trusted(wall) && wall?.last_sent?.layout_code) draft.advanced.wall_layout_code = wall.last_sent.layout_code;
+  if (input.outputs) {
+    draft.advanced.televisions = {};
+    for (const target of ['tv_left', 'tv_right'] as const) {
+      const output = input.outputs[target], source = output?.last_sent?.input;
+      draft.advanced.televisions[target] = trusted(output) && source
+        ? { state: 'set', input: { ...source } } : { state: 'keep' };
+    }
+  }
   const mode = input.runtime?.big_screen_mode;
-  if (mode === 'single' || mode === 'double') {
+  if ((mode === 'single' || mode === 'double') && (!input.outputs || trusted(wall))) {
     draft.bigScreenModeState = 'set';
     draft.bigScreenMode = mode;
   }

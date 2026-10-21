@@ -18,6 +18,7 @@ import type { MediaSourceItem } from '@/services/api';
 import CameraControlPad from './CameraControlPad.vue';
 import VenueAudioCard from './VenueAudioCard.vue';
 import VenueSourceCard from './VenueSourceCard.vue';
+import ClientStreamPreview from '@/features/preview/ClientStreamPreview.vue';
 
 const sources = useSourceStore();
 const cameraId = ref('center1');
@@ -25,7 +26,8 @@ const selected = ref<MediaSourceItem | null>(null);
 const open = ref(false);
 const workspace = ref('camera');
 const { state, result, error, volume, computer, handheld, headset, audioSource, clockOffset, busy, run } = useVenueState(() => { selected.value = null; open.value = false; });
-const controlled = computed(() => state.value?.cameras.find(camera => camera.id === cameraId.value && camera.movable));
+const previewed = computed(() => state.value?.cameras.find(camera => camera.id === cameraId.value));
+const controlled = computed(() => previewed.value?.movable ? previewed.value : undefined);
 
 /** :param camera: 只读内置项。:returns: 选窗小卡片，实际播放以输出确认。 */
 function openCamera(camera: VenueCamera): void {
@@ -45,16 +47,16 @@ function openCamera(camera: VenueCamera): void {
     <a-tabs v-tabs-keyboard v-model:activeKey="workspace" destroy-inactive-tab-pane class="venue-workspaces">
       <a-tab-pane key="camera" tab="摄像机控制">
       <div class="venue-camera-workspace"><div class="camera-grid">
-      <a-card v-for="camera in state?.cameras" :key="camera.id" :title="camera.name" size="small" :class="{ selected: controlled?.id === camera.id }">
+      <a-card v-for="camera in state?.cameras" :key="camera.id" :title="camera.name" size="small" :class="{ selected: previewed?.id === camera.id }">
         <template #extra><a-tag  :color="tagColor(camera.stream_configured ? 'default' : 'warning')">{{ camera.stream_configured ? '内置 · 只读' : '播放地址未配置' }}</a-tag></template>
         <code>{{ camera.path }}</code>
         <a-button :disabled="busy || !camera.stream_configured || !camera.source_id" @click="openCamera(camera)">打开到…</a-button>
-        <a-button v-if="camera.movable" :disabled="!camera.control_available" :type="controlled?.id === camera.id ? 'primary' : 'default'" :aria-pressed="controlled?.id === camera.id" @click="cameraId = camera.id">{{ controlled?.id === camera.id ? '正在控制' : '选择控制' }}</a-button>
+        <a-button :type="previewed?.id === camera.id ? 'primary' : 'default'" :aria-pressed="previewed?.id === camera.id" @click="cameraId = camera.id">{{ previewed?.id === camera.id ? '已选择' : camera.movable ? '预览与控制' : '预览画面' }}</a-button>
         <p v-if="camera.unavailable_reason" class="unavailable">{{ camera.unavailable_reason }}</p>
         <p v-if="camera.motion_intent === 'stop_pending'" class="unavailable">停止发送未确认，请检查设备连接。</p>
       </a-card>
     </div>
-      <a-card v-if="controlled" :title="controlled.name + ' · 云台控制'" class="venue-camera-console"><CameraControlPad :camera="controlled" :clock-offset="clockOffset" /></a-card>
+      <a-card v-if="previewed" :title="previewed.name" class="venue-camera-console"><div class="venue-camera-preview"><ClientStreamPreview :source-id="previewed.source_id || undefined" :enabled="previewed.stream_configured" quality="high" :label="previewed.name" /></div><CameraControlPad v-if="controlled" :camera="controlled" :clock-offset="clockOffset" /></a-card>
       </div></a-tab-pane>
       <a-tab-pane key="audio" tab="音量与来源">
     <a-alert v-if="result" :type="['confirmed', 'simulated', 'unchanged'].includes(result.status) ? 'info' : 'warning'"><template #description>{{ result.detail }}</template></a-alert>
@@ -78,6 +80,7 @@ function openCamera(camera: VenueCamera): void {
 .venue-camera-workspace{display:grid;grid-template-columns:minmax(260px,1fr) minmax(320px,1.2fr);gap:20px;align-items:start}
 .venue-camera-workspace .camera-grid{grid-template-columns:1fr;gap:10px}
 .venue-camera-console{position:sticky;top:0}
+.venue-camera-preview{aspect-ratio:16/9;margin-bottom:16px;overflow:hidden;border-radius:var(--borderRadiusSmall)}
 @media(max-width:1023px){.venue-camera-workspace{grid-template-columns:minmax(0,1fr)}.venue-camera-console{position:static;grid-row:1}.venue-camera-workspace .camera-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:599px){.venue-camera-workspace .camera-grid{grid-template-columns:minmax(0,1fr)}}
 header{display:flex;justify-content:space-between;gap:16px;align-items:center}

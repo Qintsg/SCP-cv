@@ -322,8 +322,14 @@ export interface ScenarioPayload {
 }
 
 /** 可选的现场高级配置；空字段保持当前设备状态。 */
+export interface ScenarioTelevision {
+  state: 'keep' | 'set';
+  input?: VideoWallMappingItem['input'] | null;
+}
+
 export interface ScenarioAdvanced {
   wall_layout_code?: string | null;
+  televisions?: { tv_left?: ScenarioTelevision; tv_right?: ScenarioTelevision };
   camera_positions?: Record<string, number | null>;
   audio?: import('./venueApi').VenueAudioSettings | null;
 }

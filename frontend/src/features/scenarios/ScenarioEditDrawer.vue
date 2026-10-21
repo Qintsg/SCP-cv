@@ -39,6 +39,8 @@ import {
 import type { MediaSourceItem, ScenarioItem } from '@/services/api';
 import ScenarioAdvancedSettings from './ScenarioAdvancedSettings.vue';
 import ScenarioWallSettings from './ScenarioWallSettings.vue';
+import ScenarioTelevisionFields from './ScenarioTelevisionFields.vue';
+import { televisionError } from './scenarioTelevisions';
 import AAutoComplete from 'ant-design-vue/es/auto-complete';
 import { directoryPath, sourcePath } from '../directories/directoryPath';
 import { nullableNumber } from '@/design-system/controlValue';
@@ -150,6 +152,8 @@ async function save(): Promise<void> {
   const scope = captureSave(), revision = editRevision;
   const current = () => scope() && props.open && revision === editRevision;
   errorMessage.value = validateName(draft.value.name);
+  if (errorMessage.value) return;
+  errorMessage.value = televisionError(draft.value.advanced.televisions);
   if (errorMessage.value) return;
   const enteredPath = folderPathInput.value.trim().replace(/\/+$/, '') || '/';
   const folder = scenarioStore.folders.find(item => directoryPath(item.id,scenarioStore.folders) === enteredPath);
@@ -266,6 +270,7 @@ function close(): void {
         </div>
       </a-card>
 
+      <ScenarioTelevisionFields v-model="draft.advanced" />
       <ScenarioAdvancedSettings v-model="draft.advanced" />
       <a-alert v-if="errorMessage" type="error" :message="t('scenarios.edit.cantSave')"><template #description>
         {{ errorMessage }}

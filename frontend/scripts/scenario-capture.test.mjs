@@ -71,6 +71,24 @@ test('未知布局及未同步系统音量保持原状，不把默认值写成�
   assert.equal(manual.draft.bigScreenModeState, 'unset');
 });
 
+test('从当前状态捕获可信电视/自定义墙码，草稿不借用服务端对象', () => {
+  const outputs = { wall: { status: 'sent_unconfirmed', last_sent: { layout_code: 'LayoutA1' } },
+    tv_left: { status: 'sent_unconfirmed', last_sent: { input: { kind: 'window_4' } } },
+    tv_right: { status: 'simulated', last_sent: { input: { kind: 'ip_stream', ip_address: '192.168.5.76' } } } };
+  const result = capture({ ...input(), outputs });
+  assert.equal(result.draft.advanced.wall_layout_code, 'LayoutA1');
+  assert.equal(result.draft.advanced.televisions.tv_left.input.kind, 'window_4');
+  result.draft.advanced.televisions.tv_right.input.ip_address = '192.168.5.85';
+  assert.equal(outputs.tv_right.last_sent.input.ip_address, '192.168.5.76');
+});
+for (const status of ['unknown', 'dispatching', 'failed', 'uncertain']) test(`输出${status}不捕获旧last_sent`, () => {
+  const value = { status, last_sent: { input: { kind: 'window_1' }, layout_code: 'stale' } };
+  const result = capture({ ...input(), outputs: { wall: value, tv_left: value, tv_right: value } });
+  assert.equal(result.draft.advanced.wall_layout_code, undefined);
+  assert.equal(result.draft.bigScreenModeState, 'unset', '不从旧runtime模式补造当前墙面配置');
+  assert.deepEqual(result.draft.advanced.televisions, { tv_left: { state: 'keep' }, tv_right: { state: 'keep' } });
+});
+
 test('切换主机后新音量读取失败，不捕获旧主机已同步的音量', async () => {
   const { useRuntimeStore } = await server.ssrLoadModule('/src/stores/runtime.ts');
   const previousFetch = globalThis.fetch;

@@ -6,6 +6,7 @@
 import { t } from '@/locales';
 import type { ScenarioItem, ScenarioPayload, ScenarioTargetItem } from '@/services/api';
 import type { ScenarioAdvanced } from '@/services/apiTypes';
+import { copyTelevisions } from './scenarioTelevisions';
 
 export type ScenarioWindowMode = 'unset' | 'empty' | 'set';
 
@@ -67,6 +68,7 @@ function copyAdvanced(advanced: ScenarioAdvanced | undefined): ScenarioAdvanced 
     ...advanced,
     ...(advanced?.camera_positions ? { camera_positions: { ...advanced.camera_positions } } : {}),
     ...(advanced?.audio ? { audio: { ...advanced.audio } } : {}),
+    ...(advanced?.televisions ? { televisions: copyTelevisions(advanced.televisions) } : {}),
   };
 }
 
@@ -118,7 +120,7 @@ export function toScenarioPayload(draft: ScenarioDraft): ScenarioPayload {
   return {
     name: draft.name.trim(),
     folder_id: draft.folderId,
-    advanced: draft.advanced,
+    advanced: copyAdvanced(draft.advanced),
     description: draft.description.trim() || undefined,
     big_screen_mode_state: draft.bigScreenModeState,
     big_screen_mode: draft.bigScreenMode,

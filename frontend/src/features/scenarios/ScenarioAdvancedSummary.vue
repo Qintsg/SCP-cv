@@ -4,6 +4,7 @@ import { computed } from 'vue';
 import AAlert from 'ant-design-vue/es/alert';
 import type { ScenarioAdvanced } from '@/services/apiTypes';
 import { microphoneAliasesConflict, microphoneVolume } from '@/services/venueApi';
+import { televisionLabel } from './scenarioTelevisions';
 const props = defineProps<{ advanced?: ScenarioAdvanced }>();
 const names: Record<string, string> = { rear: '后摄像机', center1: '中摄像机1', center2: '中摄像机2', left: '左摄像机', right: '右摄像机' };
 const positions = computed(() => Object.entries(props.advanced?.camera_positions ?? {}).filter(([, value]) => value != null && value > 0));
@@ -14,6 +15,8 @@ const unbound = computed(() => positions.value.some(([, value]) => value! > 6));
 </script>
 <template>
   <section class="advanced-summary" aria-label="预设高级配置摘要">
+    <h3>电视显示</h3>
+    <p>电视左：{{ televisionLabel(advanced?.televisions?.tv_left) }} · 电视右：{{ televisionLabel(advanced?.televisions?.tv_right) }}</p>
     <h3>摄像机与现场声音</h3>
     <p v-if="!positions.length">摄像机位置：保持</p>
     <p v-for="[id, position] in positions" :key="id">{{ names[id] ?? id }}：位置 {{ position }}</p>
@@ -27,5 +30,5 @@ const unbound = computed(() => positions.value.some(([, value]) => value! > 6));
 </template>
 <style scoped>
 .advanced-summary{margin-top:16px;border-top:1px solid var(--colorNeutralStrokeDivider);padding-top:12px}
-h3{font-size:var(--fontSizeBase300);margin:0 0 8px}p{color:var(--colorNeutralForeground2);font-size:var(--fontSizeBase200);line-height:1.6;margin:4px 0}
+h3{font-size:var(--fontSizeBase300);margin:0 0 8px}h3:not(:first-child){margin-top:14px}p{color:var(--colorNeutralForeground2);font-size:var(--fontSizeBase200);line-height:1.6;margin:4px 0}
 </style>

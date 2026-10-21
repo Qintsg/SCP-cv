@@ -68,7 +68,7 @@ export async function invalidate(change){
  await flush();
 }
 /** :param caption: 已渲染按钮文案。:param root: 当前区域。:returns: 实际原生button。 */
-export function button(caption,root=browser.document){return [...root.querySelectorAll('button')].find(node=>visibleText(node.textContent)===visibleText(caption));}
+export function button(caption,root=browser.document){return [...root.querySelectorAll('button')].find(node=>visibleText(node.textContent)===visibleText(caption)||node.getAttribute('aria-label')===caption);}
 /** :returns: 当前首页真实静音开关。 */
 export function muteSwitch(){return browser.document.querySelector('[role="switch"][aria-label="启用系统静音"]');}
 /** :returns: 系统音量的真实键盘输入，不调用内部处理器。 */

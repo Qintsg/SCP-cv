@@ -33,7 +33,7 @@ function setAudio(key: 'screen_volume' | 'computer_volume' | 'handheld_volume' |
     <label>手持话筒<a-input-number :value="value.audio?.handheld_volume ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设手持话筒音量' }" @update:value="setAudio('handheld_volume',nullableNumber($event))" /></label>
     <label>悬挂（头戴）话筒<a-input-number :value="(microphoneVolume(value.audio)) ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设悬挂（头戴）话筒音量' }" @update:value="setAudio('headset_volume',nullableNumber($event))" /></label>
     <label>声音来源<a-select v-select-aria-label="'预设声音来源'" :value="value.audio?.source ?? undefined" allow-clear placeholder="保持" :options="[{label:'IP81',value:'ip81'},{label:'SCP-cv（需输出就绪）',value:'scp_cv'}]" aria-label="预设声音来源" @update:value="setAudio('source', $event === 'ip81' || $event === 'scp_cv' ? $event : null)" /></label>
-    <a-button @click="value = { ...(value.wall_layout_code ? { wall_layout_code: value.wall_layout_code } : {}) }">现场参数全部保持</a-button>
+    <a-button @click="value = { ...(value.wall_layout_code ? { wall_layout_code: value.wall_layout_code } : {}), ...(value.televisions ? {televisions:value.televisions} : {}) }">现场参数全部保持</a-button>
   </details>
 </template>
 <style scoped>

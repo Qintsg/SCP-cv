@@ -7,7 +7,7 @@ function control(page,action){
  if(action==='mute')return muteSwitch();
  if(action==='power')return button('开机');
  if(page==='settings')return button('电视左 切换');
- const row=[...browser.document.querySelectorAll('.dashboard__power-row')].find(node=>visibleText(node.textContent).startsWith('电视左'));return row?.querySelector('button');
+ const row=[...browser.document.querySelectorAll('.dashboard-power__row')].find(node=>visibleText(node.textContent).startsWith('电视左'));return row?.querySelector('button');
 }
 /** :returns: 实际业务写入，不把初始化读取/CSRF作为设备操作。 */
 function writes(){return calls.filter(item=>item.method==='POST'&&item.path.startsWith('/api/devices/')||item.method==='PATCH'&&item.path==='/api/volume/');}

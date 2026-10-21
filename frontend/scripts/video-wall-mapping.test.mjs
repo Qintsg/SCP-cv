@@ -46,6 +46,7 @@ async function mount(kinds=['window_1','window_2'],hooks={}){
     const path=new URL(String(url),browser.location.origin).pathname,method=options.method??'GET';
     const payload=options.body?JSON.parse(options.body):null;requests.push({path,method,payload});
     if(path==='/api/auth/csrf/')return json({csrfToken:'qa-only'});
+    if(path==='/api/inputs/')return json({success:true,inputs:[]});
     if(path==='/api/video-wall/layout/apply/'){
       if(hooks.conflict)return json({detail:'布局已被其它客户端修改',error:'layout_revision_conflict'},409);
       assert.equal(payload.expected_revision,state.draft_revision);
@@ -69,23 +70,14 @@ async function chooseLayout(label){
   const radio=[...browser.document.querySelectorAll('label')].find(item=>visibleText(item.textContent) === visibleText(label))?.querySelector('input[type="radio"]');
   assert.ok(radio,`应有${label}布局选择`);radio.click();await flush();
 }
-/** :param label: 区域输入名。:param choice: 实际选项。:returns: 从真实Ant菜单选源。 */
+/** :param label: 区域输入名。:param choice: 实际选项。:returns: 从正式A弹层选源，仍断言表单往返和实际提交。 */
 async function chooseInput(label,choice){
-  const select=browser.document.querySelector(`[role="combobox"][aria-label="${label}"]`)
-    ||browser.document.querySelector(`[aria-label="${label}"] input[role="combobox"]`);
-  assert.ok(select,`${label}应有可访问组合框`);
-  select.focus(); select.click();
-  select.dispatchEvent(new browser.KeyboardEvent('keydown',{key:'ArrowDown',code:'ArrowDown',keyCode:40,which:40,bubbles:true}));await flush();
-  const root=select.closest('.ant-select');
-  const choices=['窗口 1','窗口 2','IP81','不映射','自定义 IP 流'];
-  const from=choices.findIndex(item=>root.textContent.includes(item)),to=choices.indexOf(choice);
-  assert.ok(from>=0&&to>=0,'只能从明确的当前输入切换到已知选项');
-  for(let index=0;index<Math.abs(to-from);index++){
-    select.dispatchEvent(new browser.KeyboardEvent('keydown',{key:to>from?'ArrowDown':'ArrowUp',keyCode:to>from?40:38,which:to>from?40:38,bubbles:true}));
-    await flush();
-  }
-  select.dispatchEvent(new browser.KeyboardEvent('keydown',{key:'Enter',keyCode:13,which:13,bubbles:true}));await flush();
-  assert.ok(root.textContent.includes(choice),'实际显示应变为'+choice);
+  const trigger=browser.document.querySelector(`button[aria-label="${label}"]`);assert.ok(trigger,`${label}应有可访问选源入口`);
+  trigger.click();await flush();
+  const menu=browser.document.getElementById(trigger.getAttribute('aria-controls'));assert.ok(menu,'aria-controls关联本次弹层，不能误点Ant缓存中的另一侧菜单');
+  const option=[...menu.querySelectorAll('.input-source-roots>button')].find(node=>visibleText(node.querySelector('span')?.textContent)===visibleText(choice));
+  assert.ok(option,`应提供${choice}选项`);option.click();await flush();
+  assert.ok(trigger.textContent.includes(choice),'实际显示应变为'+choice);
 }
 /** :returns: 排除只读和CSRF后的业务写请求。 */
 function writes(){return requests.filter(item=>item.method==='PUT'||item.path.endsWith('/apply/'));}

@@ -25,6 +25,7 @@ import { useToast } from '@/composables/useToast';
 import { useRequestContext } from '@/composables/useRequestContext';
 import { useSourceStore, type SourceCategory } from '@/stores/sources';
 import { useSessionStore } from '@/stores/sessions';
+import { useInputCatalogStore } from '@/stores/inputCatalog';
 import type { MediaSourceItem } from '@/services/api';
 import { formatBytes } from '@/design-system/utils';
 import DirectoryNavigator from '../directories/DirectoryNavigator.vue';
@@ -50,6 +51,8 @@ const categoryModel = computed({ get: () => sourceStore.category, set: (value: S
 const searchModel = computed({ get: () => sourceStore.searchKeyword, set: (value: string) => sourceStore.setSearchKeyword(value) });
 const hasFilters = computed(() => !!searchModel.value.trim() || categoryModel.value !== 'all');
 const loadError = ref('');
+const inputCatalog = useInputCatalogStore();
+const workstationDirectory = computed(() => protectedDirectory.value && path.value === '/工作站');
 let refreshOwner: symbol | null = null;
 const captureRefresh = useRequestContext(() => { refreshOwner = null; isLoading.value = false; loadError.value = ''; });
 const searchInput = ref<{ focus: () => void } | null>(null);
@@ -77,7 +80,10 @@ async function refresh(): Promise<void> {
   const current = () => scope() && refreshOwner === owner;
   isLoading.value = true;
   loadError.value = '';
-  try { await sourceStore.refresh(); }
+  try {
+    if (workstationDirectory.value) { await inputCatalog.load(true); if (!current()) return; }
+    await sourceStore.refresh();
+  }
   catch (error) { if (current()) { loadError.value = error instanceof Error ? error.message : t('common.retry'); toast.error(t('sources.loadFail'), loadError.value); } }
   finally { if (current()) isLoading.value = false; }
 }
@@ -104,6 +110,8 @@ function activeWindowLabel(id: number): string {
   return windows ? `窗口${windows}播放中` : '';
 }
 // 首次索引由应用启动同步负责；保留显式刷新，不在每次路由挂载重复发请求。
+// 只有进入内置工作站目录才进行端口发现；不在后台持续拉取媒体。
+watch(workstationDirectory, active => { if (active) void refresh(); }, {immediate:true});
 </script>
 
 <template>

@@ -93,8 +93,8 @@ function edit(index: number): void { editing.value = index; picker.value = true;
           <a-button size="small" danger :disabled="disabled" @click="value = value.filter((_, i) => i !== index)">删除显示块</a-button>
         </div></template>
         <button type="button" class="wall-grid__block" :style="position(block.rect)" :disabled="disabled" :aria-label="`编辑${inputLabel(block.input)}显示块`">
-          <ClientStreamPreview :input="block.input" :quality="block.rect.columns * block.rect.rows <= 4 ? 'low' : 'high'" :enabled="!disabled" :label="inputLabel(block.input)" />
-          <span class="wall-grid__block-label">{{ inputLabel(block.input) }}<small v-if="block.input.kind === 'window_3' || block.input.kind === 'window_4'"> · 预留</small></span>
+          <ClientStreamPreview :input="block.input" quality="high" :label="inputLabel(block.input)" />
+          <span class="wall-grid__block-label">{{ inputLabel(block.input) }}</span>
         </button>
       </a-popover>
     </div>

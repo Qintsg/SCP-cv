@@ -7,7 +7,7 @@
  */
 import { tagColor } from '@/design-system/tagColor';
 
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AAlert from 'ant-design-vue/es/alert';
 import AButton from 'ant-design-vue/es/button';
@@ -32,6 +32,8 @@ import type { ScenarioItem } from '@/services/api';
 import ScenarioDirectoryTools from './ScenarioDirectoryTools.vue';
 import ScenarioFileTable from './ScenarioFileTable.vue';
 import { inDirectory } from '../directories/directoryPath';
+import { displayRoutingApi } from '@/services/displayRoutingApi';
+import { useRequestContext } from '@/composables/useRequestContext';
 
 const { t } = useI18n();
 const scenarioStore = useScenarioStore();
@@ -49,8 +51,12 @@ const pendingPinId = ref<number | null>(null);
 const previewScenarioId = ref<number | null>(null);
 const editingScenario = ref<ScenarioItem | null>(null);
 const prefillDraft = ref<ScenarioDraft | undefined>(undefined);
+const capturePending = ref(false), captureError = ref('');
+let captureRevision = 0;
+const captureContext = useRequestContext(() => { captureRevision++; capturePending.value = false; captureError.value = ''; });
 
 const folderId = ref<number | null>(null), search = ref(''), selected = ref<number[]>([]);
+watch(folderId, () => { captureRevision++; capturePending.value = false; captureError.value = ''; }, { flush: 'sync' });
 const childFolders = computed(() => scenarioStore.folders.filter(folder => (folder.parent_id ?? null) === folderId.value &&
   (!search.value.trim() || folder.name.toLocaleLowerCase().includes(search.value.trim().toLocaleLowerCase()))));
 const sortedScenarios = computed(() => scenarioStore.sorted.filter(item =>
@@ -73,6 +79,7 @@ async function refresh(): Promise<void> {
 
 /** :param scenario: 明确预览对象。:param event: 真实触发元素。:returns: 打开预览并让抽屉关闭时可恢复原按钮焦点。 */
 function openPreview(scenario: ScenarioItem, event: MouseEvent): void {
+  captureRevision++; capturePending.value = false; captureError.value = '';
   const trigger = event.currentTarget as HTMLElement;
   const button = trigger.tagName === 'BUTTON' ? trigger : trigger.querySelector<HTMLButtonElement>('.scenarios-view__preview-button');
   button?.focus({ preventScroll: true });
@@ -81,6 +88,7 @@ function openPreview(scenario: ScenarioItem, event: MouseEvent): void {
 }
 
 function openCreate(): void {
+  captureRevision++; capturePending.value = false; captureError.value = '';
   editingScenario.value = null;
   prefillDraft.value = { ...createEmptyDraft(), folderId: folderId.value };
   prefillDraft.value.bigScreenModeState = 'set';
@@ -88,6 +96,7 @@ function openCreate(): void {
 }
 
 function openEdit(scenario: ScenarioItem): void {
+  captureRevision++; capturePending.value = false; captureError.value = '';
   editingScenario.value = scenario;
   prefillDraft.value = undefined;
   previewOpen.value = false;
@@ -95,20 +104,33 @@ function openEdit(scenario: ScenarioItem): void {
 }
 
 /** :returns: 临时共享先明确拒绝，不生成可被误解为已保存共享的草稿。 */
-function captureFromCurrent(): void {
-  const captured = captureScenarioState({ sessions: sessionStore.sessions, runtime: runtime.runtime,
+async function captureFromCurrent(): Promise<void> {
+  if (capturePending.value) return;
+  const initial = captureScenarioState({ sessions: sessionStore.sessions, runtime: runtime.runtime,
     volume: runtime.systemVolume, folderId: folderId.value });
-  if (!captured.draft) {
-    toast.warning(t('scenarios.transientCaptureTitle'), t('scenarios.transientCaptureDetail', { id: captured.sharedWindowId }));
+  if (!initial.draft) {
+    toast.warning(t('scenarios.transientCaptureTitle'), t('scenarios.transientCaptureDetail', { id: initial.sharedWindowId }));
     return;
   }
-  const omitted = captured.omittedWindowIds.map(id => t('scenarios.captureWindow', { id }));
-  if (captured.omittedSystemVolume) omitted.push(t('scenarios.captureSystemVolume'));
-  if (omitted.length) toast.warning(t('scenarios.partialCaptureTitle'),
-    t('scenarios.partialCaptureDetail', { items: omitted.join('、') }));
-  editingScenario.value = null;
-  prefillDraft.value = captured.draft;
-  editOpen.value = true;
+  const scope = captureContext(), revision = ++captureRevision;
+  const current = () => scope() && revision === captureRevision;
+  capturePending.value = true; captureError.value = '';
+  try {
+    const routing = await displayRoutingApi.get(current);
+    if (!current()) return;
+    const captured = captureScenarioState({ sessions: sessionStore.sessions, runtime: runtime.runtime,
+      volume: runtime.systemVolume, folderId: folderId.value, outputs: routing.outputs });
+    if (!captured.draft) return;
+    const omitted = captured.omittedWindowIds.map(id => t('scenarios.captureWindow', { id }));
+    if (captured.omittedSystemVolume) omitted.push(t('scenarios.captureSystemVolume'));
+    if (omitted.length) toast.warning(t('scenarios.partialCaptureTitle'),
+      t('scenarios.partialCaptureDetail', { items: omitted.join('、') }));
+    editingScenario.value = null;
+    prefillDraft.value = captured.draft;
+    editOpen.value = true;
+  } catch (error) {
+    if (current()) captureError.value = error instanceof Error ? error.message : '读取显示配置失败';
+  } finally { if (current()) capturePending.value = false; }
 }
 
 function onAfterDelete(): void {
@@ -162,7 +184,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
         <a-button :loading="isLoading" :aria-label="t('scenarios.refreshAria')" @click="refresh">
           <template #icon><FIcon name="arrow_clockwise_20_regular" /></template>
         </a-button>
-        <a-button @click="captureFromCurrent">
+        <a-button :loading="capturePending" @click="captureFromCurrent">
           <template #icon><FIcon name="document_24_regular" /></template>
           {{ t('scenarios.captureFromState') }}
         </a-button>
@@ -172,6 +194,7 @@ async function togglePin(scenario: ScenarioItem): Promise<void> {
         </a-button>
       </template>
     </FPageHeader>
+    <a-alert v-if="captureError" type="error" :message="captureError" />
 
     <ScenarioDirectoryTools v-model:folder-id="folderId" v-model:search="search" v-model:selected="selected"
       v-model:busy="batchBusy" :visible-ids="visibleIds">
