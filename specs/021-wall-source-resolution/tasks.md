@@ -43,6 +43,6 @@ MVP先保留D4实测4K并校验别名，再纠正其它设备尺寸。先失败�
 
 ## Phase 6: 用户后续授权推送与部署
 
-- [ ] T013 在specs/021-wall-source-resolution/deployment.md记录双仓推送、D4干净快进及部署前状态。
-- [ ] T014 在specs/021-wall-source-resolution/deployment.md记录新包摘要、协作停机与独占冷备、交互任务及桌面入口切换。
-- [ ] T015 在specs/021-wall-source-resolution/deployment.md记录双窗/数据/4K拓扑/正常HTTPS与重复启动验证，并将最终文档同步两个仓库及D4。
+- [x] T013 在specs/021-wall-source-resolution/deployment.md记录双仓推送、D4干净快进及部署前状态。
+- [x] T014 在specs/021-wall-source-resolution/deployment.md记录新包摘要、协作停机与独占冷备、交互任务及桌面入口切换。
+- [x] T015 在specs/021-wall-source-resolution/deployment.md记录双窗/数据/4K拓扑/正常HTTPS与重复启动验证，并将最终文档同步两个仓库及D4。

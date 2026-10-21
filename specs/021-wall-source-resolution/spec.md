@@ -2,7 +2,7 @@
 
 **Feature Branch**: `main`
 **Created**: 2026-10-21
-**Status**: Implemented locally（未部署；实体出画未验）
+**Status**: Deployed to D4（双仓同步；实体墙面出画未验）
 **Input**: 用户报告当前大屏布局帧不正确，D4显示器现应均为4K，要求优化并自行探索其它设备分辨率。
 
 ## User Scenarios & Testing *(mandatory)*
