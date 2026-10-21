@@ -6,7 +6,9 @@
 - es6-promise 4.2.8，MIT，mpegts.js运行依赖，许可证见[es6-promise-LICENSE.txt](es6-promise-LICENSE.txt)。
 - events 3.3.0，MIT，mpegts.js运行依赖，许可证见[events-LICENSE.txt](events-LICENSE.txt)。
 
-许可证文本直接取自本次pnpm安装的对应包，未改写版权声明。均不要求购买商业播放器授权。
+许可证文本来自对应版本的实际依赖包，保留原版权声明。依赖通过npm安装。
+
+022的Electron媒体容器处理使用`flvee0.0.1`、`@mediafish/flv0.2.2`及其运行依赖。版权和完整许可见[FLV依赖许可](flv-preview-LICENSE.txt)，目录包包含这些依赖及许可。服务器使用`LiveStreamingServerNet0.33.1`，其许可随.NET发布包保存在`third-party-notices/LiveStreamingServerNet-LICENSE.txt`。
 
 018服务器FFmpeg和MediaMTX是独立程序，不加入网页观看端安装。020 Windows Electron另随包提供自包含helper和FFmpeg，用户无需自行安装；Web不受影响。本轮只准备本机development-only资产，不提交媒体二进制或公开发行安装器。
 

@@ -1,4 +1,4 @@
-// AudioWorker真实播放、结束通知及同执行循环的周期观测入口，不直接访问业务数据库。
+// 音频进程入口、周期观测和结束通知。项目：SCP-cv；文件：Program.cs；作者：Qintsg；日期：2026-10-21。
 using ScpCv.AudioWorker.Audio;
 using ScpCv.AudioWorker.Publishing;
 using ScpCv.Contracts.Ipc;
@@ -54,7 +54,8 @@ audio.Finished += (_, finished) => _ = NotifyFinishedAsync(session, finished, st
 try
 {
     await RuntimeStartGate.WaitAsync(startGate, cancellationToken: stop.Token);
-    await session.RunAsync(executor.ExecuteAsync, executor.SampleProgressAsync, stop.Token);
+    await session.RunAsync(executor.ExecuteAsync,
+        token => executor.SampleProgressAsync(token, session.InitialIdleAudioGeneration), stop.Token);
     return 0;
 }
 catch (OperationCanceledException) when (stop.IsCancellationRequested)

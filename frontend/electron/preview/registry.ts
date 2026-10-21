@@ -1,4 +1,4 @@
-/** 原生短租约注册表：主机/完整票据/来源修订归属、延迟创建围栏和同源进程共享。 */
+/** 文件描述：原生短租约与实际来源进程共享；项目：SCP-cv；文件：registry.ts；作者：Qintsg；日期：2026-10-21。 */
 import { randomBytes, randomUUID } from 'node:crypto';
 import { NativeFlvFeed } from './flvFeed.js';
 import { NativePreviewError, validateNativeDescriptor, validateNativeId, validateNativeRequest,
@@ -13,7 +13,7 @@ export interface NativeRegistryDependencies {
 }
 interface LeaseState { lease: NativeLease; nonce: string; owner: string; generation: number; descriptor: NativeDescriptor;
   request: NativeRequest; consumed: boolean; expires: number; feed?: FeedState }
-interface FeedState { key: string; feed?: NativeFlvFeed; mode: 'copy' | 'compatible'; leases: Set<string>; stopping?: Promise<void>; error?: boolean }
+interface FeedState { key: string; feed?: NativeFlvFeed; mode: 'copy' | 'compatible'; leases: Set<string>; stopping?: Promise<void>; error?: NativePreviewError }
 
 export class NativePreviewRegistry {
   private readonly leases = new Map<string, LeaseState>();
@@ -79,7 +79,7 @@ export class NativePreviewRegistry {
     await selected.stopping;
     const completedOwner = await this.dependencies.owner();
     if (state.generation !== this.generation || state.owner !== completedOwner) throw new NativePreviewError('native_preview_stale_owner');
-    selected.feed = undefined; selected.error = false; selected.mode = 'compatible'; selected.stopping = undefined;
+    selected.feed = undefined; selected.error = undefined; selected.mode = 'compatible'; selected.stopping = undefined;
     for (const id of selected.leases) { const lease = this.leases.get(id); if (lease) lease.consumed = false; }
   }
   /** :param request: app自有协议GET。:returns: 只有本人不可猜nonce能取得内存流。 */
@@ -94,7 +94,8 @@ export class NativePreviewRegistry {
       if (state.consumed) throw new NativePreviewError('native_preview_already_consumed');
       const key = `${state.owner}:${state.descriptor.sharing_key}`;
       let selected = this.feeds.get(key);
-      if (selected?.stopping || selected?.error) throw new NativePreviewError('native_preview_cleanup_pending');
+      if (selected?.error) throw selected.error;
+      if (selected?.stopping) throw new NativePreviewError('native_preview_cleanup_pending');
       if (!selected) {
         if (this.feeds.size >= 6) throw new NativePreviewError('native_preview_capacity');
         selected = { key, mode: 'copy', leases: new Set() }; this.feeds.set(key, selected);
@@ -102,12 +103,15 @@ export class NativePreviewRegistry {
       state.feed = selected; selected.leases.add(state.lease.id); state.consumed = true;
       if (!selected.feed) {
         const own = selected;
-        own.feed = new NativeFlvFeed(this.dependencies.produce(state.descriptor.uri, own.mode), () => { own.error = true; });
+        own.feed = new NativeFlvFeed(this.dependencies.produce(state.descriptor.uri, own.mode), error => { own.error = error; });
       }
       const body = selected.feed!.subscribe(request.signal, () => { state.consumed = false; });
       selected.feed!.start();
       return new Response(body, { headers: { 'Content-Type': 'video/x-flv', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
-    } catch { return new Response('native_preview_unavailable', { status: 403, headers: { 'Cache-Control': 'no-store' } }); }
+    } catch (error) {
+      const code = error instanceof NativePreviewError ? error.code : 'native_preview_unavailable';
+      return new Response(code, { status: code === 'native_preview_incompatible_codec' ? 422 : 403, headers: { 'Cache-Control': 'no-store' } });
+    }
   }
   /** :returns: 先同步失效所有旧意图，再确认自有feed退出。 */
   async invalidate(): Promise<void> {

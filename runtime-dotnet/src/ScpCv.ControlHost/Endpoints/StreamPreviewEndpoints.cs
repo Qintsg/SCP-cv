@@ -1,4 +1,4 @@
-// 认证短租约与双FLV出口：先授权再拉流，原始URI和凭据从不发给观看端。
+// 文件描述：认证短租约与双FLV出口；项目：SCP-cv；文件：StreamPreviewEndpoints.cs；作者：Qintsg；日期：2026-10-21。
 using System.Net.WebSockets;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -106,7 +106,7 @@ public static class StreamPreviewEndpoints
             var receive = ReceiveAsync(socket, lifetime);
             try
             {
-                await SendAsync(FlvReader.Header).ConfigureAwait(false);
+                await SendAsync(FlvSerializer.Header).ConfigureAwait(false);
                 await SendAsync(first.Bytes).ConfigureAwait(false);
                 await foreach (var gop in viewer.Reader.ReadAllAsync(lifetime.Token).ConfigureAwait(false)) await SendAsync(gop.Bytes).ConfigureAwait(false);
             }
@@ -129,7 +129,7 @@ public static class StreamPreviewEndpoints
         else
         {
             context.Response.ContentType = "video/x-flv";
-            await SendAsync(FlvReader.Header).ConfigureAwait(false); await SendAsync(first.Bytes).ConfigureAwait(false);
+            await SendAsync(FlvSerializer.Header).ConfigureAwait(false); await SendAsync(first.Bytes).ConfigureAwait(false);
             await foreach (var gop in viewer.Reader.ReadAllAsync(lifetime.Token).ConfigureAwait(false)) await SendAsync(gop.Bytes).ConfigureAwait(false);
             async Task SendAsync(ReadOnlyMemory<byte> bytes)
             {

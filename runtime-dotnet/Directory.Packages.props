@@ -1,4 +1,4 @@
-<!-- .NET集中依赖版本；YAML预案使用开源YamlDotNet。 -->
+<!-- 文件描述：.NET集中依赖版本；项目：SCP-cv；文件：Directory.Packages.props；作者：Qintsg；日期：2026-10-21。 -->
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -8,6 +8,7 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="LibVLCSharp" Version="3.9.4" />
     <PackageVersion Include="LibVLCSharp.WPF" Version="3.9.4" />
+    <PackageVersion Include="LiveStreamingServerNet" Version="0.33.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />

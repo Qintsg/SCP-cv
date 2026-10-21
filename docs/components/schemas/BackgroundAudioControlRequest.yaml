@@ -17,10 +17,11 @@ properties:
     minimum: 0
     description: action=seek时必填的非负int64毫秒目标；不能传字符串、小数或null。请求仅入队，不表示媒体已定位。
 oneOf:
-  - properties:
+  - required: [action]
+    properties:
       action:
         enum: [play, pause, stop, next, prev]
   - properties:
       action:
         enum: [seek]
-    required: [position_ms]
+    required: [action, position_ms]

@@ -1,4 +1,4 @@
-// 音频Worker同一执行循环内的只读采样；只投影成功命令的源/代次，不触发原生控制。
+// 当前实例的真实音频状态采样。项目：SCP-cv；文件：AudioCommandExecutor.Progress.cs；作者：Qintsg；日期：2026-10-21。
 using System.Text.Json;
 using ScpCv.Contracts.Runtime;
 
@@ -7,9 +7,12 @@ namespace ScpCv.AudioWorker.Audio;
 public sealed partial class AudioCommandExecutor
 {
     /// <summary>:param cancellationToken: Worker循环寿命。:returns: 已完成命令源的实际观测；未知或自然末尾不给假样本。</summary>
-    public Task<WorkerStateSample?> SampleProgressAsync(CancellationToken cancellationToken)
+    public Task<WorkerStateSample?> SampleProgressAsync(CancellationToken cancellationToken, long? initialIdleGeneration = null)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        if (_observedGeneration == 0 && _observedSourceId == 0 && initialIdleGeneration is >= 0 && audio.SourceId == 0 && audio.PlaybackState == "stopped")
+            return Task.FromResult<WorkerStateSample?>(new WorkerStateSample(initialIdleGeneration.Value,
+                Snapshot(initialIdleGeneration.Value, "stopped", initialIdle: true)));
         if (_observedGeneration <= 0 || _observedSourceId <= 0 || audio.SourceId != _observedSourceId)
             return Task.FromResult<WorkerStateSample?>(null);
         // 原生Ended也表现为stopped；该状态留给带身份/代次的Finished与显式STOP结果，避免先采样stopped挡住列表推进。
@@ -19,11 +22,12 @@ public sealed partial class AudioCommandExecutor
     }
 
     /// <summary>:param generation: 已确认命令代次。:param playbackState: 本次先读取的状态，避免二次读取跨自然末尾。:returns: 纯值观测，不授予声音或解码完成。</summary>
-    private JsonElement Snapshot(long generation, string? playbackState = null)
+    private JsonElement Snapshot(long generation, string? playbackState = null, bool initialIdle = false)
     {
         var actualState = playbackState ?? audio.PlaybackState;
         return JsonSerializer.SerializeToElement(new
         {
+            initial_idle = initialIdle,
             source_generation = generation,
             source_id = audio.SourceId == 0 ? (long?)null : audio.SourceId,
             playback_state = actualState,

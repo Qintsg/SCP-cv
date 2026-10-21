@@ -1,4 +1,4 @@
-/** mpegts.js薄适配：无声MSE播放、有限缓冲、解码帧证据及彻底销毁。 */
+/** 文件描述：浏览器MSE低延迟播放器；项目：SCP-cv；文件：previewPlayer.ts；作者：Qintsg；日期：2026-10-21。 */
 import type { InjectionKey } from 'vue';
 export interface PreviewPlayer { destroy(): void }
 export type PreviewPlayerFactory = (video: HTMLVideoElement, url: string, frame: () => void, failed: () => void) => Promise<PreviewPlayer>;
@@ -11,8 +11,10 @@ export const createPreviewPlayer: PreviewPlayerFactory = async (video, url, fram
   video.muted = true; video.volume = 0;
   const absoluteUrl = new URL(url, window.location.href).href;
   const player = mpegts.createPlayer({ type: 'flv', url: absoluteUrl, isLive: true, hasAudio: false, hasVideo: true, withCredentials: true }, {
-    enableWorker: true, enableStashBuffer: false, lazyLoad: false, liveBufferLatencyChasing: true, liveBufferLatencyMaxLatency: 1.5,
-    liveBufferLatencyMinRemain: .4, autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: 10, autoCleanupMinBackwardDuration: 3,
+    enableWorker: true, enableStashBuffer: false, lazyLoad: false,
+    liveSync: true, liveSyncMaxLatency: .35, liveSyncTargetLatency: .15, liveSyncPlaybackRate: 1.25,
+    liveBufferLatencyChasing: true, liveBufferLatencyMaxLatency: .65, liveBufferLatencyMinRemain: .15,
+    autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: 10, autoCleanupMinBackwardDuration: 3,
   });
   let active = true, callback = 0, lastTime = -1;
   let fallback: ReturnType<typeof setInterval> | undefined;

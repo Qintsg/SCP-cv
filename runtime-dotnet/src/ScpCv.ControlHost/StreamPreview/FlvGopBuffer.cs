@@ -1,4 +1,4 @@
-// 完整关键帧组缓存：所有订阅共享不可变字节，慢消费者只跳完整GOP。
+// 文件描述：完整关键帧组共享缓存；项目：SCP-cv；文件：FlvGopBuffer.cs；作者：Qintsg；日期：2026-10-21。
 namespace ScpCv.ControlHost.StreamPreview;
 
 public sealed record PreviewGop(byte[] Bytes, uint Timestamp, int TagCount, PreviewEncoding? Encoding = null);

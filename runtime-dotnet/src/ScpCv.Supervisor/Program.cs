@@ -1,4 +1,4 @@
-// Supervisor 进程组入口、登记、心跳和安全停机。
+// 运行组入口、心跳和受管进程退出诊断。项目：SCP-cv；文件：Program.cs；作者：Qintsg；日期：2026-10-21。
 using System.Diagnostics;
 using System.Text.Json;
 using ScpCv.Contracts.Ipc;
@@ -78,7 +78,10 @@ static async Task<int> StartAsync(
             process.Process.Exited += (_, _) =>
             {
                 if (stopFence.IsUnexpectedExit(process.Process.ExitCode) && !stop.IsCancellationRequested)
+                {
+                    Console.Error.WriteLine($"受管进程退出：角色={process.Role}，PID={process.ProcessId}，启动={process.StartTime:O}，会话={process.SessionId}，退出码={process.Process.ExitCode}，时间={DateTimeOffset.UtcNow:O}");
                     failure.TrySetResult(process.Role);
+                }
             };
         }
 
@@ -100,6 +103,8 @@ static async Task<int> StartAsync(
         }
         else if (!stop.IsCancellationRequested)
         {
+            if (heartbeat.IsFaulted)
+                Console.Error.WriteLine($"Supervisor心跳失败：PID={Environment.ProcessId}，实例={supervisorInstanceId:D}，组={registration?.GroupEpoch}，时间={DateTimeOffset.UtcNow:O}，错误={heartbeat.Exception?.GetBaseException().GetType().Name}：{heartbeat.Exception?.GetBaseException().Message}");
             await heartbeat.ConfigureAwait(false);
             throw new InvalidOperationException("Supervisor 传输心跳意外停止。");
         }

@@ -1,5 +1,11 @@
-#!/usr/bin/env python3
-"""Setup implementation plan for a feature."""
+# 准备当前 Spec Kit 功能的实现计划。
+# 项目：SCP-cv
+# 文件：setup_plan.py
+# 作者：Qintsg
+# 日期：2026-10-21
+# /// script
+# dependencies = ["PyYAML==6.0.3"]
+# ///
 
 from __future__ import annotations
 
@@ -7,26 +13,24 @@ import json
 import sys
 from pathlib import Path
 
-try:
-    from common import (
-        TemplateResolutionError,
-        get_feature_paths,
-        resolve_template_content,
-    )
-except ImportError:  # pragma: no cover - direct execution from unusual cwd
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from common import (
-        TemplateResolutionError,
-        get_feature_paths,
-        resolve_template_content,
-    )
+from common import (
+    TemplateResolutionError,
+    get_feature_paths,
+    resolve_template_content,
+)
 
 
 def _json_line(payload: object) -> str:
+    """:param payload: 需要输出的结果对象。
+    :returns: 带换行符的 JSON 文本。
+    """
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
 def _help_text(argv0: str) -> str:
+    """:param argv0: 当前脚本名称。
+    :returns: 命令行使用说明。
+    """
     return f"""Usage: {argv0} [--json]
   --json    Output results in JSON format
   --help    Show this help message
@@ -34,6 +38,11 @@ def _help_text(argv0: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """校验参数并准备当前功能的实现计划。
+
+    :param argv: 命令行参数；省略时使用当前进程参数。
+    :returns: 成功返回零，参数或必需模板无效时返回非零状态。
+    """
     args = list(argv if argv is not None else sys.argv[1:])
     json_mode = False
     for arg in args:
@@ -42,7 +51,9 @@ def main(argv: list[str] | None = None) -> int:
         elif arg in {"--help", "-h"}:
             sys.stdout.write(_help_text(sys.argv[0]))
             return 0
-        # Other arguments are accepted and silently ignored, matching setup-plan.sh.
+        else:
+            print(f"ERROR: Unknown option '{arg}'", file=sys.stderr)
+            return 1
 
     try:
         paths = get_feature_paths(script_file=Path(__file__))
@@ -52,9 +63,7 @@ def main(argv: list[str] | None = None) -> int:
         print("ERROR: Failed to resolve feature paths", file=sys.stderr)
         return int(exc.code) if isinstance(exc.code, int) else 1
 
-    paths.feature_dir.mkdir(parents=True, exist_ok=True)
-
-    # Status messages go to stderr in JSON mode so stdout stays pure JSON.
+    # JSON 模式的状态信息写入 stderr，保持 stdout 仅包含结果对象。
     status_stream = sys.stderr if json_mode else sys.stdout
     if paths.impl_plan.is_file():
         print(
@@ -67,12 +76,12 @@ def main(argv: list[str] | None = None) -> int:
         except TemplateResolutionError as exc:
             print(f"Error: {exc}", file=sys.stderr)
             return 1
-        if template_content is not None:
-            paths.impl_plan.write_bytes(template_content.encode("utf-8"))
-            print(f"Copied plan template to {paths.impl_plan}", file=status_stream)
-        else:
-            print("Warning: Plan template not found", file=status_stream)
-            paths.impl_plan.touch()
+        if template_content is None:
+            print("ERROR: Required plan-template was not found", file=sys.stderr)
+            return 1
+        paths.feature_dir.mkdir(parents=True, exist_ok=True)
+        paths.impl_plan.write_bytes(template_content.encode("utf-8"))
+        print(f"Copied plan template to {paths.impl_plan}", file=status_stream)
 
     if json_mode:
         sys.stdout.write(

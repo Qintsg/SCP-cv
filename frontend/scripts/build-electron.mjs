@@ -1,4 +1,10 @@
-/** 可重复Electron开发目录构建：固定运行时与锁定pnpm，只编包、不发布或改动全局工具。 */
+/**
+ * 构建并核验 Electron 本机开发目录包。
+ * @Project: SCP-cv
+ * @File: build-electron.mjs
+ * @Author: Qintsg
+ * @Date: 2026-10-21
+ */
 import { readFile, stat, realpath } from 'node:fs/promises';
 import { dirname, resolve, join, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,27 +31,16 @@ const electronDist = join(frontend, 'node_modules/electron/dist');
 if ((await readFile(join(electronDist, 'version'), 'utf8')).trim() !== '44.2.0') throw new Error('只使用已安装且版本匹配的Electron44.2.0。');
 for (const asset of ['electron.exe', 'resources/default_app.asar']) await stat(join(electronDist, asset));
 
-// 明确调用当前仓库锁定版；PATH全局pnpm可能更新到其它版本而触发自动切换/网络等待。
-let pinnedCli = argumentsMap.get('--pnpm-bin');
-if (!pinnedCli) {
-  const activeEntry = process.env.npm_execpath;
-  if (!activeEntry || !isAbsolute(activeEntry)) throw new Error('直接Node构建需显式--pnpm-bin；pnpm run构建自动验证当前npm_execpath的锁定版本。');
-  const activePackageRoot = resolve(dirname(activeEntry), '..');
-  const activeManifest = JSON.parse(await readFile(join(activePackageRoot, 'package.json'), 'utf8'));
-  if (activeManifest.name !== 'pnpm' || activeManifest.version !== '11.22.0') throw new Error('当前npm_execpath不是锁定pnpm11.22.0；拒绝静默使用其它版本，请从锁定版运行或显式--pnpm-bin。');
-  pinnedCli = resolve(activePackageRoot, '../../bin');
-  const managedEntry = join(pinnedCli, '../node_modules/pnpm/bin/pnpm.mjs');
-  if (await realpath(managedEntry) !== await realpath(activeEntry)) throw new Error('无法从当前pnpm入口核对专有bin，请显式--pnpm-bin。');
-}
-if (!isAbsolute(pinnedCli)) throw new Error('--pnpm-bin必须是明确绝对目录，不改变全局PATH。');
-await stat(join(pinnedCli, 'pnpm.CMD'));
-const pinnedManifest = JSON.parse(await readFile(join(pinnedCli, '../node_modules/pnpm/package.json'), 'utf8'));
-if (pinnedManifest.name !== 'pnpm' || pinnedManifest.version !== '11.22.0') throw new Error('包管理器目录不是锁定pnpm11.22.0。');
-process.env.PATH = `${pinnedCli};${process.env.PATH || ''}`;
-process.env.npm_config_user_agent = 'pnpm/11.22.0 npm/? node/' + process.versions.node;
-process.env.npm_config_verify_deps_before_run = 'false';
-process.env.pnpm_config_verify_deps_before_run = 'warn';
-// 应用代码/依赖均已由Vite打包，生产dependencies为空；没有需要重建的Node原生扩展。
+// 使用 npm run 提供的实际入口，构建过程保持现有 PATH 和包管理器环境。
+const npmCli = process.env.npm_execpath;
+if (!npmCli || !isAbsolute(npmCli)) throw new Error('请通过 npm run build:electron 启动构建，以验证实际 npm 入口。');
+const npmRoot = resolve(dirname(npmCli), '..');
+const npmMetadata = JSON.parse(await readFile(join(npmRoot, 'package.json'), 'utf8'));
+if (npmMetadata.name !== 'npm' || npmMetadata.version !== '11.12.1' || packageMetadata.packageManager !== 'npm@11.12.1')
+  throw new Error('Electron 构建要求 npm 11.12.1，与 frontend/package.json 的 packageManager 一致。');
+if (await realpath(npmCli) !== await realpath(join(npmRoot, 'bin/npm-cli.js')))
+  throw new Error('npm_execpath 必须指向已核验 npm 包的 bin/npm-cli.js。');
+// 页面依赖由Vite打包；主进程的纯JavaScript媒体依赖随asar发布，无需重建Node原生扩展。
 const require = createRequire(import.meta.url);
 const artifacts = await build({ projectDir: frontend, targets: Platform.WINDOWS.createTarget(['dir'], Arch.x64),
   publish: 'never', config: { electronDist, electronVersion: '44.2.0', npmRebuild: false,

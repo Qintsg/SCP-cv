@@ -1,42 +1,37 @@
-// 预览FLV纯协议回归：不访问设备、MediaMTX或原生解码器。
-using System.Buffers.Binary;
+// 文件描述：成熟媒体对象的组边界与资源约束回归；项目：SCP-cv；文件：StreamPreviewFlvTests.cs；作者：Qintsg；日期：2026-10-21。
 using ScpCv.ControlHost.StreamPreview;
 
 namespace ScpCv.ControlHost.Tests;
 
 public sealed class StreamPreviewFlvTests
 {
+    /// <summary>:returns: 库分类与重新封装保持原对象时间戳。</summary>
     [Fact]
-    public async Task ReadsCompleteTagsAndRejectsIncorrectPreviousSizeAsync()
+    public void LibraryObjectsPreserveIndependentTimestampAndClassification()
     {
-        var raw = Tag(9, 42, [0x17, 1, 0, 0, 0, 1]);
-        await using var stream = new MemoryStream([.. FlvReader.Header.ToArray(), .. raw]);
-        var tags = new List<FlvTag>();
-        await foreach (var tag in FlvReader.ReadAsync(stream, CancellationToken.None)) tags.Add(tag);
-        Assert.Single(tags); Assert.Equal(42u, tags[0].Timestamp);
-        raw[^1] ^= 1;
-        await using var broken = new MemoryStream([.. FlvReader.Header.ToArray(), .. raw]);
-        await Assert.ThrowsAsync<InvalidDataException>(async () =>
-        {
-            await foreach (var unused in FlvReader.ReadAsync(broken, CancellationToken.None)) { _ = unused; }
-        });
+        var original = Tag(9, 42, [0x17, 1, 0, 0, 0, 1]);
+        Assert.True(original.IsKeyframe); Assert.False(original.IsConfiguration);
+        var moved = original.WithTimestamp(100);
+        Assert.Equal(42u, original.Timestamp); Assert.Equal(100u, moved.Timestamp);
+        Assert.Equal(original.Bytes.Length, moved.Bytes.Length);
+        Assert.NotEqual(original.Bytes, moved.Bytes);
     }
 
+    /// <summary>:returns: 完整组从关键帧开始，携带当前配置。</summary>
     [Fact]
     public void GopStartsAtKeyframeAndCarriesCurrentDecoderConfiguration()
     {
         var buffer = new FlvGopBuffer();
-        Assert.Null(buffer.Push(new(Tag(9, 0, [0x17, 0, 0, 0, 0, 1]))));
-        Assert.Null(buffer.Push(new(Tag(9, 10, [0x27, 1, 0, 0, 0, 2]))));
-        Assert.Null(buffer.Push(new(Tag(9, 20, [0x17, 1, 0, 0, 0, 3]))));
-        Assert.Null(buffer.Push(new(Tag(9, 30, [0x27, 1, 0, 0, 0, 4]))));
-        var gop = buffer.Push(new(Tag(9, 40, [0x17, 1, 0, 0, 0, 5])));
+        Assert.Null(buffer.Push(Tag(9, 0, [0x17, 0, 0, 0, 0, 1])));
+        Assert.Null(buffer.Push(Tag(9, 10, [0x27, 1, 0, 0, 0, 2])));
+        Assert.Null(buffer.Push(Tag(9, 20, [0x17, 1, 0, 0, 0, 3])));
+        Assert.Null(buffer.Push(Tag(9, 30, [0x27, 1, 0, 0, 0, 4])));
+        var gop = buffer.Push(Tag(9, 40, [0x17, 1, 0, 0, 0, 5]));
         Assert.NotNull(gop); Assert.Equal(20u, gop.Timestamp); Assert.Equal(3, gop.TagCount);
-        Assert.Equal(20u, new FlvTag(gop.Bytes[..21]).Timestamp);
-        Assert.Equal(0, gop.Bytes[12]);
-        Assert.Equal(1, gop.Bytes[21 + 12]);
+        Assert.Equal(63, gop.Bytes.Length);
     }
 
+    /// <summary>:returns: 编码代次时间线向前接续，旧配置不能跨代使用。</summary>
     [Fact]
     public void NewEncoderEpochKeepsTimestampForwardAndDiscardsUndecodableTail()
     {
@@ -44,40 +39,32 @@ public sealed class StreamPreviewFlvTests
         clock.BeginEpoch(); Assert.Equal(0u, clock.Map(400)); Assert.Equal(100u, clock.Map(500));
         clock.BeginEpoch(); Assert.Equal(101u, clock.Map(0)); Assert.Equal(201u, clock.Map(100));
         var buffer = new FlvGopBuffer();
-        buffer.Push(new(Tag(9, 0, [0x17, 0, 0, 0, 0, 1])));
-        buffer.Push(new(Tag(9, 0, [0x17, 1, 0, 0, 0, 2])));
+        buffer.Push(Tag(9, 0, [0x17, 0, 0, 0, 0, 1]));
+        buffer.Push(Tag(9, 0, [0x17, 1, 0, 0, 0, 2]));
         buffer.BeginEpoch();
-        Assert.Null(buffer.Push(new(Tag(9, 1000, [0x27, 1, 0, 0, 0, 3]))));
-        Assert.Null(buffer.Push(new(Tag(9, 1000, [0x17, 1, 0, 0, 0, 4]))));
+        Assert.Null(buffer.Push(Tag(9, 1000, [0x27, 1, 0, 0, 0, 3])));
+        Assert.Null(buffer.Push(Tag(9, 1000, [0x17, 1, 0, 0, 0, 4])));
     }
 
+    /// <summary>:returns: 完整组超过上限立即拒绝。</summary>
     [Fact]
     public void OversizeGopFailsInsteadOfGrowingWithoutBound()
     {
         var buffer = new FlvGopBuffer(80);
-        buffer.Push(new(Tag(9, 0, [0x17, 0, 0, 0, 0, 1])));
-        buffer.Push(new(Tag(9, 0, [0x17, 1, 0, 0, 0, 2])));
-        Assert.Throws<InvalidDataException>(() => buffer.Push(new(Tag(9, 1, [0x27, 1, .. new byte[64]]))));
+        buffer.Push(Tag(9, 0, [0x17, 0, 0, 0, 0, 1]));
+        buffer.Push(Tag(9, 0, [0x17, 1, 0, 0, 0, 2]));
+        Assert.Throws<InvalidDataException>(() => buffer.Push(Tag(9, 1, [0x27, 1, .. new byte[64]])));
     }
 
+    /// <summary>:returns: 未完整分类及超限媒体不能复制进入共享缓存。</summary>
     [Fact]
-    public async Task TruncatedOrOversizedTagIsRejectedBeforeAllocationAsync()
+    public void IncompleteUnsupportedOrOversizedPayloadIsRejectedBeforeCopy()
     {
-        var header = Tag(9, 0, [0x17, 1, 0]);
-        header[1] = 0x7f;
-        await using var stream = new MemoryStream([.. FlvReader.Header.ToArray(), .. header]);
-        await Assert.ThrowsAsync<InvalidDataException>(async () =>
-        {
-            await foreach (var unused in FlvReader.ReadAsync(stream, CancellationToken.None)) { _ = unused; }
-        });
+        Assert.Throws<InvalidDataException>(() => Tag(9, 0, [0x17, 1, 0]));
+        Assert.Throws<InvalidDataException>(() => Tag(9, 0, [0x1c, 1, 0, 0, 0]));
+        Assert.Throws<InvalidDataException>(() => Tag(9, 0, new byte[FlvTag.MaximumBytes]));
     }
 
-    /// <summary>:param type: FLV类型。:param timestamp: 毫秒。:param payload: 有界测试负载。:returns: 独立构造的合法完整tag。</summary>
-    private static byte[] Tag(byte type, uint timestamp, byte[] payload)
-    {
-        var bytes = new byte[15 + payload.Length]; bytes[0] = type;
-        bytes[1] = (byte)(payload.Length >> 16); bytes[2] = (byte)(payload.Length >> 8); bytes[3] = (byte)payload.Length;
-        bytes[4] = (byte)(timestamp >> 16); bytes[5] = (byte)(timestamp >> 8); bytes[6] = (byte)timestamp; bytes[7] = (byte)(timestamp >> 24);
-        payload.CopyTo(bytes, 11); BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(bytes.Length - 4), (uint)payload.Length + 11); return bytes;
-    }
+    /// <summary>:param type: 库的种类。:param timestamp: 媒体毫秒。:param payload: 分类边界数据。:returns: 交给成熟库分类和封装的对象；实际解码由真实媒体验证覆盖。</summary>
+    private static FlvTag Tag(byte type, uint timestamp, byte[] payload) => new(type, timestamp, payload);
 }

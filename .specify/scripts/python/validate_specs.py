@@ -1,6 +1,11 @@
-#!/usr/bin/env python
-# -*- coding: UTF-8 -*-
-"""校验仓库中的 GitHub Spec Kit 功能产物。"""
+# 校验仓库中的 GitHub Spec Kit 功能产物。
+# 项目：SCP-cv
+# 文件：validate_specs.py
+# 作者：Qintsg
+# 日期：2026-10-21
+# /// script
+# dependencies = []
+# ///
 
 from __future__ import annotations
 
@@ -90,7 +95,7 @@ def main() -> int:
 
     :returns: 进程退出码，0 表示通过。
     """
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="校验 Spec Kit 功能规范、计划及任务文件。")
     parser.add_argument("--specs-dir", type=Path, default=Path("specs"))
     args = parser.parse_args()
     errors = validate_specs(args.specs_dir)

@@ -137,7 +137,7 @@ SCP_CV_HTTPS_HOSTS=192.168.5.194,127.0.0.1
 
 启动Node进程前另外配置`NODE_EXTRA_CA_CERTS=D:/SCP-cv-private/tls/ca/rootCA.pem`，让HTTPS代理正常验证本地CA的后端；它不是前端VITE变量。前端三个SCP项必须同时提供，完全没配保持既有HTTP，部分/错误配置拒绝启动，不降级。SCP项只在服务器读取，不进入客户端；build:web/封装构建不读取密钥。
 
-使用`pnpm --dir frontend run dev:web`，或Web构建后`pnpm --dir frontend exec vite preview --mode web --port 80 --strictPort`；本地开发可将两端口改为5173/5174。两固定端口不可相同或占用，失败不随机换端口、不得留下半运行服务。网页REST/SSE默认走同源代理，VITE_BACKEND_TARGET只覆盖对应协议上游，不让浏览器绕过入口；已选择的播放主机仍优先，封装端的明确后端配置及回退不变。每请求按实际TLS socket分流，HTTPS正常验证上游，不设置secure=false或NODE_TLS_REJECT_UNAUTHORIZED=0。dev/preview用于本项目开发/联调，不宣称生产静态服务器；替换证书后重启自有服务并复核。
+使用`npm --prefix frontend run dev:web`，或Web构建后`npm --prefix frontend exec -- vite preview --mode web --port 80 --strictPort`；本地开发可将两端口改为5173/5174。两固定端口不可相同或占用，失败不随机换端口、不得留下半运行服务。网页REST/SSE默认走同源代理，VITE_BACKEND_TARGET只覆盖对应协议上游，不让浏览器绕过入口；已选择的播放主机仍优先，封装端的明确后端配置及回退不变。每请求按实际TLS socket分流，HTTPS正常验证上游，不设置secure=false或NODE_TLS_REJECT_UNAUTHORIZED=0。dev/preview用于本项目开发/联调，不宣称生产静态服务器；替换证书后重启自有服务并复核。
 
 ### 4. 分层检查
 

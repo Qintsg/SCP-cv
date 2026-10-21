@@ -1,4 +1,4 @@
-// Windows预览转换器：暂停创建、只继承明确管道、先加入独占Job再放行；不启动可见窗口。
+// 文件描述：Windows独占Job内的预览媒体进程；项目：SCP-cv；文件：PreviewProcess.cs；作者：Qintsg；日期：2026-10-21。
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -16,6 +16,9 @@ public sealed class PreviewProcess : IAsyncDisposable
     private int _disposed;
     public Stream Output { get; }
     public int ProcessId => _process.Id;
+
+    /// <summary>:param cancellationToken: 当前等待寿命。:returns: 精确编码进程的实际退出。</summary>
+    public Task WaitForExitAsync(CancellationToken cancellationToken) => _process.WaitForExitAsync(cancellationToken);
 
     private PreviewProcess(SafeFileHandle job, Process process, Stream output)
     { _job = job; _process = process; Output = output; }

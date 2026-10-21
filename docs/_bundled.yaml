@@ -25,6 +25,10 @@ security:
   - sessionAuth: []
   - sessionAuthHttp: []
 tags:
+  - name: inputs
+    description: 受信现场输入、别名和有界服务端口发现
+  - name: display-routing
+    description: 大屏与两电视的逻辑下发记账，非实体读回
   - name: auth
     description: 登录、登出、CSRF 与当前用户查询
   - name: folders
@@ -37,6 +41,8 @@ tags:
     description: 窗口播放、切换、重置和物理冒烟测试
   - name: screen-sharing
     description: 临时网页屏幕共享的发布和原生私有信令；受理不等于出画
+  - name: stream-preview
+    description: 按需共享的无声FLV预览；先申请短租约再观看，不暴露原始设备凭据
   - name: background-audio
     description: 背景音乐播放列表、播放控制与状态查询
   - name: runtime
@@ -54,6 +60,729 @@ tags:
   - name: events
     description: Server-Sent Events 播放状态事件流
 paths:
+  /inputs/:
+    get:
+      tags:
+        - inputs
+      summary: 读取现场输入及发现缓存
+      operationId: listSiteInputs
+      description: GET不探网络或写业务库；工作站51–74、监控76、现场81、摄像机84–88，不存在75。
+      responses:
+        '200':
+          description: 固定目录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+  /inputs/refresh/:
+    post:
+      tags:
+        - inputs
+      summary: 合并刷新服务可达快照并同步工作站目录
+      operationId: refreshSiteInputs
+      description: 固定31项，最多6项并发、单端口250ms、默认TTL60秒；Simulation全部unknown且不连接网络。不会接管同名用户目录。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                force:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: 可达快照；不是媒体出画状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          description: 内置目录与用户目录冲突，未接管
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /display-routing/:
+    get:
+      tags:
+        - display-routing
+      summary: 获取大屏和两电视最后下发意图
+      operationId: getDisplayRouting
+      responses:
+        '200':
+          description: 逻辑记录；不是现场实时状态
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    required:
+                      - outputs
+                    properties:
+                      outputs:
+                        type: object
+                        required:
+                          - wall
+                          - tv_left
+                          - tv_right
+                        properties:
+                          wall:
+                            $ref: '#/components/schemas/DisplayRoutingTarget'
+                          tv_left:
+                            $ref: '#/components/schemas/DisplayRoutingTarget'
+                          tv_right:
+                            $ref: '#/components/schemas/DisplayRoutingTarget'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+  /display-routing/televisions/{target}/:
+    put:
+      tags:
+        - display-routing
+      summary: 电视单路全屏选源
+      description: 同连接先满屏后单源，全部写完才记录成功意图。force默认为true，仪表盘可同源重发；不操作电源
+      operationId: setTelevisionRouting
+      parameters:
+        - name: target
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - tv_left
+              - tv_right
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - input
+              properties:
+                input:
+                  $ref: '#/components/schemas/VideoWallInput'
+                force:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: 完整写出、模拟写出或按请求跳过相同意图，不证明实体出画
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    required:
+                      - output
+                      - result
+                    properties:
+                      output:
+                        $ref: '#/components/schemas/DisplayRoutingTarget'
+                      result:
+                        type: string
+                        enum:
+                          - sent_unconfirmed
+                          - simulated
+                          - unchanged
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /stream-previews/native/resolve/:
+    post:
+      tags:
+        - stream-preview
+      operationId: resolveNativeStreamPreview
+      summary: 为受信原生主进程解析已有来源，不拉流、不创建服务器租约
+      description: 沿当前入口Cookie/CSRF/Origin及来源验证，响应Cache-Control:no-store。 uri可能包含凭据，原生主进程不得将响应原样交给renderer、缓存到页面或记录日志。 主进程每次续租重新解析固定target，完整登录票据/Origin/实际URI改变将得到不同sharing_key；修订单独复核。 普通Web仍使用共享FLV租约，不调用该敏感描述符接口。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+      responses:
+        '200':
+          description: 30秒内有效的受限来源描述，不等于设备可达或已经出画
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NativeDescriptor'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '422':
+          $ref: '#/components/responses/ErrorResponse'
+  /stream-previews/:
+    post:
+      tags:
+        - stream-preview
+      operationId: createStreamPreview
+      summary: 申请本人短期观看租约，不立即拉流
+      description: 只接受登记媒体ID或受限设备输入。有效观看消费后才注册MediaMTX按需路径；相同实际URI和凭据共享一份上游及编码。 租约绑定加密会话票据摘要、入口协议及Origin；同账号重新登录也不可使用旧租约。未消费的租约到期不会启动上游。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Request'
+            example:
+              input:
+                kind: window_1
+              quality: low
+      responses:
+        '201':
+          description: 已登记观看意图；不表示设备在线或已出画
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Created'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '422':
+          description: preview_no_stream；无流或未登记输入，卡片显示普通空态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+  /stream-previews/status/:
+    get:
+      tags:
+        - stream-preview
+      operationId: getStreamPreviewStatus
+      summary: 读取预览预算与共享项数量，不探测设备
+      responses:
+        '200':
+          description: 只读内存摘要，不代表依赖或实际画面已确认
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+  /stream-previews/{id}/:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+        - stream-preview
+      operationId: getStreamPreviewLease
+      summary: 读取本人同登录代次租约
+      responses:
+        '200':
+          description: 当前租约
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lease'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '410':
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - stream-preview
+      operationId: closeStreamPreviewLease
+      summary: 释放本人租约与其消费连接
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      responses:
+        '204':
+          description: 此租约已释放；最后消费者离开后有限宽限释放共享上游
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '410':
+          $ref: '#/components/responses/ErrorResponse'
+  /stream-previews/{id}/heartbeat/:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    post:
+      tags:
+        - stream-preview
+      operationId: heartbeatStreamPreview
+      summary: 续期本人有效租约，不复活已过期会话
+      description: 网页每10秒续租，30秒失联到期；普通无body续租时源修订改变则释放并返回410。 共享池为每target保留一份非消费验证租约，单独消费租约可提交aliases。 aliases必须同Owner/Origin/实际URI且来源修订仍有效，完整校验后仅切换消费租约的校验快照，不允许换实际流。 别名失效返回409且不续期，调用方须先重查别名；无有效别名不能无限续旧流。
+      security:
+        - sessionAuth: []
+          csrfToken: []
+        - sessionAuthHttp: []
+          csrfToken: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharedHeartbeat'
+      responses:
+        '200':
+          description: 已续租
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Lease'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '410':
+          $ref: '#/components/responses/ErrorResponse'
+  /stream-previews/{id}/stream.flv:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+        - stream-preview
+      operationId: readStreamPreviewHttpFlv
+      summary: 消费已有本人租约的HTTP-FLV
+      description: 一租约只允许一个连接。先等待有效完整关键帧组再发送200；首帧等待最多12秒。 Cache-Control为no-store；无音轨。200只证明开始发送FLV，不证明浏览器已解码。 慢客户端只追赶完整GOP，全局限速、降码率与帧率；流开始后故障关闭连接，前端内联重连。
+      responses:
+        '200':
+          description: 持续二进制FLV文件头与完整tag，不是JSON
+          content:
+            video/x-flv:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '410':
+          $ref: '#/components/responses/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+  /stream-previews/{id}/stream.ws:
+    parameters:
+      - $ref: '#/components/parameters/Id'
+    get:
+      tags:
+        - stream-preview
+      operationId: readStreamPreviewWebSocketFlv
+      summary: 升级为本人租约的WebSocket-FLV
+      description: 必须有效Cookie、精确Origin和WebSocket升级。二进制消息承载连续FLV，不接受文字控制命令。 无查询串token；HTTP与HTTPS会话隔离，WSS证书验证不可关闭。
+      parameters:
+        - name: Origin
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        '101':
+          description: 切换协议，后续二进制WebSocket消息为FLV字节
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+        '410':
+          $ref: '#/components/responses/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ErrorResponse'
+  /venue/:
+    get:
+      tags:
+        - devices
+      summary: 获取现场摄像机与音频能力
+      operationId: getVenue
+      responses:
+        '200':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  venue:
+                    $ref: '#/components/schemas/VenueState'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /venue/audio/read/:
+    post:
+      tags:
+        - devices
+      summary: 只读查询并记录实际屏幕音量
+      operationId: readVenueAudio
+      responses:
+        '200':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  audio:
+                    $ref: '#/components/schemas/VenueAudioResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /venue/audio/:
+    put:
+      tags:
+        - devices
+      summary: 配置IP81/SCP-cv来源、输出155增益或中控三路音量
+      operationId: setVenueAudio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VenueAudioSettings'
+      responses:
+        '200':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  audio:
+                    $ref: '#/components/schemas/VenueAudioResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /venue/cameras/{id}/motion/:
+    post:
+      tags:
+        - devices
+      summary: 摄像机方向/变焦短租约控制
+      operationId: moveVenueCamera
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - rear
+              - center1
+              - center2
+              - left
+              - right
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CameraMotionRequest'
+      responses:
+        '200':
+          description: 只表示发送或租约处理；没有机械状态读回。仿真不会写实体。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  camera:
+                    $ref: '#/components/schemas/VenueCameraResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /venue/cameras/{id}/positions/{position}/{action}/:
+    post:
+      tags:
+        - devices
+      summary: 保存或调用工程绑定的六个摄像机位置
+      operationId: venueCameraPosition
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - rear
+              - center1
+              - center2
+              - left
+              - right
+        - name: position
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 6
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - save
+              - call
+      responses:
+        '200':
+          description: 模式按钮及位置按钮已写出；没有位置读回，不自动重试。
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  camera:
+                    $ref: '#/components/schemas/VenueCameraResult'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /scenario-folders/:
+    get:
+      tags:
+        - scenarios
+      summary: 列出预设目录
+      operationId: listScenarioFolders
+      responses:
+        '200':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  folders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Folder'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      tags:
+        - scenarios
+      summary: 新建预设目录
+      operationId: createScenarioFolder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioFolderRequest'
+      responses:
+        '200':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  folder:
+                    $ref: '#/components/schemas/Folder'
+        '201':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  folder:
+                    $ref: '#/components/schemas/Folder'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+  /scenario-folders/{id}/:
+    put:
+      tags:
+        - scenarios
+      summary: 编辑或移动预设目录
+      operationId: updateScenarioFolder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScenarioFolderRequest'
+      responses:
+        '200':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  folder:
+                    $ref: '#/components/schemas/Folder'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
+    delete:
+      tags:
+        - scenarios
+      summary: 删除空预设目录
+      operationId: deleteScenarioFolder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功；发送/读回/仿真状态见响应详情
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '403':
+          $ref: '#/components/responses/ErrorResponse'
+        '404':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          $ref: '#/components/responses/ErrorResponse'
   /auth/csrf/:
     get:
       tags:
@@ -952,6 +1681,8 @@ paths:
                 - frames
                 - activated
               properties:
+                quality:
+                  $ref: '#/components/schemas/ReceiverQuality'
                 frames:
                   type: integer
                   format: int64
@@ -2128,15 +2859,95 @@ components:
       scheme: bearer
       description: 内存256位随机cap，仅原Worker能领取，绑定share/window/generation/instance/owner/group；不持久、不写查询串或日志。
   schemas:
-    CsrfTokenResponse:
+    VideoWallInput:
       type: object
       required:
-        - csrfToken
+        - kind
       properties:
-        csrfToken:
+        kind:
           type: string
-          description: ControlHost CSRF token，同时响应会通过 Set-Cookie 写入 `csrftoken`。
-          example: x9I3kV7sExampleToken
+          enum:
+            - window_1
+            - window_2
+            - laptop
+            - ip_stream
+            - window_3
+            - window_4
+          description: 窗口1–4固定登记63–66，IP81为现场输入；3/4可作为预览及组播来源，但仍不创建原生播放窗口
+        ip_address:
+          anyOf:
+            - type: string
+              format: ipv4
+            - type: string
+              enum:
+                - ''
+          description: 仅kind=ip_stream填写IPv4，其它输入使用空串或省略；须匹配服务器已登记的设备流描述，未登记时只可保存预览
+    Item:
+      type: object
+      required:
+        - id
+        - name
+        - group
+        - ip_suffix
+        - preview_input
+        - source_id
+        - availability
+        - is_available
+        - checked_at
+        - aliases
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        group:
+          type: string
+          enum:
+            - workstation
+            - camera
+            - site
+        ip_suffix:
+          type: integer
+          minimum: 1
+          maximum: 254
+        preview_input:
+          $ref: '#/components/schemas/VideoWallInput'
+        source_id:
+          type: integer
+          format: int64
+          nullable: true
+        availability:
+          type: string
+          enum:
+            - unknown
+            - reachable
+            - unreachable
+        is_available:
+          type: boolean
+          description: 仅RTSP/RTMP服务端口可达，不是画面确认
+        checked_at:
+          type: string
+          format: date-time
+          nullable: true
+        aliases:
+          type: array
+          items:
+            type: string
+    Response:
+      type: object
+      required:
+        - success
+        - inputs
+      properties:
+        success:
+          type: boolean
+          enum:
+            - true
+        inputs:
+          type: array
+          maxItems: 31
+          items:
+            $ref: '#/components/schemas/Item'
     ErrorResponse:
       type: object
       required:
@@ -2149,6 +2960,513 @@ components:
         code:
           type: string
           example: invalid_json
+    SuccessResponse:
+      type: object
+      required:
+        - success
+      properties:
+        success:
+          type: boolean
+          example: true
+    DisplayRoutingIntent:
+      type: object
+      properties:
+        input:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/VideoWallInput'
+          nullable: true
+        layout_code:
+          type: string
+          nullable: true
+          description: 大屏最后完整下发的可解析布局码，电视使用input
+    DisplayRoutingTarget:
+      type: object
+      required:
+        - target
+        - status
+        - last_sent
+        - updated_at
+      description: 服务端最后下发的逻辑记录，不是实体实时读回；失败仍可保留历史last_sent，但不可用于跳过
+      properties:
+        target:
+          type: string
+          enum:
+            - wall
+            - tv_left
+            - tv_right
+        status:
+          type: string
+          enum:
+            - unknown
+            - dispatching
+            - sent_unconfirmed
+            - simulated
+            - uncertain
+        last_sent:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/DisplayRoutingIntent'
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+    Quality:
+      type: string
+      enum:
+        - low
+        - high
+      default: low
+      description: 观看意图；实际输出仍受共享预算与拥塞约束
+    SourceRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - source_id
+      properties:
+        source_id:
+          type: integer
+          format: int64
+          minimum: 1
+          description: 已登记的RTSP或RTMP媒体源
+        quality:
+          $ref: '#/components/schemas/Quality'
+    InputRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - input
+      properties:
+        input:
+          type: object
+          additionalProperties: false
+          required:
+            - kind
+          properties:
+            kind:
+              type: string
+              enum:
+                - window_1
+                - window_2
+                - laptop
+                - window_3
+                - window_4
+                - ip_stream
+              description: 窗口1–4分别为目录63–66，原生播放仍只占用两窗；未知地址无流，不猜测
+            ip_address:
+              type: string
+              nullable: true
+              description: 仅ip_stream使用，须由服务端显式登记许可
+        quality:
+          $ref: '#/components/schemas/Quality'
+    Request:
+      oneOf:
+        - $ref: '#/components/schemas/SourceRequest'
+        - $ref: '#/components/schemas/InputRequest'
+    SharingKey:
+      type: string
+      pattern: ^[0-9a-f]{64}$
+      description: 服务器随机私钥HMAC，绑定完整登录票据、Origin与实际规范URI；不是可供猜凭据的裸URI哈希
+    NativeDescriptor:
+      type: object
+      required:
+        - uri
+        - sharing_key
+        - source_id
+        - source_revision
+        - expires_at
+        - quality
+      properties:
+        uri:
+          type: string
+          format: uri
+          description: 敏感实际RTSP/RTMP地址，仅Electron受限主进程使用，不传renderer/日志
+        sharing_key:
+          $ref: '#/components/schemas/SharingKey'
+        source_id:
+          type: integer
+          format: int64
+          nullable: true
+        source_revision:
+          type: integer
+          format: int64
+        expires_at:
+          type: string
+          format: date-time
+        quality:
+          $ref: '#/components/schemas/Quality'
+    Created:
+      type: object
+      required:
+        - id
+        - sharing_key
+        - expires_at
+        - http_path
+        - ws_path
+      properties:
+        id:
+          type: string
+          format: uuid
+        expires_at:
+          type: string
+          format: date-time
+        sharing_key:
+          $ref: '#/components/schemas/SharingKey'
+        http_path:
+          type: string
+          description: 同Host的完整/api/stream-previews/{id}/stream.flv相对路径；播放器须先解析为绝对URL
+        ws_path:
+          type: string
+          description: 同Host的完整/api/stream-previews/{id}/stream.ws相对路径
+    Status:
+      type: object
+      required:
+        - lease_count
+        - upstream_count
+        - max_upstreams
+        - egress_kbps
+        - mode
+        - detail
+      properties:
+        lease_count:
+          type: integer
+          minimum: 0
+          description: 含尚未消费的短租约，不是实际观看人数
+        upstream_count:
+          type: integer
+          minimum: 0
+          description: 含关闭中的共享项数量，不是设备在线数量
+        max_upstreams:
+          type: integer
+        egress_kbps:
+          type: integer
+          description: 配置的预览总出站上限，不是当前吞吐或系统QoS保证
+        mode:
+          type: string
+          enum:
+            - server_flv
+        detail:
+          type: string
+    Lease:
+      type: object
+      required:
+        - id
+        - expiresAt
+        - connected
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        expiresAt:
+          type: string
+          format: date-time
+        connected:
+          type: boolean
+          description: 已有消费连接，不等于浏览器已实际解码
+        status:
+          type: string
+          enum:
+            - idle
+            - connecting
+            - live
+            - reconnecting
+            - unavailable
+    SharedHeartbeat:
+      type: object
+      additionalProperties: false
+      required:
+        - aliases
+      properties:
+        aliases:
+          type: array
+          minItems: 1
+          maxItems: 64
+          uniqueItems: true
+          items:
+            type: string
+            format: uuid
+          description: 同归属、同实际流、仍有效的非消费验证租约；不能包含当前消费租约
+    VenueAudioSettings:
+      type: object
+      description: 未配置为保持。screen_volume为155读回增益；computer_volume、handheld_volume与headset_volume为中控请求百分比，按floor(percent*19/100)换算原工程0–19共20档，非DSP读回。悬挂与头戴为同一组，hanging_volume是兼容输入别名；不同值冲突或SCP-cv软件输出未就绪时409且全部零写出。IP81可独立发送。
+      properties:
+        screen_volume:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+        handheld_volume:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+        computer_volume:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+          description: 原工程电脑音频滑杆Join3，SQL Lock=19为满量程，不是255或65535。
+        headset_volume:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+          description: 悬挂（头戴）话筒，原工程头戴1/2分组Join1。唯一保存与响应字段；旧hanging_volume规范化到此字段。
+        hanging_volume:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+          deprecated: true
+          description: 用户已确认与headset_volume为同一组的旧输入别名。单独提交仍可用；两个非空值相同只发Join1一次，不同则首包前拒绝；保存与响应规范化为headset_volume，hanging_volume为null。
+        source:
+          type: string
+          nullable: true
+          enum:
+            - ip81
+            - scp_cv
+            - null
+          description: 固定输出155/音频通道1选择IP81或软件总线63；请求值不是实体路由读回。SCP-cv需要可信启动输出与私有引擎通过预检。
+    VenueState:
+      type: object
+      required:
+        - cameras
+        - audio
+        - capabilities
+        - simulation
+      properties:
+        cameras:
+          type: array
+          items:
+            type: object
+            required:
+              - id
+              - name
+              - path
+              - source_id
+              - stream_configured
+              - movable
+              - control_available
+              - unavailable_reason
+            properties:
+              id:
+                type: string
+                enum:
+                  - rear
+                  - center1
+                  - center2
+                  - left
+                  - right
+                  - fixed
+              name:
+                type: string
+              path:
+                type: string
+              source_id:
+                type: integer
+                description: 目录冲突未同步时为0，不得用作播放目标
+              stream_configured:
+                type: boolean
+              movable:
+                type: boolean
+              control_available:
+                type: boolean
+                description: 已装配绑定，可以发送；不是摄像机在线或机械动作确认。
+              position_count:
+                type: integer
+                enum:
+                  - 0
+                  - 6
+              motion_intent:
+                type: string
+                enum:
+                  - idle
+                  - held
+                  - stop_pending
+                description: 本服务意图；stop_pending表示安全释放仍未写出，不是物理角度。
+              unavailable_reason:
+                type: string
+        audio:
+          $ref: '#/components/schemas/VenueAudioSettings'
+        capabilities:
+          type: object
+          properties:
+            screen_volume:
+              type: boolean
+            computer_volume:
+              type: boolean
+            handheld_volume:
+              type: boolean
+            headset_volume:
+              type: boolean
+              description: 原头戴1/2即悬挂话筒；与hanging_volume为同一通道的发送能力，不是DSP读回。
+            hanging_volume:
+              type: boolean
+              description: 与headset_volume相同，仅表示兼容旧输入，不是额外话筒分组。
+            source:
+              type: boolean
+              description: 是否装配固定二选一来源传输；具体选项还需检查source_ip81/source_scp_cv。
+            source_ip81:
+              type: boolean
+              description: IP81来源的发送能力，不依赖软件输出，不代表实体路由读回。
+            source_scp_cv:
+              type: boolean
+              description: 已确认63号总线的活动端点、两个窗口私有网页/Office引擎及声音策略接口通过只读预检；发送前再次预检。
+            reason:
+              type: string
+            hanging_label:
+              type: string
+            headset_label:
+              type: string
+        server_time_ms:
+          type: integer
+          format: int64
+          description: 供控制端修正开始请求的时钟偏差，不代表运动事件时间。
+        simulation:
+          type: boolean
+    VenueAudioResult:
+      type: object
+      required:
+        - status
+        - detail
+      properties:
+        status:
+          type: string
+          enum:
+            - not_sent
+            - confirmed
+            - simulated
+            - unchanged
+            - uncertain
+            - sent_unconfirmed
+            - mismatch
+        detail:
+          type: string
+        screen_volume:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 100
+        source:
+          type: string
+          nullable: true
+          enum:
+            - ip81
+            - scp_cv
+            - null
+          description: 本次已完成写出的来源请求，可能出现在后续阶段失败的响应中；不是实体路由读回。
+        sent_fields:
+          type: array
+          description: 本次已完成TCP写出的字段；不等于设备执行或可听确认。
+          items:
+            type: string
+            enum:
+              - screen_volume
+              - computer_volume
+              - handheld_volume
+              - headset_volume
+              - source
+        failed_field:
+          type: string
+          nullable: true
+          description: 失败或不确定阶段；已写出项不自动回滚/重发。
+    CameraMotionRequest:
+      type: object
+      required:
+        - direction
+        - phase
+        - motion_id
+        - issued_at_ms
+      properties:
+        direction:
+          type: string
+          enum:
+            - up
+            - down
+            - left
+            - right
+            - zoom_in
+            - zoom_out
+        phase:
+          type: string
+          enum:
+            - start
+            - hold
+            - stop
+          description: 开始后每300ms续租；无有效续租900ms后服务端独立释放。stop不继承客户端取消。
+        motion_id:
+          type: string
+          format: uuid
+        issued_at_ms:
+          type: integer
+          format: int64
+          description: 使用venue.server_time_ms校正的开始时间；开始超过2秒或未来超过250ms拒绝。续租不能重新启动。
+    VenueCameraResult:
+      type: object
+      required:
+        - status
+        - detail
+      properties:
+        status:
+          type: string
+          enum:
+            - not_sent
+            - sent_unconfirmed
+            - simulated
+        detail:
+          type: string
+        motion_id:
+          type: string
+          format: uuid
+          nullable: true
+    Folder:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        is_protected:
+          type: boolean
+        id:
+          type: integer
+        name:
+          type: string
+        relative_path:
+          type: string
+          description: 以/开始的目录路径，使用正斜杠分隔；内置目录不可添加或修改
+        parent_id:
+          type: integer
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+    ScenarioFolderRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        parent_id:
+          type: integer
+          nullable: true
+          description: 完整更新的父目录；null为根
+    CsrfTokenResponse:
+      type: object
+      required:
+        - csrfToken
+      properties:
+        csrfToken:
+          type: string
+          description: ControlHost CSRF token，同时响应会通过 Set-Cookie 写入 `csrftoken`。
+          example: x9I3kV7sExampleToken
     LoginRequest:
       type: object
       required:
@@ -2223,38 +3541,6 @@ components:
           type: string
           format: password
           minLength: 8
-    SuccessResponse:
-      type: object
-      required:
-        - success
-      properties:
-        success:
-          type: boolean
-          example: true
-    Folder:
-      type: object
-      required:
-        - id
-        - name
-      properties:
-        id:
-          type: integer
-        name:
-          type: string
-        relative_path:
-          type: string
-          description: media 根目录下的真实相对目录路径，使用正斜杠分隔
-        parent_id:
-          type: integer
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          nullable: true
-        updated_at:
-          type: string
-          format: date-time
-          nullable: true
     FoldersResponse:
       allOf:
         - $ref: '#/components/schemas/SuccessResponse'
@@ -2332,6 +3618,12 @@ components:
         - preview_label
         - created_at
       properties:
+        path:
+          type: string
+          description: 从/开始；受管上传文件为实际保存的叶名，重名不覆盖
+        is_protected:
+          type: boolean
+          description: 系统内置项禁止编辑、移动、删除；不能通过metadata修改保护
         id:
           type: integer
         source_type:
@@ -2340,6 +3632,7 @@ components:
           type: string
         uri:
           type: string
+          description: 授权编辑/播放使用的完整地址，直播URI可能含凭据；普通界面/日志必须脱敏，不得将脱敏展示值回写
         is_available:
           type: boolean
           description: 表示当前配置可尝试打开，不保证依赖就绪、文稿解析成功或实际出画。 PPT/PPTX 默认动态模式独立检查原件存在及登记摘要非空，不受静态制品排队、缺失或失败阻断； 不在列表投影时重新计算原件摘要。显式静态模式须另行通过所选布局的制品门禁。 列表和编辑/移动/上传/重试响应使用相同门禁。直播源仅表示配置可尝试连接， 实际连通、画面和错误以目标播放会话为准。
@@ -2500,10 +3793,13 @@ components:
           format: uri
           description: |
             RTSP 源使用 rtsp://，SRT 源使用 srt://；自定义流当前支持
-            http(s)://、udp://、rtp:// 或 rtmp:// 主机地址。内嵌用户名和密码会被拒绝。
+            http(s)://、udp://、rtp:// 或 rtmp:// 主机地址。
+            RTSP、HTTP(S)、RTMP可内嵌用户名和密码，例如rtsp://operator:example-pass@192.0.2.188/live；
+            凭据内特殊字符需百分号编码。SRT/UDP/RTP不支持非空userinfo，SRT仍使用自身查询参数。
+            完整地址保存在授权媒体合同中，不能当作对已登录操作员保密或加密存储。
         name:
           type: string
-          description: 操作员可识别的名称；省略时以地址作为名称
+          description: 操作员可识别的名称；省略时以脱敏地址作为名称，不含凭据或已知敏感查询值
         folder_id:
           type: integer
           nullable: true
@@ -2615,7 +3911,7 @@ components:
           type: string
         uri:
           type: string
-          description: 网页或直播源可修改 URL，流地址变更仅影响后续打开；文件原件路径不能在此修改
+          description: 网页或直播源可修改URL；RTSP/HTTP(S)/RTMP媒体流支持内嵌凭据，规则同直播登记。必须提交完整原值而非脱敏占位符，变更仅影响后续打开；文件路径不能在此修改
         preheat_enabled:
           type: boolean
           description: 是否在播放器启动时预热该媒体源
@@ -2808,6 +4104,32 @@ components:
           type: boolean
           default: false
           description: 原生采集实际返回内容音轨，不是希望获取麦克风。
+    ReceiverQuality:
+      type: object
+      nullable: true
+      additionalProperties: false
+      description: 同授权接收资源的有限实际统计，缺字段为未知，停止清空；不是理论建议码率。
+      properties:
+        width:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 32768
+        height:
+          type: integer
+          nullable: true
+          minimum: 1
+          maximum: 32768
+        fps:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 240
+        bitrate_mbps:
+          type: number
+          nullable: true
+          minimum: 0
+          maximum: 1000
     Sdp:
       type: object
       required:
@@ -2840,6 +4162,8 @@ components:
         - actual_volume
         - actual_muted
       properties:
+        receiver_quality:
+          $ref: '#/components/schemas/ReceiverQuality'
         id:
           type: string
           format: uuid
@@ -3089,22 +4413,33 @@ components:
                 $ref: '#/components/schemas/SessionSnapshot'
             background_audio:
               $ref: '#/components/schemas/BackgroundAudioSnapshot'
-    VideoWallInput:
+    VideoWallRect:
       type: object
+      nullable: true
+      description: grid区域必须非null，10列5行，零起点、正跨度、不越界不重叠；旧区域响应可省略或为null，不能与旧区域混用非空坐标
       required:
-        - kind
+        - column
+        - row
+        - columns
+        - rows
+      additionalProperties: false
       properties:
-        kind:
-          type: string
-          enum:
-            - window_1
-            - window_2
-            - laptop
-            - ip_stream
-        ip_address:
-          type: string
-          format: ipv4
-          description: 仅kind=ip_stream使用；须匹配服务器已登记的设备流描述，未登记时只可保存预览
+        column:
+          type: integer
+          minimum: 0
+          maximum: 9
+        row:
+          type: integer
+          minimum: 0
+          maximum: 4
+        columns:
+          type: integer
+          minimum: 1
+          maximum: 10
+        rows:
+          type: integer
+          minimum: 1
+          maximum: 5
     VideoWallMapping:
       type: object
       required:
@@ -3117,8 +4452,11 @@ components:
             - fullscreen
             - left
             - right
+            - grid
         input:
           $ref: '#/components/schemas/VideoWallInput'
+        rect:
+          $ref: '#/components/schemas/VideoWallRect'
     VideoWallLayout:
       type: object
       required:
@@ -3139,7 +4477,7 @@ components:
         mappings:
           type: array
           minItems: 1
-          maxItems: 2
+          maxItems: 50
           items:
             $ref: '#/components/schemas/VideoWallMapping'
         can_apply:
@@ -3215,7 +4553,7 @@ components:
         mappings:
           type: array
           minItems: 1
-          maxItems: 2
+          maxItems: 50
           items:
             $ref: '#/components/schemas/VideoWallMapping'
     VideoWallLayoutApplyResponse:
@@ -3226,6 +4564,8 @@ components:
             - runtime
             - sessions
           properties:
+            audio:
+              $ref: '#/components/schemas/VenueAudioResult'
             runtime:
               $ref: '#/components/schemas/RuntimeSnapshot'
             sessions:
@@ -3316,7 +4656,9 @@ components:
           minimum: 0
           description: action=seek时必填的非负int64毫秒目标；不能传字符串、小数或null。请求仅入队，不表示媒体已定位。
       oneOf:
-        - properties:
+        - required:
+            - action
+          properties:
             action:
               enum:
                 - play
@@ -3329,6 +4671,7 @@ components:
               enum:
                 - seek
           required:
+            - action
             - position_ms
     BackgroundAudioVolumeRequest:
       type: object
@@ -3675,6 +5018,51 @@ components:
           properties:
             device:
               $ref: '#/components/schemas/DeviceDescriptor'
+    ScenarioTelevision:
+      type: object
+      properties:
+        state:
+          type: string
+          enum:
+            - keep
+            - set
+          default: keep
+        input:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/VideoWallInput'
+          nullable: true
+      description: 缺省保持；set必须提供已登记输入，keep不得夹带input。每台电视单路全屏，不控制电源
+    ScenarioTelevisions:
+      type: object
+      properties:
+        tv_left:
+          $ref: '#/components/schemas/ScenarioTelevision'
+        tv_right:
+          $ref: '#/components/schemas/ScenarioTelevision'
+      description: 旧预案缺省两台保持。相同可信来源预案跳过，未知或失败仍重发
+    ScenarioAdvanced:
+      type: object
+      description: 保存是意图，不保证设备可执行；激活前检查全部绑定。空值保持，不调用默认位置。
+      properties:
+        televisions:
+          $ref: '#/components/schemas/ScenarioTelevisions'
+        wall_layout_code:
+          type: string
+          nullable: true
+          maxLength: 480
+          pattern: ^[A-Za-z0-9]*$
+          description: 可解析完整布局的v1短码；null或空串不覆盖旧布局字段，不建数据库码表。配置后优先于旧单/双屏字段，保存可含预留输入，激活前全量预检
+        camera_positions:
+          type: object
+          additionalProperties:
+            type: integer
+            nullable: true
+            minimum: 0
+            maximum: 255
+          description: 键仅rear/center1/center2/left/right；0或null保持（保存归一null）；固定监控拒绝，实际可调用位置由能力校验
+        audio:
+          $ref: '#/components/schemas/VenueAudioSettings'
     SourceState:
       type: string
       enum:
@@ -3721,6 +5109,14 @@ components:
         - created_at
         - updated_at
       properties:
+        folder_id:
+          type: integer
+          nullable: true
+        path:
+          type: string
+          description: 从/开始的预设路径
+        advanced:
+          $ref: '#/components/schemas/ScenarioAdvanced'
         id:
           type: integer
         name:
@@ -3805,6 +5201,11 @@ components:
       required:
         - name
       properties:
+        folder_id:
+          type: integer
+          nullable: true
+        advanced:
+          $ref: '#/components/schemas/ScenarioAdvanced'
         name:
           type: string
         description:
@@ -3849,6 +5250,12 @@ components:
     ScenarioUpdateRequest:
       type: object
       properties:
+        folder_id:
+          type: integer
+          nullable: true
+          description: 未提交保持；null移到根
+        advanced:
+          $ref: '#/components/schemas/ScenarioAdvanced'
         name:
           type: string
         description:
@@ -3935,6 +5342,13 @@ components:
           schema:
             $ref: '#/components/schemas/SuccessResponse'
   parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
     FolderId:
       in: path
       name: folder_id

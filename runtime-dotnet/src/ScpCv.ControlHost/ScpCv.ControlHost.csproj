@@ -1,3 +1,4 @@
+<!-- 文件描述：控制服务与成熟媒体协议依赖；项目：SCP-cv；文件：ScpCv.ControlHost.csproj；作者：Qintsg；日期：2026-10-21。 -->
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
@@ -8,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="LiveStreamingServerNet" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -23,6 +25,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="../../third-party-notices/LiveStreamingServerNet-LICENSE.txt" Link="third-party-notices/LiveStreamingServerNet-LICENSE.txt"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <EmbeddedResource Include="ScreenSharing\ReceiverPage.html" />
     <EmbeddedResource Include="ScreenSharing\receiver.js" />
   </ItemGroup>

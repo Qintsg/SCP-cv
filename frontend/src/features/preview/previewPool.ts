@@ -1,4 +1,4 @@
-/** 应用级预览池：每实际流一连接/decoder，多画布共享；每target独立修订围栏与有界引用回收。 */
+/** 文件描述：应用级按需共享预览池；项目：SCP-cv；文件：previewPool.ts；作者：Qintsg；日期：2026-10-21。 */
 import type { InjectionKey } from 'vue';
 import { ApiRequestError } from '@/services/api';
 import { createPreviewPlayer, type PreviewPlayer, type PreviewPlayerFactory } from './previewPlayer';
@@ -16,7 +16,7 @@ interface Entry {
   key: string; requests: Set<Request>; current: () => boolean; abort: AbortController; state: PreviewState;
   lease?: PoolLease; player?: PreviewPlayer; video?: HTMLVideoElement; paintedVideo?: HTMLVideoElement; pending?: Promise<void>; generation: number;
   timer?: ReturnType<typeof setTimeout>; monitor?: ReturnType<typeof setInterval>; lastFrame: number;
-  attempts: number; hasFrame: boolean; fallback: boolean; closed: boolean; failureSince: number; still?: HTMLCanvasElement;
+  attempts: number; hasFrame: boolean; closed: boolean; failureSince: number; still?: HTMLCanvasElement;
 }
 interface PoolTiming { idleGrace: number; heartbeat: number; monitor: number; stale: number; failed: number; retry: number }
 const defaults: PoolTiming = { idleGrace: 1000, heartbeat: 10000, monitor: 1000, stale: 3000, failed: 20000, retry: 1000 };
@@ -110,7 +110,7 @@ export class PreviewPool {
     let entry = this.entries.get(lease.sharingKey);
     if (!entry) {
       entry = { key: lease.sharingKey, requests: new Set(), current: request.current, abort: new AbortController(),
-        state: 'connecting', generation: 0, lastFrame: 0, attempts: 0, hasFrame: false, fallback: false, closed: false, failureSince: 0 };
+        state: 'connecting', generation: 0, lastFrame: 0, attempts: 0, hasFrame: false, closed: false, failureSince: 0 };
       this.entries.set(entry.key, entry);
     }
     if (!entry.requests.has(request) && entry.requests.size >= 64) {
@@ -141,7 +141,7 @@ export class PreviewPool {
         this.release(lease, entry.current); await this.resolve(request);
         if (!entry.closed && entry.requests.size) this.failed(entry); return;
       }
-      entry.lease = lease; entry.fallback = false;
+      entry.lease = lease;
       await this.player(entry, generation);
       if (!entry.closed && generation === entry.generation) this.schedule(entry);
     } catch { if (!entry.closed && generation === entry.generation) this.failed(entry); }
@@ -170,17 +170,8 @@ export class PreviewPool {
     }, this.timing.monitor);
   }
 
-  /** :param entry: 当前解码器故障。:returns: 原生至多一次受限兼容切换；普通Web走有限退避。 */
+  /** :param entry: 当前解码器故障。:returns: 保留原协议和编码模式，在同一来源内执行有界重连。 */
   private async decodeFailed(entry: Entry): Promise<void> {
-    if (!entry.fallback && this.transport.fallback && entry.lease) {
-      entry.fallback = true; const generation = ++entry.generation; this.stopPlayer(entry); this.state(entry, 'reconnecting');
-      try {
-        await this.transport.fallback(entry.lease);
-        if (!entry.closed && generation === entry.generation) { await this.player(entry, generation); this.schedule(entry); }
-        return;
-      }
-      catch { /* 兼容切换也失败时进入同一有界重连，不伪装原码直连成功。 */ }
-    }
     if (!entry.closed) this.failed(entry);
   }
 

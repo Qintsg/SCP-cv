@@ -1,3 +1,4 @@
+// 进程握手与当前观测合同。项目：SCP-cv；文件：HandshakeMessages.cs；作者：Qintsg；日期：2026-10-21。
 using System.Text.Json.Serialization;
 
 namespace ScpCv.Contracts.Ipc;
@@ -22,6 +23,10 @@ public sealed record HelloDto
 
 public sealed record WelcomeDto
 {
+    [JsonPropertyName("initial_idle_audio_generation")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? InitialIdleAudioGeneration { get; init; }
+
     [JsonPropertyName("service_epoch")]
     public long ServiceEpoch { get; init; }
 

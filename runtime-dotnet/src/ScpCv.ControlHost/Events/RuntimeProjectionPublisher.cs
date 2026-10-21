@@ -1,4 +1,4 @@
-// 只接受归属与代次匹配的 Worker 状态，并投影到持久会话与 SSE。
+// 当前身份与代次的实际播放投影。项目：SCP-cv；文件：RuntimeProjectionPublisher.cs；作者：Qintsg；日期：2026-10-21。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Ipc;
@@ -124,6 +124,16 @@ public sealed class RuntimeProjectionPublisher(
             report.SourceGeneration < state.ObservedGeneration)
         {
             return new StateReportAcceptance(false, "stale_generation");
+        }
+
+        if (report.State.TryGetProperty("initial_idle", out var initialIdle) && initialIdle.ValueKind == JsonValueKind.True)
+        {
+            if (state.CurrentSourceId is not null || ReadPlaybackState(report.State, PlaybackState.Error) != PlaybackState.Stopped ||
+                !report.State.TryGetProperty("source_id", out var source) || source.ValueKind != JsonValueKind.Null)
+                return new StateReportAcceptance(false, "initial_audio_state_conflict");
+            if (await database.CommandRecords.AnyAsync(item => item.TargetKind == CommandTargetKind.Audio && item.TargetId == 1 &&
+                (item.Status == CommandStatus.Pending || item.Status == CommandStatus.Processing), cancellationToken).ConfigureAwait(false))
+                return new StateReportAcceptance(false, "audio_command_pending");
         }
 
         state.ObservedGeneration = report.SourceGeneration;

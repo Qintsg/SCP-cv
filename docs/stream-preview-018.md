@@ -16,11 +16,18 @@
 
 ## 数据路径与按需共享
 
-```text
-设备RTMP／RTSP → 现有MediaMTX按需路径 → 一份服务器FFmpeg → HTTP-FLV／WS-FLV → 网页
+```mermaid
+flowchart LR
+  Camera["设备 RTMP / RTSP"] --> Relay["MediaMTX 按需路径"]
+  Relay --> Encoder["同源共享的 FFmpeg"]
+  Encoder --> Receiver["回环 RTMP 媒体接收器"]
+  Receiver --> Stream["HTTP-FLV / WebSocket-FLV"]
+  Stream --> Browser["网页共享播放器"]
 ```
 
-MediaMTX v1.17.1本身不输出FLV，因此补充的是ControlHost内的薄转换／扇出模块，不是另一套MediaMTX服务。浏览器使用Apache-2.0的mpegts.js 1.8.2，默认HTTP-FLV；服务端也提供WebSocket-FLV。
+MediaMTX v1.17.1负责按需接入设备媒体；ControlHost通过FFmpeg转换，并使用LiveStreamingServerNet0.33.1的回环RTMP接收及FLV writer生成共享输出。内部监听使用随机端口与路径，仅接受当前编码器的发布，拒绝网络订阅。浏览器使用Apache-2.0的mpegts.js1.8.2，默认HTTP-FLV；服务端也提供WebSocket-FLV。
+
+编码器完整关键帧组约200–250毫秒，浏览器使用实时追赶：播放速度追赶阈值350毫秒、目标150毫秒；前向缓冲超过650毫秒时定位至保留150毫秒处。修改布局比例和重复卡片继续复用应用级同源播放器，不重新创建全部连接。指标属于软件控制范围，实际采集、设备编码和网络时延需要分别测量。
 
 - 创建租约只登记需求，实际消费连接才拉流，不扫描或定时拉取整个媒体库。
 - 完整规范化URI（含凭据）在服务端计算共享键；同一实际流的多个卡片／客户端只拉一份、只编码一份。不同通道和密码不是同一个流；请求高清与低清但实际URI相同仍共享。

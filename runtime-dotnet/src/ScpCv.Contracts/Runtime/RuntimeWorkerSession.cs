@@ -1,5 +1,4 @@
-// Worker 的认证管道会话、命令执行、状态与事件上报。
-// Worker 认证管道会话：命令领取、回执、心跳与带代次的实际进度上报。
+// 认证会话、命令执行与当前状态观测。项目：SCP-cv；文件：RuntimeWorkerSession.cs；作者：Qintsg；日期：2026-10-21。
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -48,6 +47,7 @@ public sealed class RuntimeWorkerSession(
     public long OwnerEpoch { get; private set; }
     public long GroupEpoch { get; private set; }
     public string GroupState { get; private set; } = "stopped";
+    public long? InitialIdleAudioGeneration { get; private set; }
 
     public async Task ConnectAndReadyAsync(CancellationToken cancellationToken = default)
     {
@@ -75,6 +75,7 @@ public sealed class RuntimeWorkerSession(
             OwnerEpoch = hello.OwnerEpoch;
             GroupEpoch = welcome.GroupEpoch;
             GroupState = welcome.GroupState;
+            InitialIdleAudioGeneration = welcome.InitialIdleAudioGeneration;
             var ready = await _client.ExchangeAsync(Frame("worker_ready", new WorkerReadyDto
             {
                 UiReady = true,

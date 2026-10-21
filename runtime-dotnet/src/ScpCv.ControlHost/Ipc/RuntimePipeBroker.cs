@@ -1,4 +1,4 @@
-// ControlHost 管道连接、受管角色与运行组就绪门禁。
+// 管道连接、运行组就绪和安全诊断。项目：SCP-cv；文件：RuntimePipeBroker.cs；作者：Qintsg；日期：2026-10-21。
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipes;
@@ -125,6 +125,8 @@ public sealed partial class RuntimePipeBroker(
     private async Task HandleConnectionAsync(NamedPipeServerStream stream, CancellationToken stoppingToken)
     {
         RuntimeConnection? connection = null;
+        var lastMessageType = "handshake";
+        var lastMessageAt = Stopwatch.GetTimestamp();
         try
         {
             var helloFrame = await ReadFrameAsync(stream, IpcProtocol.HandshakeTimeout, stoppingToken).ConfigureAwait(false);
@@ -168,6 +170,9 @@ public sealed partial class RuntimePipeBroker(
             ObserveSupervisorExit(connection, group.State, stoppingToken);
             var welcome = Response(helloFrame, "welcome", new WelcomeDto
             {
+                InitialIdleAudioGeneration = identity.Role == "audio"
+                    ? await authority.GetInitialIdleAudioGenerationAsync(group.GroupEpoch, stoppingToken).ConfigureAwait(false)
+                    : null,
                 ServiceEpoch = Environment.TickCount64,
                 GroupEpoch = group.GroupEpoch,
                 GroupState = group.State.ToString().ToLowerInvariant(),
@@ -178,6 +183,8 @@ public sealed partial class RuntimePipeBroker(
             while (!stoppingToken.IsCancellationRequested && stream.IsConnected)
             {
                 var frame = await ReadFrameAsync(stream, IpcProtocol.FrameReadTimeout, connection.Lifetime).ConfigureAwait(false);
+                lastMessageType = frame.MessageType;
+                lastMessageAt = Stopwatch.GetTimestamp();
                 // 同一 Worker 执行长 Office 子操作时仍须能发送 LeaseRenew。
                 // 单 reader 只拆帧；处理和响应可并发，实际写入由 RuntimeConnection 串行化。
                 connection.Dispatch(() => DispatchAndRespondAsync(connection, frame, connection.Lifetime));
@@ -188,7 +195,10 @@ public sealed partial class RuntimePipeBroker(
         catch (EndOfStreamException) { }
         catch (TimeoutException exception)
         {
-            LogClientTimeout(logger, exception);
+            LogClientTimeout(logger, connection?.Identity.Role ?? "handshake", connection?.Identity.ProcessId ?? 0,
+                connection?.Identity.ProcessStartTime ?? DateTimeOffset.MinValue, connection?.Identity.LogonSessionId ?? -1,
+                connection?.Identity.InstanceId ?? Guid.Empty, connection?.GroupEpoch ?? 0, connection?.OwnerEpoch ?? 0,
+                lastMessageType, (long)Stopwatch.GetElapsedTime(lastMessageAt).TotalMilliseconds, exception);
         }
         catch (Exception exception)
         {
@@ -422,8 +432,11 @@ public sealed partial class RuntimePipeBroker(
     [LoggerMessage(EventId = 2201, Level = LogLevel.Error, Message = "接受 Runtime Named Pipe 连接失败")]
     private static partial void LogAcceptFailed(ILogger logger, Exception exception);
 
-    [LoggerMessage(EventId = 2202, Level = LogLevel.Warning, Message = "Runtime 管道客户端超时断开")]
-    private static partial void LogClientTimeout(ILogger logger, Exception exception);
+    [LoggerMessage(EventId = 2202, Level = LogLevel.Warning,
+        Message = "Runtime管道超时：角色{Role}、PID{ProcessId}、启动{ProcessStartTime}、会话{SessionId}、实例{InstanceId}、组{GroupEpoch}、所有者{OwnerEpoch}；最后消息{LastMessageType}，间隔{ElapsedMilliseconds}ms")]
+    private static partial void LogClientTimeout(ILogger logger, string role, int processId,
+        DateTimeOffset processStartTime, int sessionId, Guid instanceId, long groupEpoch, long ownerEpoch,
+        string lastMessageType, long elapsedMilliseconds, Exception exception);
 
     [LoggerMessage(EventId = 2203, Level = LogLevel.Warning, Message = "Runtime 管道客户端被拒绝或异常断开")]
     private static partial void LogClientRejected(ILogger logger, Exception exception);

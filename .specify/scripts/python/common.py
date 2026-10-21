@@ -1,4 +1,11 @@
-"""Shared helpers for Spec Kit Python scripts."""
+# 提供 Spec Kit 功能目录、配置及模板读取工具。
+# 项目：SCP-cv
+# 文件：common.py
+# 作者：Qintsg
+# 日期：2026-10-21
+# /// script
+# dependencies = ["PyYAML==6.0.3"]
+# ///
 
 from __future__ import annotations
 
@@ -9,8 +16,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+import yaml
+
 
 def _trim_trailing_separators(value: Path) -> str:
+    """:param value: 待规范化路径。
+    :returns: 保留根目录并移除末尾分隔符的路径文本。
+    """
     text = str(value)
     while len(text) > 1 and text.endswith((os.sep, "/")):
         text = text[:-1]
@@ -18,6 +30,9 @@ def _trim_trailing_separators(value: Path) -> str:
 
 
 def find_specify_root(start_dir: Path | None = None) -> Path | None:
+    """:param start_dir: 向上查找的起始目录；省略时使用当前目录。
+    :returns: 包含 .specify 的项目目录；未找到时返回 None。
+    """
     current = (start_dir or Path.cwd()).resolve()
     while True:
         if (current / ".specify").is_dir():
@@ -29,6 +44,8 @@ def find_specify_root(start_dir: Path | None = None) -> Path | None:
 
 
 def resolve_specify_init_dir() -> Path:
+    """:returns: SPECIFY_INIT_DIR 指定且通过验证的项目目录。
+    """
     raw = os.environ.get("SPECIFY_INIT_DIR", "")
     candidate = Path(raw)
     if not candidate.is_absolute():
@@ -58,6 +75,9 @@ def resolve_specify_init_dir() -> Path:
 
 
 def get_repo_root(script_file: Path | None = None) -> Path:
+    """:param script_file: 当前工具文件，用于定位所属项目。
+    :returns: 环境变量或实际目录指定的项目根目录。
+    """
     if os.environ.get("SPECIFY_INIT_DIR"):
         return resolve_specify_init_dir()
 
@@ -70,36 +90,61 @@ def get_repo_root(script_file: Path | None = None) -> Path:
         if script_root is not None:
             return script_root
 
-        # Installed scripts live at .specify/scripts/python/<script>.py.
+        # 安装后的工具位于 .specify/scripts/python/<script>.py。
         return script_file.resolve().parents[3]
     return Path.cwd().resolve()
 
 
 def get_current_branch() -> str:
+    """:returns: 环境变量中明确指定的功能标识。
+    """
     return os.environ.get("SPECIFY_FEATURE", "")
 
 
+def _read_json_mapping(path: Path) -> dict[str, object]:
+    """读取必须使用对象根节点的现有 JSON 配置。
+
+    :param path: 明确存在的配置文件。
+    :returns: 通过根节点类型检查的配置对象。
+    :raises TemplateResolutionError: 配置路径或根节点类型无效。
+    """
+    if not path.is_file():
+        raise TemplateResolutionError(f"配置路径必须是常规文件：{path}")
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise TemplateResolutionError(f"配置根节点必须是对象：{path}")
+    return value
+
+
 def read_feature_json_feature_directory(repo_root: Path) -> str:
+    """读取当前功能指针并拒绝畸形配置。
+
+    :param repo_root: Spec Kit 项目目录。
+    :returns: 当前功能目录；可选指针文件不存在时返回空字符串。
+    :raises TemplateResolutionError: 已有指针内容不符合配置要求。
+    """
     feature_json = repo_root / ".specify" / "feature.json"
-    if not feature_json.is_file():
+    if not os.path.lexists(feature_json):
         return ""
-    try:
-        data = json.loads(feature_json.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return ""
-    value = data.get("feature_directory") if isinstance(data, dict) else None
-    return value if isinstance(value, str) else ""
+    value = _read_json_mapping(feature_json).get("feature_directory")
+    if not isinstance(value, str) or not value.strip():
+        raise TemplateResolutionError(f"feature_directory 必须是非空字符串：{feature_json}")
+    return value
 
 
 def _json_dump(data: dict[str, str]) -> str:
+    """:param data: 待保存的配置对象。
+    :returns: 带换行符的 JSON 文本。
+    """
     return json.dumps(data, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
 def persist_feature_json(repo_root: Path, feature_dir_value: str) -> None:
-    # Strip the repo root prefix lexically (no resolve()) to mirror the
-    # Bash/PowerShell helpers: with a symlinked <repo>/specs, resolve() would
-    # escape the repo and persist a machine-specific absolute path instead of
-    # the relative "specs/NNN-name" the other variants store.
+    """:param repo_root: 当前项目目录。
+    :param feature_dir_value: 当前功能目录。
+    :returns: 保存发生变化的本机功能指针。
+    """
+    # 保存项目内的相对路径，保留 specs 符号连接的项目语义。
     value = feature_dir_value
     relative = Path(value)
     if relative.is_absolute():
@@ -136,6 +181,10 @@ class FeaturePaths:
 def get_feature_paths(
     *, no_persist: bool = False, script_file: Path | None = None
 ) -> FeaturePaths:
+    """:param no_persist: 是否保持当前功能指针不变。
+    :param script_file: 当前工具文件，用于定位所属项目。
+    :returns: 当前功能全部设计文件的路径。
+    """
     repo_root = get_repo_root(script_file)
     current_branch = get_current_branch()
 
@@ -187,6 +236,9 @@ _SAFE_COMPONENT_PATTERN = re.compile(r"[a-z0-9-]+")
 
 
 def _is_safe_component(value: object) -> bool:
+    """:param value: 待检查的目录或模板标识。
+    :returns: 标识仅包含受支持字符时返回 True。
+    """
     return (
         isinstance(value, str)
         and _SAFE_COMPONENT_PATTERN.fullmatch(value) is not None
@@ -194,52 +246,56 @@ def _is_safe_component(value: object) -> bool:
 
 
 def _normalize_priority(value: object) -> int:
-    if isinstance(value, bool):
-        return 10
-    try:
-        priority = int(value)
-    except (TypeError, ValueError, OverflowError):
-        return 10
-    return priority if priority >= 1 else 10
+    """检查显式配置的模板优先级。
+
+    :param value: 配置中的优先级。
+    :returns: 大于零的整数优先级。
+    :raises TemplateResolutionError: 优先级类型或范围无效。
+    """
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise TemplateResolutionError("配置 priority 必须是大于零的整数")
+    return value
 
 
 def _sorted_preset_ids(presets_dir: Path) -> list[str]:
+    """按照已验证的配置读取预设顺序。
+
+    :param presets_dir: 可选的预设目录。
+    :returns: 启用预设的标识列表。
+    :raises TemplateResolutionError: 已有配置的结构、标识或优先级无效。
+    """
     registry = presets_dir / ".registry"
-    if registry.is_file():
-        # Invalid JSON or registry shapes fall back to the directory scan below.
-        try:
-            data = json.loads(registry.read_text(encoding="utf-8"))
-            presets = data.get("presets", {})
-            return [
-                pid
-                for pid, meta in sorted(
-                    presets.items(),
-                    key=lambda kv: (
-                        _normalize_priority(kv[1].get("priority"))
-                        if isinstance(kv[1], dict)
-                        else 10,
-                        kv[0],
-                    ),
-                )
-                if (
-                    _is_safe_component(pid)
-                    and isinstance(meta, dict)
-                    and bool(meta.get("enabled", True))
-                )
-            ]
-        except Exception:
-            pass
-    try:
-        return sorted(
-            p.name
-            for p in presets_dir.iterdir()
-            if p.is_dir() and _is_safe_component(p.name)
-        )
-    except OSError:
+    if os.path.lexists(registry):
+        presets = _read_json_mapping(registry).get("presets", {})
+        if not isinstance(presets, dict):
+            raise TemplateResolutionError(f"presets 必须是对象：{registry}")
+        ranked: list[tuple[int, str]] = []
+        for preset_id, metadata in presets.items():
+            if not _is_safe_component(preset_id) or not isinstance(metadata, dict):
+                raise TemplateResolutionError(f"预设标识或配置对象无效：{registry}")
+            enabled = metadata.get("enabled", True)
+            if not isinstance(enabled, bool):
+                raise TemplateResolutionError(f"enabled 必须是布尔值：{registry}")
+            priority = _normalize_priority(metadata.get("priority", 10))
+            if enabled:
+                ranked.append((priority, preset_id))
+        return [preset_id for _, preset_id in sorted(ranked)]
+    if not os.path.lexists(presets_dir):
         return []
+    return sorted(
+        path.name
+        for path in presets_dir.iterdir()
+        if path.is_dir() and _is_safe_component(path.name)
+    )
 
 
 def _sorted_extension_ids(extensions_dir: Path) -> list[str]:
+    """按照注册信息和目录读取启用扩展。
+
+    :param extensions_dir: 可选的扩展目录。
+    :returns: 按照优先级排序的扩展标识。
+    :raises TemplateResolutionError: 已有扩展配置无效。
+    """
     registry = extensions_dir / ".registry"
     registered_ids: set[str] = set()
     extensions: dict[object, object] = {}
@@ -248,16 +304,7 @@ def _sorted_extension_ids(extensions_dir: Path) -> list[str]:
             raise TemplateResolutionError(
                 f"Invalid extension registry {registry}: not a regular file"
             )
-        try:
-            data = json.loads(registry.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            raise TemplateResolutionError(
-                f"Failed to parse extension registry {registry}: {exc}"
-            ) from exc
-        if not isinstance(data, dict):
-            raise TemplateResolutionError(
-                f"Invalid extension registry {registry}: root must be a mapping"
-            )
+        data = _read_json_mapping(registry)
         raw_extensions = data.get("extensions", {})
         if not isinstance(raw_extensions, dict):
             raise TemplateResolutionError(
@@ -271,14 +318,16 @@ def _sorted_extension_ids(extensions_dir: Path) -> list[str]:
 
     ranked: list[tuple[int, str]] = []
     for ext_id, metadata in extensions.items():
-        if (
-            _is_safe_component(ext_id)
-            and isinstance(metadata, dict)
-            and bool(metadata.get("enabled", True))
-        ):
-            ranked.append((_normalize_priority(metadata.get("priority")), ext_id))
+        if not _is_safe_component(ext_id) or not isinstance(metadata, dict):
+            raise TemplateResolutionError(f"扩展标识或配置对象无效：{registry}")
+        enabled = metadata.get("enabled", True)
+        if not isinstance(enabled, bool):
+            raise TemplateResolutionError(f"enabled 必须是布尔值：{registry}")
+        priority = _normalize_priority(metadata.get("priority", 10))
+        if enabled:
+            ranked.append((priority, ext_id))
 
-    try:
+    if os.path.lexists(extensions_dir):
         ranked.extend(
             (10, path.name)
             for path in extensions_dir.iterdir()
@@ -288,14 +337,16 @@ def _sorted_extension_ids(extensions_dir: Path) -> list[str]:
                 and path.name not in registered_ids
             )
         )
-    except OSError:
-        pass
     return [ext_id for _, ext_id in sorted(ranked)]
 
 
 def _conventional_template(
     base_dir: Path, template_name: str
 ) -> Path | None:
+    """:param base_dir: 模板所属目录。
+    :param template_name: 模板名称。
+    :returns: 实际存在的常规模板路径；未找到时返回 None。
+    """
     for candidate in (
         base_dir / "templates" / f"{template_name}.md",
         base_dir / f"{template_name}.md",
@@ -306,13 +357,11 @@ def _conventional_template(
 
 
 def resolve_template(template_name: str, repo_root: Path) -> Path | None:
-    """Resolve a template name to a file path using the priority stack.
+    """按照项目覆盖、预设、扩展和内置模板的顺序查找文件。
 
-    Order (mirrors resolve_template in scripts/bash/common.sh):
-      1. .specify/templates/overrides/
-      2. .specify/presets/<preset-id>/templates/ (sorted by .registry priority)
-      3. .specify/extensions/<ext-id>/templates/ (hidden directories skipped)
-      4. .specify/templates/ (core)
+    :param template_name: 模板名称。
+    :param repo_root: 当前项目目录。
+    :returns: 最高优先级的现有模板路径；未找到时返回 None。
     """
     if not _is_safe_component(template_name):
         return None
@@ -347,18 +396,20 @@ def resolve_template(template_name: str, repo_root: Path) -> Path | None:
 
 
 class TemplateResolutionError(RuntimeError):
-    """Raised when template layers exist but cannot be composed safely."""
+    """配置内容或模板组合无效。"""
 
 
-# Mirror the canonical PresetManifest contract (see src/specify_cli/presets)
-# so runtime resolution rejects the same structurally malformed manifests.
+# 按照 PresetManifest 合同检查模板声明的类型及组合策略。
 _VALID_TEMPLATE_TYPES = ("template", "command", "script")
 _VALID_TEMPLATE_STRATEGIES = ("replace", "prepend", "append", "wrap")
 _VALID_SCRIPT_STRATEGIES = ("replace", "wrap")
 
 
 def _validate_manifest_template_entry(entry: object) -> None:
-    """Validate a single manifest template entry against the canonical rules."""
+    """:param entry: 清单中的模板声明。
+    :returns: 声明符合类型、路径字段及组合策略要求时正常返回。
+    :raises ValueError: 模板声明类型或策略无效。
+    """
     if not isinstance(entry, dict):
         raise ValueError("manifest template entries must be mappings")
     if "type" not in entry or "name" not in entry or "file" not in entry:
@@ -383,20 +434,19 @@ def _validate_manifest_template_entry(entry: object) -> None:
 def _preset_template_layer(
     preset_dir: Path, template_name: str
 ) -> tuple[Path, str] | None:
-    """Return the preset template path and composition strategy."""
+    """读取预设清单明确指定的模板。
+
+    :param preset_dir: 当前预设目录。
+    :param template_name: 需要读取的模板名称。
+    :returns: 模板路径和组合策略；没有对应模板声明时返回 None。
+    :raises TemplateResolutionError: 现有清单或模板路径无效。
+    """
     manifest_path = preset_dir / "preset.yml"
     conventional = _conventional_template(preset_dir, template_name)
 
-    try:
-        import yaml
-    except ImportError as exc:
-        if manifest_path.is_file():
-            raise TemplateResolutionError(
-                "PyYAML is required to resolve preset template composition"
-            ) from exc
-        return (conventional, "replace") if conventional is not None else None
-
-    if manifest_path.is_file():
+    if os.path.lexists(manifest_path):
+        if not manifest_path.is_file():
+            raise TemplateResolutionError(f"预设清单必须是常规文件：{manifest_path}")
         try:
             manifest = yaml.safe_load(manifest_path.read_text(encoding="utf-8"))
             if not isinstance(manifest, dict):
@@ -425,14 +475,14 @@ def _preset_template_layer(
                 strategy = entry.get("strategy", "replace")
                 relative = Path(file_value)
                 if (
-                    not relative
+                    not file_value.strip()
                     or relative.is_absolute()
                     or ".." in relative.parts
                 ):
-                    return None
+                    raise ValueError("manifest template file must be a non-empty relative path")
                 candidate = preset_dir / relative
                 if not candidate.is_file():
-                    return None
+                    raise ValueError(f"manifest template file does not exist: {candidate}")
                 return candidate, strategy.lower()
         except (OSError, UnicodeError, ValueError, yaml.YAMLError) as exc:
             raise TemplateResolutionError(
@@ -443,13 +493,19 @@ def _preset_template_layer(
 
 
 def resolve_template_content(template_name: str, repo_root: Path) -> str | None:
-    """Resolve and compose template content through the project layer stack."""
+    """:param template_name: 模板名称。
+    :param repo_root: 当前项目目录。
+    :returns: 按配置组合的模板内容；没有对应模板时返回 None。
+    :raises TemplateResolutionError: 已有清单或组合要求无效。
+    """
     if not _is_safe_component(template_name):
         return None
 
     layers: list[tuple[Path, str]] = []
 
     def compose_from_base() -> str:
+        """:returns: 从替换模板开始组合的完整模板内容。
+        """
         try:
             content = layers[-1][0].read_bytes().decode("utf-8")
             for path, strategy in reversed(layers[:-1]):
@@ -516,34 +572,36 @@ def resolve_template_content(template_name: str, repo_root: Path) -> str | None:
 
 
 def get_invoke_separator(repo_root: Path) -> str:
+    """读取集成命令的调用分隔符。
+
+    :param repo_root: Spec Kit 项目目录。
+    :returns: 配置的分隔符；未配置时使用标准句点。
+    :raises TemplateResolutionError: 已有集成配置类型或分隔符无效。
+    """
     integration_json = repo_root / ".specify" / "integration.json"
-    if not integration_json.is_file():
+    if not os.path.lexists(integration_json):
         return "."
-    # Split the parse out of the lookup and guard the top-level shape, matching
-    # read_feature_json_feature_directory above and the bash/PowerShell twins,
-    # which both fall back to "." for any unusable integration.json:
-    #   * a non-mapping top level ([], "forge", 42, null) is valid JSON, so
-    #     json.JSONDecodeError never fires and state.get(...) raised
-    #     AttributeError;
-    #   * a non-UTF-8 file raises UnicodeDecodeError, which is a ValueError --
-    #     not an OSError -- so it escaped the except tuple. Realistic on
-    #     Windows, where PowerShell 5.1's Out-File/`>` default to UTF-16.
-    try:
-        state = json.loads(integration_json.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return "."
-    if not isinstance(state, dict):
-        return "."
-    key = state.get("default_integration") or state.get("integration") or ""
-    settings = state.get("integration_settings")
-    if isinstance(key, str) and isinstance(settings, dict):
-        entry = settings.get(key)
-        if isinstance(entry, dict) and entry.get("invoke_separator") in {".", "-"}:
-            return entry["invoke_separator"]
-    return "."
+    state = _read_json_mapping(integration_json)
+    key = state.get("default_integration", state.get("integration", ""))
+    if not isinstance(key, str):
+        raise TemplateResolutionError(f"integration 必须是字符串：{integration_json}")
+    settings = state.get("integration_settings", {})
+    if not isinstance(settings, dict):
+        raise TemplateResolutionError(f"integration_settings 必须是对象：{integration_json}")
+    entry = settings.get(key, {})
+    if not isinstance(entry, dict):
+        raise TemplateResolutionError(f"所选集成配置必须是对象：{integration_json}")
+    separator = entry.get("invoke_separator", ".")
+    if not isinstance(separator, str) or separator not in {".", "-"}:
+        raise TemplateResolutionError(f"invoke_separator 必须为 . 或 -：{integration_json}")
+    return separator
 
 
 def format_speckit_command(command_name: str, repo_root: Path) -> str:
+    """:param command_name: Spec Kit 命令名称。
+    :param repo_root: 当前项目目录。
+    :returns: 使用当前集成分隔符的完整调用名称。
+    """
     separator = get_invoke_separator(repo_root)
     name = command_name.lstrip("/")
     if name.startswith("speckit."):

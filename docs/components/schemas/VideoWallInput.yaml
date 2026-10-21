@@ -7,7 +7,7 @@ properties:
     enum: [window_1, window_2, laptop, ip_stream, window_3, window_4]
     description: 窗口1–4固定登记63–66，IP81为现场输入；3/4可作为预览及组播来源，但仍不创建原生播放窗口
   ip_address:
-    oneOf:
+    anyOf:
       - type: string
         format: ipv4
       - type: string

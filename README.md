@@ -1,166 +1,106 @@
 # SCP-cv
 
-2026-10-21已双仓推送并部署D4：[020输入路由与直连预览](docs/input-routing-preview-020.md)含正式A输入菜单、工作站目录、65/66与当前摄像机预览、右侧电视单源及预案去重；Electron本机直拉，普通网页保持服务端FLV。完整运行包6c528ad、网页及代理92769c0，桌面一键入口已更新，恰两播放器在线；冷备、正常TLS、CORS与未验边界见[020部署记录](specs/020-input-routing-preview/deployment.md)。下方018为历史阶段。
+上海第二工业大学28#108多媒体显示控制平台。共享Vue控制台支持浏览器、Windows Electron和Android Capacitor；Windows播放服务提供两个大屏播放器、背景音乐、LibreOffice演示文稿播放及现场设备控制。
 
-2026-10-20已部署D4：015–018的直播凭据、4K适配、32:9／50格布局码、目录／YAML预案、紧凑仪表盘与主题品牌导航；直播预览使用[服务端按需共享FLV](docs/stream-preview-018.md)，观看电脑无需Node／FFmpeg。D4桌面新增`SCP-cv 一键启动.cmd`；双仓推送、冷备与验收见[018部署记录](specs/018-shared-flv-preview/deployment.md)。不自动改Windows显示设置，窗口3/4仍仅网页预留。
-
-直播凭据支持已随018部署：RTSP、HTTP(S)、RTMP可直接填写带用户名/密码的地址，默认隐藏输入及常规摘要中的秘密。使用格式与转义见[使用文档](docs/使用文档.md)，范围见[015规范](specs/015-stream-credentials/spec.md)。部署不代表所有真实流或设备已逐一测试。
-
-SCP-cv 是用于控制上海第二工业大学 28#108 多媒体显示系统的 Windows 播控平台。系统由共享 Vue 控制台、ASP.NET Core ControlHost、持久命令队列、Named Pipe 运行时和独立播放进程组成，可管理 PPT、视频、图片、网页、音频及 SRT/RTSP 直播源。配置HTTPS后，HTTP访问默认跳到同主机HTTPS并保留路径和查询；登录、控制及屏幕共享在HTTPS页面操作，详见[屏幕共享与入口配置](docs/screen-sharing.md)。原生播放器仅占两块大屏输出；两台电视保留独立电源和矩阵单源选源，不创建额外播放窗口。
-
-Ant控制台入口：[HTTP（自动跳转）](http://192.168.5.194/)、[HTTPS控制台](https://192.168.5.194/)，端口80/443。当前为020，原数据、63号声音输出、私有网页/Office引擎及DISPLAY2/3保留。两窗按部署前状态保持空闲，没有自动打开历史来源。当前验收见[020部署](specs/020-input-routing-preview/deployment.md)；此前播放、真人手势和实体欠账仍分别保留，不能据部署称全部现场功能通过。
-
-## 项目信息
-
-显式软件声音绑定的继承包身份隔离修复已随012l部署D4；完整后端1615项及正常绑定/切换/退出基线见[T046记录](specs/012-directory-camera-console/verification/20261018-audio-package-isolation.md)，本机[真人点击网页播放](specs/012-directory-camera-console/verification/20261018-human-web-gesture.md)已补证。D4真实手势与原现场欠账仍未完成。
-
-| 项目 | 内容 |
-| --- | --- |
-| 开发者 | Qintsg（饶弘玮，上海第二工业大学 25网工A2）、young86（陈子阳，上海第二工业大学 25数据A2） |
-| 单位 | 上海第二工业大学 / 计算机与信息工程学院 / SSPU AI-Lab / 超级棒棒糖 |
-| 应用地点 | 上海第二工业大学 28#108 |
-| 许可证 | Artistic-2.0 |
-| 主仓库 | `https://github.com/SCP-of-SSPU/SCP-cv.git` |
-| 镜像仓库 | `http://git.bbt.sspu.edu.cn/Qintsg/scp-cv.git` |
+控制台：[HTTPS](https://192.168.5.194/)，HTTP80自动跳转HTTPS443。当前播放恢复和低延迟验证见[022记录](specs/022-playback-preview-recovery/verification.md)，输入分辨率见[维护说明](docs/input-resolution-021.md)。
 
 ## 架构
 
-```text
-Vue 3 + Ant Design Vue + Tailwind CSS 4 + Pinia + Vite（Web / Electron / Capacitor）
-                         │ REST / SSE
-ASP.NET Core ControlHost（SQLite + EF Core + 持久命令队列）
-                         │ Named Pipe
-Windows Supervisor ─┬─ PlayerWorker × 2（WPF / VLC / WebView2 / PDF / LibreOffice）
-                    ├─ AudioWorker
-                    │  └─ LibreOfficeHost（每窗独立，按需创建）
-                    └─ MediaMTX
+```mermaid
+flowchart TD
+    Console[Web / Electron / Capacitor] -->|REST / SSE| Host[ASP.NET Core ControlHost]
+    Host --> Database[SQLite与持久命令]
+    Host -->|Named Pipe| Supervisor[Windows Supervisor]
+    Supervisor --> Players[PlayerWorker × 2]
+    Supervisor --> Audio[AudioWorker]
+    Supervisor --> Media[MediaMTX]
+    Players --> Engines[VLC / WebView2 / PDF / LibreOffice]
 ```
 
-ControlHost 是业务数据库的唯一写入者。控制端只访问 REST/SSE，不直接访问 Named Pipe、数据库或原生播放对象。旧 Django/PySide 运行时已在 .NET 替换完成后移除；历史可从 Git 获取，旧 `db.sqlite3`、媒体和日志不会自动迁移或删除。
+ControlHost负责业务数据库写入、认证和命令协调。播放进程按当前身份、组代次和来源代次执行命令。两个原生窗口绑定大屏输出，控制桌面保持可用；窗口3/4提供预览和输入选择。两台电视使用独立矩阵选源与电源控制。
+
+浏览器预览由服务器按需转换并共享。Electron使用随包媒体组件从设备读取RTSP/RTMP。同一来源的多个预览共享传输和解码。
 
 ## 环境要求
 
-- Windows 10/11 x64 与交互式桌面
-- [.NET SDK 10.0.400](global.json)
-- Node.js 22 或更高版本
-- pnpm 11（仓库 `packageManager` 字段固定版本；不要使用 npm 安装依赖）
-- LibreOffice Windows x64（包含官方.NET互操作/GAC组件；本机验证26.8.0.3）
-- .NET Framework 4.8运行时与开发targeting pack（官方UNO侧车使用）
-- VLC/libVLC Windows x64 运行时
-- MediaMTX Windows x64
+- Windows10/11 x64交互桌面。
+- 仓库`global.json`指定的.NET SDK，以及.NET Framework4.8运行时和开发组件。
+- Node.js24、npm11.12.1；依赖版本由`package.json`指定。
+- LibreOffice Windows x64及官方.NET互操作组件。
+- VLC/libVLC、MediaMTX；服务器预览配置FFmpeg。
+- uv，用于运行规范与QA辅助脚本。
 
-Node 依赖通过仓库级 `.npmrc` 使用 `https://registry.npmmirror.com/`（2026-10-16按维护要求选择淘宝镜像，原CERNET跳转节点失效）。项目不提交 pnpm 锁文件，依赖版本以 `package.json` 中的精确版本为准。前端工作区显式拒绝已核对、仅展示捐赠广告的`core-js`安装后脚本，其余依赖构建权限不放宽。
+依赖安装使用仓库`.npmrc`中的淘宝镜像。根目录与前端分别安装，Node锁文件按仓库约定保持忽略。
 
-## 快速开始
+## 安装与构建
 
 ```powershell
-git clone <repo-url> SCP-cv
-cd SCP-cv
-
 dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
 dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
-
-pnpm install
-pnpm --prefix frontend install
+npm install
+npm --prefix frontend install
+npm --prefix frontend run typecheck
+npm --prefix frontend run build:web
 ```
 
-第三方运行时约定：
+第三方运行时位置：
 
-- `tools/third_party/mediamtx/mediamtx.exe`
-- `tools/third_party/vlc/runtime/`，或系统安装的 `C:\Program Files\VideoLAN\VLC`
-- `C:\Program Files\LibreOffice\program`，或`SCP_CV_LIBREOFFICE_PROGRAM`指定的官方安装目录
-
-PPT/PPTX默认LibreOffice只读动态放映；上传由独立转换实例准备图片和只含图片的静态PDF。
-PowerPoint设置/播放/转换入口已退役。文字适配默认关闭，开启只改变内存布局，不修改原件。
-统一媒体暂停、恢复、定位和窗口音量/静音暂不支持，不以放映暂停标志假报能力。
-详细配置、回退与验证边界见[LibreOffice文稿运行指南](docs/libreoffice-playback.md)。
+- `tools/third_party/mediamtx/mediamtx.exe`。
+- VLC/libVLC采用配置的Windows x64运行时。
+- LibreOffice默认位于`C:/Program Files/LibreOffice/program`，可通过`SCP_CV_LIBREOFFICE_PROGRAM`指定。
 
 ## 开发运行
-
-先启动无物理副作用的 ControlHost：
 
 ```powershell
 dotnet run --project runtime-dotnet/src/ScpCv.ControlHost -- `
   --SafetyMode=Simulation `
   --urls=http://127.0.0.1:18000 `
   --DataRoot=.validation/dotnet
+
+npm --prefix frontend run dev:web
 ```
 
-再启动共享控制台：
+前端连接设置见`frontend/.env.example`。Windows播放需要交互桌面和明确的显示器绑定；配置、凭据和实际启动操作见[维护文档](docs/维护文档.md)。
 
-```powershell
-pnpm --prefix frontend run dev:web
-```
+已有D4部署可使用桌面`SCP-cv 一键启动.cmd`。程序核对固定任务和文件身份，已有运行组保持运行。API提供`GET /api/runtime/`、`POST /api/system/restart/`和`POST /api/system/shutdown/`；写入请求携带认证会话和CSRF。
 
-如需让前端直连其它地址，复制 `frontend/.env.example` 为 `frontend/.env` 并修改 `VITE_BACKEND_TARGET`。
+## 媒体与配置
 
-## Windows 播放运行时
+- 媒体按照目录管理，上传保存原件；支持视频、图片、网页、音频和直播来源。
+- PPT/PPTX由LibreOffice播放和转换，文字适配可在打开时选择，原件保持不变。
+- 主组播分辨率与预览通道分别配置。软件支持D4四路4K输出，控制帧尺寸需要匹配当前输入的实际读回；设备尺寸见输入维护表。
+- 屏幕共享需要安全连接，入口与证书设置见[屏幕共享文档](docs/screen-sharing.md)。
 
-物理播放必须在 Windows 交互桌面中运行。推荐使用无头启动脚本；口令应放在 ACL 受保护的文件或 `SCP_CV_DEVELOPMENT_PASSWORD` 环境变量中，不要写入命令行或仓库。
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass `
-  -File runtime-dotnet/scripts/run-headless.ps1 `
-  -SafetyMode Hardware `
-  -StartWorkers `
-  -Detach `
-  -DataRoot data/dotnet `
-  -ListenUrls https://localhost:18443 `
-  -AllowedHosts 'localhost;127.0.0.1' `
-  -AllowedOrigins 'https://localhost' `
-  -DevelopmentPasswordFile '<口令文件>'
-```
-
-运行组状态与启停使用 ControlHost 的已认证会话：`GET /api/runtime/` 查询，
-`POST /api/system/restart/` 启动/重启，`POST /api/system/shutdown/` 协作停机；
-写请求必须携带 CSRF。先确认两块大屏绑定，停机确认 Worker/Office 退出后，再以同一绝对
-DataRoot 调用 `run-headless.ps1 -Stop` 停止控制面。完整流程见
-[工作站操作手册](docs/qa/003-workstation-runbook.md)。独立 `runtime.ps1` 已退役，所有旧动作
-均明确失败并提示迁移，不再读写另一份运行组状态文件。
-
-配置来源主要是 `runtime-dotnet/src/ScpCv.ControlHost/appsettings.json`、命令行参数和标准 ASP.NET Core 环境变量。默认 `SafetyMode=Simulation`；只有明确切到 `Hardware` 才会访问显示器、系统音量、设备和视频墙。
+主要配置来自`runtime-dotnet/src/ScpCv.ControlHost/appsettings.json`和标准ASP.NET Core环境变量。账号口令使用受保护文件或配置环境变量，媒体URI中的凭据保持隐藏。
 
 ## 验证
 
 ```powershell
-dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
 dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
-$env:http_proxy=''; $env:https_proxy=''; $env:all_proxy=''
-dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
-
-pnpm --prefix frontend test
-pnpm --prefix frontend run typecheck
-pnpm --prefix frontend run build:web
-
-py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
-pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
+npm --prefix frontend run typecheck
+npm --prefix frontend run build:web
+uv run --no-project .specify/scripts/python/validate_specs.py --specs-dir specs
+npm exec --package @redocly/cli -- redocly lint docs/openapi.yaml
+git diff --check
 ```
 
-本机代理可能影响使用自定义 `Host` 头的回环 HTTP 测试，因此测试命令显式清空代理变量。`Physical` 测试、两块大屏/Office/VLC/MediaMTX/音频长稳测试和性能基准需要专用工作站，不能用 Simulation 结果替代。大屏现支持窗口1/2/输入IP81的12种全屏和左右组合及单侧映射，保留两个旧预设；已发送不等于出画，未登记IP仍禁止下发。配置、协议及现场边界见[大屏映射指南](docs/video-wall-mapping.md)。
+功能验收使用实际服务、真实媒体和进程，记录实际画面、时钟、页码与释放结果。Windows播放器、LibreOffice、音频、共享预览和现场设备分别验证。软件控制帧的发送结果与实体画面证据分别记录。
 
-历史D4紧凑界面及63/64配置部署、运行/备份见 [2026-10-09部署记录](docs/deployments/20261009-d4-compact.md)，当前版本以 [012部署记录](specs/012-directory-camera-console/verification/d4-deployment.md)为准。历史两窗实测、修复前后对照及未完成门禁见 [006 验证记录](specs/006-d4-live-convergence/verification.md)。部署烟雾不证明新映射出画，短时出画或1000普通命令通过也不等于60分钟混合长稳完成。
+## 数据与开发规范
 
-控制台区分选中源与实际播出；离线选源/Seek 禁用，断线恢复或换源不补发旧缓冲进度。PPT 页图 missing/failed 可显式重试，queued/running/uncertain 不盲重放，通知以返回的真实准备状态为准。
+运行数据默认位于`data/dotnet/`，验证资料位于`.validation/`。备份包括数据库、媒体、派生文件和部署配置。凭据、私钥、数据库、媒体、日志和构建产物保持本机存储。
 
-## 数据边界
-
-新的运行数据默认位于 `data/dotnet/`，验证数据应放在 `.validation/`。不要自动删除或覆盖旧 `db.sqlite3`、上传媒体、日志、凭据或其它未跟踪数据；如需清空数据，必须先停止运行时并单独确认精确目标。
+开发约定见[AGENTS.md](AGENTS.md)、[CONTRIBUTING](CONTRIBUTING.md)和[STYLE](STYLE.md)。功能需求通过`specs/`中的规范、计划、任务和实际验收记录维护。
 
 ## 文档
 
 - [使用文档](docs/使用文档.md)
 - [维护文档](docs/维护文档.md)
 - [OpenAPI](docs/openapi.yaml)
-- [已知坑与物理副作用路径](docs/known-pitfalls.md)
-- [.NET 重构规范](specs/003-dotnet-runtime-refactor/spec.md)
-- [视频墙控制规范](specs/004-video-wall-control/spec.md)
-- [大屏专用与媒体整理规范](specs/005-big-screen-only/spec.md)
-- [三输入大屏组合与协议接入规范](specs/009-wall-input-mapping/spec.md)
-- [D4 两窗实机收敛规范](specs/006-d4-live-convergence/spec.md)
+- [文稿运行指南](docs/libreoffice-playback.md)
+- [设备操作与已知问题](docs/known-pitfalls.md)
 - [变更记录](docs/CHANGELOG.md)
 
-2026-10-13工作区后续已修正IP81实测1080P默认、选源编码和手机44px设备操作。LibreOffice两实例实际声音可到63，但正常退出尚未稳定，完整来源仍禁用，未提交部署；当前结论见[选源与手机操作台接续](specs/012-directory-camera-console/verification/20261013-venue-followup.md)。
+## 项目信息
 
-## 许可证
-
-本项目使用 Artistic License 2.0，详见 [LICENSE](LICENSE)。
+开发者：Qintsg（饶弘玮）、young86（陈子阳）。使用地点：上海第二工业大学28#108。许可证：[Artistic License2.0](LICENSE)。

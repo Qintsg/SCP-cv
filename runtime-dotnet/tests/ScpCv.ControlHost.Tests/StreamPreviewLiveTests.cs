@@ -1,4 +1,4 @@
-// 显式全回环验证：自有MediaMTX／合成RTMP，真实FLV解码，不访问现场或操作播放窗口。
+// 文件描述：真实MediaMTX、编码与两种FLV输出验证；项目：SCP-cv；文件：StreamPreviewLiveTests.cs；作者：Qintsg；日期：2026-10-21。
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
@@ -152,11 +152,16 @@ public sealed class StreamPreviewLiveTests
 
     private static async Task CaptureAsync(Stream input, string file, TaskCompletionSource warmed, CancellationToken cancellationToken)
     {
-        await using var output = File.Create(file); await output.WriteAsync(FlvReader.Header, cancellationToken); var count = 0;
+        await using var output = File.Create(file); var count = 0;
         try
         {
-            await foreach (var tag in FlvReader.ReadAsync(input, cancellationToken))
-            { await output.WriteAsync(tag.Bytes, cancellationToken); if (++count >= 30) warmed.TrySetResult(); }
+            var bytes = new byte[16384];
+            while (true)
+            {
+                var read = await input.ReadAsync(bytes, cancellationToken); if (read == 0) break;
+                await output.WriteAsync(bytes.AsMemory(0, read), cancellationToken);
+                count += read; if (count >= 32768) warmed.TrySetResult();
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }
     }

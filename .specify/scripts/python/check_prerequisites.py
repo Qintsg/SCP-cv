@@ -1,5 +1,11 @@
-#!/usr/bin/env python3
-"""Consolidated prerequisite checking script."""
+# 检查 Spec Kit 功能目录、任务及模板的前置条件。
+# 项目：SCP-cv
+# 文件：check_prerequisites.py
+# 作者：Qintsg
+# 日期：2026-10-21
+# /// script
+# dependencies = ["PyYAML==6.0.3"]
+# ///
 
 from __future__ import annotations
 
@@ -8,26 +14,19 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-try:
-    from common import (
-        FeaturePaths,
-        TemplateResolutionError,
-        format_speckit_command,
-        get_feature_paths,
-        resolve_template_content,
-    )
-except ImportError:  # pragma: no cover - direct execution from unusual cwd
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from common import (
-        FeaturePaths,
-        TemplateResolutionError,
-        format_speckit_command,
-        get_feature_paths,
-        resolve_template_content,
-    )
+from common import (
+    FeaturePaths,
+    TemplateResolutionError,
+    format_speckit_command,
+    get_feature_paths,
+    resolve_template_content,
+)
 
 
 def _json_line(payload: object) -> str:
+    """:param payload: 需要输出的结果对象。
+    :returns: 带换行符的 UTF-8 JSON 文本。
+    """
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
@@ -44,14 +43,14 @@ OPTIONS:
   --help, -h          Show this help message
 
 EXAMPLES:
-  # Check task prerequisites (plan.md required)
-  ./check_prerequisites.py --json
+  # 检查设计阶段前置条件（需要 plan.md）
+  uv run .specify/scripts/python/check_prerequisites.py --json
 
-  # Check implementation prerequisites (plan.md + tasks.md required)
-  ./check_prerequisites.py --json --require-tasks --include-tasks
+  # 检查实现阶段前置条件（需要 plan.md 和 tasks.md）
+  uv run .specify/scripts/python/check_prerequisites.py --json --require-tasks --include-tasks
 
-  # Get feature paths only (no validation)
-  ./check_prerequisites.py --paths-only
+  # 只读取当前功能路径
+  uv run .specify/scripts/python/check_prerequisites.py --paths-only
 
 """
 
@@ -66,6 +65,9 @@ class Args:
 
 
 def _parse_args(argv: list[str]) -> Args:
+    """:param argv: 当前命令行参数。
+    :returns: 通过选项检查的前置条件配置。
+    """
     json_mode = False
     require_tasks = False
     include_tasks = False
@@ -113,6 +115,9 @@ def _parse_args(argv: list[str]) -> Args:
 
 
 def _dir_has_entries(path: Path) -> bool:
+    """:param path: 需要检查的目录。
+    :returns: 目录存在并包含文件时返回 True。
+    """
     try:
         return path.is_dir() and any(path.iterdir())
     except OSError:
@@ -120,6 +125,10 @@ def _dir_has_entries(path: Path) -> bool:
 
 
 def _available_docs(paths: FeaturePaths, include_tasks: bool) -> list[str]:
+    """:param paths: 当前功能的文件路径。
+    :param include_tasks: 是否包含任务清单。
+    :returns: 当前实际存在的文档名称。
+    """
     docs: list[str] = []
     if paths.research.is_file():
         docs.append("research.md")
@@ -135,6 +144,10 @@ def _available_docs(paths: FeaturePaths, include_tasks: bool) -> list[str]:
 
 
 def _print_paths_only(paths: FeaturePaths, json_mode: bool) -> None:
+    """:param paths: 当前功能的文件路径。
+    :param json_mode: 是否输出 JSON 对象。
+    :returns: 输出当前路径信息。
+    """
     if json_mode:
         sys.stdout.write(
             _json_line(
@@ -159,15 +172,8 @@ def _print_paths_only(paths: FeaturePaths, json_mode: bool) -> None:
 
 
 def _status_marker(ok: bool) -> str:
-    """Return the status glyph, downgraded to ASCII when stdout cannot encode it.
-
-    On Windows sys.stdout falls back to the ANSI code page whenever it is not a
-    console - a pipe or a file redirect, which is how agents and workflow steps
-    invoke these scripts - and U+2713 is unencodable in cp1252, so printing it
-    raised UnicodeEncodeError and aborted the report right after
-    "AVAILABLE_DOCS:". "[OK]"/"[FAIL]" is the ASCII rendering these markers
-    already have in-tree: see Test-FileExists in scripts/powershell/common.ps1
-    and normalize_status_text in tests/parity_helpers.py.
+    """:param ok: 当前检查是否通过。
+    :returns: 当前终端编码能够表示的检查标记。
     """
     glyph = "✓" if ok else "✗"
     try:
@@ -178,14 +184,26 @@ def _status_marker(ok: bool) -> str:
 
 
 def _check_file(path: Path, description: str) -> None:
+    """:param path: 待检查的文件。
+    :param description: 输出的文件说明。
+    :returns: 输出文件存在状态。
+    """
     print(f"  {_status_marker(path.is_file())} {description}")
 
 
 def _check_dir(path: Path, description: str) -> None:
+    """:param path: 待检查的目录。
+    :param description: 输出的目录说明。
+    :returns: 输出目录是否包含文件。
+    """
     print(f"  {_status_marker(_dir_has_entries(path))} {description}")
 
 
 def _print_text_results(paths: FeaturePaths, include_tasks: bool) -> None:
+    """:param paths: 当前功能的文件路径。
+    :param include_tasks: 是否包含任务清单。
+    :returns: 输出可读的当前文档状态。
+    """
     print(f"FEATURE_DIR:{paths.feature_dir}")
     print("AVAILABLE_DOCS:")
     _check_file(paths.research, "research.md")
@@ -197,6 +215,9 @@ def _print_text_results(paths: FeaturePaths, include_tasks: bool) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """:param argv: 命令行参数；省略时读取进程参数。
+    :returns: 所有必需条件满足时返回零。
+    """
     args = _parse_args(list(argv if argv is not None else sys.argv[1:]))
 
     try:

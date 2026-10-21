@@ -1,5 +1,11 @@
-#!/usr/bin/env python3
-"""Create a new feature directory and spec file."""
+# 创建 Spec Kit 功能目录及需求规范。
+# 项目：SCP-cv
+# 文件：create_new_feature.py
+# 作者：Qintsg
+# 日期：2026-10-21
+# /// script
+# dependencies = ["PyYAML==6.0.3"]
+# ///
 
 from __future__ import annotations
 
@@ -11,24 +17,18 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-try:
-    from common import (
-        TemplateResolutionError,
-        get_repo_root,
-        persist_feature_json,
-        resolve_template_content,
-    )
-except ImportError:  # pragma: no cover - direct execution from unusual cwd
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from common import (
-        TemplateResolutionError,
-        get_repo_root,
-        persist_feature_json,
-        resolve_template_content,
-    )
+from common import (
+    TemplateResolutionError,
+    get_repo_root,
+    persist_feature_json,
+    resolve_template_content,
+)
 
 
 def _json_line(payload: object) -> str:
+    """:param payload: 需要输出的结果对象。
+    :returns: 带换行符的 JSON 文本。
+    """
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
@@ -45,6 +45,9 @@ _MAX_FEATURE_NUMBER = 2**63 - 1
 
 
 def _int64_from_digits(value: str) -> int | None:
+    """:param value: 无符号十进制数字文本。
+    :returns: 有效整数；超过功能编号范围时返回 None。
+    """
     normalized = value.lstrip("0") or "0"
     maximum = str(_MAX_FEATURE_NUMBER)
     if len(normalized) > len(maximum) or (
@@ -57,6 +60,11 @@ def _int64_from_digits(value: str) -> int | None:
 def _persistence_assignments(
     branch_name: str, feature_dir: str, *, powershell: bool
 ) -> tuple[str, str]:
+    """:param branch_name: 当前功能标识。
+    :param feature_dir: 当前功能目录。
+    :param powershell: 是否输出 PowerShell 环境变量命令。
+    :returns: 功能标识及目录的环境变量设置命令。
+    """
     if powershell:
         quoted_branch = "'" + branch_name.replace("'", "''") + "'"
         quoted_dir = "'" + feature_dir.replace("'", "''") + "'"
@@ -71,6 +79,9 @@ def _persistence_assignments(
 
 
 def _usage(argv0: str) -> str:
+    """:param argv0: 当前脚本名称。
+    :returns: 命令行参数格式。
+    """
     return (
         f"Usage: {argv0} [--json] [--dry-run] [--allow-existing-branch] "
         "[--short-name <name>] [--number N] [--timestamp] <feature_description>"
@@ -78,6 +89,9 @@ def _usage(argv0: str) -> str:
 
 
 def _help_text(argv0: str) -> str:
+    """:param argv0: 当前脚本名称。
+    :returns: 完整命令行使用说明。
+    """
     return f"""{_usage(argv0)}
 
 Options:
@@ -108,6 +122,10 @@ class Args:
 
 
 def _parse_args(argv: list[str], argv0: str) -> Args:
+    """:param argv: 当前命令行参数。
+    :param argv0: 当前脚本名称。
+    :returns: 通过必要选项检查的功能创建参数。
+    """
     json_mode = False
     dry_run = False
     allow_existing = False
@@ -166,12 +184,18 @@ def _parse_args(argv: list[str], argv0: str) -> Args:
 
 
 def _clean_branch_name(name: str) -> str:
+    """:param name: 功能名称文本。
+    :returns: 由小写字母、数字和连接符组成的名称。
+    """
     cleaned = re.sub(r"[^a-z0-9]", "-", name.lower())
     cleaned = re.sub(r"-+", "-", cleaned)
     return cleaned.strip("-")
 
 
 def _generate_branch_name(description: str) -> str:
+    """:param description: 用户提供的功能描述。
+    :returns: 从有效关键词生成的功能名称。
+    """
     clean = re.sub(r"[^a-z0-9]", " ", description.lower())
     meaningful: list[str] = []
     for word in clean.split():
@@ -179,8 +203,7 @@ def _generate_branch_name(description: str) -> str:
             continue
         if len(word) >= 3:
             meaningful.append(word)
-        # Keep short words that appear as an uppercase acronym in the original,
-        # mirroring the bash twin's case-sensitive `grep -qw` check.
+        # 原文中的大写缩写保留为有效关键词。
         elif re.search(
             rf"(?<![0-9A-Za-z_]){re.escape(word.upper())}(?![0-9A-Za-z_])",
             description,
@@ -196,6 +219,9 @@ def _generate_branch_name(description: str) -> str:
 
 
 def _get_highest_from_specs(specs_dir: Path) -> int:
+    """:param specs_dir: 当前功能规范根目录。
+    :returns: 已有顺序编号中的最大有效值。
+    """
     highest = 0
     if not specs_dir.is_dir():
         return highest
@@ -203,7 +229,7 @@ def _get_highest_from_specs(specs_dir: Path) -> int:
         if not entry.is_dir():
             continue
         name = entry.name
-        # Match sequential prefixes (>=3 digits), but skip timestamp dirs.
+        # 读取至少三位数字的顺序编号，忽略时间戳目录。
         if re.match(r"^[0-9]{3,}-", name) and not re.match(
             r"^[0-9]{8}-[0-9]{6}-", name
         ):
@@ -214,7 +240,10 @@ def _get_highest_from_specs(specs_dir: Path) -> int:
 
 
 def _fit_branch_name(feature_num: str, branch_suffix: str) -> str:
-    """Fit a feature prefix and suffix within GitHub's branch-name limit."""
+    """:param feature_num: 功能编号。
+    :param branch_suffix: 功能名称部分。
+    :returns: 长度符合限制的完整功能标识。
+    """
     branch_name = f"{feature_num}-{branch_suffix}"
     if len(branch_name) <= _MAX_BRANCH_LENGTH:
         return branch_name
@@ -225,15 +254,16 @@ def _fit_branch_name(feature_num: str, branch_suffix: str) -> str:
 
 
 def _spec_prefix_exists(specs_dir: Path, feature_num: str) -> bool:
-    """Return whether a spec directory owns the given numeric prefix."""
-    try:
-        return any(
-            entry.is_dir() and entry.name.startswith(f"{feature_num}-")
-            for entry in specs_dir.iterdir()
-        )
-    except OSError:
-        # Match Bash globbing and PowerShell's ErrorAction=SilentlyContinue.
+    """:param specs_dir: 当前功能规范根目录。
+    :param feature_num: 待检查编号。
+    :returns: 编号已经用于功能目录时返回 True。
+    """
+    if not specs_dir.exists():
         return False
+    return any(
+        entry.is_dir() and entry.name.startswith(f"{feature_num}-")
+        for entry in specs_dir.iterdir()
+    )
 
 
 def _has_spec_prefix_conflict(
@@ -243,7 +273,12 @@ def _has_spec_prefix_conflict(
     *,
     allow_existing: bool,
 ) -> bool:
-    """Return whether another spec directory owns the requested prefix."""
+    """:param specs_dir: 当前功能规范根目录。
+    :param feature_num: 待使用编号。
+    :param requested_dir: 当前请求的完整功能目录。
+    :param allow_existing: 是否允许复用同一现有功能目录。
+    :returns: 编号存在冲突时返回 True。
+    """
     if allow_existing and requested_dir.is_dir():
         return False
 
@@ -251,6 +286,9 @@ def _has_spec_prefix_conflict(
 
 
 def main(argv: list[str] | None = None) -> int:
+    """:param argv: 命令行参数；省略时读取进程参数。
+    :returns: 功能创建或只读计算成功时返回零。
+    """
     argv0 = sys.argv[0]
     args = _parse_args(list(argv if argv is not None else sys.argv[1:]), argv0)
 
@@ -276,9 +314,7 @@ def main(argv: list[str] | None = None) -> int:
         feature_num = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     else:
         if branch_number:
-            # Mirrors bash: $((10#$BRANCH_NUMBER)) only accepts unsigned
-            # decimal digits, rejecting signs, whitespace, and other
-            # characters that int() would otherwise tolerate.
+            # 顺序编号只接受无符号十进制数字。
             if not re.fullmatch(r"[0-9]+", branch_number):
                 print(
                     "Error: --number must be an unsigned integer, "
@@ -307,8 +343,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         feature_num = f"{number:03d}"
 
-        # Treat an explicit number as a preference when its prefix is already used
-        # by a feature directory. Auto-detected numbers are already conflict-free.
+        # 明确指定的编号发生冲突时，选择下一个可用编号。
         if branch_number:
             requested_branch_name = _fit_branch_name(feature_num, branch_suffix)
             requested_dir = specs_dir / requested_branch_name
@@ -347,7 +382,7 @@ def main(argv: list[str] | None = None) -> int:
     original_branch_name = f"{feature_num}-{branch_suffix}"
     branch_name = _fit_branch_name(feature_num, branch_suffix)
 
-    # GitHub enforces a 244-byte limit on branch names.
+    # GitHub 的分支名称长度上限为 244 字节。
     if branch_name != original_branch_name:
         print(
             "[specify] Warning: Branch name exceeded GitHub's 244-byte limit",
@@ -393,23 +428,19 @@ def main(argv: list[str] | None = None) -> int:
             except TemplateResolutionError as exc:
                 print(f"Error: {exc}", file=sys.stderr)
                 return 1
+            if template_content is None:
+                print("ERROR: Required spec-template was not found", file=sys.stderr)
+                return 1
 
         feature_dir.mkdir(parents=True, exist_ok=True)
 
         if needs_spec:
-            if template_content is not None:
-                spec_file.write_bytes(template_content.encode("utf-8"))
-            else:
-                print(
-                    "Warning: Spec template not found; created empty spec file",
-                    file=sys.stderr,
-                )
-                spec_file.touch()
+            spec_file.write_bytes(template_content.encode("utf-8"))
 
-        # Persist to .specify/feature.json so downstream commands can find the feature.
+        # 保存当前功能目录，供后续工具读取。
         persist_feature_json(repo_root, f"specs/{branch_name}")
 
-        # Inform the user how to set feature state in their own shell.
+        # 显示当前终端中设置功能变量的命令。
         feature_assignment, directory_assignment = _persistence_assignments(
             branch_name,
             str(feature_dir),

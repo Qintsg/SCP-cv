@@ -1,5 +1,11 @@
-#!/usr/bin/env python3
-"""Resolve composed template content from the project template stack."""
+# 读取项目配置指定的 Spec Kit 模板内容。
+# 项目：SCP-cv
+# 文件：resolve_template.py
+# 作者：Qintsg
+# 日期：2026-10-21
+# /// script
+# dependencies = ["PyYAML==6.0.3"]
+# ///
 
 from __future__ import annotations
 
@@ -8,22 +14,17 @@ import json
 import sys
 from pathlib import Path
 
-try:
-    from common import (
-        TemplateResolutionError,
-        get_repo_root,
-        resolve_template_content,
-    )
-except ImportError:  # pragma: no cover - direct execution from unusual cwd
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from common import (
-        TemplateResolutionError,
-        get_repo_root,
-        resolve_template_content,
-    )
+from common import (
+    TemplateResolutionError,
+    get_repo_root,
+    resolve_template_content,
+)
 
 
 def main(argv: list[str] | None = None) -> int:
+    """:param argv: 命令行参数；省略时读取进程参数。
+    :returns: 指定模板读取成功时返回零。
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("template_name")
     parser.add_argument("--json", action="store_true")

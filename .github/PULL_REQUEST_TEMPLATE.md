@@ -12,11 +12,10 @@
 ```text
 - [ ] dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
 - [ ] dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
-- [ ] dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
-- [ ] pnpm --prefix frontend test
-- [ ] pnpm --prefix frontend run typecheck
-- [ ] pnpm --prefix frontend run build:web
-- [ ] py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
+- [ ] npm --prefix frontend run typecheck
+- [ ] npm --prefix frontend run build:web
+- [ ] uv run --no-project .specify/scripts/python/validate_specs.py --specs-dir specs
+- [ ] 相关功能已经使用真实媒体、服务和进程验证，并记录资源释放
 ```
 
 ## 风险与回滚

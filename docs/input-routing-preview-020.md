@@ -60,8 +60,8 @@ H264优先原码转封装、静音，不缩放原画面；不兼容时等待旧�
 
 ## 构建与发行
 
-`pnpm --prefix frontend native:prepare --ffmpeg <固定exe> --sha256 <真实摘要> --license <许可证文件> --origin <HTTPS来源> --development-only true`仅准备本机验证资产。默认输出`.validation/client-preview-020/assets`，electron-builder的extraResources将其放入`resources/client-preview`，不查询全局PATH。
+`npm --prefix frontend run native:prepare -- --ffmpeg <固定exe> --sha256 <真实摘要> --license <许可证文件> --origin <HTTPS来源> --development-only true`仅准备本机验证资产。默认输出`.validation/client-preview-020/assets`，electron-builder的extraResources将其放入`resources/client-preview`，不查询全局PATH。
 
-`pnpm --prefix frontend build:electron`先检查资产完整性与摘要，再构建本机目录包；默认不创建安装器、不发布。包装器使用已安装44.2运行时和当前锁定pnpm11.22，避免再次下载和误用全局11.24自动切版本；直接Node调用需显式`--pnpm-bin`，正常pnpm run从npm_execpath核对。目录包输出在`.validation/client-preview-020`独占子目录，不清空用户目录。公开分发须提供与二进制匹配的`--source-archive`、准确许可证／构建配置及第三方材料，并完成匹配审计；当前本机development-only资产不是公开发行包。FFmpeg含GPL组件时不能标为纯LGPL，“无商业属性”不免除对应义务。媒体二进制、源码包、测试CA、凭据与日志均不入Git。
+`npm --prefix frontend run build:electron -- --development-only true`先检查资产完整性与摘要，再构建本机目录包；默认不创建安装器、不发布。包装器使用已安装44.2运行时和npm11.12.1，通过`npm run`提供的`npm_execpath`核对实际入口。目录包输出在`.validation/client-preview-020`独占子目录，不清空用户目录。公开分发须提供与二进制匹配的`--source-archive`、准确许可证／构建配置及第三方材料，并完成匹配审计。FFmpeg含GPL组件时不能标为纯LGPL，“无商业属性”不免除对应义务。媒体二进制、源码包、测试CA、凭据与日志均不入Git。
 
 自动化、真实合成媒体／Electron、本机只读截图与未执行现场项见[020验证](../specs/020-input-routing-preview/verification.md)。

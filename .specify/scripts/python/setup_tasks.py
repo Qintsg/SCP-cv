@@ -1,5 +1,11 @@
-#!/usr/bin/env python3
-"""Check tasks prerequisites and resolve the tasks template."""
+# 检查任务清单前置条件并读取 Spec Kit 任务模板。
+# 项目：SCP-cv
+# 文件：setup_tasks.py
+# 作者：Qintsg
+# 日期：2026-10-21
+# /// script
+# dependencies = ["PyYAML==6.0.3"]
+# ///
 
 from __future__ import annotations
 
@@ -7,32 +13,27 @@ import json
 import sys
 from pathlib import Path
 
-try:
-    from common import (
-        FeaturePaths,
-        TemplateResolutionError,
-        format_speckit_command,
-        get_feature_paths,
-        resolve_template,
-        resolve_template_content,
-    )
-except ImportError:  # pragma: no cover - direct execution from unusual cwd
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from common import (
-        FeaturePaths,
-        TemplateResolutionError,
-        format_speckit_command,
-        get_feature_paths,
-        resolve_template,
-        resolve_template_content,
-    )
+from common import (
+    FeaturePaths,
+    TemplateResolutionError,
+    format_speckit_command,
+    get_feature_paths,
+    resolve_template,
+    resolve_template_content,
+)
 
 
 def _json_line(payload: object) -> str:
+    """:param payload: 需要输出的结果对象。
+    :returns: 带换行符的 JSON 文本。
+    """
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n"
 
 
 def _help_text(argv0: str) -> str:
+    """:param argv0: 当前脚本名称。
+    :returns: 命令行使用说明。
+    """
     return f"""Usage: {argv0} [--json]
   --json    Output results in JSON format
   --help    Show this help message
@@ -40,6 +41,9 @@ def _help_text(argv0: str) -> str:
 
 
 def _dir_has_entries(path: Path) -> bool:
+    """:param path: 待检查目录。
+    :returns: 目录存在并包含文件时返回 True。
+    """
     try:
         return path.is_dir() and any(path.iterdir())
     except OSError:
@@ -47,6 +51,9 @@ def _dir_has_entries(path: Path) -> bool:
 
 
 def _available_docs(paths: FeaturePaths) -> list[str]:
+    """:param paths: 当前功能文件路径。
+    :returns: 当前实际存在的设计文档名称。
+    """
     docs: list[str] = []
     if paths.research.is_file():
         docs.append("research.md")
@@ -60,15 +67,8 @@ def _available_docs(paths: FeaturePaths) -> list[str]:
 
 
 def _status_marker(ok: bool) -> str:
-    """Return the status glyph, downgraded to ASCII when stdout cannot encode it.
-
-    On Windows sys.stdout falls back to the ANSI code page whenever it is not a
-    console - a pipe or a file redirect, which is how agents and workflow steps
-    invoke these scripts - and U+2713 is unencodable in cp1252, so printing it
-    raised UnicodeEncodeError and aborted the report mid-listing.
-    "[OK]"/"[FAIL]" is the ASCII rendering these markers already have in-tree:
-    see Test-FileExists in scripts/powershell/common.ps1 and
-    normalize_status_text in tests/parity_helpers.py.
+    """:param ok: 当前检查是否通过。
+    :returns: 当前终端编码能够表示的检查标记。
     """
     glyph = "✓" if ok else "✗"
     try:
@@ -79,14 +79,25 @@ def _status_marker(ok: bool) -> str:
 
 
 def _check_file(path: Path, description: str) -> None:
+    """:param path: 待检查文件。
+    :param description: 输出的文件说明。
+    :returns: 输出文件存在状态。
+    """
     print(f"  {_status_marker(path.is_file())} {description}")
 
 
 def _check_dir(path: Path, description: str) -> None:
+    """:param path: 待检查目录。
+    :param description: 输出的目录说明。
+    :returns: 输出目录是否包含文件。
+    """
     print(f"  {_status_marker(_dir_has_entries(path))} {description}")
 
 
 def main(argv: list[str] | None = None) -> int:
+    """:param argv: 命令行参数；省略时读取进程参数。
+    :returns: 必需设计文档及模板可用时返回零。
+    """
     json_mode = False
     for arg in list(argv if argv is not None else sys.argv[1:]):
         if arg == "--json":

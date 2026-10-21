@@ -8,8 +8,8 @@
 git status --short --branch
 git pull --rebase
 dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
-pnpm install
-pnpm install --prefix frontend
+npm install
+npm --prefix frontend install
 ```
 
 如果工作区存在未提交内容，先判断是否与当前任务相关。不要覆盖或回滚他人的改动。
@@ -47,6 +47,9 @@ docs(repo): 补充维护文档
 
 ## 3. 代码要求
 
+- 代码文件头包含描述、项目名、文件名、作者和日期。Python文件顶部使用中文注释，函数使用类型标注和reST文档。
+- 代码通过`apply_patch`编辑；成熟文件格式交给对应格式组件处理。错误直接报告，功能验收使用实际文件、服务与进程。
+
 - C# 代码遵循 `runtime-dotnet/Directory.Build.props` 的分析器、nullable 和 warnings-as-errors 约束。
 - Python 只用于 Spec Kit/QA 辅助脚本，遵循 PEP 8 与类型注解，不得重新引入 Python 运行时服务。
 - Vue / TypeScript 代码遵循 `frontend/src/` 既有组件、store、composable 和样式结构。
@@ -82,23 +85,26 @@ docs(repo): 补充维护文档
 ```powershell
 dotnet restore runtime-dotnet/ScpCv.sln --locked-mode
 dotnet build runtime-dotnet/ScpCv.sln -c Release --no-restore
-$env:http_proxy=''; $env:https_proxy=''; $env:all_proxy=''
-dotnet test runtime-dotnet/ScpCv.sln -c Release --no-build --filter "Category!=Physical"
 ```
 
 前端：
 
 ```powershell
-pnpm --prefix frontend test
-pnpm --prefix frontend run typecheck
-pnpm --prefix frontend run build
+npm --prefix frontend run typecheck
+npm --prefix frontend run build
+```
+
+功能验证按照当前规范中的实际验收流程执行。媒体使用真实文件、编码器和解码器；运行组验证核对原始进程句柄、命令代次及实际退出。单纯构建成功不能作为媒体播放完成的证据。FLV格式组件的可重复验证入口为：
+
+```powershell
+npm --prefix frontend run native:verify-format -- --ffmpeg <FFmpeg绝对路径> --ffprobe <FFprobe绝对路径>
 ```
 
 规范与 API：
 
 ```powershell
-py -3 .specify/scripts/python/validate_specs.py --specs-dir specs
-pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
+uv run --no-project .specify/scripts/python/validate_specs.py --specs-dir specs
+npm exec --package @redocly/cli -- redocly lint docs/openapi.yaml
 ```
 
 无法运行某项验证时，在提交或交付说明中写明原因和剩余风险。
@@ -115,10 +121,11 @@ pnpm --package=@redocly/cli dlx redocly lint docs/openapi.yaml
 - `.playwright-mcp` / `.playwright-mcp/`
 - `node_modules/`
 - `pnpm-lock.yaml`
+- `package-lock.json`、`npm-shrinkwrap.json`
 - 上传媒体、日志、临时测试脚本
 - `requirements*.txt`
 
-.NET 依赖以集中包版本和项目 `packages.lock.json` 为准；Node 依赖只用 pnpm，版本以 `package.json` 的精确版本为准，不提交 pnpm 锁文件。
+.NET依赖以集中包版本和项目`packages.lock.json`为准；Node依赖使用npm，版本以`package.json`的精确版本为准，Node锁文件保持忽略。
 
 ## 7. Pull Request 检查清单
 

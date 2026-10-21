@@ -1,4 +1,4 @@
-// AudioWorker 的单实例 LibVLC 播放与自然结束事件。
+// 音频原生播放、空资源状态与结束事件。项目：SCP-cv；文件：VlcAudioAdapter.cs；作者：Qintsg；日期：2026-10-21。
 using LibVLCSharp.Shared;
 using ScpCv.Runtime.Audio;
 
@@ -43,6 +43,7 @@ public sealed class VlcAudioAdapter : IAudioPlaybackAdapter, IAsyncDisposable
             }
             return _player.State switch
             {
+                VLCState.NothingSpecial when SourceId == 0 && _media is null => "stopped",
                 VLCState.Playing => "playing",
                 VLCState.Paused => "paused",
                 VLCState.Stopped or VLCState.Ended => "stopped",
