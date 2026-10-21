@@ -25,6 +25,10 @@ servers:
     description: 加密本机后端入口，须正常信任证书
 
 tags:
+  - name: inputs
+    description: 受信现场输入、别名和有界服务端口发现
+  - name: display-routing
+    description: 大屏与两电视的逻辑下发记账，非实体读回
   - name: auth
     description: 登录、登出、CSRF 与当前用户查询
   - name: folders
@@ -61,6 +65,16 @@ security:
   - sessionAuthHttp: []
 
 paths:
+  /inputs/:
+    $ref: './paths/input-catalog.yaml#/List'
+  /inputs/refresh/:
+    $ref: './paths/input-catalog.yaml#/Refresh'
+  /display-routing/:
+    $ref: './paths/display-routing_.yaml'
+  /display-routing/televisions/{target}/:
+    $ref: './paths/display-routing_televisions_{target}_.yaml'
+  /stream-previews/native/resolve/:
+    $ref: './paths/stream-preview-native.yaml#/Resolve'
   /stream-previews/:
     $ref: './paths/stream-preview.yaml#/Create'
   /stream-previews/status/:

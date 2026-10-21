@@ -5,7 +5,7 @@ properties:
   kind:
     type: string
     enum: [window_1, window_2, laptop, ip_stream, window_3, window_4]
-    description: 窗口3/4仅前端规划预留，服务端拒绝实体应用，未绑定猜测的输入地址
+    description: 窗口1–4固定登记63–66，IP81为现场输入；3/4可作为预览及组播来源，但仍不创建原生播放窗口
   ip_address:
     oneOf:
       - type: string

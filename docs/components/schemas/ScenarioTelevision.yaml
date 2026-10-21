@@ -1,0 +1,12 @@
+type: object
+properties:
+  state:
+    type: string
+    enum: [keep, set]
+    default: keep
+  input:
+    type: object
+    allOf:
+      - $ref: ./VideoWallInput.yaml
+    nullable: true
+description: 缺省保持；set必须提供已登记输入，keep不得夹带input。每台电视单路全屏，不控制电源

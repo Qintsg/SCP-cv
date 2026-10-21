@@ -1,0 +1,27 @@
+get:
+  tags: [display-routing]
+  summary: 获取大屏和两电视最后下发意图
+  operationId: getDisplayRouting
+  responses:
+    '200':
+      description: 逻辑记录；不是现场实时状态
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../components/schemas/SuccessResponse.yaml
+              - type: object
+                required: [outputs]
+                properties:
+                  outputs:
+                    type: object
+                    required: [wall, tv_left, tv_right]
+                    properties:
+                      wall:
+                        $ref: ../components/schemas/DisplayRoutingTarget.yaml
+                      tv_left:
+                        $ref: ../components/schemas/DisplayRoutingTarget.yaml
+                      tv_right:
+                        $ref: ../components/schemas/DisplayRoutingTarget.yaml
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml

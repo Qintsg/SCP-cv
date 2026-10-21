@@ -1,6 +1,8 @@
 type: object
 description: 保存是意图，不保证设备可执行；激活前检查全部绑定。空值保持，不调用默认位置。
 properties:
+  televisions:
+    $ref: ./ScenarioTelevisions.yaml
   wall_layout_code:
     type: string
     nullable: true

@@ -1,0 +1,11 @@
+type: object
+properties:
+  input:
+    type: object
+    allOf:
+      - $ref: ./VideoWallInput.yaml
+    nullable: true
+  layout_code:
+    type: string
+    nullable: true
+    description: 大屏最后完整下发的可解析布局码，电视使用input

@@ -35,7 +35,7 @@ Create:
       '403':
         $ref: '../components/responses/ErrorResponse.yaml'
       '422':
-        description: preview_no_stream；无流、预留3/4或未登记输入，卡片显示普通空态
+        description: preview_no_stream；无流或未登记输入，卡片显示普通空态
         content:
           application/json:
             schema:
@@ -109,12 +109,22 @@ Heartbeat:
     tags: [stream-preview]
     operationId: heartbeatStreamPreview
     summary: 续期本人有效租约，不复活已过期会话
-    description: 网页每10秒续租，30秒失联到期；源修订改变时释放并返回410。
+    description: >-
+      网页每10秒续租，30秒失联到期；普通无body续租时源修订改变则释放并返回410。
+      共享池为每target保留一份非消费验证租约，单独消费租约可提交aliases。
+      aliases必须同Owner/Origin/实际URI且来源修订仍有效，完整校验后仅切换消费租约的校验快照，不允许换实际流。
+      别名失效返回409且不续期，调用方须先重查别名；无有效别名不能无限续旧流。
     security:
       - sessionAuth: []
         csrfToken: []
       - sessionAuthHttp: []
         csrfToken: []
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/StreamPreview.yaml#/SharedHeartbeat'
     responses:
       '200':
         description: 已续租
@@ -129,6 +139,8 @@ Heartbeat:
       '403':
         $ref: '../components/responses/ErrorResponse.yaml'
       '404':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
         $ref: '../components/responses/ErrorResponse.yaml'
       '410':
         $ref: '../components/responses/ErrorResponse.yaml'

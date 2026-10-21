@@ -1,0 +1,47 @@
+put:
+  tags: [display-routing]
+  summary: 电视单路全屏选源
+  description: 同连接先满屏后单源，全部写完才记录成功意图。force默认为true，仪表盘可同源重发；不操作电源
+  operationId: setTelevisionRouting
+  parameters:
+    - name: target
+      in: path
+      required: true
+      schema:
+        type: string
+        enum: [tv_left, tv_right]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [input]
+          properties:
+            input:
+              $ref: ../components/schemas/VideoWallInput.yaml
+            force:
+              type: boolean
+              default: true
+  responses:
+    '200':
+      description: 完整写出、模拟写出或按请求跳过相同意图，不证明实体出画
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: ../components/schemas/SuccessResponse.yaml
+              - type: object
+                required: [output, result]
+                properties:
+                  output:
+                    $ref: ../components/schemas/DisplayRoutingTarget.yaml
+                  result:
+                    type: string
+                    enum: [sent_unconfirmed, simulated, unchanged]
+    '400':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '409':
+      $ref: ../components/responses/ErrorResponse.yaml

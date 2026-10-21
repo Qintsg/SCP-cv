@@ -15,6 +15,8 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
+| 两电视内容及逐输出预案去重 | `PUT /api/display-routing/televisions/{target}/`及预案激活；电源失效记账 | `DisplayRoutingService`→同VideoWallOperationGate→矩阵Controller→161/162:4830同连接6231+610D；门禁内持久dispatching/完成，失败不复用 | 显式SimulationTelevisionController，仍预检及记账 | Hardware装配解析、黄金包、Writer/本机TCP、SQLite提交故障及HTTP/DOM；020现场电视出画未验 |
+| Electron直连无声预览 | 受限Main IPC→固定native描述符API→私有app能力流 | 随包自包含ClientPreviewHost→挂独占Job后启动固定FFmpeg，完整票据/源/主机寿命与stdin短心跳 | Native注册表/假生产者，Web不调用IPC | 020真Electron44.2 RTSP/RTMP实际帧、H265兼容、父/helper死亡零残留；不连接D4 |
 | 拼接屏画面映射（视频墙） | 草稿PUT、应用POST、快捷预设及预案兼容入口 | Service→操作门禁/组合Planner→控制器→50节点4830；D4的63/64/81组合，未知输入/几何拒绝；被动回读仅诊断 | 相同预检与Planner，明确simulated | Planner/Protocol/Dispatch、SQLite/HTTP/DOM；现场抓包/出画另验，不把回环称实体通过 |
 | 系统音量 / 系统静音 | `PATCH /api/volume/`；预案激活 `POST /api/scenarios/{id}/activate/` | `RuntimeStateService` / `ScenarioService.Runtime` → `ISystemAudioController.Apply` → `WindowsCoreAudioController`；预案保留当前静音并保存真实读回 | `SimulationSystemAudioController` | `GetSystemVolumeAsync` 返回 `system_synced`；`ScenarioVolumeActivationTests` 真实 Host 装配、`ScenarioRuntimeCommitFailureTests` 提交故障；D4 预案音量复测待授权，见坑 2 |
 | 现场音量 / 切墙重发 / 高级预设 | `POST /api/venue/audio/read/`、`PUT /api/venue/audio/`；两种布局及预案激活 | `VenueDeviceService`→串行门禁→155:4830的6190/6191；另经`VenueJoinDispatcher`向5.10:8889发送悬挂（原头戴1/2）/手持/电脑Join1/2/3，Lock=19量程；headset/hanging同值去重、冲突及未知来源首包前拒绝，155读回不覆盖其他字段 | 相同预检/明确simulated，不证明实体收包 | `VenueDeviceTests`、`VenueAudioWallTests`、`VenueBoundControlTests`、`VenueMicrophoneAliasTests`；机械/实际DSP/完整来源未验，不将发送当confirmed |
@@ -41,6 +43,8 @@
 5. 把结果补进本表和对应 `specs/` 条目。
 
 ## 2. 已记录的坑
+
+020新增首帧stash、共享池所有权、别名续期、Ant输入卸载、隐藏菜单误点、预记账故障落点与原生心跳问题，见[输入与预览边界](known-pitfalls/input-routing-preview.md)。均区分真实回环、组件替身和未执行现场，不用关闭安全机制或删断言收口。
 
 ### 坑 1 - 整层漏迁：模块有测试、有常量，零生产调用方（2026-09-19 修复）
 

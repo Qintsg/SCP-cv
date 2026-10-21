@@ -1,0 +1,7 @@
+type: object
+properties:
+  tv_left:
+    $ref: ./ScenarioTelevision.yaml
+  tv_right:
+    $ref: ./ScenarioTelevision.yaml
+description: 旧预案缺省两台保持。相同可信来源预案跳过，未知或失败仍重发

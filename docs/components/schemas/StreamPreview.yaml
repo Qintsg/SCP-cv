@@ -1,4 +1,4 @@
-# 018无声预览的来源与租约合同，不含原始地址或凭据。
+# 020无声预览与应用共享池合同；普通Web响应不含原始地址或凭据。
 Request:
   oneOf:
     - $ref: '#/SourceRequest'
@@ -28,7 +28,7 @@ InputRequest:
         kind:
           type: string
           enum: [window_1, window_2, laptop, window_3, window_4, ip_stream]
-          description: 3/4尚未接入预览，返回preview_no_stream，不猜地址
+          description: 窗口1–4分别为目录63–66，原生播放仍只占用两窗；未知地址无流，不猜测
         ip_address:
           type: string
           nullable: true
@@ -42,7 +42,7 @@ Quality:
   description: 观看意图；实际输出仍受共享预算与拥塞约束
 Created:
   type: object
-  required: [id, expires_at, http_path, ws_path]
+  required: [id, sharing_key, expires_at, http_path, ws_path]
   properties:
     id:
       type: string
@@ -50,12 +50,45 @@ Created:
     expires_at:
       type: string
       format: date-time
+    sharing_key:
+      $ref: '#/SharingKey'
     http_path:
       type: string
       description: 同Host的完整/api/stream-previews/{id}/stream.flv相对路径；播放器须先解析为绝对URL
     ws_path:
       type: string
       description: 同Host的完整/api/stream-previews/{id}/stream.ws相对路径
+SharingKey:
+  type: string
+  pattern: '^[0-9a-f]{64}$'
+  description: 服务器随机私钥HMAC，绑定完整登录票据、Origin与实际规范URI；不是可供猜凭据的裸URI哈希
+SharedHeartbeat:
+  type: object
+  additionalProperties: false
+  required: [aliases]
+  properties:
+    aliases:
+      type: array
+      minItems: 1
+      maxItems: 64
+      uniqueItems: true
+      items: {type: string, format: uuid}
+      description: 同归属、同实际流、仍有效的非消费验证租约；不能包含当前消费租约
+NativeDescriptor:
+  type: object
+  required: [uri, sharing_key, source_id, source_revision, expires_at, quality]
+  properties:
+    uri:
+      type: string
+      format: uri
+      description: 敏感实际RTSP/RTMP地址，仅Electron受限主进程使用，不传renderer/日志
+    sharing_key:
+      $ref: '#/SharingKey'
+    source_id: {type: integer, format: int64, nullable: true}
+    source_revision: {type: integer, format: int64}
+    expires_at: {type: string, format: date-time}
+    quality:
+      $ref: '#/Quality'
 Lease:
   type: object
   required: [id, expiresAt, connected, status]

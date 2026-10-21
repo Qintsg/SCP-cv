@@ -1,5 +1,7 @@
 # SCP-cv
 
+2026-10-21本机新增[020输入路由与直连预览](docs/input-routing-preview-020.md)：正式A二级输入菜单、工作站目录、65/66预览、摄像机当前预览、右侧电视单源及预案逐输出去重；Electron随包直拉RTSP／RTMP，普通网页保持服务端FLV。本轮未推送／未部署D4，下面018仍为现场版本。
+
 2026-10-20已部署D4：015–018的直播凭据、4K适配、32:9／50格布局码、目录／YAML预案、紧凑仪表盘与主题品牌导航；直播预览使用[服务端按需共享FLV](docs/stream-preview-018.md)，观看电脑无需Node／FFmpeg。D4桌面新增`SCP-cv 一键启动.cmd`；双仓推送、冷备与验收见[018部署记录](specs/018-shared-flv-preview/deployment.md)。不自动改Windows显示设置，窗口3/4仍仅网页预留。
 
 直播凭据支持已随018部署：RTSP、HTTP(S)、RTMP可直接填写带用户名/密码的地址，默认隐藏输入及常规摘要中的秘密。使用格式与转义见[使用文档](docs/使用文档.md)，范围见[015规范](specs/015-stream-credentials/spec.md)。部署不代表所有真实流或设备已逐一测试。

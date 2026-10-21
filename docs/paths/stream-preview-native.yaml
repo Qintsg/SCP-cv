@@ -1,0 +1,37 @@
+# 020原生预览固定描述符；主进程只取得已登记来源，不提供任意URL代理或进程接口。
+Resolve:
+  post:
+    tags: [stream-preview]
+    operationId: resolveNativeStreamPreview
+    summary: 为受信原生主进程解析已有来源，不拉流、不创建服务器租约
+    description: >-
+      沿当前入口Cookie/CSRF/Origin及来源验证，响应Cache-Control:no-store。
+      uri可能包含凭据，原生主进程不得将响应原样交给renderer、缓存到页面或记录日志。
+      主进程每次续租重新解析固定target，完整登录票据/Origin/实际URI改变将得到不同sharing_key；修订单独复核。
+      普通Web仍使用共享FLV租约，不调用该敏感描述符接口。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+      - sessionAuthHttp: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '../components/schemas/StreamPreview.yaml#/Request'
+    responses:
+      '200':
+        description: 30秒内有效的受限来源描述，不等于设备可达或已经出画
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/StreamPreview.yaml#/NativeDescriptor'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '403':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '422':
+        $ref: '../components/responses/ErrorResponse.yaml'

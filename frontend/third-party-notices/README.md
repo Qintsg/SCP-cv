@@ -8,4 +8,6 @@
 
 许可证文本直接取自本次pnpm安装的对应包，未改写版权声明。均不要求购买商业播放器授权。
 
-服务器FFmpeg和MediaMTX是独立程序，不加入观看端安装。若后续分发服务器二进制，需要随所选构建保留其许可证及对应分发材料；本轮没有新增提交或部署FFmpeg二进制。
+018服务器FFmpeg和MediaMTX是独立程序，不加入网页观看端安装。020 Windows Electron另随包提供自包含helper和FFmpeg，用户无需自行安装；Web不受影响。本轮只准备本机development-only资产，不提交媒体二进制或公开发行安装器。
+
+Native资产清单保存精确FFmpeg摘要、HTTPS来源和`-version`构建配置，包内保留FFmpeg-LICENSE.txt。当前验证构建含GPL组件，不能称为纯LGPL；公开分发前必须提供匹配二进制的完整对应源码及第三方材料并完成匹配审计，不能用单个LICENSE或“非商业”代替。准备脚本缺少--source-archive时拒绝发行模式；打包前检查完整性，`--require-distributable`还拒绝development-only资产。见[020构建说明](../../docs/input-routing-preview-020.md#构建与发行)。

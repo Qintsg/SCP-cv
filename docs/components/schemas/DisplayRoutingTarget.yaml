@@ -1,0 +1,19 @@
+type: object
+required: [target, status, last_sent, updated_at]
+description: 服务端最后下发的逻辑记录，不是实体实时读回；失败仍可保留历史last_sent，但不可用于跳过
+properties:
+  target:
+    type: string
+    enum: [wall, tv_left, tv_right]
+  status:
+    type: string
+    enum: [unknown, dispatching, sent_unconfirmed, simulated, uncertain]
+  last_sent:
+    type: object
+    allOf:
+      - $ref: ./DisplayRoutingIntent.yaml
+    nullable: true
+  updated_at:
+    type: string
+    format: date-time
+    nullable: true

@@ -1,0 +1,53 @@
+# 仅显式刷新触发固定清单的有界TCP探测，不拉取媒体。
+List:
+  get:
+    tags: [inputs]
+    summary: 读取现场输入及发现缓存
+    operationId: listSiteInputs
+    description: GET不探网络或写业务库；工作站51–74、监控76、现场81、摄像机84–88，不存在75。
+    responses:
+      '200':
+        description: 固定目录
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/SiteInput.yaml#/Response'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+Refresh:
+  post:
+    tags: [inputs]
+    summary: 合并刷新服务可达快照并同步工作站目录
+    operationId: refreshSiteInputs
+    description: 固定31项，最多6项并发、单端口250ms、默认TTL60秒；Simulation全部unknown且不连接网络。不会接管同名用户目录。
+    security:
+      - sessionAuth: []
+        csrfToken: []
+      - sessionAuthHttp: []
+        csrfToken: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties: false
+            properties:
+              force: {type: boolean, default: false}
+    responses:
+      '200':
+        description: 可达快照；不是媒体出画状态
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/SiteInput.yaml#/Response'
+      '400':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '401':
+        $ref: '../components/responses/ErrorResponse.yaml'
+      '409':
+        description: 内置目录与用户目录冲突，未接管
+        content:
+          application/json:
+            schema:
+              $ref: '../components/schemas/ErrorResponse.yaml'

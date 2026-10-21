@@ -1,0 +1,28 @@
+# 输入目录只暴露固定设备身份，不接受原始帧或任意探测目标。
+Item:
+  type: object
+  required: [id, name, group, ip_suffix, preview_input, source_id, availability, is_available, checked_at, aliases]
+  properties:
+    id: {type: string}
+    name: {type: string}
+    group: {type: string, enum: [workstation, camera, site]}
+    ip_suffix: {type: integer, minimum: 1, maximum: 254}
+    preview_input:
+      $ref: './VideoWallInput.yaml'
+    source_id: {type: integer, format: int64, nullable: true}
+    availability: {type: string, enum: [unknown, reachable, unreachable]}
+    is_available:
+      type: boolean
+      description: 仅RTSP/RTMP服务端口可达，不是画面确认
+    checked_at: {type: string, format: date-time, nullable: true}
+    aliases: {type: array, items: {type: string}}
+Response:
+  type: object
+  required: [success, inputs]
+  properties:
+    success: {type: boolean, enum: [true]}
+    inputs:
+      type: array
+      maxItems: 31
+      items:
+        $ref: '#/Item'
