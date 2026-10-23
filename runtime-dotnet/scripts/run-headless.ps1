@@ -1,4 +1,8 @@
-﻿<#
+﻿#Requires -Version 7.2
+#Requires -PSEdition Core
+# 文件描述：通过当前PowerShell 7启动或停止指定数据目录的控制服务。
+# 项目：SCP-cv；文件：run-headless.ps1；作者：Qintsg；日期：2026-10-22。
+<#
 .SYNOPSIS
   以无头方式运行 ControlHost（隐藏窗口 + 日志落盘），可选一并拉起受管 Worker。
 
@@ -29,6 +33,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+if (-not $IsWindows) { throw '控制服务维护脚本要求Windows。' }
+$shellProcess = [System.Diagnostics.Process]::GetCurrentProcess()
+try { $pwshPath = [System.IO.Path]::GetFullPath($shellProcess.MainModule.FileName) }
+finally { $shellProcess.Dispose() }
+$expectedShell = [System.IO.Path]::GetFullPath((Join-Path $PSHOME 'pwsh.exe'))
+if (-not [System.IO.File]::Exists($pwshPath) -or
+    -not [string]::Equals($pwshPath, $expectedShell, [StringComparison]::OrdinalIgnoreCase)) {
+    throw '当前解释器必须是本安装目录中的pwsh.exe。'
+}
 
 function Get-AllowedOriginList {
     param([string]$Value)
@@ -96,13 +110,8 @@ $probeBaseUrl = Get-ProbeBaseUrl $listenBaseUrl
 $httpOrigin = $originList | Where-Object { $_ -match '^https?://' } | Select-Object -First 1
 if ([string]::IsNullOrWhiteSpace($httpOrigin)) { $httpOrigin = $probeBaseUrl }
 
-# Windows PowerShell 5.1 没有 Invoke-WebRequest -SkipCertificateCheck；
-# 仅当目标是本机 https（自签证书）时放宽校验回调，避免脚本在旧版 PowerShell 上直接失败。
 $isHttps = $ListenUrls.TrimStart().StartsWith('https://', [StringComparison]::OrdinalIgnoreCase)
 $supportsSkip = (Get-Command Invoke-WebRequest).Parameters.ContainsKey('SkipCertificateCheck')
-if ($isHttps -and -not $supportsSkip) {
-    [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
-}
 # CrossSiteCookies=true 会让会话 Cookie 带 Secure 标记，HTTP 下客户端不会回传；
 # 未显式指定时按监听协议决定。
 if ($null -eq $CrossSiteCookies) { $CrossSiteCookies = $isHttps }
@@ -137,8 +146,6 @@ function Write-Log {
 }
 
 function Get-HeadlessControlHost {
-    # 注意：Windows PowerShell 5.1 基于 .NET Framework，没有
-    # String.Contains(string, StringComparison) 重载，必须用 IndexOf。
     Get-CimInstance Win32_Process -Filter "Name='ScpCv.ControlHost.exe'" -ErrorAction SilentlyContinue |
         Where-Object {
             $_.CommandLine -and
@@ -219,8 +226,7 @@ if ($Detach) {
         ($lines -join [Environment]::NewLine) + [Environment]::NewLine,
         (New-Object System.Text.UTF8Encoding($true)))
 
-    $action = (Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe') +
-        ' -NoProfile -ExecutionPolicy Bypass -File ' + $launcher
+    $action = '"' + $pwshPath + '" -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -File "' + $launcher + '"'
     if ($action.Length -gt 261) { throw "计划任务动作超过 261 字符：$action" }
     $taskName = Get-HeadlessTaskName
     $created = schtasks /create /tn $taskName /tr $action /sc once /st 23:59 /f 2>&1 | Out-String

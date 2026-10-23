@@ -1,4 +1,8 @@
-﻿<#
+﻿#Requires -Version 7.2
+#Requires -PSEdition Core
+# 文件描述：核验并启动当前部署任务，支持仅检查模式。
+# 项目：SCP-cv；文件：start-deployed.ps1；作者：Qintsg；日期：2026-10-22。
+<#
 .SYNOPSIS
   启动已部署的SCP-cv任务；重复运行复用现有服务，不切墙或开设备电源。
 .PARAMETER ConfigurationPath

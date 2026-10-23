@@ -1,5 +1,6 @@
-// 已部署启动入口合同与缺配置失败测试；不启动计划任务或访问现场设备。
+// 已部署启动入口与解释器拒绝验证，不启动计划任务。项目：SCP-cv；文件：DeployedStartupScriptTests.cs；作者：Qintsg；日期：2026-10-23。
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace ScpCv.ControlHost.Tests;
 
@@ -8,9 +9,30 @@ public sealed class DeployedStartupScriptTests
     private static readonly string ScriptPath = Path.Combine(AppContext.BaseDirectory, "scripts", "start-deployed.ps1");
 
     [Fact]
-    public void ScriptHasWindowsPowerShellUtf8Bom()
+    public void ScriptHasUtf8BomAndLfLineEndings()
     {
-        Assert.Equal(new byte[] { 0xef, 0xbb, 0xbf }, File.ReadAllBytes(ScriptPath)[..3]);
+        var bytes = File.ReadAllBytes(ScriptPath);
+        Assert.Equal(new byte[] { 0xef, 0xbb, 0xbf }, bytes[..3]);
+        Assert.DoesNotContain((byte)'\r', bytes);
+    }
+
+    [Fact]
+    public async Task ScriptParsesInPowerShell7AndRequiresCoreVersion72()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var result = await RunShellAsync("pwsh.exe", "-Command",
+            "$tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile('" +
+            ScriptPath.Replace("'", "''", StringComparison.Ordinal) + "',[ref]$tokens,[ref]$errors);" +
+            "@{version=[string]$ast.ScriptRequirements.RequiredPSVersion;editions=@($ast.ScriptRequirements.RequiredPSEditions);" +
+            "errors=@($errors|ForEach-Object Message);shell_version=$PSVersionTable.PSVersion.ToString();shell_edition=$PSVersionTable.PSEdition}|ConvertTo-Json -Depth 3");
+        Assert.True(result.ExitCode == 0, result.Error);
+        using var document = JsonDocument.Parse(result.Output);
+        var root = document.RootElement;
+        Assert.Equal("7.2", root.GetProperty("version").GetString());
+        Assert.Equal("Core", root.GetProperty("editions")[0].GetString());
+        Assert.Equal(0, root.GetProperty("errors").GetArrayLength());
+        Assert.True(Version.Parse(root.GetProperty("shell_version").GetString()!) >= new Version(7, 2));
+        Assert.Equal("Core", root.GetProperty("shell_edition").GetString());
     }
 
     [Fact]
@@ -57,22 +79,63 @@ public sealed class DeployedStartupScriptTests
     public async Task MissingConfigurationReturnsFailureWithoutStartingTasks()
     {
         if (!OperatingSystem.IsWindows()) return;
+        var missingPath = Path.Combine(Path.GetTempPath(), $"missing-scp-cv-{Guid.NewGuid():N}.json");
+        var result = await RunShellAsync("pwsh.exe", "-File", ScriptPath, "-ConfigurationPath", missingPath, "-NoPause");
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("启动失败：", result.Output, StringComparison.Ordinal);
+        Assert.Contains(Path.GetFileName(missingPath), result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("ScriptRequires", result.Output + result.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain("已就绪", result.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Start-ScheduledTask", result.Error, StringComparison.Ordinal);
+        Assert.False(File.Exists(missingPath));
+    }
+
+    [Fact]
+    public async Task WindowsPowerShell51IsRejectedBeforeReadingConfiguration()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var missingPath = Path.Combine(Path.GetTempPath(), $"missing-scp-cv-{Guid.NewGuid():N}.json");
+        var legacyShell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+        var result = await RunShellAsync(legacyShell, "-File", ScriptPath, "-ConfigurationPath", missingPath, "-NoPause");
+        Assert.Equal(1, result.ExitCode);
+        Assert.Contains("ScriptRequiresUnmatchedPSVersion", result.Error, StringComparison.Ordinal);
+        Assert.Empty(result.Output);
+        Assert.False(File.Exists(missingPath));
+    }
+
+    /// <summary>:param executable: 明确解释器。:param arguments: 实际脚本参数。:returns: 有时间限制并完整读取的实际结果。</summary>
+    private static async Task<(int ExitCode, string Output, string Error)> RunShellAsync(
+        string executable, params string[] arguments)
+    {
         using var process = new Process
         {
-            StartInfo = new ProcessStartInfo("powershell.exe")
+            StartInfo = new ProcessStartInfo(executable)
             {
                 UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true,
             },
         };
-        foreach (var argument in new[] { "-NoProfile", "-NonInteractive", "-File", ScriptPath, "-ConfigurationPath", Path.Combine(Path.GetTempPath(), $"missing-scp-cv-{Guid.NewGuid():N}.json"), "-NoPause" })
+        process.StartInfo.ArgumentList.Add("-NoLogo");
+        process.StartInfo.ArgumentList.Add("-NoProfile");
+        process.StartInfo.ArgumentList.Add("-NonInteractive");
+        foreach (var argument in arguments)
             process.StartInfo.ArgumentList.Add(argument);
         Assert.True(process.Start());
         var output = process.StandardOutput.ReadToEndAsync();
         var error = process.StandardError.ReadToEndAsync();
         using var budget = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-        await process.WaitForExitAsync(budget.Token);
-        Assert.Equal(1, process.ExitCode);
-        Assert.DoesNotContain("已就绪", await output, StringComparison.Ordinal);
-        Assert.DoesNotContain("Start-ScheduledTask", await error, StringComparison.Ordinal);
+        try
+        {
+            await process.WaitForExitAsync(budget.Token);
+            return (process.ExitCode, await output, await error);
+        }
+        finally
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                using var exitBudget = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                await process.WaitForExitAsync(exitBudget.Token);
+            }
+        }
     }
 }
