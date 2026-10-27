@@ -78,7 +78,9 @@ Worker纯值观测包含`share_id/actual_frames/actual_audio`和null媒体ID，�
 
 浏览器采集必须是安全上下文；localhost只支持本机开发，普通局域网HTTP不满足要求。配置步骤见下节，不能使用关闭安全策略/不安全来源flag作为正式方法。D4当前普通入口为`http://192.168.5.194/`，共享入口为`https://192.168.5.194/`；任何采集设备都须正常信任用户证书，HTTP确认只负责导航，不自动建立信任。
 
-012捕获不人为限尺寸，优先文字细节和30fps；发送建议上限1080P为8Mbps、1440P为12Mbps、更高20Mbps。面板分别报告真实捕获、发送和接收尺寸/帧率/码率；参数上限不是保证值，缺失统计保持未知。新参数实测见[共享清晰度记录](../specs/012-directory-camera-console/verification/share-quality.md)。
+捕获保持原始尺寸，优先文字细节和30fps。服务端下发视频策略，默认发送上限为1080P 16Mbps、1440P 24Mbps、更高48Mbps；浏览器按网络与编码能力决定实际码率。捕获尺寸进入新档位时更新发送参数，质量详情显示浏览器实际接受的上限和实时统计。
+
+通过`ScreenSharing:Video:FullHdBitrate`、`QhdBitrate`、`UltraHdBitrate`配置各档位（bit/s），`MaxFrameRate`配置帧率（1–30）。三个码率必须递增或相同，最低1Mbps，最高200Mbps；无效配置在启动时报告错误。策略随共享快照的`video_policy`返回，接收端沿用原始WebRTC轨道。手机控制台停止加载预览并隐藏共享发起面板。
 
 自动化覆盖登录/CSRF、争抢、有界信令、原身份围栏、失败撤销、接收来源、停止及专用音频，D4双Worker长稳/十轮/换源已有独立证据。边界：人工普通系统选择器未代操作；跨VLAN/AP隔离或外网未验，默认没有外部STUN/TURN。D4独立音频meter未取得有效采样，未验现场扬声器可听；实际属性/RTP与本机渲染信号不混为硬件听音。见[验证记录](../specs/010-browser-screen-share/verification.md)。
 
