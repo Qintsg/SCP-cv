@@ -146,7 +146,7 @@ job成员计数可能因已终止进程的句柄引用暂留；必须核真实�
 具体原因随失败返回，候选清理失败仍不确定，见[安全限制实测](../specs/008-libreoffice-playback/verification/repeat-safety-and-source-picker-20261005.md)。
 
 2026-10-03用户已明确末页且动画耗尽后下一步保持最后画面、仅提示“当前已是最后一页”，并重新授权D4窗口1/2软件测试及相关环境安装。当前v3 noop协议、Player/精确持久命令反馈及无主序原生终点已部分接通；有主序耗尽保护仍未完成，不能称该规则完整交付，旧v2包不可与源码v3混用。
-D4已安装匹配本机的LibreOffice26.8.0.3，交互清单和只读库确认窗口1/2绑定DISPLAY2/3，控制用DISPLAY1非primary；尚未更新当前应用/启动新运行组。历史“D4暂停/未访问”段落保留为原轮结论，现行范围和剩余门禁见[末页候选与D4记录](../specs/008-libreoffice-playback/verification/terminal-hold-candidate-20261003.md)。
+D4使用LibreOffice 26.8.0.3；当前运行组与显示器绑定见[系统升级验证](../specs/025-d4-windows-driver-upgrade/verification.md)。末页处理的验证范围见[末页候选与D4记录](../specs/008-libreoffice-playback/verification/terminal-hold-candidate-20261003.md)。
 
 本机已验证Frame承载、正常关闭、真实转换、两窗同/异源开关、损坏候选留旧画面、桌面/手机设置与静态选择。
 具体计数与失败证据见[008验证记录](../specs/008-libreoffice-playback/verification.md)。
@@ -160,4 +160,4 @@ D4已安装匹配本机的LibreOffice26.8.0.3，交互清单和只读库确认�
 当前拒绝OOXML外部关系，禁止宏执行和自动更新外链；自动加载的交互handler只选择终止，不批准修复、密码或保存。禁止宏执行不等于按.pptm后缀拒绝所有文稿，真实宏/加密样例仍待测。
 共享纯包预检在引擎启动/候选创建前完成；六OOXML声明扩展及可解析ZIP内演示包内容用同一门禁，不靠改名绕过。非法关系模式、绝对内部引用、异常页引用和XML DTD拒绝；非OOXML旧格式保持既有路由，不假装经过OOXML检查。见[内容门禁与新包记录](../specs/008-libreoffice-playback/verification/package-content-gate-20261003.md)。
 这类已知拒绝记为失败并保留原件，不能与原生执行后的不确定混为一谈；旧输出或原生退出未确认仍禁止盲重试。
-D4已按新授权进行独立QA软件实测，应用源码尚未同步、完整运行组仍停止；电源、未知墙面映射和系统音量未操作。重复主序在末页保持候选与自然End对照均有原生访问冲突，两份转储及官方符号结果见[故障栈记录](../specs/008-libreoffice-playback/verification/terminal-repeat-native-stack-20261004.md)，取得故障栈不等于修复或完成长稳。
+重复主序在末页保持候选与自然End对照中出现原生访问冲突，故障分析见[原生调用记录](../specs/008-libreoffice-playback/verification/terminal-repeat-native-stack-20261004.md)。
