@@ -8,6 +8,7 @@ internal sealed class ScreenShareEntry
     internal required ScpCv.Infrastructure.Playback.ScreenShareTargetIdentity Target { get; init; }
     internal int WindowId => Target.WindowId;
     internal required bool HasAudio { get; init; }
+    internal ScreenShareVideoPolicy VideoPolicy { get; init; } = new();
     internal required DateTimeOffset CreatedAt { get; init; }
     internal required DateTimeOffset LastPublisherSeen { get; set; }
     internal required DateTimeOffset ExpiresAt { get; set; }
@@ -27,5 +28,5 @@ internal sealed class ScreenShareEntry
 
     internal ScreenShareSnapshot Snapshot() => new(
         Id, WindowId, State, HasAudio, ReceiverHasAudio, SourceGeneration,
-        ExpiresAt, ActualFrames, LastFrameAt, Answer, StopReason) { ReceiverQuality = Quality };
+        ExpiresAt, ActualFrames, LastFrameAt, Answer, StopReason) { ReceiverQuality = Quality, VideoPolicy = VideoPolicy };
 }

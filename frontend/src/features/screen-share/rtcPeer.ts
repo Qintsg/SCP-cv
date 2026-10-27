@@ -1,6 +1,6 @@
 /** 发布者独占WebRTC；无外部STUN/TURN、不获取麦克风，不用连接状态冒充帧。SCP-cv 2026-10-11。 */
-import type { ScreenShareSdp } from '@/services/screenSharing';
-import { configureVideoSender, preferTextDetail, qualitySampler, type ShareQuality } from './shareQuality';
+import type { ScreenShareSdp, ScreenShareVideoPolicy } from '@/services/screenSharing';
+import { checkedVideoPolicy, configureVideoSender, preferTextDetail, qualitySampler, videoBitrateLimit, type ShareQuality } from './shareQuality';
 
 export interface ScreenSharePeer {
   offer(signal: AbortSignal): Promise<ScreenShareSdp>;
@@ -28,13 +28,32 @@ function gatherIce(peer: RTCPeerConnection, signal: AbortSignal): Promise<void> 
 }
 
 /** :param stream: 用户本次授权的内容轨道。:param failed: 断线通知，只结束当前实例。:returns: 由发布者拥有并显式close的连接。 */
-export function createScreenSharePeer(stream: MediaStream, failed: () => void): ScreenSharePeer {
+export function createScreenSharePeer(stream: MediaStream, failed: () => void, suppliedPolicy?: ScreenShareVideoPolicy): ScreenSharePeer {
+  const policy = checkedVideoPolicy(suppliedPolicy);
   const peer = new RTCPeerConnection({ iceServers: [] });
   let closed = false;
   let parameters = 'pending';
   const video = stream.getVideoTracks().find(track => track.readyState === 'live');
   if (video) preferTextDetail(video);
   const sample = video ? qualitySampler(peer, video, () => parameters) : undefined;
+  let attemptedBitrate: number | undefined;
+  let configuring: Promise<void> | undefined;
+  /** :returns: 只在捕获进入新码率档位时更新发送参数。 */
+  async function configure(signal?: AbortSignal): Promise<void> {
+    if (closed || signal?.aborted || !video) return;
+    if (configuring) return configuring;
+    const limit = videoBitrateLimit(video.getSettings(), policy);
+    if (limit === attemptedBitrate) return;
+    attemptedBitrate = limit;
+    const operation = (async () => {
+      for (const sender of peer.getSenders()) {
+        if (closed || signal?.aborted) return;
+        if (sender.track?.kind === 'video') parameters = await configureVideoSender(sender, () => !closed && !signal?.aborted, policy);
+      }
+    })();
+    configuring = operation;
+    try { await operation; } finally { if (configuring === operation) configuring = undefined; }
+  }
   const connectionChanged = (): void => {
     if (!closed && ['disconnected', 'failed', 'closed'].includes(peer.connectionState)) failed();
   };
@@ -54,13 +73,10 @@ export function createScreenSharePeer(stream: MediaStream, failed: () => void): 
       signal.throwIfAborted();
       if (description.type !== 'answer' || new TextEncoder().encode(description.sdp).byteLength > 65536) throw new Error('share_sdp_invalid');
       await peer.setRemoteDescription(description); signal.throwIfAborted();
-      for (const sender of peer.getSenders()) {
-        if (closed || signal.aborted) break;
-        if (sender.track?.kind === 'video') parameters = await configureVideoSender(sender, () => !closed && !signal.aborted);
-      }
+      await configure(signal);
       signal.throwIfAborted();
     },
-    quality: sample,
+    quality: sample ? async () => { await configure(); return sample(); } : undefined,
     close() {
       if (closed) return;
       closed = true; peer.removeEventListener('connectionstatechange', connectionChanged); peer.close();

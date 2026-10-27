@@ -43,10 +43,36 @@ Sdp:
       type: string
       maxLength: 65536
       description: 以v=0和CRLF开头，解码后的UTF-8字节数不超过65536；Unicode可能更早达到字节上限。
+VideoPolicy:
+  type: object
+  required: [full_hd_bitrate, qhd_bitrate, ultra_hd_bitrate, max_frame_rate]
+  properties:
+    full_hd_bitrate:
+      type: integer
+      minimum: 1000000
+      maximum: 200000000
+      default: 16000000
+    qhd_bitrate:
+      type: integer
+      minimum: 1000000
+      maximum: 200000000
+      default: 24000000
+    ultra_hd_bitrate:
+      type: integer
+      minimum: 1000000
+      maximum: 200000000
+      default: 48000000
+    max_frame_rate:
+      type: integer
+      minimum: 1
+      maximum: 30
+      default: 30
 Share:
   type: object
   required: [id, window_id, state, has_audio, receiver_has_audio, source_generation, expires_at, actual_frames, last_frame_at, answer, stop_reason, actual_volume, actual_muted]
   properties:
+    video_policy:
+      $ref: '#/VideoPolicy'
     receiver_quality:
       $ref: '../components/schemas/ReceiverQuality.yaml'
     id:

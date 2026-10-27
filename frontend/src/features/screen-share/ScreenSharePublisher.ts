@@ -1,5 +1,5 @@
 /** 单个网页授权尝试的所有者：许可先于API、本地先停止、迟到结果不复活。SCP-cv 2026-10-11。 */
-import type { ScreenSharingApi, ScreenShareSnapshot } from '@/services/screenSharing';
+import type { ScreenSharingApi, ScreenShareSnapshot, ScreenShareVideoPolicy } from '@/services/screenSharing';
 import type { ScreenSharePeer } from './rtcPeer';
 import { ScreenShareAudioController, type ScreenShareAudioView } from './ScreenShareAudioController';
 import { displayVideoConstraints, type ShareQuality } from './shareQuality';
@@ -18,7 +18,7 @@ export interface PublisherDependencies {
   availability(): string;
   isCurrent(): boolean;
   capture(options: DisplayMediaStreamOptions): Promise<MediaStream>;
-  peer(stream: MediaStream, failed: () => void): ScreenSharePeer;
+  peer(stream: MediaStream, failed: () => void, policy?: ScreenShareVideoPolicy): ScreenSharePeer;
   api: ScreenSharingApi;
   changed(view: ScreenShareView): void;
 }
@@ -50,7 +50,7 @@ function nextPoll(signal: AbortSignal): Promise<void> {
 function errorCode(error: unknown): string {
   if (error instanceof Error) {
     const known = new Set(['share_window_busy', 'share_player_offline', 'share_sdp_invalid', 'share_sdp_too_large',
-      'share_ice_timeout', 'share_capture_empty', 'share_context_changed', 'share_identity_invalid', 'share_ended']);
+      'share_ice_timeout', 'share_capture_empty', 'share_context_changed', 'share_identity_invalid', 'share_ended', 'share_video_policy_invalid']);
     const code = 'code' in error && typeof error.code === 'string' ? error.code : error.message;
     if (known.has(code)) return code;
     if (error.name === 'UnauthorizedError') return 'share_login_required';
@@ -158,7 +158,7 @@ export class ScreenSharePublisher {
       }
       this.accept(attempt, allocated);
       if (!this.live(attempt)) { await this.stop(); return; }
-      attempt.peer = this.deps.peer(stream, () => { if (this.live(attempt)) void this.stop('share_peer_disconnected'); });
+      attempt.peer = this.deps.peer(stream, () => { if (this.live(attempt)) void this.stop('share_peer_disconnected'); }, allocated.video_policy);
       const offer = await attempt.peer.offer(attempt.abort.signal);
       if (!this.live(attempt)) return;
       const accepted = await this.deps.api.offer(allocated.id, offer, attempt.abort.signal);

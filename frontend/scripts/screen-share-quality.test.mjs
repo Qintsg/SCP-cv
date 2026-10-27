@@ -17,10 +17,10 @@ test('采集没有1080P上限并请求完整像素/30fps', () => {
   assert.deepEqual(quality.displayVideoConstraints.frameRate, { ideal: 30, max: 30 });
 });
 test('上限按像素量选取，不当作实际发送码率', () => {
-  assert.equal(quality.videoBitrateLimit({ width: 1280, height: 720 }), 8_000_000);
-  assert.equal(quality.videoBitrateLimit({ width: 1920, height: 1080 }), 8_000_000);
-  assert.equal(quality.videoBitrateLimit({ width: 2560, height: 1440 }), 12_000_000);
-  assert.equal(quality.videoBitrateLimit({ width: 3840, height: 2160 }), 20_000_000);
+  assert.equal(quality.videoBitrateLimit({ width: 1280, height: 720 }), 16_000_000);
+  assert.equal(quality.videoBitrateLimit({ width: 1920, height: 1080 }), 16_000_000);
+  assert.equal(quality.videoBitrateLimit({ width: 2560, height: 1440 }), 24_000_000);
+  assert.equal(quality.videoBitrateLimit({ width: 3840, height: 2160 }), 48_000_000);
 });
 test('仅视频sender修改可写编码字段并保留RID和事务', async () => {
   let applied;
@@ -30,7 +30,7 @@ test('仅视频sender修改可写编码字段并保留RID和事务', async () =>
   assert.equal(await quality.configureVideoSender(sender, () => true), 'configured');
   assert.equal(applied.transactionId, 'same');
   assert.equal(applied.encodings[0].rid, 'a');
-  assert.equal(applied.encodings[0].maxBitrate, 8_000_000);
+  assert.equal(applied.encodings[0].maxBitrate, 16_000_000);
   assert.equal(applied.encodings[0].scaleResolutionDownBy, 1);
   assert.equal(applied.degradationPreference, 'maintain-resolution');
   let audioCalls = 0;
@@ -70,5 +70,5 @@ test('兼容回退删除浏览器返回的旧限制字段，而非带着不支�
   assert.equal(applied[1].degradationPreference, undefined);
   assert.equal(applied[2].encodings[0].maxFramerate, undefined);
   assert.equal(applied[2].encodings[0].scaleResolutionDownBy, undefined);
-  assert.equal(applied[2].encodings[0].maxBitrate, 8_000_000);
+  assert.equal(applied[2].encodings[0].maxBitrate, 16_000_000);
 });

@@ -5,7 +5,7 @@ using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.ScreenSharing;
 
-public sealed partial class ScreenShareRegistry(TimeProvider timeProvider)
+public sealed partial class ScreenShareRegistry(TimeProvider timeProvider, ScreenShareOptions? options = null)
 {
     private const int MaximumSdpBytes = 65536;
     private const int MaximumTerminalEntries = 32;
@@ -42,6 +42,7 @@ public sealed partial class ScreenShareRegistry(TimeProvider timeProvider)
             {
                 Id = Guid.NewGuid(), OwnerId = ownerId, Target = target, HasAudio = hasAudio,
                 CreatedAt = now, LastPublisherSeen = now, ExpiresAt = now + ReservationLifetime,
+                VideoPolicy = options?.Video ?? new(),
             };
             _entries.Add(entry.Id, entry);
             return entry.Snapshot();

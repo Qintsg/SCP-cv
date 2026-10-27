@@ -36,6 +36,7 @@ export default {
       share_https_same_origin_required: '当前连接了另一个主机入口。请直接打开该主机的网页控制台后再切换 HTTPS，避免改变共享目标。',
       share_browser_unsupported: '请在支持屏幕共享的桌面 Chrome 或 Edge 网页中操作，当前浏览器或封装端不支持。',
       share_login_required: '登录后才能共享。', share_player_offline: '目标播放器当前离线，恢复在线后再共享。',
+      share_video_policy_invalid: '共享视频配置无效，请检查播放主机设置。',
       share_permission_denied: '已取消或拒绝共享许可，未切换播放器。', share_cancelled: '已取消共享。',
       share_capture_failed: '浏览器无法读取所选内容，请重新选择可共享的屏幕或窗口。', share_capture_empty: '浏览器未提供有效视频轨道，未切换播放器。',
       share_context_changed: '账号或播放主机已改变，本地采集已停止；旧共享将按服务端时限回收。',

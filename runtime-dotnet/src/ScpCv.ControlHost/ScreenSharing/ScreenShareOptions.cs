@@ -4,6 +4,7 @@ namespace ScpCv.ControlHost.ScreenSharing;
 public sealed class ScreenShareOptions
 {
     public Uri ReceiverBaseUri { get; init; } = new("https://localhost:18443");
+    public ScreenShareVideoPolicy Video { get; init; } = new();
 
     /// <summary>沿用运行脚本的urls；显式覆盖仍必须是纯loopback HTTP(S)地址。</summary>
     public static ScreenShareOptions FromConfiguration(IConfiguration configuration)
@@ -16,13 +17,15 @@ public sealed class ScreenShareOptions
             .Replace("[::]", "[::1]", StringComparison.Ordinal)
             .Replace("://+:", "://127.0.0.1:", StringComparison.Ordinal)
             .Replace("://*:", "://127.0.0.1:", StringComparison.Ordinal);
-        var options = new ScreenShareOptions { ReceiverBaseUri = new Uri(configured, UriKind.Absolute) };
+        var options = new ScreenShareOptions { ReceiverBaseUri = new Uri(configured, UriKind.Absolute),
+            Video = configuration.GetSection("ScreenSharing:Video").Get<ScreenShareVideoPolicy>() ?? new() };
         options.Validate();
         return options;
     }
 
     public void Validate()
     {
+        Video.Validate();
         if (!ReceiverBaseUri.IsAbsoluteUri || !ReceiverBaseUri.IsLoopback ||
             ReceiverBaseUri.Scheme is not ("http" or "https") || ReceiverBaseUri.AbsolutePath != "/" ||
             ReceiverBaseUri.UserInfo.Length != 0 || ReceiverBaseUri.Query.Length != 0 || ReceiverBaseUri.Fragment.Length != 0)

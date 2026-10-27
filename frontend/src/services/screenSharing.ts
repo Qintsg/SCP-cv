@@ -3,7 +3,9 @@ import { requestJson } from './api';
 import type { PlaybackCommandSnapshot } from './apiTypes';
 
 export interface ScreenShareSdp { type: 'offer' | 'answer'; sdp: string }
+export interface ScreenShareVideoPolicy { full_hd_bitrate: number; qhd_bitrate: number; ultra_hd_bitrate: number; max_frame_rate: number }
 export interface ScreenShareSnapshot {
+  video_policy?: ScreenShareVideoPolicy;
   receiver_quality?: { width: number | null; height: number | null; fps: number | null; bitrate_mbps: number | null } | null;
   id: string;
   window_id: number;
