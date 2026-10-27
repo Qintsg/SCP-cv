@@ -42,7 +42,7 @@ function New-RuntimeVlcPluginCache {
     $generator = Join-Path $root 'ScpCv.AudioWorker.dll'
     if (-not (Test-Path -LiteralPath $generator -PathType Leaf)) { throw '缺少插件索引生成入口；未标记运行时包完成。' }
     $start = New-Object System.Diagnostics.ProcessStartInfo
-    $start.FileName = (Get-Command dotnet -CommandType Application -ErrorAction Stop).Source
+    $start.FileName = (Get-Command dotnet -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
     $start.Arguments = '"' + $generator + '" --generate-plugin-cache "' + $root + '"'
     $start.WorkingDirectory = $root
     $start.UseShellExecute = $false
