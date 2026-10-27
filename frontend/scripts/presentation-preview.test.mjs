@@ -29,7 +29,7 @@ test('专注页的当前页、下一页和缩略栏都取实际源40适配版，
   assert.equal(browser.document.querySelector('.ppt-focus__next img')?.src, fittedImageUrl(2));
   assert.deepEqual([...browser.document.querySelectorAll('.ppt-slide-rail__thumb img')]
     .map((image) => image.src), [fittedImageUrl(1), fittedImageUrl(2)]);
-  assert.equal(browser.document.querySelector('.ppt-focus__topbar-title')?.textContent, '实际文稿40');
+  assert.equal(browser.document.querySelector('.ppt-focus__identity h1')?.textContent, '实际文稿40');
 });
 
 for (const componentName of ['control', 'focus']) {
@@ -157,7 +157,7 @@ test('专注页卸载后迟到的轮询不能重新安排timer或发送HTTP', as
 });
 
 for (const componentName of ['control', 'focus']) {
-  test(`${componentName} HTTP200但无页图时明确提示所选布局预览未准备，不改原生播放状态`, async () => {
+  test(`${componentName} HTTP200但无页图时保持空预览及原生播放状态`, async () => {
     const component = componentName === 'control' ? PlaybackControl : PptFocusView;
     const rows = resourceRows(40, true).map((row) => ({ ...row, slide_image: '', next_slide_image: '' }));
     const sessions = await mountPreview(component, {
@@ -166,7 +166,6 @@ for (const componentName of ['control', 'focus']) {
       respondResource: () => resourceResponse(rows),
     });
     assert.equal(currentImage(component), '');
-    assert.match(browser.document.body.textContent, /所选布局预览尚未准备/);
     assert.equal(sessions.byWindowId(1).playback_state, 'playing');
     assert.equal(sessions.byWindowId(1).error_message, '');
     assert.equal(sessions.byWindowId(1).actual_fit_text, true);
@@ -206,7 +205,7 @@ for (const componentName of ['control', 'focus']) {
       assert.equal(resourceRequests().length, 9, '初始读取加八次自动补齐');
     }
     const button = [...browser.document.querySelectorAll('button')]
-      .find((element) => visibleText(element.textContent) === visibleText('刷新预览'));
+      .find((element) => visibleText(element.textContent) === visibleText('刷新预览') || element.getAttribute('aria-label') === '刷新预览');
     assert.ok(button, '预览不可用时应有独立只读刷新入口');
     assert.equal(button.disabled, false);
     if (clock) {

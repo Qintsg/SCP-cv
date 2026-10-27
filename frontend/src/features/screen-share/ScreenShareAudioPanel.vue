@@ -44,7 +44,7 @@ function toggleMute(): void {
       <h4>{{ t('screenShare.audio.title') }}</h4>
       <span class="share-audio__actual" role="status" aria-live="polite" aria-atomic="true">{{ actual }}</span>
     </div>
-    <p v-if="unavailable" class="share-audio__hint">{{ t(`screenShare.audio.${unavailable}`) }}</p>
+    <p class="share-audio__hint" :class="{ 'share-audio__empty': !unavailable }">{{ unavailable ? t(`screenShare.audio.${unavailable}`) : ' ' }}</p>
     <form class="share-audio__actions" @submit.prevent="applyVolume">
       <label class="share-audio__field">
         <span>{{ t('screenShare.audio.volume') }}</span>
@@ -54,7 +54,7 @@ function toggleMute(): void {
       <a-button html-type="submit"  :disabled="disabled || !validDraft">{{ t('screenShare.audio.apply') }}</a-button>
       <a-button html-type="button"  :disabled="disabled" @click="toggleMute">{{ toggleLabel }}</a-button>
     </form>
-    <p v-if="feedback" class="share-audio__feedback" role="status" aria-live="polite" aria-atomic="true">{{ feedback }}</p>
+    <p class="share-audio__feedback" :class="{ 'share-audio__empty': !feedback }" role="status" aria-live="polite" aria-atomic="true">{{ feedback || ' ' }}</p>
   </div>
 </template>
 

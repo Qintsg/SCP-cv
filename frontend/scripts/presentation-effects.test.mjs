@@ -40,7 +40,7 @@ async function mountEffects(component, respondControl, reuseStoreScope = false) 
 
 /** :param label: 公开按钮名称。:returns: 当前真实Naive UI动画按钮。 */
 function effectButton(label) {
-  const button = [...browser.document.querySelectorAll('.presentation-effects button')]
+  const button = [...browser.document.querySelectorAll('.presentation-navigation button')]
     .find((candidate) => visibleText(candidate.textContent) === visibleText(label));
   assert.ok(button, `应有真实动画按钮：${label}`);
   return button;
@@ -77,10 +77,10 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
         completed_at: queries === 1 ? null : '2026-10-04T00:00:00Z',
       } }), { headers: { 'Content-Type': 'application/json' } }));
     };
-    effectButton('下一步动画').click();
+    effectButton('下一步').click();
     await flushUi();
     assert.equal(queries, 1);
-    assert.equal(effectButton('下一步动画').disabled, false);
+    assert.equal(effectButton('下一步').disabled, false);
     assert.doesNotMatch(browser.document.body.textContent, /当前已是最后一页/);
     assert.equal(callbacks.length, 1);
     callbacks.shift()();
@@ -100,10 +100,10 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
       const fallback = globalThis.fetch;
       globalThis.fetch = (url, options) => String(url).includes(`/commands/${id}/`)
         ? terminal.promise : fallback(url, options);
-      effectButton('下一步动画').click();
+      effectButton('下一步').click();
       await flushUi();
       if (invalidate === '倒退') {
-        effectButton('上一步动画').click();
+        effectButton('上一步').click();
         await flushUi();
       } else if (invalidate === '卸载') {
         unmountPreview();
@@ -136,16 +136,17 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
           command_id: id, window_id: 1, command: 'NEXT_EFFECT', source_generation: 7,
           status: 'completed', result_code: 'presentation_at_last_slide', completed_at: '2026-10-04T00:00:00Z', ...patch,
         } }), { headers: { 'Content-Type': 'application/json' } })) : fallback(url, options);
-      effectButton('下一步动画').click();
+      effectButton('下一步').click();
       await flushUi();
       assert.doesNotMatch(browser.document.body.textContent, /当前已是最后一页/);
       assert.match(browser.document.body.textContent, /无法读取操作结果/);
     });
   }
 
-  test(`${name}整页下一页也跟踪自己的命令并显示确认边界`, async () => {
+  test(`${name}静态文稿下一步跟踪自己的命令并显示确认边界`, async () => {
     const id = '334f4721-8173-4924-bf41-bbd5f96557b9';
-    await mountEffects(component(), (_request, store) => acceptedResponse([store.byWindowId(1)]));
+    const { sessions } = await mountEffects(component(), (_request, store) => acceptedResponse([store.byWindowId(1)]));
+    await observe(sessions, { playback_mode: 'slide_images', actual_adapter_kind: 'slide_images' });
     const fallback = globalThis.fetch;
     globalThis.fetch = (url, options) => {
       const path = new URL(String(url), browser.location.origin).pathname;
@@ -158,7 +159,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
       } }), { headers: { 'Content-Type': 'application/json' } }));
       return fallback(url, options);
     };
-    const next = [...browser.document.querySelectorAll('button')].find(button => visibleText(button.textContent) === visibleText('下一页'));
+    const next = effectButton('下一步');
     assert.ok(next);
     next.click();
     await flushUi();
@@ -180,7 +181,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
           command_id: id, window_id: 1, command: 'NEXT_EFFECT', source_generation: 7,
           status, result_code: code, completed_at: '2026-10-04T00:00:00Z',
         } }), { headers: { 'Content-Type': 'application/json' } })) : fallback(url, options);
-      effectButton('下一步动画').click();
+      effectButton('下一步').click();
       await flushUi();
       assert.doesNotMatch(browser.document.body.textContent, /当前已是最后一页/);
       if (message) assert.ok(browser.document.body.textContent.includes(message));
@@ -199,7 +200,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
         command_id: id, window_id: 2, command: 'NEXT_EFFECT', source_generation: 7,
         status: 'completed', result_code: 'presentation_at_last_slide', completed_at: '2026-10-04T00:00:00Z',
       } }), { headers: { 'Content-Type': 'application/json' } })) : fallback(url, options);
-    effectButton('下一步动画').click();
+    effectButton('下一步').click();
     await flushUi();
     assert.doesNotMatch(browser.document.body.textContent, /当前已是最后一页/);
     assert.match(browser.document.body.textContent, /命令回执身份不匹配/);
@@ -219,7 +220,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
       queries.push(target.pathname);
       return terminal.promise;
     };
-    effectButton('下一步动画').click();
+    effectButton('下一步').click();
     await flushUi();
     assert.equal(controls.length, 1);
     assert.deepEqual(queries, [`/api/playback/1/commands/${commandId}/`]);
@@ -236,7 +237,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
   test(`${name}卸载后旧动画HTTP错误不能污染后续页面的通知`, async () => {
     const gate = responseGate();
     const { controls } = await mountEffects(component(), () => gate.promise);
-    effectButton('下一步动画').click();
+    effectButton('下一步').click();
     await flushUi();
     assert.equal(controls.length, 1);
     unmountPreview();
@@ -252,14 +253,14 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
   test(`${name}同步双点下一步并交错上一步在网络在途内仅发送一条动画POST`, async () => {
     const gate = responseGate();
     const { sessions, controls } = await mountEffects(component(), () => gate.promise);
-    const next = effectButton('下一步动画');
+    const next = effectButton('下一步');
     next.click();
     next.click();
-    effectButton('上一步动画').click();
+    effectButton('上一步').click();
     await flushUi();
     assert.deepEqual(controls, [{ method: 'POST', body: { action: 'next_effect' } }]);
-    assert.equal(effectButton('下一步动画').disabled, true);
-    assert.equal(effectButton('上一步动画').disabled, true);
+    assert.equal(effectButton('下一步').disabled, true);
+    assert.equal(effectButton('上一步').disabled, true);
     gate.resolve(acceptedResponse([sessions.byWindowId(1)]));
     await flushUi();
   });
@@ -269,17 +270,17 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
       ? new Response(JSON.stringify({ detail: '动画命令被拒绝：测试HTTP错误' }), {
         status: 400, headers: { 'Content-Type': 'application/json' },
       }) : acceptedResponse([sessions.byWindowId(1)]));
-    effectButton('下一步动画').click();
+    effectButton('下一步').click();
     await flushUi();
     assert.deepEqual(controls, [{ method: 'POST', body: { action: 'next_effect' } }]);
-    assert.match(browser.document.body.textContent, /动画步操作失败/);
+    assert.match(browser.document.body.textContent, /步进失败/);
     assert.match(browser.document.body.textContent, /动画命令被拒绝：测试HTTP错误/);
-    assert.equal(effectButton('下一步动画').disabled, false);
-    assert.equal(effectButton('上一步动画').disabled, false);
+    assert.equal(effectButton('下一步').disabled, false);
+    assert.equal(effectButton('上一步').disabled, false);
     // 失败后不自动重放；第二条请求只能来自用户这一轮显式点击。
     await flushUi();
     assert.equal(controls.length, 1);
-    effectButton('上一步动画').click();
+    effectButton('上一步').click();
     await flushUi();
     assert.deepEqual(controls.map((request) => request.body),
       [{ action: 'next_effect' }, { action: 'previous_effect' }]);
@@ -291,7 +292,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
       { ...store.byWindowId(1), pending_command: 'NEXT_EFFECT', last_updated_at: '2026-10-03T00:00:01Z' },
     ]));
     assert.equal(currentImage(view), fittedImageUrl(1));
-    effectButton('下一步动画').click();
+    effectButton('下一步').click();
     await flushUi();
     assert.deepEqual(controls, [{ method: 'POST', body: { action: 'next_effect' } }]);
     assert.equal(sessions.byWindowId(1).pending_command, 'NEXT_EFFECT');
@@ -307,7 +308,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
     const gate = responseGate();
     const { sessions, controls } = await mountEffects(view, () => gate.promise);
     const oldSnapshot = { ...sessions.byWindowId(1), pending_command: 'NEXT_EFFECT' };
-    effectButton('下一步动画').click();
+    effectButton('下一步').click();
     await flushUi();
     assert.equal(controls.length, 1);
     await observe(sessions, { current_slide: 2, pending_command: '', playback_state: 'playing' });
@@ -317,7 +318,7 @@ for (const [name, component] of [['显示页', () => PlaybackControl], ['专注�
     assert.equal(sessions.byWindowId(1).current_slide, 2);
     assert.equal(sessions.byWindowId(1).pending_command, '');
     assert.equal(currentImage(view), fittedImageUrl(2));
-    assert.equal(effectButton('下一步动画').disabled, false);
-    assert.equal(effectButton('上一步动画').disabled, false);
+    assert.equal(effectButton('下一步').disabled, false);
+    assert.equal(effectButton('上一步').disabled, false);
   });
 }

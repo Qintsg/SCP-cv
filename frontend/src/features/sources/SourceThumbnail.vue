@@ -9,6 +9,8 @@ import ATooltip from 'ant-design-vue/es/tooltip';
 import FIcon from '@/design-system/FIcon.vue';
 import { buildBackendUrl, type MediaSourceItem } from '@/services/api';
 import { sourceCategoryIcon } from './sourcePresentation';
+import { useMobileControls } from '@/composables/useMobileControls';
+const mobileControls = useMobileControls();
 
 const props = withDefaults(defineProps<{
   source: MediaSourceItem;
@@ -27,7 +29,7 @@ const rawPreviewUrl = computed(() => props.imageUrl
 const previewUrl = computed(() => (rawPreviewUrl.value ? buildBackendUrl(rawPreviewUrl.value) : ''));
 const previewKind = computed(() => props.imageUrl ? 'image' : props.source.preview_kind || 'icon');
 const fallbackIcon = computed(() => sourceCategoryIcon(props.source));
-const canRenderPreview = computed(() => !!previewUrl.value && previewKind.value !== 'icon' && !loadFailed.value);
+const canRenderPreview = computed(() => !mobileControls.value && !!previewUrl.value && previewKind.value !== 'icon' && !loadFailed.value);
 
 watch(rawPreviewUrl, () => {
   loadFailed.value = false;

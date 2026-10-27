@@ -57,5 +57,5 @@ const statuses = computed(() => Object.fromEntries([1, 2].map(id => {
 </template>
 <style scoped>
 .source-open-card__name{font-weight:600;margin:0 0 6px}.source-open-card__hint{font-size:12px;color:var(--colorNeutralForeground3);overflow-wrap:anywhere}
-.source-open-card__targets{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.source-open-card__targets p{font-size:12px;color:var(--colorNeutralForeground2);overflow-wrap:anywhere;min-height:32px}
+.source-open-card__targets{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.source-open-card__targets p{font-size:12px;color:var(--colorNeutralForeground2);overflow-wrap:anywhere;height:48px;overflow:auto;margin:8px 0 0}
 </style>

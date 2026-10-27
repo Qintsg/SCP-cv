@@ -14,7 +14,7 @@
  * @Author : Qintsg
  * @Date : 2026-09-29
  */
-import { onBeforeUnmount, readonly, ref, watch, type Ref } from 'vue';
+import { onScopeDispose, readonly, ref, watch, type Ref } from 'vue';
 
 /** 调用方需要提供的提交回调与节流参数。 */
 export interface ThrottledSliderOptions {
@@ -193,11 +193,17 @@ export function useThrottledSlider(
    */
   function handleChange(next: number): void {
     if (!canCommit()) return;
+    const alreadyScheduled = turnInput === next || dragging && value.value === next;
+    if (dragging) {
+      const version = ++turnVersion;
+      turnInput = next;
+      queueMicrotask(() => { if (version === turnVersion) turnInput = null; });
+    }
     dragging = false;
     clearThrottleTimer();
     lastSentAt = 0;
     // 同轮收尾不再排入同值，但必须解除节流等待，及时发送已经缓存的最终输入。
-    if (turnInput !== next) {
+    if (!alreadyScheduled) {
       pendingValue = next;
       value.value = next;
     }
@@ -206,7 +212,7 @@ export function useThrottledSlider(
     void flush();
   }
 
-  onBeforeUnmount((): void => {
+  onScopeDispose((): void => {
     disposed = true;
     discardPending();
   });

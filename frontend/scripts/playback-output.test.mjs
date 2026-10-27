@@ -91,7 +91,7 @@ test('请求PPT而实际仍为视频时禁用错误类型的翻页和动画，�
   await mountPreview(PlaybackControl, { sourcesTransform: (rows) => rows.map((row) => row.id === 40
     ? { ...row, source_type: 'video', playback_mode: '', name: '实际旧视频' } : row),
   observation: { actual_source_id: 40, actual_adapter_kind: 'vlc', actual_fit_text: null } });
-  for (const label of ['上一页', '下一页', '跳转', '上一步动画', '下一步动画']) {
+  for (const label of ['上一步', '下一步']) {
     const button = [...browser.document.querySelectorAll('button')].find((item) => visibleText(item.textContent) === visibleText(label));
     assert.equal(button?.disabled, true, label);
   }

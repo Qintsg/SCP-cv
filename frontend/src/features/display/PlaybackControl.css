@@ -135,17 +135,6 @@
   flex-wrap: wrap;
 }
 
-.playback-control__jump {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacingHorizontalS);
-  flex: 0 0 auto;
-}
-
-.playback-control__jump :deep(.ant-input) {
-  width: 96px;
-}
-
 .playback-control__row--progress,
 .playback-control__row--seek {
   align-items: center;

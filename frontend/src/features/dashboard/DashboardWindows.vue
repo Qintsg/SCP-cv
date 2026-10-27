@@ -1,21 +1,25 @@
 <!-- 首页双窗口入口，只读取已同步的会话；导航不会切换播放内容。 -->
 <script setup lang="ts">
 import { tagColor } from '@/design-system/tagColor';
+import { computed } from 'vue';
 import { RouterLink } from 'vue-router';
 import ATag from 'ant-design-vue/es/tag';
 import { useSessionStore } from '@/stores/sessions';
 import FIcon from '@/design-system/FIcon.vue';
+import { useMobileControls } from '@/composables/useMobileControls';
+const mobileControls = useMobileControls();
 import { windowPresentation } from './windowPresentation';
 import ClientStreamPreview from '@/features/preview/ClientStreamPreview.vue';
 const sessions = useSessionStore();
 const targets = [{ id: 1, path: '/display/big-left' }, { id: 2, path: '/display/big-right' }, { id: 3, path: '/display/window-3' }, { id: 4, path: '/display/window-4' }];
+const visibleTargets = computed(() => mobileControls.value ? targets.filter(item => item.id <= 2) : targets);
 </script>
 <template>
   <section class="dashboard-windows" aria-label="播放窗口与预留输出">
-    <RouterLink v-for="target in targets" :key="target.id" :to="target.path" class="dashboard-window">
+    <RouterLink v-for="target in visibleTargets" :key="target.id" :to="target.path" class="dashboard-window">
       <div class="dashboard-window__heading"><span class="dashboard-window__number" aria-hidden="true">{{ target.id }}</span><strong>窗口{{ target.id }}</strong>
         <a-tag :color="target.id > 2 ? undefined : tagColor(windowPresentation(sessions.byWindowId(target.id)).tone)">{{ target.id > 2 ? '仅预览' : windowPresentation(sessions.byWindowId(target.id)).label }}</a-tag></div>
-      <div class="dashboard-window__preview"><ClientStreamPreview :input="{ kind: target.id === 1 ? 'window_1' : target.id === 2 ? 'window_2' : target.id === 3 ? 'window_3' : 'window_4' }" :label="`窗口${target.id}预览`" /></div>
+      <div v-if="!mobileControls" class="dashboard-window__preview"><ClientStreamPreview :input="{ kind: target.id === 1 ? 'window_1' : target.id === 2 ? 'window_2' : target.id === 3 ? 'window_3' : 'window_4' }" :label="`窗口${target.id}预览`" /></div>
       <div class="dashboard-window__footer"><p>{{ target.id > 2 ? `IP${target.id + 62}` : sessions.byWindowId(target.id)?.source_name || (sessions.byWindowId(target.id)?.source_type === 'screen_share' ? '屏幕共享' : '未选择媒体') }}</p>
         <span class="dashboard-window__action">{{ target.id > 2 ? '预留' : '进入控制' }} <FIcon name="open_24_regular" /></span></div>
     </RouterLink>

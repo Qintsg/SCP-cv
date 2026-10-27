@@ -10,7 +10,7 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 import ACard from 'ant-design-vue/es/card';
 import AEmpty from 'ant-design-vue/es/empty';
-import AAlert from 'ant-design-vue/es/alert';
+import ATag from 'ant-design-vue/es/tag';
 import ATabs from 'ant-design-vue/es/tabs';
 import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
 import ASegmented from 'ant-design-vue/es/segmented';
@@ -20,15 +20,15 @@ import FPageHeader from '@/design-system/FPageHeader.vue';
 import PlaybackControl from './PlaybackControl.vue';
 import SourcePicker from './SourcePicker.vue';
 import ScreenSharePanel from '../screen-share/ScreenSharePanel.vue';
+import { useMobileControls } from '@/composables/useMobileControls';
 import { DISPLAY_TARGETS, resolveDisplayTarget } from './displayTargets';
-import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useSessionStore } from '@/stores/sessions';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const sessionStore = useSessionStore();
-const { isMobile } = useBreakpoint();
+const mobileControls = useMobileControls();
 
 const targetParam = computed(() => String(route.params.target ?? 'big-left'));
 const targetMeta = computed(() => resolveDisplayTarget(targetParam.value));
@@ -49,6 +49,14 @@ const mobileTab = ref<TabId>('control');
 const commandObservation = computed(() => (
   targetMeta.value ? sessionStore.commandObservation(targetMeta.value.windowId) : null
 ));
+const commandStatus = computed(() => {
+  const session = currentSession.value;
+  if (!session) return t('display.loadingTitle');
+  if (!session.player_online) return t('playback.playerOfflineTitle');
+  if (commandObservation.value?.accepted && !['SET_VOLUME', 'SET_MUTE', 'SEEK'].includes((session.pending_command || '').toUpperCase()))
+    return t('playback.commandAcceptedTitle');
+  return session.playback_state_label || session.playback_state || t('playback.idle');
+});
 
 /** :param value: 明确逻辑目标路由。:returns: 仅切换控制视图，不下发墙面或播放命令。 */
 function changeTarget(value: string): void {
@@ -57,7 +65,7 @@ function changeTarget(value: string): void {
 
 /** :returns: 窄屏受理普通切源后显示控制区，实际播出仍等待Worker报告。 */
 function handleSourceOpened(): void {
-  if (isMobile.value) mobileTab.value = 'control';
+  if (mobileControls.value) mobileTab.value = 'control';
 }
 
 </script>
@@ -66,22 +74,9 @@ function handleSourceOpened(): void {
   <div class="display-view">
     <a-segmented class="display-view__targets" :value="targetParam" :options="targetOptions" :aria-label="t('display.windowSelectAria')" @change="value => changeTarget(String(value))" />
 
-    <FPageHeader :title="targetTitle + t('display.titleSuffix')" />
-
-    <a-alert
-      v-if="commandObservation && !commandObservation.playerOnline"
-      type="warning"
-      :message="t('playback.playerOfflineTitle')"
-
-    />
-    <a-alert
-      v-else-if="commandObservation?.accepted"
-      type="info"
-      :message="t('playback.commandAcceptedTitle')"
-
-    />
-
-    <ScreenSharePanel v-if="targetMeta && currentSession" :key="targetMeta.windowId" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
+    <FPageHeader :title="targetTitle + t('display.titleSuffix')">
+      <template #actions><a-tag class="display-view__status" :color="currentSession?.player_online ? undefined : 'warning'" role="status">{{ commandStatus }}</a-tag></template>
+    </FPageHeader>
 
     <template v-if="!currentSession">
       <a-card>
@@ -93,7 +88,7 @@ function handleSourceOpened(): void {
       </a-card>
     </template>
 
-    <template v-else-if="isMobile">
+    <template v-else-if="mobileControls">
       <a-tabs v-tabs-keyboard v-model:activeKey="mobileTab" type="line" role="tablist" :aria-label="t('display.viewSwitchAria')">
         <a-tab-pane key="source" :tab="t('display.tabSource')">
           <SourcePicker :window-id="currentSession.window_id" @opened="handleSourceOpened" />
@@ -112,6 +107,9 @@ function handleSourceOpened(): void {
         <SourcePicker :window-id="currentSession.window_id" @opened="handleSourceOpened" />
       </div>
     </template>
+    <details v-if="!mobileControls && targetMeta && currentSession" class="display-view__sharing"><summary>屏幕共享</summary>
+      <ScreenSharePanel :key="targetMeta.windowId" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
+    </details>
   </div>
 </template>
 
@@ -122,6 +120,8 @@ function handleSourceOpened(): void {
   gap: var(--spacingVerticalL);
   max-width: 1440px;
 }
+.display-view__status { min-width: 88px; max-width: 160px; min-height: 26px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.display-view__sharing summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}.display-view__sharing[open] summary{margin-bottom:12px}
 
 .display-view__targets {
   display: flex;

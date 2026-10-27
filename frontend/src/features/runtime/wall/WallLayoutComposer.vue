@@ -8,6 +8,8 @@ import InputSourcePicker from '../inputs/InputSourcePicker.vue';
 import type { VideoWallMappingItem } from '@/services/apiTypes';
 import ClientStreamPreview from '@/features/preview/ClientStreamPreview.vue';
 import WallGridEditor from './WallGridEditor.vue';
+import { useMobileControls } from '@/composables/useMobileControls';
+const mobileControls = useMobileControls();
 import { decodeLayout, encodeLayout } from './layoutCode';
 import { inputLabel, validateBlocks, type WallBlock } from './layoutModel';
 const props = defineProps<{ disabled?: boolean }>();
@@ -85,7 +87,7 @@ function selectInput(index: number, input: VideoWallMappingItem['input']): void 
           <InputSourcePicker :value="choice.input" :disabled="disabled" :aria-label="`${regionLabel(choice.region)}输入来源`" @choose="selectInput(index,$event)" />
         </div>
       </div>
-      <div class="wall-composer__screen" :class="{ 'wall-composer__screen--split': mode === 'split' }" aria-label="32比9大屏预览">
+      <div v-if="!mobileControls" class="wall-composer__screen" :class="{ 'wall-composer__screen--split': mode === 'split' }" aria-label="32比9大屏预览">
         <ClientStreamPreview v-for="choice in choices" :key="choice.region" :input="choice.input" quality="high" :label="inputLabel(choice.input)" />
       </div>
     </template>

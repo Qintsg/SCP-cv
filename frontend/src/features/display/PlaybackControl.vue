@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * 单窗口播放控制条：按 source_type 渲染不同分支
- *  - PPT：上一页 / 下一页 / 跳页 / PPT 进度条 / 当前页媒体子表
+ *  - PPT：两按钮步进 / 页码 / 当前页媒体子表
  *  - video：播放暂停停止 / 循环 / Seek
  *  - image / web：仅展示 URI + 关闭按钮
  *  - *_stream：直播状态 Tag + URI（无 Seek）
@@ -16,12 +16,11 @@
 import { tagColor } from '@/design-system/tagColor';
 import { displayMediaAddress } from '@/services/mediaAddress';
 
-import { computed, ref, watch } from 'vue';
+import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { RouterLink } from 'vue-router';
 import AAlert from 'ant-design-vue/es/alert';
 import AButton from 'ant-design-vue/es/button';
-import AInput from 'ant-design-vue/es/input';
 import AProgress from 'ant-design-vue/es/progress';
 import ASlider from 'ant-design-vue/es/slider';
 import ASwitch from 'ant-design-vue/es/switch';
@@ -42,8 +41,8 @@ import { usePlaybackErrorGate } from './usePlaybackErrorGate';
 import { isConfirmedPlayback, isRequestedScreenShare, playbackStateTagType } from './playbackObservation';
 import { resolveActualOutputSource, resolveActualScreenShare } from './playbackOutput';
 import ScreenShareOutputStatus from '../screen-share/ScreenShareOutputStatus.vue';
-import PresentationEffectControls from './PresentationEffectControls.vue';
-import { usePresentationCommandFeedback } from './usePresentationCommandFeedback';
+import PresentationNavigation from './PresentationNavigation.vue';
+import { useMobileControls } from '@/composables/useMobileControls';
 
 const props = defineProps<{ session: SessionSnapshot }>();
 
@@ -51,15 +50,14 @@ const { t } = useI18n();
 const toast = useToast();
 const sessionStore = useSessionStore();
 const sourceStore = useSourceStore();
-const feedback = usePresentationCommandFeedback(() => sessionStore.byWindowId(props.session.window_id),
-  () => sessionStore.commandFeedbackRevisions[props.session.window_id] ?? 0);
+const mobileControls = useMobileControls();
 
 const category = computed(() => sourceStore.resolveCategory(props.session.source_type));
 const isStaticSlideMode = computed(() => props.session.playback_mode === 'pdf' || props.session.playback_mode === 'slide_images');
 const currentSource = computed(() => sourceStore.findById(props.session.source_id) ?? null);
 const { context: previewContext, resources: pptResources, error: pptError,
-  unavailable: previewUnavailable, pending: previewPending,
-  refresh: refreshPreview } = usePresentationPreview(() => props.session);
+  pending: previewPending,
+  refresh: refreshPreview } = usePresentationPreview(() => mobileControls.value ? undefined : props.session);
 const usesPresentationPreview = computed(() => isPresentationPreviewAdapter(props.session.actual_adapter_kind)
   || category.value === 'ppt' && !['image', 'web', 'vlc'].includes(props.session.actual_adapter_kind ?? ''));
 const actualSource = computed(() => resolveActualOutputSource(props.session, sourceStore.findById));
@@ -88,18 +86,6 @@ const canAdjustWindowAudio = computed(() => (
 
 const stateType = computed(() => playbackStateTagType(props.session));
 
-const jumpInput = ref<string>('');
-
-watch(
-  () => props.session.current_slide,
-  (slide) => {
-    if (category.value === 'ppt' && slide > 0) {
-      jumpInput.value = String(slide);
-    }
-  },
-  { immediate: true },
-);
-
 async function call(action: () => Promise<unknown>, errorTitle: string): Promise<void> {
   try {
     await action();
@@ -117,23 +103,6 @@ function onPause(): void {
 function onStop(): void {
   void call(() => sessionStore.control(props.session.window_id, 'stop'), t('playback.stopFail'));
 }
-function onPrev(): void {
-  void call(() => sessionStore.navigate(props.session.window_id, 'prev'), t('playback.navFail'));
-}
-function onNext(): void {
-  void call(() => feedback.submit(() => sessionStore.navigate(props.session.window_id, 'next'), 'NEXT'), t('playback.navFail'));
-}
-/** :returns: 只接受完整十进制正整数文本；非法输入使用既有提示，不发送导航。 */
-function onJump(): void {
-  const text = jumpInput.value.trim();
-  const target = Number(text);
-  if (!/^\d+$/.test(text) || !Number.isSafeInteger(target) || target <= 0 || target > 2_147_483_647) {
-    toast.warning(t('playback.pageInvalid'), t('playback.pageInvalidDetail'));
-    return;
-  }
-  void call(() => sessionStore.navigate(props.session.window_id, 'goto', target), t('playback.jumpFail'));
-}
-
 function onLoopToggle(value: boolean): void {
   void call(() => sessionStore.setLoop(props.session.window_id, value), t('playback.loopFail'));
 }
@@ -263,7 +232,6 @@ const errorBarDescription = computed(() => {
           <h3 class="playback-control__source-name">
             {{ requestedShare || shareStopPending ? t('screenShare.title') : session.source_name && session.source_id ? session.source_name : t('playback.notOpened') }}
           </h3>
-          <p v-if="outputMismatch" class="playback-control__caption">{{ t('playback.requestedSourceLabel') }}</p>
           <p v-if="session.source_id" class="playback-control__caption">
             {{ session.source_type_label || t('playback.idle') }}
             <a-tag v-if="category === 'ppt' && session.playback_mode === 'pdf'" color="processing"  >
@@ -288,8 +256,10 @@ const errorBarDescription = computed(() => {
       </RouterLink>
     </header>
 
-    <ScreenShareOutputStatus v-if="actualShare" :frames="actualShare.frames" :audio="actualShare.audio" :online="session.player_online" />
-    <section v-else-if="outputReferenceVisible" class="playback-control__monitor" aria-live="polite">
+    <PresentationNavigation v-if="category === 'ppt'" :window-id="session.window_id" :mode="session.playback_mode" :disabled="presentationControlsDisabled" />
+
+    <ScreenShareOutputStatus v-if="actualShare" :audio="actualShare.audio" :online="session.player_online" />
+    <section v-else-if="outputReferenceVisible && !mobileControls" class="playback-control__monitor" aria-live="polite">
       <SourceThumbnail v-if="monitorSource" :source="monitorSource" size="stage" :image-url="currentPagePreviewUrl"
         :allow-source-preview="!usesPresentationPreview" />
       <div class="playback-control__monitor-copy">
@@ -300,10 +270,6 @@ const errorBarDescription = computed(() => {
           @click="refreshPreview">刷新预览</a-button>
       </div>
     </section>
-
-    <a-alert v-if="previewUnavailable" type="info"><template #description>
-      所选布局的预览暂不可用。
-    </template></a-alert>
 
     <a-alert v-if="session.actual_source_id && !supportsRequestedPlaybackControls(session)" type="warning"><template #description>
       {{ t('playback.controlsTypeMismatch') }}
@@ -319,20 +285,6 @@ const errorBarDescription = computed(() => {
     </template></a-alert>
 
     <section v-if="category === 'ppt'" class="playback-control__section">
-      <div class="playback-control__row playback-control__row--ppt">
-        <a-button :disabled="presentationControlsDisabled" @click="onPrev">
-          <template #icon><FIcon name="previous_24_regular" /></template>
-          {{ t('playback.prevPage') }}
-        </a-button>
-        <a-button type="primary" :disabled="presentationControlsDisabled" @click="onNext">
-          <template #icon><FIcon name="next_24_regular" /></template>
-          {{ t('playback.nextPage') }}
-        </a-button>
-        <div class="playback-control__jump">
-          <a-input v-model:value="jumpInput" type="text" :placeholder="t('playback.jumpPlaceholder')" :maxlength="4" />
-          <a-button :disabled="presentationControlsDisabled" @click="onJump">{{ t('playback.jump') }}</a-button>
-        </div>
-      </div>
       <div v-if="session.total_slides > 0" class="playback-control__row playback-control__row--progress">
         <a-progress
           type="line"
@@ -347,7 +299,6 @@ const errorBarDescription = computed(() => {
         {{ pptError }}
       </template></a-alert>
 
-      <PresentationEffectControls v-if="session.playback_mode === 'libreoffice'" :window-id="session.window_id" :disabled="presentationControlsDisabled" />
       <div v-if="!isStaticSlideMode && session.playback_mode !== 'libreoffice' && currentResource && currentResource.media_items.length > 0" class="playback-control__media">
         <h4 class="playback-control__media-title">{{ t('playback.currentMedia') }}</h4>
         <ul class="playback-control__media-list">

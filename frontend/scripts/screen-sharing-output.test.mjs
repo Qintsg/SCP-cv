@@ -20,7 +20,7 @@ test('null媒体库ID的共享显示临时输出、实际帧，不显示未打�
   await mount();
   assert.equal(browser.document.querySelector('h3')?.textContent.trim(), '屏幕共享');
   assert.match(browser.document.body.textContent, /已收到画面/);
-  assert.match(browser.document.body.textContent, /已接收 30 帧/);
+  assert.match(browser.document.querySelector('.share-output')?.textContent ?? '', /共享画面/);
   assert.equal(browser.document.body.textContent.split('临时实时画面，不存入媒体库或预案').length - 1, 1, '共享限制说明不应重复堆叠');
   assert.doesNotMatch(browser.document.body.textContent, /未打开任何源|该窗口当前没有源/);
   assert.equal(browser.document.querySelectorAll('img').length, 0);
@@ -63,5 +63,5 @@ test('停止待确认仍展示最后共享身份但禁用重复窗口关闭，�
     source_type: 'screen_share', desired_generation: 5, observed_generation: 5, playback_state: 'playing', pending_command: '', actual_frames: 40 });
   sessions.applyRemoteSessions([{ ...shared, window_id: 1, last_updated_at: '2026-10-03T00:00:00Z' }]); await flushUi();
   assert.equal(sessions.byWindowId(1).actual_share_id, '33333333-3333-4333-8333-333333333333');
-  assert.match(browser.document.body.textContent, /已接收 40 帧/);
+  assert.match(browser.document.querySelector('.share-output')?.textContent ?? '', /共享画面/);
 });

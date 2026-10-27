@@ -19,6 +19,8 @@ import CameraControlPad from './CameraControlPad.vue';
 import VenueAudioCard from './VenueAudioCard.vue';
 import VenueSourceCard from './VenueSourceCard.vue';
 import ClientStreamPreview from '@/features/preview/ClientStreamPreview.vue';
+import { useMobileControls } from '@/composables/useMobileControls';
+const mobileControls = useMobileControls();
 
 const sources = useSourceStore();
 const cameraId = ref('center1');
@@ -62,7 +64,7 @@ function openCamera(camera: VenueCamera): void {
         <p v-if="camera.motion_intent === 'stop_pending'" class="unavailable">停止发送未确认，请检查设备连接。</p>
       </a-card>
     </div>
-      <a-card v-if="previewed" :title="previewed.name" class="venue-camera-console"><div class="venue-camera-preview"><ClientStreamPreview :source-id="previewed.source_id || undefined" :enabled="previewed.stream_configured" quality="high" :label="previewed.name" /></div><CameraControlPad v-if="controlled" :camera="controlled" :clock-offset="clockOffset" /></a-card>
+      <a-card v-if="previewed" :title="previewed.name" class="venue-camera-console"><div v-if="!mobileControls" class="venue-camera-preview"><ClientStreamPreview :source-id="previewed.source_id || undefined" :enabled="previewed.stream_configured" quality="high" :label="previewed.name" /></div><CameraControlPad v-if="controlled" :camera="controlled" :clock-offset="clockOffset" /></a-card>
       </div></a-tab-pane>
       <a-tab-pane key="audio" tab="音量与来源">
     <a-alert v-if="audioWarning" type="warning" :message="audioWarning" />

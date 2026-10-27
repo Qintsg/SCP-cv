@@ -6,6 +6,8 @@ import APopover from 'ant-design-vue/es/popover';
 import type { VideoWallMappingItem, VideoWallRect } from '@/services/apiTypes';
 import ClientStreamPreview from '@/features/preview/ClientStreamPreview.vue';
 import WallInputPicker from './WallInputPicker.vue';
+import { useMobileControls } from '@/composables/useMobileControls';
+const mobileControls = useMobileControls();
 import { inputLabel, overlaps, selectionRect, validateBlocks, type WallBlock } from './layoutModel';
 const props = withDefaults(defineProps<{ disabled?: boolean }>(), { disabled: false });
 const value = defineModel<WallBlock[]>({ required: true });
@@ -93,7 +95,7 @@ function edit(index: number): void { editing.value = index; picker.value = true;
           <a-button size="small" danger :disabled="disabled" @click="value = value.filter((_, i) => i !== index)">删除显示块</a-button>
         </div></template>
         <button type="button" class="wall-grid__block" :style="position(block.rect)" :disabled="disabled" :aria-label="`编辑${inputLabel(block.input)}显示块`">
-          <ClientStreamPreview :input="block.input" quality="high" :label="inputLabel(block.input)" />
+          <ClientStreamPreview v-if="!mobileControls" :input="block.input" quality="high" :label="inputLabel(block.input)" />
           <span class="wall-grid__block-label">{{ inputLabel(block.input) }}</span>
         </button>
       </a-popover>

@@ -1,7 +1,6 @@
 <!-- 一个真实云台手控块：方向与变焦按住，位置调用显式，保存需二次确认。 -->
 <script setup lang="ts">
 import { nullableNumber } from '@/design-system/controlValue';
-import AAlert from 'ant-design-vue/es/alert';
 import AButton from 'ant-design-vue/es/button';
 import AInputNumber from 'ant-design-vue/es/input-number';
 import APopconfirm from 'ant-design-vue/es/popconfirm';
@@ -34,7 +33,7 @@ const directions: { value: CameraDirection; label: string; symbol: string }[] = 
         <template #title>将覆盖{{ confirmation?.name }}的位置{{ confirmation?.position }}，确认保存？</template>
       </a-popconfirm>
     </div>
-    <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert><a-alert v-if="feedback" type="info"><template #description>{{ feedback }}</template></a-alert>
+    <p class="camera-pad__status" :class="{ 'camera-pad__status--error': error, 'camera-pad__status--empty': !error && !feedback }" role="status">{{ error || feedback || ' ' }}</p>
   </div>
 </template>
 <style scoped>
@@ -46,5 +45,5 @@ h3{margin:0 0 8px;font-size:var(--fontSizeBase500)}p,small{color:var(--colorNeut
 .pad-buttons button:focus-visible{outline:2px solid var(--colorBrandStroke1);outline-offset:2px}.pad-buttons button:disabled{opacity:.4;cursor:not-allowed}
 .up{grid-area:1/2}.left{grid-area:2/1}.right{grid-area:2/3}.down{grid-area:3/2}.zoom_in{grid-area:1/4}.zoom_out{grid-area:3/4}.pad-buttons .stop{grid-area:2/2;font-size:12px;font-weight:600}
 .positions{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.positions label{display:flex;align-items:center;gap:12px;width:100%;margin-bottom:4px}.positions .ant-input-number{width:100px}.positions small{width:100%}
-.camera-pad>.ant-alert{grid-column:1/-1}.pad-copy{min-width:0}.positions{min-width:0}
+.camera-pad__status{height:44px;overflow:auto;margin:0;font-size:12px;overflow-wrap:anywhere}.camera-pad__status--error{color:var(--colorStatusDangerForeground1)}.camera-pad__status--empty{visibility:hidden}.pad-copy{min-width:0}.positions{min-width:0}
 </style>

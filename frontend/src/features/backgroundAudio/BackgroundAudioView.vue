@@ -201,7 +201,7 @@ function setMute(muted: boolean): Promise<void> {
                />
             <span>{{ formatDuration(currentState?.duration_ms ?? 0) }}</span>
           </div>
-          <p v-if="currentState?.error_message" class="background-audio__error">{{ currentState.error_message }}</p>
+          <p class="background-audio__error" :class="{ 'background-audio__error--empty': !currentState?.error_message }" role="status">{{ currentState?.error_message || ' ' }}</p>
         </div>
 
         <div class="background-audio__controls">

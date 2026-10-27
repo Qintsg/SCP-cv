@@ -25,12 +25,14 @@ import {
 import type { NavItemDef } from './types';
 import { useWindowSizeClass } from '@/composables/useWindowSizeClass';
 import { useRuntimeStore } from '@/stores/runtime';
+import { useMobileControls } from '@/composables/useMobileControls';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const runtime = useRuntimeStore();
-const { sizeClass, isCompact, isLargeUp } = useWindowSizeClass();
+const { sizeClass, isLargeUp } = useWindowSizeClass();
+const mobileControls = useMobileControls();
 
 const moreOpen = ref(false);
 const scrolled = ref(false);
@@ -38,7 +40,7 @@ const mainRef = ref<HTMLElement | null>(null);
 
 /** 导航形态：compact 底栏 / rail 轨道 / drawer 抽屉。 */
 const navVariant = computed<'bottom' | 'rail' | 'drawer'>(() =>
-  isCompact.value ? 'bottom' : isLargeUp.value ? 'drawer' : 'rail',
+  mobileControls.value ? 'bottom' : isLargeUp.value ? 'drawer' : 'rail',
 );
 
 const primaryItems = computed<NavItemDef[]>(() =>
@@ -52,7 +54,7 @@ const primaryItems = computed<NavItemDef[]>(() =>
 
 function isActive(path: string): boolean {
   if (path === '/dashboard') return route.path === '/' || route.path === '/dashboard';
-  if (path === '/display/big-left' && isCompact.value) {
+  if (path === '/display/big-left' && mobileControls.value) {
     return route.path.startsWith('/display/');
   }
   return route.path === path;
@@ -98,8 +100,9 @@ onBeforeUnmount(() => {
     class="app-shell console-shell"
     :data-size="sizeClass"
     :data-nav="navVariant"
+    :data-mobile-controls="mobileControls"
   >
-    <a-layout-sider v-if="!isCompact" :width="228" :collapsed-width="76" :collapsed="!isLargeUp" class="console-sider" theme="dark">
+    <a-layout-sider v-if="!mobileControls" :width="228" :collapsed-width="76" :collapsed="!isLargeUp" class="console-sider" theme="dark">
       <AppBrand :collapsed="!isLargeUp" />
       <AppNavigation
         v-model:more-open="moreOpen"
@@ -122,7 +125,7 @@ onBeforeUnmount(() => {
         <RouterView />
       </main>
       <AppNavigation
-      v-if="isCompact"
+      v-if="mobileControls"
       v-model:more-open="moreOpen"
       compact
       :nav-variant="navVariant"
