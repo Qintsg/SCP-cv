@@ -22,6 +22,7 @@ export interface AuthenticationOperationOptions {
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<AuthUser | null>(null);
   const initialized = ref(false);
+  const initializationError = ref('');
   const isAuthenticated = computed(() => user.value !== null);
   const username = computed(() => user.value?.username ?? '');
   // 私有修订也须可观察：改密等操作未替换user，仍应立即清掉旧UI缓冲。
@@ -54,6 +55,7 @@ export const useAuthStore = defineStore('auth', () => {
     revision.value++;
     initialization = null;
     user.value = next;
+    initializationError.value = '';
     initialized.value = true;
   }
 
@@ -73,11 +75,23 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         const payload = await api.fetchAuthStatus();
         if (current()) commit(payload.authenticated ? payload.user : null);
-      } catch { if (current()) commit(null); }
+      } catch (error) {
+        if (current()) {
+          initializationError.value = error instanceof Error ? error.message : '无法连接播放主机';
+          initialized.value = true;
+        }
+      }
     })();
     initialization = { promise: operation, isCurrent: current };
     try { await operation; }
     finally { if (initialization?.promise === operation) initialization = null; }
+  }
+
+  /** :returns: 重新读取当前主机的认证状态。 */
+  async function retryInitialization(): Promise<void> {
+    initialized.value = false;
+    initializationError.value = '';
+    await ensureInitialized();
   }
 
   /** :param options: 调用页与完成归属，默认保留布尔合同。:returns: 当前主机探测结果。:raises Error: 原错误或明确归属失效。 */
@@ -85,6 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
     const { canContinue = () => true, onCommitted } = options;
     assertAuthenticationScope(canContinue);
     const authentication = begin(true);
+    initializationError.value = '';
     const current = () => authentication() && canContinue();
     initialized.value = false;
     const operation = (async () => {
@@ -99,7 +114,10 @@ export const useAuthStore = defineStore('auth', () => {
         onCommitted?.(() => canContinue() && completed());
         return user.value !== null;
       } catch (error) {
-        if (current()) initialized.value = true;
+        if (current()) {
+          initializationError.value = error instanceof Error ? error.message : '无法连接播放主机';
+          initialized.value = true;
+        }
         throw error;
       }
     })();
@@ -115,6 +133,7 @@ export const useAuthStore = defineStore('auth', () => {
     const { canContinue = () => true, onCommitted } = options;
     assertAuthenticationScope(canContinue);
     const authentication = begin(true);
+    initializationError.value = '';
     const current = () => authentication() && canContinue();
     initialized.value = true;
     try { await api.fetchCsrfToken(current); }
@@ -173,7 +192,8 @@ export const useAuthStore = defineStore('auth', () => {
     initialization = null;
     user.value = null;
     initialized.value = false;
+    initializationError.value = '';
   }
 
-  return { user, initialized, isAuthenticated, username, ensureInitialized, probeCurrentServer, login, logout, changePassword, synchronizeSession, clearLocal, $reset };
+  return { user, initialized, initializationError, isAuthenticated, username, ensureInitialized, retryInitialization, probeCurrentServer, login, logout, changePassword, synchronizeSession, clearLocal, $reset };
 });

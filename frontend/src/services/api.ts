@@ -192,7 +192,7 @@ export class ApiRequestError extends Error {
 
 async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = REQUEST_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+  const timeoutId = globalThis.setTimeout(() => controller.abort(), timeoutMs);
   try {
     try {
       return await fetch(url, { ...init, signal: init.signal ? AbortSignal.any([controller.signal, init.signal]) : controller.signal });
@@ -203,7 +203,7 @@ async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs =
       throw new Error(t('api.connectionLost'));
     }
   } finally {
-    window.clearTimeout(timeoutId);
+    globalThis.clearTimeout(timeoutId);
   }
 }
 

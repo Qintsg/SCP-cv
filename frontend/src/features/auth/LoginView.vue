@@ -35,12 +35,13 @@ const runtime = useRuntimeStore();
 const username = ref('');
 const password = ref('');
 const submitting = ref(false);
+const checkingConnection = ref(false);
 const errorMessage = ref('');
 const errorId = useId();
 let active = true, intent = 0;
 
 /** :returns: 清旧意图与界面密码，不假称撤销已发出的HTTP或擦除JS字符串内存。 */
-function invalidateIntent(): void { intent++; password.value = ''; submitting.value = false; errorMessage.value = ''; }
+function invalidateIntent(): void { intent++; password.value = ''; submitting.value = false; checkingConnection.value = false; errorMessage.value = ''; }
 onBeforeRouteLeave(invalidateIntent);
 onBeforeRouteUpdate(invalidateIntent);
 watch(() => [route.fullPath, runtime.connectionGeneration, runtime.serverProfile?.origin], invalidateIntent, { flush: 'sync' });
@@ -53,9 +54,23 @@ const redirectTarget = computed<string>(() => {
   return '/dashboard';
 });
 
+/** :returns: 检查当前主机并恢复已登录的会话。 */
+async function retryConnection(): Promise<void> {
+  if (checkingConnection.value || submitting.value) return;
+  const operation = ++intent, path = route.fullPath, generation = clientConnection.captureGeneration();
+  checkingConnection.value = true;
+  try {
+    await auth.retryInitialization();
+    if (active && operation === intent && path === route.fullPath && generation === clientConnection.captureGeneration() && auth.isAuthenticated)
+      await router.replace(redirectTarget.value);
+  } finally {
+    if (active && operation === intent) checkingConnection.value = false;
+  }
+}
+
 /** :returns: 单次冻结提交；只有本页本次主机及完成认证仍有效才反馈、导航或解除忙态。 */
 async function submit(): Promise<void> {
-  if (!active || submitting.value) return;
+  if (!active || submitting.value || checkingConnection.value) return;
   errorMessage.value = '';
   if (!username.value.trim() || !password.value) {
     errorMessage.value = t('auth.loginFail');
@@ -97,12 +112,16 @@ async function submit(): Promise<void> {
       :body-style="{ padding: '28px', paddingTop: '8px', overflow: 'visible' }"
       >
       <FPageHeader :title="t('auth.pageTitle')" :description="t('auth.pageSubtitle')" />
+      <a-alert v-if="auth.initializationError" type="error" show-icon message="无法连接播放主机" class="login-view__connection-error">
+        <template #description>{{ auth.initializationError }}</template>
+        <template #action><a-button size="small" :loading="checkingConnection" @click="retryConnection">重新连接</a-button></template>
+      </a-alert>
       <a-form layout="vertical" :model="{ username, password }" @finish="submit">
         <a-form-item :label="t('auth.username')" required>
           <a-input
             v-model:value="username"
             :placeholder="t('auth.usernamePlaceholder')"
-            :disabled="submitting"
+            :disabled="submitting || checkingConnection"
             autocomplete="username"
             v-bind="{ 'aria-label': t('auth.username'), 'aria-describedby': errorMessage ? errorId : undefined }"
           />
@@ -112,7 +131,7 @@ async function submit(): Promise<void> {
             v-model:value="password"
 
             :placeholder="t('auth.passwordPlaceholder')"
-            :disabled="submitting"
+            :disabled="submitting || checkingConnection"
             autocomplete="current-password"
             v-bind="{ 'aria-label': t('auth.password'), 'aria-describedby': errorMessage ? errorId : undefined }"
           />
@@ -125,7 +144,7 @@ async function submit(): Promise<void> {
           type="primary"
           block
           :loading="submitting"
-          :disabled="submitting"
+          :disabled="submitting || checkingConnection"
           class="login-view__submit"
         >
           {{ submitting ? t('auth.submitting') : t('auth.submit') }}
@@ -188,6 +207,8 @@ async function submit(): Promise<void> {
   height: 44px;
   font-size: 16px;
 }
+
+.login-view__connection-error { margin-bottom: var(--spacingVerticalM); }
 
 .login-view__hint {
   margin: var(--spacingVerticalL) 0 0;

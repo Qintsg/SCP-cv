@@ -37,9 +37,9 @@ export function validateBlocks(mappings: readonly VideoWallMappingItem[]): WallB
       throw new Error('矩形必须位于10列5行网格内');
     if (!mapping.input || !INPUT_KINDS.includes(mapping.input.kind)) throw new Error('未知的输入来源');
     const ip = mapping.input.ip_address || '';
-    if (mapping.input.kind === 'ip_stream' ? !validIp(ip) : !!ip) throw new Error('自定义输入需要有效IPv4地址');
+    if (mapping.input.kind === 'ip_stream' ? !validIp(ip) : !!ip.trim()) throw new Error('自定义输入需要有效IPv4地址');
     if (blocks.some(b => overlaps(rect, b.rect))) throw new Error('显示块不能重叠');
-    blocks.push({ region: 'grid', rect, input: { kind: mapping.input.kind, ip_address: ip } });
+    blocks.push({ region: 'grid', rect, input: { kind: mapping.input.kind, ip_address: mapping.input.kind === 'ip_stream' ? ip : '' } });
   }
   return blocks.sort((a, b) => a.rect.row - b.rect.row || a.rect.column - b.rect.column);
 }

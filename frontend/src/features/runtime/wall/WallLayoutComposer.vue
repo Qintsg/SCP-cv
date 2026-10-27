@@ -13,6 +13,7 @@ import { inputLabel, validateBlocks, validIp, type WallBlock } from './layoutMod
 const props = defineProps<{ disabled?: boolean }>();
 const value = defineModel<VideoWallMappingItem[]>({ required: true });
 const mode = ref<'fullscreen' | 'split' | 'custom'>('split'), codeInput = ref(''), codeError = ref('');
+const restoreError = ref('');
 const custom = ref<WallBlock[]>([]);
 const modeOptions = [{ label: '单屏', value: 'fullscreen' }, { label: '双屏', value: 'split' }, { label: '自定义', value: 'custom' }];
 const choices = ref<VideoWallMappingItem[]>([]);
@@ -29,7 +30,8 @@ function restore(): void {
   mode.value = mappings.some(m => m.region === 'grid') || !mappings.length || mappings.length === 1 && mappings[0]?.region !== 'fullscreen'
     ? 'custom' : mappings.some(m => m.region === 'fullscreen') ? 'fullscreen' : 'split';
   choices.value = mappings.filter(m => m.region !== 'grid').map(m => ({ ...m, input: { ...m.input } }));
-  try { custom.value = validateBlocks(mappings); } catch { custom.value = []; }
+  try { custom.value = validateBlocks(mappings); restoreError.value = ''; }
+  catch (failure) { custom.value = []; restoreError.value = failure instanceof Error ? failure.message : '布局无效'; }
   if (mode.value === 'custom') hasCustom = true;
   else remembered.set(mode.value, choices.value.map(m => ({ ...m, input: { ...m.input } })));
   codeInput.value = code.value;
@@ -38,14 +40,18 @@ watch(() => value.value, () => { if (!publishing) restore(); else codeInput.valu
 /** :param mappings: 本轮完整选择。:returns: 仅发本地更新。 */
 function publish(mappings: VideoWallMappingItem[]): void {
   publishing = true; value.value = mappings;
-  queueMicrotask(() => { publishing = false; codeInput.value = code.value; }); codeError.value = '';
+  queueMicrotask(() => { publishing = false; codeInput.value = code.value; }); codeError.value = ''; restoreError.value = '';
 }
 /** :param next: 明确布局模式。:returns: 把快捷模式转换为相同映射合同。 */
 function switchMode(next: string | number): void {
   if (props.disabled || !['fullscreen', 'split', 'custom'].includes(String(next))) return;
   if (mode.value !== 'custom') remembered.set(mode.value, choices.value.map(m => ({ ...m, input: { ...m.input } })));
+  if (next === 'custom' && !hasCustom && valid.value) {
+    try { custom.value = validateBlocks(value.value); }
+    catch (failure) { restoreError.value = failure instanceof Error ? failure.message : '布局无效'; return; }
+  }
   mode.value = next as typeof mode.value;
-  if (mode.value === 'custom') { if (!hasCustom && valid.value) custom.value = validateBlocks(value.value); hasCustom = true; publish(custom.value); return; }
+  if (mode.value === 'custom') { hasCustom = true; publish(custom.value); return; }
   choices.value = remembered.get(mode.value)?.map(m => ({ ...m, input: { ...m.input } })) ?? (mode.value === 'fullscreen'
     ? [{ region: 'fullscreen', input: { kind: 'window_1', ip_address: '' } }]
     : [{ region: 'left', input: { kind: 'window_1', ip_address: '' } }, { region: 'right', input: { kind: 'window_2', ip_address: '' } }]);
@@ -72,8 +78,9 @@ function selectInput(index: number, input: VideoWallMappingItem['input']): void 
       </div>
     </div>
     <p v-if="codeError" class="wall-composer__error" role="alert">{{ codeError }}</p>
-    <WallGridEditor v-if="mode === 'custom'" :model-value="custom" :disabled="disabled" @update:model-value="custom = $event; publish($event)" />
-    <template v-else>
+    <p v-if="restoreError" class="wall-composer__error" role="alert">无法显示当前布局：{{ restoreError }}</p>
+    <WallGridEditor v-if="mode === 'custom' && !restoreError" :model-value="custom" :disabled="disabled" @update:model-value="custom = $event; publish($event)" />
+    <template v-else-if="mode !== 'custom'">
       <div class="wall-composer__choices" :class="{ 'wall-composer__choices--split': mode === 'split' }">
         <div v-for="(choice,index) in choices" :key="choice.region" class="wall-composer__choice"><span>{{ regionLabel(choice.region) }}</span>
           <InputSourcePicker :value="choice.input" :disabled="disabled" :aria-label="`${regionLabel(choice.region)}输入来源`" @choose="selectInput(index,$event)" />

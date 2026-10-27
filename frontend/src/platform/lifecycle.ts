@@ -42,7 +42,11 @@ export function installClientLifecycle(adapter: PlatformAdapter, router: Router)
         await router.replace('/login');
       }
       return authenticated;
-    }).catch(() => false).finally(() => { if (resumeInFlight?.promise === operation) resumeInFlight = null; });
+    }).catch(async () => {
+      if (live() && auth.initializationError && router.currentRoute.value.path !== '/login')
+        await router.replace('/login');
+      return false;
+    }).finally(() => { if (resumeInFlight?.promise === operation) resumeInFlight = null; });
     resumeInFlight = { promise: operation, isCurrent: live };
   };
 
