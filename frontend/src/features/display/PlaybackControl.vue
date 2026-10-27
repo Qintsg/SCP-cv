@@ -303,7 +303,7 @@ const errorBarDescription = computed(() => {
     </section>
 
     <a-alert v-if="previewUnavailable" type="info"><template #description>
-      所选布局预览尚未准备；此提示仅指静态参考图，不表示原生播放失败。
+      所选布局的预览暂不可用。
     </template></a-alert>
 
     <a-alert v-if="session.actual_source_id && !supportsRequestedPlaybackControls(session)" type="warning"><template #description>

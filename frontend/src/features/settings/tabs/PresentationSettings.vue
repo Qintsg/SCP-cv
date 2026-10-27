@@ -114,7 +114,7 @@ onMounted(refresh);
       </li>
     </ul>
     <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert>
-    <a-alert type="info"><template #description>仅进行静态检查，不证明原生引擎启动、文稿兼容或实际播放成功。统一媒体暂停、恢复、定位及窗口音量暂不可用。</template></a-alert>
+    <a-alert type="info"><template #description>当前检查运行依赖；统一媒体暂停、恢复、定位及窗口音量暂不可用。</template></a-alert>
     <a-button :loading="pending" :disabled="pending" @click="refresh">重新检查</a-button>
   </a-card>
 </template>

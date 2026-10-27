@@ -16,10 +16,10 @@ export default {
         share_audio_unavailable: '当前共享尚不具备声音控制条件。', share_player_offline: '播放器离线，未确认本次音频设置。', share_ended: '原共享已结束，不继续控制声音。',
       },
     },
-    stopPending: '本地采集已停止，正在等待播放器实际释放；不会自动重新共享。',
+    stopPending: '本地采集已停止，正在等待播放器释放共享。',
     upgrade: {
       title: '屏幕共享需要 HTTPS',
-      description: '普通播放控制可继续使用 HTTP，但浏览器屏幕共享需要 HTTPS 安全连接。确认后将跳转到当前页面的 HTTPS 入口，可能需要重新登录；请再次点击共享并选择内容。自签证书未被信任时，浏览器仍会显示证书警告，跳转不会自动建立信任或开始采集。',
+      description: '屏幕共享需要 HTTPS。确认后将跳转到当前页面的 HTTPS 入口，可能需要重新登录；请再次点击共享并选择内容。自签证书未被信任时，浏览器会显示证书警告。',
       confirm: '前往 HTTPS', cancel: '继续使用 HTTP',
     },
     output: {

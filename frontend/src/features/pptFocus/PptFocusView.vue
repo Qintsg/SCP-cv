@@ -312,7 +312,7 @@ function exitFocus(): void {
       <a-button v-if="previewContext" :loading="previewPending" :disabled="previewPending"
         @click="refreshPreview">刷新预览</a-button>
       <a-alert v-if="previewUnavailable" type="info"><template #description>
-        所选布局预览尚未准备；此提示仅指静态参考图，不表示原生播放失败。
+        所选布局的预览暂不可用。
       </template></a-alert>
       <a-alert v-if="loadError" type="error" :message="t('pptFocus.loadFailTitle')"><template #description>
         {{ loadError }}

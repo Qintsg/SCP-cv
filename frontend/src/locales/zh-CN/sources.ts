@@ -133,7 +133,7 @@ export default {
       streamUrl: '流地址',
       streamUrlRequired: '请输入流地址',
       streamNamePlaceholder: '例如：现场摄像头',
-      streamHint: '保存只登记信号，不代表已经连通。请在大屏窗口 1/2 打开后核对实际画面和错误状态。',
+      streamHint: '保存后可在窗口 1 或窗口 2 打开直播流，检查画面和播放状态。',
       addStream: '添加直播源',
       streamAddedOk: '直播源已登记',
       streamAddedDetail: '连通和画面状态待目标窗口实际播放后确认。',

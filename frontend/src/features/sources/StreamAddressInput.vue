@@ -14,7 +14,7 @@ watch(() => props.active, () => { visible.value = false; }, { flush: 'sync' });
       :placeholder="placeholder" :aria-label="label" autocomplete="off" autocapitalize="off" spellcheck="false" />
     <a-button size="small" :disabled="disabled" :aria-pressed="visible" @click="visible = !visible">{{ visible ? '隐藏地址' : '显示地址' }}</a-button>
   </div>
-  <p class="stream-address-hint">支持 rtsp://用户名:密码@主机:端口/路径。凭据中的 @、#、:、% 等字符请百分号编码；地址仅供授权编辑，保存不代表已连通。</p>
+  <p class="stream-address-hint">支持 rtsp://用户名:密码@主机:端口/路径。凭据中的 @、#、:、% 等字符请百分号编码。</p>
 </template>
 <style scoped>
 .stream-address-input{display:flex;gap:var(--spacingHorizontalS);align-items:center}
