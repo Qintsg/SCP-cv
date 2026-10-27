@@ -9,7 +9,7 @@ import type { VideoWallMappingItem } from '@/services/apiTypes';
 import ClientStreamPreview from '@/features/preview/ClientStreamPreview.vue';
 import WallGridEditor from './WallGridEditor.vue';
 import { decodeLayout, encodeLayout } from './layoutCode';
-import { inputLabel, validateBlocks, validIp, type WallBlock } from './layoutModel';
+import { inputLabel, validateBlocks, type WallBlock } from './layoutModel';
 const props = defineProps<{ disabled?: boolean }>();
 const value = defineModel<VideoWallMappingItem[]>({ required: true });
 const mode = ref<'fullscreen' | 'split' | 'custom'>('split'), codeInput = ref(''), codeError = ref('');
@@ -21,7 +21,6 @@ const remembered = new Map<string, VideoWallMappingItem[]>();
 let hasCustom = false;
 /** :param region: 目标区域。:returns: 与可见区域一致的无障碍名称。 */
 function regionLabel(region: string): string { return region === 'fullscreen' ? '全屏' : region === 'left' ? '大屏左' : '大屏右'; }
-const valid = computed(() => value.value.every(m => m.input.kind !== 'ip_stream' || validIp(m.input.ip_address || '')));
 const code = computed(() => { try { return encodeLayout(value.value); } catch { return ''; } });
 let publishing = false;
 /** :returns: 从外部布局恢复本地编辑态，初始化不产生写入。 */
@@ -46,7 +45,7 @@ function publish(mappings: VideoWallMappingItem[]): void {
 function switchMode(next: string | number): void {
   if (props.disabled || !['fullscreen', 'split', 'custom'].includes(String(next))) return;
   if (mode.value !== 'custom') remembered.set(mode.value, choices.value.map(m => ({ ...m, input: { ...m.input } })));
-  if (next === 'custom' && !hasCustom && valid.value) {
+  if (next === 'custom' && !hasCustom) {
     try { custom.value = validateBlocks(value.value); }
     catch (failure) { restoreError.value = failure instanceof Error ? failure.message : '布局无效'; return; }
   }
