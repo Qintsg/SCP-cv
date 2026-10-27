@@ -217,12 +217,6 @@ void runtime;
           <p v-if="target.source_state === 'set' && target.source_name" class="scenario-preview__source">
             {{ target.source_name }}
           </p>
-          <p v-else-if="target.source_state === 'empty'" class="scenario-preview__hint">
-            {{ t('scenarios.preview.blackoutHint') }}
-          </p>
-          <p v-else class="scenario-preview__hint">
-            {{ t('scenarios.preview.keepHint') }}
-          </p>
           <p v-if="target.source_state === 'set'" class="scenario-preview__settings">
             {{ t('scenarios.preview.sourceLine', { autoplay: target.autoplay ? t('scenarios.preview.on') : t('scenarios.preview.off'), resume: target.resume ? t('scenarios.preview.yes') : t('scenarios.preview.no') }) }}
           </p>

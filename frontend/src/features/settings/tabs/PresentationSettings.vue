@@ -100,7 +100,6 @@ onMounted(refresh);
 <template>
   <a-card title="演示文稿播放" class="presentation-settings">
     <a-tag :color="tagColor(passed ? 'success' : 'warning')">LibreOffice · {{ summary }}</a-tag>
-    <p>{{ snapshot?.detail }}</p>
     <ul v-if="snapshot?.components?.length" class="presentation-settings__components" aria-label="运行依赖检查项目">
       <li v-for="component in snapshot.components" :key="component.id" :data-dependency-id="component.id">
         <div class="presentation-settings__component-heading">
@@ -114,7 +113,6 @@ onMounted(refresh);
       </li>
     </ul>
     <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert>
-    <a-alert type="info"><template #description>当前检查运行依赖；统一媒体暂停、恢复、定位及窗口音量暂不可用。</template></a-alert>
     <a-button :loading="pending" :disabled="pending" @click="refresh">重新检查</a-button>
   </a-card>
 </template>

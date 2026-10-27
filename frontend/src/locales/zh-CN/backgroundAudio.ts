@@ -13,7 +13,7 @@ export default {
     audioSources: '音频源',
     emptyPlaylist: '播放列表为空',
     emptyAudioSources: '暂无音频源',
-    emptyAudioHint: '上传 MP3、WAV、FLAC 等音频文件后会显示在这里。',
+    emptyAudioHint: '暂无音频',
     addAudio: '添加音频',
     play: '播放',
     pause: '暂停',

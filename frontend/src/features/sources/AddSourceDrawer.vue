@@ -171,7 +171,7 @@ async function uploadFile(): Promise<void> {
       onProgress: handleUploadProgress,
     });
     if (result.source_type === 'ppt' && result.preparation_state === 'queued') {
-      toast.info(t('sources.add.pptQueued'), t('sources.add.pptQueuedDetail', { name: result.name }));
+      toast.info(t('sources.add.pptQueued'));
     } else {
       toast.success(t('sources.add.uploadedSaved'), t('sources.add.sourceNameDetail', { name: result.name }));
     }
@@ -223,7 +223,7 @@ async function addStreamSource(): Promise<void> {
       folder_id: props.folderId ?? null,
       preheat_enabled: streamPreheatEnabled.value,
     });
-    toast.info(t('sources.add.streamAddedOk'), t('sources.add.streamAddedDetail'));
+    toast.info(t('sources.add.streamAddedOk'));
     emit('added');
     reset();
     close();
@@ -240,7 +240,6 @@ async function addStreamSource(): Promise<void> {
   <ControlDrawer role="dialog" aria-modal="true" :aria-label="t('sources.add.title')" :title="t('sources.add.title')" v-model:open="isOpen" width="min(480px, 100vw)" placement="right">
 
       <p class="source-add-destination">保存位置：<strong>{{ destinationPath }}</strong></p>
-      <p class="add-source__desc">{{ t('sources.add.desc') }}</p>
 
       <a-tabs v-tabs-keyboard v-model:activeKey="activeTab" type="line" :aria-label="t('sources.add.typeAria')">
         <a-tab-pane key="file" :tab="t('sources.add.tabFile')">
@@ -257,7 +256,6 @@ async function addStreamSource(): Promise<void> {
                 </span>
                 <a-button @click.stop="triggerFilePicker">{{ t('sources.add.chooseFile') }}</a-button>
               </label>
-              <p class="add-source__pdf-hint">{{ t('sources.add.pdfSuggestion') }}</p>
             </div>
           </a-form-item>
           <a-form-item :label="t('sources.add.displayName')">
@@ -307,7 +305,6 @@ async function addStreamSource(): Promise<void> {
           <a-form-item :label="t('sources.add.preheat')">
             <a-switch v-model:checked="streamPreheatEnabled" :disabled="uploading" aria-label="直播流预热" />
           </a-form-item>
-          <a-alert type="info" :show-icon="true"><template #description>{{ t('sources.add.streamHint') }}</template></a-alert>
         </a-tab-pane>
       </a-tabs>
 
@@ -339,12 +336,6 @@ async function addStreamSource(): Promise<void> {
 <style scoped>
 .source-add-destination { padding:var(--spacingVerticalS) var(--spacingHorizontalM); margin:0 0 var(--spacingVerticalM); border-radius:var(--borderRadiusMedium); background:var(--colorBrandBackground2); color:var(--colorNeutralForeground2); overflow-wrap:anywhere; }
 .source-add-destination strong { font-family:Consolas,monospace; color:var(--colorNeutralForeground1); }
-.add-source__desc {
-  margin: 0 0 var(--spacingVerticalM);
-  color: var(--colorNeutralForeground2);
-  font-size: var(--fontSizeBase200);
-}
-
 .add-source__file {
   display: flex;
   align-items: center;

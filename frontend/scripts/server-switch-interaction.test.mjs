@@ -47,7 +47,7 @@ async function mount(){
 }
 /** :param root: 连接页。:param value: 假目标。:returns: 原生输入的实际响应式更新。 */
 async function fill(root,value='http://next.invalid'){
- const input=root.querySelector('input[aria-label="ControlHost 地址"]');assert.ok(input);input.value=value;input.dispatchEvent(new browser.Event('input',{bubbles:true}));await flush();
+ const input=root.querySelector('input[aria-label="播放主机地址"]');assert.ok(input);input.value=value;input.dispatchEvent(new browser.Event('input',{bubbles:true}));await flush();
 }
 /** :param root: 当前连接页。:returns: 实际Ant连接提交按钮。 */
 function connectButton(root){const button=[...root.querySelectorAll('button')].find(node=>node.type==='submit');assert.ok(button);return button;}

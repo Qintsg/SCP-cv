@@ -64,9 +64,9 @@ export function usePresentationCommandFeedback(readSession: () => SessionSnapsho
         if (result.status !== 'pending' && result.status !== 'processing') throw new Error('命令状态未知，未采用其反馈。');
         await delay();
       }
-      if (valid()) toast.warning('操作结果仍未确认', '不会自动重发，请检查播放主机状态。');
+      if (valid()) toast.warning('操作结果未确认', '请检查播放主机状态。');
     } catch (error) {
-      if (valid()) toast.warning('无法读取操作结果', error instanceof Error ? error.message : '不会自动重发。');
+      if (valid()) toast.warning('无法读取操作结果', error instanceof Error ? error.message : '请检查播放主机连接。');
     }
   }
 

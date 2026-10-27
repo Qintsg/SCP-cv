@@ -23,7 +23,6 @@ import ScreenSharePanel from '../screen-share/ScreenSharePanel.vue';
 import { DISPLAY_TARGETS, resolveDisplayTarget } from './displayTargets';
 import { useBreakpoint } from '@/composables/useBreakpoint';
 import { useSessionStore } from '@/stores/sessions';
-import { isActualScreenShare, isRequestedScreenShare } from './playbackObservation';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -37,13 +36,6 @@ const targetMeta = computed(() => resolveDisplayTarget(targetParam.value));
 const currentSession = computed(() => {
   if (!targetMeta.value) return undefined;
   return sessionStore.byWindowId(targetMeta.value.windowId);
-});
-
-const targetCaption = computed(() => {
-  const session = currentSession.value;
-  const name = isRequestedScreenShare(session) || isActualScreenShare(session) ? t('screenShare.title')
-    : session?.source_id ? session.source_name : '';
-  return [t('videoWall.logicalWindowHint'), name ? t('display.currentSource', { name }) : t('display.idle')].join(' · ');
 });
 
 const availableTargets = DISPLAY_TARGETS;
@@ -74,30 +66,26 @@ function handleSourceOpened(): void {
   <div class="display-view">
     <a-segmented class="display-view__targets" :value="targetParam" :options="targetOptions" :aria-label="t('display.windowSelectAria')" @change="value => changeTarget(String(value))" />
 
-    <FPageHeader :title="targetTitle + t('display.titleSuffix')" :description="targetCaption" />
+    <FPageHeader :title="targetTitle + t('display.titleSuffix')" />
 
     <a-alert
       v-if="commandObservation && !commandObservation.playerOnline"
       type="warning"
       :message="t('playback.playerOfflineTitle')"
 
-    ><template #description>
-      {{ t('playback.playerOfflineHint') }}
-    </template></a-alert>
+    />
     <a-alert
       v-else-if="commandObservation?.accepted"
       type="info"
       :message="t('playback.commandAcceptedTitle')"
 
-    ><template #description>
-      {{ t('playback.commandAcceptedHint', { state: commandObservation.actualState }) }}
-    </template></a-alert>
+    />
 
     <ScreenSharePanel v-if="targetMeta && currentSession" :key="targetMeta.windowId" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
 
     <template v-if="!currentSession">
       <a-card>
-        <a-empty :description="t('display.loadingDesc')">
+        <a-empty :description="t('display.loadingTitle')">
           <template #image>
             <FIcon name="info_24_regular" />
           </template>

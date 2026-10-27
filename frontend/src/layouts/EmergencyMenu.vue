@@ -41,27 +41,6 @@ async function onResetAll(): Promise<void> {
 }
 
 /**
- * 确认后重置当前 PowerPoint 放映。
- * :return: Promise 完成时表示请求已处理或用户已取消
- */
-async function onResetPptPlayback(): Promise<void> {
-  const current = dialog.captureContext();
-  const confirmed = await dialog.danger({
-    title: t('emergency.resetPptTitle'),
-    description: t('emergency.resetPptDesc'),
-    confirmLabel: t('emergency.resetPptConfirm'),
-    cancelLabel: t('common.cancel'),
-  });
-  if (!confirmed || !current()) return;
-  try {
-    await session.resetPptPlayback();
-    toast.success(t('emergency.resetPptOk'));
-  } catch (error) {
-    toast.error(t('emergency.resetPptFail'), error instanceof Error ? error.message : t('common.retry'));
-  }
-}
-
-/**
  * 在物理输出窗口显示窗口编号。
  * :return: Promise 完成时表示请求已处理
  */
@@ -140,7 +119,6 @@ const options = computed<ActionDropdownOption[]>(() => [
     key: 'group-main',
     children: [
       { label: t('emergency.resetAll'), key: 'reset', icon: renderIcon('arrow_reset_24_regular'), action: onResetAll },
-      { label: t('emergency.resetPpt'), key: 'reset-ppt', icon: renderIcon('arrow_clockwise_24_regular'), action: onResetPptPlayback },
       { label: t('emergency.showIds'), key: 'show-ids', icon: renderIcon('eye_24_regular'), action: onShowWindowIds },
     ],
   },

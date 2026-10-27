@@ -130,13 +130,10 @@ test('切换当前主机后重新读取摘要不保留上一主机端口', () =>
   assert.equal(apiModule.getConnectionPorts().backendPort, '25443');
 });
 
-test('真实设置页品牌摘要显示已保存的当前主机端口', async () => {
+test('设置首页将端口信息收在开发诊断中', async () => {
   configureServer('http://127.0.0.1:20881');
   await mountSettings(SettingsView);
-  const caption = browser.document.querySelector('.settings-view__brand-caption')?.textContent ?? '';
-  assert.match(caption, /REST :20881/);
-  assert.match(caption, /Vite :20880/);
-  assert.doesNotMatch(caption, /18443|8000/);
+  assert.doesNotMatch(browser.document.body.textContent, /REST :20881|Vite :20880/);
 });
 
 test('真实开发诊断 Tab 的端口汇总同样使用当前主机', async () => {

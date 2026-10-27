@@ -139,7 +139,7 @@ async function selectFittedPresentation() {
   assert.ok(tab, '应有文稿分类');
   tab.click();
   await flushUi();
-  const toggle = browser.document.querySelector('[role="switch"][aria-label="文字适配（不修改原件）"]');
+  const toggle = browser.document.querySelector('[role="switch"][aria-label="文字适配"]');
   assert.ok(toggle, '应有文字适配开关');
   toggle.click();
   await flushUi();
@@ -241,7 +241,7 @@ test('显式静态未准备保留原始错误和布局选择，再次点击只�
   await flushUi();
   assert.equal(browser.document.querySelector('.source-picker__upload-error')?.textContent, detail);
   assert.equal(sources.findById(42)?.id, 42, '明确上传成功的源应保留');
-  assert.equal(browser.document.querySelector('[role="switch"][aria-label="文字适配（不修改原件）"]')
+  assert.equal(browser.document.querySelector('[role="switch"][aria-label="文字适配"]')
     ?.getAttribute('aria-checked'), 'true');
   assert.match(browser.document.querySelector('.ant-select[aria-label="文稿打开方式"]')?.textContent ?? '', /静态 PDF/);
   uploadAndOpenButton().click();
@@ -296,7 +296,7 @@ test('上传在途改变模式和文字适配只影响下一次点击，不改�
   uploadAndOpenButton().click();
   await flushUi();
   assert.deepEqual(openBodies(), [], '上传未响应前不得OPEN');
-  const toggle = browser.document.querySelector('[role="switch"][aria-label="文字适配（不修改原件）"]');
+  const toggle = browser.document.querySelector('[role="switch"][aria-label="文字适配"]');
   toggle.click();
   await flushUi();
   await choosePresentationMode('静态 PDF（无动画／媒体）');

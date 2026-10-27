@@ -114,16 +114,14 @@ function openLogin(): void {
 <template>
   <main class="min-h-dvh bg-canvas px-4 py-8 text-foreground sm:px-6 lg:px-8">
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-5">
-      <FPageHeader :title="t('serverConnection.title')" :description="t('serverConnection.subtitle')" meta="SCP-cv" />
+      <FPageHeader :title="t('serverConnection.title')" meta="SCP-cv" />
 
       <section class="grid gap-3 sm:grid-cols-2" :aria-label="t('serverConnection.layerStatus')">
         <a-card size="small" :title="t('serverConnection.controlLayer')">
           <a-tag :color="tagColor(controlTagType)" >{{ controlLabel }}</a-tag>
-          <p class="mb-0 mt-3 text-sm text-foreground-muted">{{ t('serverConnection.controlHint') }}</p>
         </a-card>
         <a-card size="small" :title="t('serverConnection.playerLayer')">
           <a-tag :color="tagColor(layerSummary.player === 'online' ? 'success' : 'error')" >{{ playerLabel }}</a-tag>
-          <p class="mb-0 mt-3 text-sm text-foreground-muted">{{ t('serverConnection.playerHint') }}</p>
         </a-card>
       </section>
 
@@ -178,9 +176,6 @@ function openLogin(): void {
         </a-form>
       </a-card>
 
-      <a-alert type="info" :message="t('serverConnection.securityTitle')"><template #description>
-        {{ t('serverConnection.securityHint') }}
-      </template></a-alert>
     </div>
   </main>
 </template>

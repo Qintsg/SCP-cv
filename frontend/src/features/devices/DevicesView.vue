@@ -28,6 +28,12 @@ const workspace = ref('camera');
 const { state, result, error, volume, computer, handheld, headset, audioSource, clockOffset, busy, run } = useVenueState(() => { selected.value = null; open.value = false; });
 const previewed = computed(() => state.value?.cameras.find(camera => camera.id === cameraId.value));
 const controlled = computed(() => previewed.value?.movable ? previewed.value : undefined);
+const audioWarning = computed(() => {
+  const value = result.value;
+  if (!value || ['confirmed', 'simulated', 'unchanged'].includes(value.status)) return '';
+  if (value.status === 'sent_unconfirmed' && value.sent_fields && !value.sent_fields.includes('screen_volume')) return '';
+  return value.detail;
+});
 
 /** :param camera: 只读内置项。:returns: 选窗小卡片，实际播放以输出确认。 */
 function openCamera(camera: VenueCamera): void {
@@ -39,16 +45,16 @@ function openCamera(camera: VenueCamera): void {
 
 <template>
   <section class="venue-page">
-    <FPageHeader title="摄像机与音量" description="打开摄像机画面、控制机位，或调整现场声音。">
+    <FPageHeader title="摄像机与音量">
       <template #actions><a-button :loading="busy" :disabled="busy" @click="run('load')">刷新</a-button></template>
     </FPageHeader>
     <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert>
-    <a-alert v-if="state?.simulation" type="warning"><template #description>当前为仿真模式，所有音量结果均非实体设备状态。</template></a-alert>
+    <a-alert v-if="state?.simulation" type="warning" message="仿真模式" />
     <a-tabs v-tabs-keyboard v-model:activeKey="workspace" destroy-inactive-tab-pane class="venue-workspaces">
       <a-tab-pane key="camera" tab="摄像机控制">
       <div class="venue-camera-workspace"><div class="camera-grid">
       <a-card v-for="camera in state?.cameras" :key="camera.id" :title="camera.name" size="small" :class="{ selected: previewed?.id === camera.id }">
-        <template #extra><a-tag  :color="tagColor(camera.stream_configured ? 'default' : 'warning')">{{ camera.stream_configured ? '内置 · 只读' : '播放地址未配置' }}</a-tag></template>
+        <template #extra><a-tag v-if="!camera.stream_configured" :color="tagColor('warning')">播放地址未配置</a-tag></template>
         <code>{{ camera.path }}</code>
         <a-button :disabled="busy || !camera.stream_configured || !camera.source_id" @click="openCamera(camera)">打开到…</a-button>
         <a-button :type="previewed?.id === camera.id ? 'primary' : 'default'" :aria-pressed="previewed?.id === camera.id" @click="cameraId = camera.id">{{ previewed?.id === camera.id ? '已选择' : camera.movable ? '预览与控制' : '预览画面' }}</a-button>
@@ -59,15 +65,15 @@ function openCamera(camera: VenueCamera): void {
       <a-card v-if="previewed" :title="previewed.name" class="venue-camera-console"><div class="venue-camera-preview"><ClientStreamPreview :source-id="previewed.source_id || undefined" :enabled="previewed.stream_configured" quality="high" :label="previewed.name" /></div><CameraControlPad v-if="controlled" :camera="controlled" :clock-offset="clockOffset" /></a-card>
       </div></a-tab-pane>
       <a-tab-pane key="audio" tab="音量与来源">
-    <a-alert v-if="result" :type="['confirmed', 'simulated', 'unchanged'].includes(result.status) ? 'info' : 'warning'"><template #description>{{ result.detail }}</template></a-alert>
+    <a-alert v-if="audioWarning" type="warning" :message="audioWarning" />
     <div class="audio-grid" v-if="state">
-      <VenueAudioCard v-model="computer" title="大屏音量" caption="电脑音频通道 · 百分比换算20档，显示的是请求值" :busy="busy" :disabled="!state.capabilities.computer_volume" @apply="run('apply', { computer_volume: computer })" />
-      <VenueAudioCard v-model="handheld" title="手持话筒" caption="手持话筒分组 · 百分比换算20档" :busy="busy" :disabled="!state.capabilities.handheld_volume" @apply="run('apply', { handheld_volume: handheld })" />
-      <VenueAudioCard v-model="headset" title="悬挂（头戴）话筒" caption="头戴话筒1/2为同一分组 · 百分比换算20档" :busy="busy" :disabled="!state.capabilities.headset_volume" @apply="run('apply', { headset_volume: headset })" />
+      <VenueAudioCard v-model="computer" title="大屏音量" :busy="busy" :disabled="!state.capabilities.computer_volume" @apply="run('apply', { computer_volume: computer })" />
+      <VenueAudioCard v-model="handheld" title="手持话筒" :busy="busy" :disabled="!state.capabilities.handheld_volume" @apply="run('apply', { handheld_volume: handheld })" />
+      <VenueAudioCard v-model="headset" title="悬挂（头戴）话筒" :busy="busy" :disabled="!state.capabilities.headset_volume" @apply="run('apply', { headset_volume: headset })" />
     </div>
     <div class="audio-extra" v-if="state">
       <VenueSourceCard v-model="audioSource" :busy="busy" :capabilities="state.capabilities" :requested="state.audio.source" @apply="run('apply', { source: audioSource })" />
-      <details><summary>高级：分布式输出增益</summary><VenueAudioCard v-model="volume" title="输出增益" caption="155输出节点 · 可读回，与上述中控滑杆独立" :busy="busy" readback @read="run('read')" @apply="run('apply', { screen_volume: volume })" /></details>
+      <details><summary>高级：分布式输出增益</summary><VenueAudioCard v-model="volume" title="输出增益" :busy="busy" readback @read="run('read')" @apply="run('apply', { screen_volume: volume })" /></details>
     </div>
       </a-tab-pane>
     </a-tabs>

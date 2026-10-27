@@ -109,7 +109,7 @@ async function execute(action: 'save' | 'folder-delete' | 'move' | 'delete'): Pr
       <a-select v-select-aria-label="'预设移动目标'" v-model:value="destination" :options="options" :disabled="busy" aria-label="预设移动目标" style="width:240px" />
       <a-button :disabled="busy" @click="execute('move')">移动到…</a-button><a-button danger  :disabled="busy" @click="execute('delete')">删除所选</a-button>
       <a-button type="text" :disabled="busy" @click="selected = []">取消选择</a-button></div>
-    <p v-if="busy" role="status">正在处理已选预设；结果将按原路径逐项显示。</p>
+    <p v-if="busy" role="status">正在处理…</p>
     <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert>
     <a-alert v-if="results.length" type="info"><template #description><p v-for="result in results" :key="result">{{ result }}</p></template></a-alert>
     <slot />

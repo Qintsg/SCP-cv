@@ -111,7 +111,7 @@ async function submit(): Promise<void> {
     <a-card class="login-view__card"
       :body-style="{ padding: '28px', paddingTop: '8px', overflow: 'visible' }"
       >
-      <FPageHeader :title="t('auth.pageTitle')" :description="t('auth.pageSubtitle')" />
+      <FPageHeader :title="t('auth.pageTitle')" />
       <a-alert v-if="auth.initializationError" type="error" show-icon message="无法连接播放主机" class="login-view__connection-error">
         <template #description>{{ auth.initializationError }}</template>
         <template #action><a-button size="small" :loading="checkingConnection" @click="retryConnection">重新连接</a-button></template>
@@ -150,7 +150,6 @@ async function submit(): Promise<void> {
           {{ submitting ? t('auth.submitting') : t('auth.submit') }}
         </a-button>
       </a-form>
-      <p class="login-view__hint">{{ t('auth.defaultHint') }}</p>
       <p class="login-view__server-link">
         <RouterLink to="/connect">{{ t('auth.changeServer') }}</RouterLink>
       </p>
@@ -209,15 +208,6 @@ async function submit(): Promise<void> {
 }
 
 .login-view__connection-error { margin-bottom: var(--spacingVerticalM); }
-
-.login-view__hint {
-  margin: var(--spacingVerticalL) 0 0;
-  color: var(--colorNeutralForeground3);
-  font-size: var(--fontSizeBase200);
-  text-align: left;
-  line-height: 1.65;
-  max-width: 380px;
-}
 
 .login-view__server-link {
   margin: var(--spacingVerticalM) 0 0;

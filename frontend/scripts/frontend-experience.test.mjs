@@ -34,6 +34,8 @@ test('窗口在线不冒充实际播放，空/离线/切源/错误分别展示',
 });
 test('预热开关描述配置意图，不把未执行的预热说成完成', async () => {
   const { default: copy } = await server.ssrLoadModule('/src/locales/zh-CN/sources.ts');
-  assert.equal(copy.sources.add.preheatSwitch, '启用预热');
-  assert.equal(copy.sources.editDrawer.preheatSwitch, '启用预热');
+  assert.equal(copy.sources.add.preheat, '提前加载');
+  assert.equal(copy.sources.add.preheatSwitch, '开启');
+  assert.equal(copy.sources.editDrawer.preheat, '提前加载');
+  assert.equal(copy.sources.editDrawer.preheatSwitch, '开启');
 });

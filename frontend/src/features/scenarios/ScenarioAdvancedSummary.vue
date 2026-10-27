@@ -22,10 +22,9 @@ const unbound = computed(() => positions.value.some(([, value]) => value! > 6));
     <p v-for="[id, position] in positions" :key="id">{{ names[id] ?? id }}：位置 {{ position }}</p>
     <p>大屏音量：{{ audio?.computer_volume == null ? '保持' : audio.computer_volume + '%' }} · 输出增益：{{ audio?.screen_volume == null ? '保持' : audio.screen_volume + '%' }}</p>
     <p>声音来源：{{ audio?.source == null ? '保持' : audio.source === 'ip81' ? 'IP81' : 'SCP-cv' }}</p>
-    <p v-if="audio?.source === 'scp_cv'">SCP-cv要求调用时软件输出就绪；不满足时在任何动作前拒绝。</p>
     <p>手持话筒：{{ audio?.handheld_volume == null ? '保持' : audio.handheld_volume + '%' }} · 悬挂（头戴）话筒：{{ microphoneConflict ? '配置冲突' : microphone == null ? '保持' : microphone + '%' }}</p>
-    <a-alert v-if="microphoneConflict" type="error"><template #description>同一话筒配置冲突：头戴 {{ audio?.headset_volume }}% / 旧悬挂 {{ audio?.hanging_volume }}%；请编辑后再调用，任何设备动作前会拒绝。</template></a-alert>
-    <a-alert v-if="unbound" type="warning"><template #description>包含尚未绑定的设备配置，调用时会在任何设备动作前拒绝。请先改为保持，或完成现场绑定。</template></a-alert>
+    <a-alert v-if="microphoneConflict" type="error"><template #description>话筒音量冲突：{{ audio?.headset_volume }}% / {{ audio?.hanging_volume }}%，请编辑并选择一个值。</template></a-alert>
+    <a-alert v-if="unbound" type="warning" message="摄像机位置无效，请选择1–6或保持。" />
   </section>
 </template>
 <style scoped>

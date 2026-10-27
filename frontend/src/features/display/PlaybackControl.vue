@@ -216,7 +216,7 @@ async function reopenCurrentSource(): Promise<void> {
   if (!reopenSourceId.value) return;
   try {
     await sessionStore.reopenCurrentSource(props.session.window_id);
-    toast.info(t('playback.reopenOk'), t('playback.reopenOkDetail'));
+    toast.info(t('playback.reopenOk'));
   } catch (error) {
     toast.error(t('playback.reopenFail'), error instanceof Error ? error.message : t('common.retry'));
   }
@@ -294,9 +294,8 @@ const errorBarDescription = computed(() => {
         :allow-source-preview="!usesPresentationPreview" />
       <div class="playback-control__monitor-copy">
         <span class="playback-control__monitor-eyebrow">{{ monitorSource ? t(session.player_online ? 'playback.currentOutput' : 'playback.lastOutput') : missingOutputLabel }}</span>
-        <strong>{{ monitorSource?.name || (usesPresentationPreview ? '实际源或文字布局未知，不显示默认预览' : missingOutputLabel) }}</strong>
+        <strong>{{ monitorSource?.name || missingOutputLabel }}</strong>
         <span v-if="outputMismatch">{{ t('playback.outputMismatch') }}</span>
-        <span>{{ t('playback.previewReference') }}</span>
         <a-button v-if="previewContext" size="small" :loading="previewPending" :disabled="previewPending"
           @click="refreshPreview">刷新预览</a-button>
       </div>
@@ -433,10 +432,7 @@ const errorBarDescription = computed(() => {
       </a-button>
     </section>
 
-    <section v-else-if="requestedShare || actualShare" class="playback-control__section">
-      <p class="playback-control__caption">{{ t('screenShare.output.temporary') }}</p>
-    </section>
-    <section v-else class="playback-control__section">
+    <section v-else-if="!requestedShare && !actualShare" class="playback-control__section">
       <p class="playback-control__caption">{{ t('playback.noSource') }}</p>
     </section>
 

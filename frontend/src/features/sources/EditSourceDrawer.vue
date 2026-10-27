@@ -176,42 +176,36 @@ function close(): void {
 <template>
   <ControlDrawer role="dialog" aria-modal="true" :aria-label="t('sources.editDrawer.title')" :title="t('sources.editDrawer.title')" v-model:open="isOpen" width="min(480px, 100vw)" placement="right">
 
-      <p v-if="source" class="edit-source__desc">{{ t('sources.editDrawer.desc', { name: source.name }) }}</p>
-
       <template v-if="source">
         <a-alert v-if="isPptWithImages" :type="previewState === 'ready' ? 'success' : previewState === 'failed' || previewState === 'uncertain' ? 'warning' : 'info'"
           class="edit-source__preparation"><template #description>
-          <a-form-item label="静态制品文字适配（不修改原件）">
-            <a-switch v-model:checked="fitText" aria-label="静态制品文字适配（不修改原件）" :disabled="retrying" />
+          <a-form-item label="页图文字适配">
+            <a-switch v-model:checked="fitText" aria-label="页图文字适配" :disabled="retrying" />
           </a-form-item>
           {{ t('sources.editDrawer.pptStatus', { status: pptPreparationStateLabel(previewState), pages: previewSummary.pageCount }) }}
           <a-button v-if="canRetryPpt" size="small" :disabled="retrying" :loading="retrying" @click="retryPptImages">
             {{ t('sources.editDrawer.pptRetry') }}
           </a-button>
         </template></a-alert>
-        <a-form-item :label="t('sources.editDrawer.displayName')" required :extra="t('sources.editDrawer.displayNameHint')">
+        <a-form-item :label="t('sources.editDrawer.displayName')" required>
           <a-input v-model:value="draftName" :placeholder="t('sources.editDrawer.displayNamePlaceholder')" :disabled="saving" v-bind="{ 'aria-label': t('sources.editDrawer.displayName') }" />
         </a-form-item>
 
         <template v-if="isUrlSource">
-          <a-form-item :label="isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url')" required
-            :extra="isStreamSource ? t('sources.editDrawer.streamUrlHint') : t('sources.editDrawer.urlHint')">
+          <a-form-item :label="isStreamSource ? t('sources.add.streamUrl') : t('sources.editDrawer.url')" required>
             <StreamAddressInput v-if="isStreamSource" :key="source.id" v-model:value="draftUri" placeholder="rtsp:// 或 srt://"
               :disabled="saving" :active="open" :label="t('sources.add.streamUrl')" />
             <a-input v-else v-model:value="draftUri" placeholder="https://" :disabled="saving" :aria-label="t('sources.editDrawer.url')" />
           </a-form-item>
         </template>
 
-        <a-form-item :label="t('sources.editDrawer.preheat')" :extra="t('sources.editDrawer.preheatHint')">
+        <a-form-item :label="t('sources.editDrawer.preheat')">
           <a-switch v-model:checked="draftPreheatEnabled" :disabled="saving" :aria-label="t('sources.editDrawer.preheat')">
             <template #checkedChildren>{{ t('sources.editDrawer.preheatSwitch') }}</template>
             <template #unCheckedChildren>{{ t('sources.editDrawer.preheatSwitchOff') }}</template>
           </a-switch>
         </a-form-item>
 
-        <a-alert v-if="!isUrlSource" type="info" :closable="false"><template #description>
-          {{ t('sources.editDrawer.nonWebInfo') }}
-        </template></a-alert>
       </template>
 
       <a-alert v-if="errorMessage" type="error" :message="t('sources.editDrawer.cantSave')"><template #description>
@@ -231,12 +225,6 @@ function close(): void {
 </template>
 
 <style scoped>
-.edit-source__desc {
-  margin: 0 0 var(--spacingVerticalM);
-  color: var(--colorNeutralForeground2);
-  font-size: var(--fontSizeBase200);
-}
-
 .edit-source__preparation { margin-bottom: var(--spacingVerticalM); }
 
 .edit-source__actions {

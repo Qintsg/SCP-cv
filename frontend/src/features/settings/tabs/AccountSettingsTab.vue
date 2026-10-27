@@ -165,7 +165,6 @@ async function logout(): Promise<void> {
     </a-card>
 
     <a-card :title="t('settings.sessionTitle')">
-      <p class="settings-view__hint">{{ t('settings.sessionHint') }}</p>
       <a-button  :disabled="saving || synchronizing || loggingOut" :loading="loggingOut" @click="logout">
         {{ t('auth.logoutAction') }}
       </a-button>

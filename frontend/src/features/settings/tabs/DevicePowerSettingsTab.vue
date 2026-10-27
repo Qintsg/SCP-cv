@@ -28,7 +28,6 @@ function lastActionLabel(deviceType: string): string {
 <template>
   <section class="settings-view__grid">
     <a-card :title="t('settings.splice')">
-      <p class="settings-view__hint">{{ t('settings.spliceHint') }}</p>
       <div class="settings-view__row">
         <a-button type="primary" :disabled="isPending('splice_screen')" :loading="isLoading('splice_screen', 'on')" @click="powerOnSplice">
           <template #icon><FIcon name="power_24_regular" /></template>
@@ -47,7 +46,6 @@ function lastActionLabel(deviceType: string): string {
     </a-card>
 
     <a-card :title="t('settings.tv')">
-      <p class="settings-view__hint">{{ t('settings.tvHint') }}</p>
       <div class="settings-view__row">
         <a-button :disabled="isPending('tv_left')" :loading="isLoading('tv_left', 'toggle')" @click="toggleTv('tv_left', t('settings.devLeft'))">
           <template #icon><FIcon name="arrow_swap_24_regular" /></template>

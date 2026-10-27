@@ -189,7 +189,7 @@ function setMute(muted: boolean): Promise<void> {
           <div class="background-audio__now">
             <a-tag  :color="tagColor(currentState?.playback_state === 'error' ? 'error' : 'info')">{{ statusLabel }}</a-tag>
             <h3>{{ currentSource?.name || t('backgroundAudio.standbyTitle') }}</h3>
-            <p>{{ currentSource?.path || currentSource?.uri || t('backgroundAudio.standbyHint') }}</p>
+            <p v-if="currentSource">{{ currentSource.path || currentSource.uri }}</p>
           </div>
           <div class="background-audio__progress-row">
             <span>{{ formatDuration(currentState?.position_ms ?? 0) }}</span>

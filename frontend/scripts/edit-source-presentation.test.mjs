@@ -107,7 +107,7 @@ function preparationText() {
  * :returns: 开关操作后的渲染完成。
  */
 async function toggleFit() {
-  const toggle = browser.document.querySelector('[role="switch"][aria-label="静态制品文字适配（不修改原件）"]');
+  const toggle = browser.document.querySelector('[role="switch"][aria-label="页图文字适配"]');
   assert.ok(toggle, '应提供默认关闭的文字适配开关');
   toggle.click();
   await flushUi();

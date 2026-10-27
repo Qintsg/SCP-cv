@@ -145,7 +145,7 @@ watch(workstationDirectory, active => { if (active) void refresh(); }, {immediat
           <a-button danger  :disabled="busy" @click="execute('delete')">删除所选</a-button>
           <a-button type="text" :disabled="busy" @click="selected = []">取消选择</a-button>
         </div>
-        <p v-if="busy" class="sources-view__caption" role="status">正在处理已选媒体；结果将按原路径逐项显示。</p>
+        <p v-if="busy" class="sources-view__caption" role="status">正在处理…</p>
         <a-alert v-if="results.length" :type="results.some(item => !item.success) ? 'warning' : 'success'" message="逐项操作结果" :show-icon="false"><template #description>
           <p v-for="item in results" :key="item.id">{{ item.path }} · {{ item.detail }}</p>
         </template></a-alert>
@@ -153,7 +153,7 @@ watch(workstationDirectory, active => { if (active) void refresh(); }, {immediat
           <FEmptyState v-if="loadError" title="媒体列表读取失败" :description="loadError"><a-button @click="refresh">重新读取</a-button></FEmptyState>
           <div v-else-if="isLoading && !sourceStore.filtered.length" class="sources-view__loading" role="status">正在读取媒体文件…</div>
           <FEmptyState v-else-if="!tableRows.length" :title="hasFilters ? '没有匹配的媒体' : '当前目录没有媒体文件'"
-            :description="hasFilters ? '试试其他名称，或清除筛选条件。' : protectedDirectory ? '这里的内容由系统维护。' : '上传文件，或添加网页和直播流。'">
+            >
             <a-button v-if="hasFilters" @click="clearFilters">清除筛选</a-button>
             <a-button v-else-if="!protectedDirectory" type="primary" :disabled="busy" @click="drawerOpen = true">上传或添加</a-button>
           </FEmptyState>

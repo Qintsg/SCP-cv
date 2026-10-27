@@ -80,8 +80,6 @@ void dialog;
 <template>
   <ControlDrawer role="dialog" aria-modal="true" :aria-label="t('more.title')" :title="t('more.title')" v-model:open="isOpen" :width="360" placement="bottom" :height="480">
 
-      <p class="more-sheet__desc">{{ t('more.desc') }}</p>
-
       <a-card size="small" :title="t('more.screenMode')" class="more-sheet__card">
         <BigScreenModeButtons
           :current-mode="currentScreenMode"
@@ -89,7 +87,6 @@ void dialog;
           block
           @select="switchScreenMode"
         />
-        <p class="more-sheet__hint">{{ t('more.screenHint') }}</p>
       </a-card>
 
       <a-card size="small" :title="t('more.systemMute')" class="more-sheet__card">
@@ -122,17 +119,7 @@ void dialog;
 </template>
 
 <style scoped>
-.more-sheet__desc {
-  margin: 0 0 var(--spacingVerticalM);
-  color: var(--colorNeutralForeground2);
-  font-size: var(--fontSizeBase200);
-}
 .more-sheet__card {
   margin-bottom: var(--spacingVerticalM);
-}
-.more-sheet__hint {
-  margin: var(--spacingVerticalS) 0 0;
-  color: var(--colorNeutralForeground3);
-  font-size: var(--fontSizeBase200);
 }
 </style>

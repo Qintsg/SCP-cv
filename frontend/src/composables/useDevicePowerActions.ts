@@ -55,7 +55,7 @@ export function useDevicePowerActions(surface: 'dashboard' | 'settings') {
   /** :returns: 明确确认后才发关机；取消/归属失效零派发。 */
   function powerOffSplice(): Promise<void> {
     return execute('splice_screen', 'off', () => device.power('splice_screen', 'off'), {
-      title: t(`${surface}.spliceOffOk`), detail: t(`${surface}.spliceOffOkDetail`), warning: true,
+      title: t(`${surface}.spliceOffOk`), warning: true,
       error: t(`${surface}.spliceOffFail`), fallback: t(`${surface}.spliceOffFailDetail`),
     }, { title: t(`${surface}.spliceOffTitle`), description: t(`${surface}.spliceOffDesc`),
       confirmLabel: t(`${surface}.spliceOffConfirm`), cancelLabel: t('common.cancel') });
@@ -63,7 +63,7 @@ export function useDevicePowerActions(surface: 'dashboard' | 'settings') {
   /** :param type: 左/右电视。:param label: 点击时名称。:returns: 一次切换，不读回或猜测电源状态。 */
   function toggleTv(type: 'tv_left' | 'tv_right', label: string): Promise<void> {
     return execute(type, 'toggle', () => device.toggle(type), {
-      title: t(`${surface}.tvToggleOk`, { label }), detail: surface === 'dashboard' ? t('dashboard.tvToggleOkDetail') : undefined,
+      title: t(`${surface}.tvToggleOk`, { label }),
       error: t(`${surface}.tvToggleFail`, { label }), fallback: t('common.retry'),
     });
   }

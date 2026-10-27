@@ -18,7 +18,7 @@ const available = computed(() => value.value === 'ip81' ? props.capabilities.sou
       <a-radio value="ip81" :disabled="capabilities.source_ip81 !== true">IP81</a-radio>
       <a-radio value="scp_cv" :disabled="capabilities.source_scp_cv !== true">SCP-cv</a-radio>
     </a-radio-group>
-    <p>最后发送请求：{{ requested === 'ip81' ? 'IP81' : requested === 'scp_cv' ? 'SCP-cv' : '未配置' }}。实际声音来源需现场确认。</p>
+    <p v-if="requested">上次请求：{{ requested === 'ip81' ? 'IP81' : 'SCP-cv' }}</p>
     <p v-if="!capabilities.source_scp_cv" class="unavailable">SCP-cv：{{ capabilities.reason }}</p>
     <a-button type="primary" :disabled="busy || !available" @click="$emit('apply')">应用声音来源</a-button>
   </a-card>

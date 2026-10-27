@@ -71,24 +71,21 @@ async function upgrade(trigger: HTMLElement): Promise<void> {
       <h3>{{ t('screenShare.title') }}</h3>
       <span class="screen-share__target">{{ t('screenShare.target', { id: windowId }) }}</span>
     </div>
-    <p class="screen-share__hint">{{ t('screenShare.hint') }}</p>
     <div class="screen-share__status" role="status" aria-live="polite" aria-atomic="true">
       <span class="screen-share__dot" aria-hidden="true" />
       <span>{{ status }}</span>
       <span v-if="view.phase === 'sharing'" class="screen-share__frames">{{ t('screenShare.frames', { count: view.snapshot?.actual_frames ?? 0 }) }}</span>
     </div>
-    <p v-if="view.phase === 'stopping'" class="screen-share__hint">{{ t('screenShare.stopPending') }}</p>
-    <p v-if="view.captureActive" class="screen-share__hint">{{ t(view.localHasAudio ? 'screenShare.audioPresent' : 'screenShare.noAudio') }}</p>
     <details v-if="view.captureActive" class="screen-share__hint">
       <summary>查看共享清晰度与网络状态</summary>
       <p>采集 {{ view.quality?.captureWidth ?? '未知' }} × {{ view.quality?.captureHeight ?? '未知' }}；
         发送 {{ view.quality?.sentWidth ?? '未知' }} × {{ view.quality?.sentHeight ?? '未知' }}</p>
       <p>实际 {{ view.quality?.bitrateMbps?.toFixed(2) ?? '未知' }} Mbps · {{ view.quality?.fps ?? '未知' }} fps；
-        建议上限 {{ view.quality?.limitMbps ?? '待协商' }} Mbps（非实际码率）</p>
+        码率上限 {{ view.quality?.limitMbps ?? '待协商' }} Mbps</p>
       <p>实际接收 {{ view.snapshot?.receiver_quality?.width ?? '未知' }} × {{ view.snapshot?.receiver_quality?.height ?? '未知' }} ·
         {{ view.snapshot?.receiver_quality?.bitrate_mbps?.toFixed(2) ?? '未知' }} Mbps · {{ view.snapshot?.receiver_quality?.fps ?? '未知' }} fps</p>
       <p>限制：{{ ({ none: '无', bandwidth: '网络带宽', cpu: '编码性能', other: '其它', unknown: '未知' } as Record<string, string>)[view.quality?.limitation ?? 'unknown'] }}；
-        参数：{{ view.quality?.parameters === 'configured' ? '已接受' : view.quality?.parameters === 'compatible' ? '兼容模式' : '浏览器默认/待协商' }}。接收清晰度仍需以大屏画面核对。</p>
+        参数：{{ view.quality?.parameters === 'configured' ? '已接受' : view.quality?.parameters === 'compatible' ? '兼容模式' : '浏览器默认/待协商' }}</p>
     </details>
     <div class="screen-share__actions">
       <a-checkbox v-model:checked="audio" :disabled="active">{{ t('screenShare.includeAudio') }}</a-checkbox>

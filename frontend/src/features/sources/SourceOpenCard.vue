@@ -45,7 +45,7 @@ const statuses = computed(() => Object.fromEntries([1, 2].map(id => {
 <template>
   <a-modal :footer="null" v-model:open="open"  title="打开到…" class="source-open-card" style="width:min(440px,calc(100vw - 32px))">
     <p class="source-open-card__name">{{ source?.name }}</p>
-    <p class="source-open-card__hint">{{ source?.path }} · 打开会替换目标窗口的当前内容。</p>
+    <p class="source-open-card__hint">{{ source?.path }}</p>
     <div class="source-open-card__targets">
       <div v-for="id in [1,2]" :key="id">
         <a-button block type="primary"  :loading="pending === id"

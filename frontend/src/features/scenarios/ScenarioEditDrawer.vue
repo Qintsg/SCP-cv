@@ -214,7 +214,7 @@ function close(): void {
         <a-form-item :label="t('scenarios.edit.bigScreenMode')">
           <ScenarioWallSettings v-if="isOpen" v-model="draft" />
         </a-form-item>
-        <a-form-item :label="t('scenarios.edit.systemVolume')" :extra="t('scenarios.edit.systemVolumeHint')">
+        <a-form-item :label="t('scenarios.edit.systemVolume')">
           <div class="scenario-edit__field-stack">
             <a-radio-group v-model:value="draft.volumeState">
               <a-radio value="unset">{{ t('scenarios.edit.keep') }}</a-radio>

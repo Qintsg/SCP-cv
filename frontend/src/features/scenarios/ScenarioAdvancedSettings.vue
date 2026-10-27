@@ -24,15 +24,14 @@ function setAudio(key: 'screen_volume' | 'computer_volume' | 'handheld_volume' |
 </script>
 <template>
   <details class="advanced-settings"><summary>高级：摄像机位置与现场音量</summary>
-    <p>机位填 1–6，0 或留空保持；音量填百分比，留空保持。</p>
-    <a-alert v-if="microphoneConflict" type="error"><template #description>悬挂（头戴）话筒配置冲突：头戴 {{ value.audio?.headset_volume }}% / 旧悬挂 {{ value.audio?.hanging_volume }}%。请在下面重新输入一个值或清空；保存与调用前会拒绝全部动作。</template></a-alert>
+    <a-alert v-if="microphoneConflict" type="error"><template #description>话筒音量冲突：{{ value.audio?.headset_volume }}% / {{ value.audio?.hanging_volume }}%，请重新输入或清空。</template></a-alert>
     <label v-for="[id,label] in cameras" :key="id">{{ label }}
       <a-input-number :value="value.camera_positions?.[id] ?? undefined" :controls="false" :min="0" :max="6" :precision="0" allow-clear placeholder="0 · 保持" v-bind="{ 'aria-label': label+'预设位置' }" @update:value="setPosition(id,nullableNumber($event))" /></label>
-    <label>大屏音量（电脑音频）<a-input-number :value="value.audio?.computer_volume ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设大屏音量' }" @update:value="setAudio('computer_volume',nullableNumber($event))" /></label>
-    <label>输出155增益<a-input-number :value="value.audio?.screen_volume ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设输出增益' }" @update:value="setAudio('screen_volume',nullableNumber($event))" /></label>
-    <label>手持话筒<a-input-number :value="value.audio?.handheld_volume ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设手持话筒音量' }" @update:value="setAudio('handheld_volume',nullableNumber($event))" /></label>
-    <label>悬挂（头戴）话筒<a-input-number :value="(microphoneVolume(value.audio)) ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设悬挂（头戴）话筒音量' }" @update:value="setAudio('headset_volume',nullableNumber($event))" /></label>
-    <label>声音来源<a-select v-select-aria-label="'预设声音来源'" :value="value.audio?.source ?? undefined" allow-clear placeholder="保持" :options="[{label:'IP81',value:'ip81'},{label:'SCP-cv（需输出就绪）',value:'scp_cv'}]" aria-label="预设声音来源" @update:value="setAudio('source', $event === 'ip81' || $event === 'scp_cv' ? $event : null)" /></label>
+    <label>大屏音量（%）<a-input-number :value="value.audio?.computer_volume ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设大屏音量' }" @update:value="setAudio('computer_volume',nullableNumber($event))" /></label>
+    <label>输出增益（%）<a-input-number :value="value.audio?.screen_volume ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设输出增益' }" @update:value="setAudio('screen_volume',nullableNumber($event))" /></label>
+    <label>手持话筒（%）<a-input-number :value="value.audio?.handheld_volume ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设手持话筒音量' }" @update:value="setAudio('handheld_volume',nullableNumber($event))" /></label>
+    <label>悬挂（头戴）话筒（%）<a-input-number :value="(microphoneVolume(value.audio)) ?? undefined" :controls="false" :min="0" :max="100" :precision="0" allow-clear placeholder="保持" v-bind="{ 'aria-label': '预设悬挂（头戴）话筒音量' }" @update:value="setAudio('headset_volume',nullableNumber($event))" /></label>
+    <label>声音来源<a-select v-select-aria-label="'预设声音来源'" :value="value.audio?.source ?? undefined" allow-clear placeholder="保持" :options="[{label:'IP81',value:'ip81'},{label:'SCP-cv',value:'scp_cv'}]" aria-label="预设声音来源" @update:value="setAudio('source', $event === 'ip81' || $event === 'scp_cv' ? $event : null)" /></label>
     <a-button @click="value = { ...(value.wall_layout_code ? { wall_layout_code: value.wall_layout_code } : {}), ...(value.televisions ? {televisions:value.televisions} : {}) }">现场参数全部保持</a-button>
   </details>
 </template>

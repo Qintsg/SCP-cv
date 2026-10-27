@@ -300,8 +300,8 @@ async function uploadOnly(): Promise<void> {
       <a-select v-select-aria-label="'文稿打开方式'" v-model:value="presentationMode" :options="presentationOptions" aria-label="文稿打开方式" />
     </a-form-item>
 
-    <a-form-item v-if="filterValue === 'ppt'" label="文字适配（不修改原件）">
-      <a-switch v-model:checked="fitText" aria-label="文字适配（不修改原件）" />
+    <a-form-item v-if="filterValue === 'ppt'" label="文字适配">
+      <a-switch v-model:checked="fitText" aria-label="文字适配" />
     </a-form-item>
 
     <ul class="source-picker__list">
@@ -353,7 +353,7 @@ async function uploadOnly(): Promise<void> {
         <span>{{ t('sourcePicker.uploadNew') }}</span>
       </summary>
       <div class="source-picker__upload-body">
-        <p class="source-picker__pdf-hint">此处上传默认保存到 / 根目录；不会跟随浏览目录。</p>
+        <p class="source-picker__pdf-hint">保存位置：/</p>
         <a-form-item :label="t('sourcePicker.file')" required>
           <div class="source-picker__file-row">
             <label class="source-picker__file">
@@ -365,7 +365,6 @@ async function uploadOnly(): Promise<void> {
                 {{ t('sourcePicker.chooseFile') }}
               </a-button>
             </label>
-            <p class="source-picker__pdf-hint">{{ t('sourcePicker.pdfSuggestion') }}</p>
           </div>
         </a-form-item>
         <a-form-item :label="t('sourcePicker.displayName')">

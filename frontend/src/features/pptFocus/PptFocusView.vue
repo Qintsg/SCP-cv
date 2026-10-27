@@ -324,7 +324,7 @@ function exitFocus(): void {
       </div>
 
       <template v-else-if="!previewContext">
-        <a-empty description="实际文稿源或文字布局尚未确认，不能显示默认预览。">
+        <a-empty description="文稿预览暂不可用">
           <template #image>
             <FIcon name="document_24_regular" />
           </template>

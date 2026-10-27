@@ -5,14 +5,13 @@
  */
 import { tabsKeyboard as vTabsKeyboard } from '@/design-system/tabsKeyboard';
 
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { TabPane as ATabPane } from 'ant-design-vue/es/tabs';
 import ATabs from 'ant-design-vue/es/tabs';
 
 import FPageHeader from '@/design-system/FPageHeader.vue';
 import { useBreakpoint } from '@/composables/useBreakpoint';
-import { getConnectionPorts } from '@/services/api';
 import RuntimeSettingsTab from './tabs/RuntimeSettingsTab.vue';
 import DisplaySettingsTab from './tabs/DisplaySettingsTab.vue';
 import DevicePowerSettingsTab from './tabs/DevicePowerSettingsTab.vue';
@@ -25,15 +24,11 @@ const { t } = useI18n();
 
 const activeTab = ref<SettingsTab>('runtime');
 const { isMobile } = useBreakpoint();
-const connectionPorts = getConnectionPorts();
-const portsCaption = computed(() => t('settings.ports', connectionPorts));
 </script>
 
 <template>
   <div class="settings-view">
-    <FPageHeader title="设置">
-      <template #context><p class="settings-view__brand-caption">{{ portsCaption }}</p></template>
-    </FPageHeader>
+    <FPageHeader title="设置" />
 
     <a-tabs v-tabs-keyboard v-model:activeKey="activeTab" :tab-position="isMobile ? 'top' : 'left'" type="line" :aria-label="t('settings.tabsAria')" class="console-settings-tabs">
       <a-tab-pane key="runtime" :tab="t('settings.tabRuntime')">

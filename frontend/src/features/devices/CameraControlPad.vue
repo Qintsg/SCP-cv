@@ -18,7 +18,7 @@ const directions: { value: CameraDirection; label: string; symbol: string }[] = 
 </script>
 <template>
   <div class="camera-pad">
-    <div class="pad-copy"><h3>{{ camera.name }}</h3><p>按住转动或变焦，松开即停止。断线后自动释放。</p></div>
+    <div class="pad-copy"><p>按住控制，松开停止。</p></div>
     <div class="pad-buttons" aria-label="云台方向与变焦">
       <button v-for="direction in directions" :key="direction.value" type="button" :class="[direction.value, { held: active === direction.value }]"
         :disabled="disabled" :aria-label="camera.name + direction.label" :aria-pressed="active === direction.value"
@@ -32,7 +32,7 @@ const directions: { value: CameraDirection; label: string; symbol: string }[] = 
       <a-popconfirm :open="confirmation !== null" :disabled="saveDisabled" :ok-button-props="{ danger: true, style: { minHeight: '44px' } }" :cancel-button-props="{ style: { minHeight: '44px' } }" @open-change="openConfirmation" @confirm="saveConfirmed">
         <a-button :disabled="saveDisabled">保存当前位置…</a-button>
         <template #title>将覆盖{{ confirmation?.name }}的位置{{ confirmation?.position }}，确认保存？</template>
-      </a-popconfirm><small>位置1–{{ camera.position_count ?? 6 }} · 操作后不自动重试</small>
+      </a-popconfirm>
     </div>
     <a-alert v-if="error" type="error"><template #description>{{ error }}</template></a-alert><a-alert v-if="feedback" type="info"><template #description>{{ feedback }}</template></a-alert>
   </div>

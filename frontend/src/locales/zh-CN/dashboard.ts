@@ -38,11 +38,9 @@ export default {
     spliceOffDesc: '关机指令分两次发送，间隔 5 秒。请确认现场没有正在进行的演讲。',
     spliceOffConfirm: '确认关机',
     spliceOffOk: '拼接屏关机指令已发送',
-    spliceOffOkDetail: '发送流程已完成，屏幕实际状态请以现场为准。',
     spliceOffFail: '拼接屏关机失败',
     spliceOffFailDetail: '请检查 TCP 连接',
     tvToggleOk: '{label} 已发送切换开/关机状态指令',
-    tvToggleOkDetail: '该指令仅发送切换，不读取真实开关状态',
     tvToggleFail: '{label} 切换失败',
   },
 } as const;
