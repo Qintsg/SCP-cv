@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
     <base-config cleartextTrafficPermitted="false" />
+    <!-- 文件描述：现场地址使用已有公开根证书。项目：SCP-cv；文件：network_security_config.xml；作者：Qintsg；日期：2026-10-27。 -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain>192.168.5.194</domain>
+        <domain>10.88.50.194</domain>
+        <trust-anchors>
+            <certificates src="@raw/scp_cv_root_ca" />
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
     <!-- 仅 debug APK 允许使用测试设备的用户 CA，便于连接受信的本机 HTTPS
-         ControlHost；release APK 不应用 debug-overrides，仍只信任系统 CA。 -->
+         ControlHost。 -->
     <debug-overrides>
         <trust-anchors>
             <certificates src="user" />

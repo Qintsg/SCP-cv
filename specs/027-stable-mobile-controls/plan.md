@@ -14,7 +14,7 @@
 **Testing**: 实际Vue代码、文件提交、真实本地Hardware服务、浏览器WebRTC和只读页面检查。
 **Target Platform**: 桌面网页、Windows客户端、Android与手机网页。
 **Project Type**: 播放控制服务及共享控制台。
-**Constraints**: 沿用认证、来源代次、媒体与设备合同；不使用computer use，不部署D4或增加自动显示恢复。
+**Constraints**: 沿用认证、来源代次、媒体与设备合同；不使用computer use或增加自动显示恢复。
 **Scope**: 滑块、PPT、频繁状态、预览、移动导航与共享视频策略。
 
 ## Constitution Check
@@ -38,3 +38,9 @@
 手机策略统一窄视口及触摸设备短边判定；父容器去掉无预览时的高度，预览组件同时停止订阅。底栏使用半透明主题色、模糊和边缘高光，并增加内容底部安全留白。
 
 共享默认视频上限16/24/48 Mbps、30fps，服务配置决定实际策略。前端只在分辨率档位变化时更新发送参数，质量诊断读取已接受参数；接收端继续直接解码。
+
+## 部署与客户端制品
+
+推送GitHub和GitLab；D4从GitLab快进。通过既有发布入口生成独立运行包，保留DataRoot、当前显示目标和音频端点；认证停止旧运行组、冷备数据库，替换任务引用和网页后启动，核对进程、媒体与显示配置。
+
+Windows沿用Electron完整目录包，校验ASAR与原生预览资产后归档便携ZIP。Android使用Java21、SDK36和项目Gradle，按arm64-v8a生成APK并使用本机保留的签名密钥签名；校验签名、包内网页和ABI配置。APK为D4两个既有地址带入当前公开根证书，服务允许Capacitor的https://localhost来源；保持TLS和Cookie校验。两份制品放入本机桌面。
