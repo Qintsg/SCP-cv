@@ -81,11 +81,6 @@ else builder.Services.AddSingleton<IVenueAudioTransport, TcpVenueAudioTransport>
 builder.Services.AddSingleton(sseOptions);
 builder.Services.AddSingleton(supervisorOptions);
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddHttpClient("stream-probe", client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(5);
-    client.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("SCP-cv", "1.0"));
-});
 builder.Services.AddSingleton(controlDbFactory);
 builder.Services.AddSingleton<IDbContextFactory<ControlDbContext>>(controlDbFactory);
 builder.Services.AddSingleton<DatabaseInitializer>();
