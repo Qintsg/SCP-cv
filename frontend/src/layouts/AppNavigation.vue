@@ -1,4 +1,4 @@
-<!-- Ant分组导航：按现场操作/内容资源/系统组织，小屏保留五个稳定底部入口。 -->
+<!-- 文件描述：桌面分组导航与手机Pad滑动玻璃底栏。项目：SCP-cv；文件：AppNavigation.vue；作者：Qintsg；日期：2026-10-28。 -->
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -9,6 +9,7 @@ import { DESKTOP_SECONDARY_NAV, MOBILE_TAB_BAR } from './navItems';
 import type { NavItemDef } from './types';
 import FIcon from '@/design-system/FIcon.vue';
 import { useTheme } from '@/composables/useTheme';
+import LiquidBottomNavigation from './glass/LiquidBottomNavigation.vue';
 
 const props = defineProps<{
   compact: boolean; navVariant: 'bottom' | 'rail' | 'drawer'; primaryItems: NavItemDef[];
@@ -16,13 +17,22 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{
   (event: 'update:moreOpen', value: boolean): void;
-  (event: 'bottomClick', path: string, value: MouseEvent): void;
 }>();
 const { t } = useI18n();
 const router = useRouter();
 const { dark } = useTheme();
 const all = computed(() => [...props.primaryItems, ...DESKTOP_SECONDARY_NAV]);
 const selected = computed(() => all.value.filter(item => props.isActive(item.path)).map(item => item.path));
+const activeBottomIndex = computed(() => {
+  const index = MOBILE_TAB_BAR.findIndex(item => props.isActive(item.path));
+  return props.moreOpen || index < 0 ? 4 : index;
+});
+/** :param index: 松手或键盘选择的底栏入口。:returns: 实际页面导航完成。 */
+async function selectBottom(index: number): Promise<void> {
+  const path = MOBILE_TAB_BAR[index]!.path;
+  if (path === '/more') emit('update:moreOpen', true);
+  else await router.push(path);
+}
 const groups = computed(() => [
   { key: 'operate', label: '现场操作', children: props.primaryItems.filter(item =>
     ['/dashboard', '/display/big-left', '/display/big-right', '/display/window-3', '/display/window-4', '/devices'].includes(item.path)) },
@@ -48,12 +58,6 @@ function navigate({ key, domEvent }: { key: string | number; domEvent?: Event })
       </a-menu-item-group>
     </a-menu>
   </nav>
-  <nav v-else class="app-shell__bottom" :aria-label="t('app.primaryNav')">
-    <a v-for="item in MOBILE_TAB_BAR" :key="item.path" :href="item.path" class="app-shell__bottom-item"
-      :class="{ 'app-shell__bottom-item--active': isActive(item.path) }" :aria-current="isActive(item.path) ? 'page' : undefined"
-      @click.prevent="event => emit('bottomClick', item.path, event)">
-      <FIcon :name="(isActive(item.path) && item.iconSelected) || item.icon" :size="22" /><span>{{ item.label }}</span>
-    </a>
-  </nav>
+  <LiquidBottomNavigation v-else :items="MOBILE_TAB_BAR" :active-index="activeBottomIndex" :label="t('app.primaryNav')" :select="selectBottom" />
   <MoreSheet :open="moreOpen" @update:open="value => emit('update:moreOpen', value)" />
 </template>

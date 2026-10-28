@@ -28,7 +28,9 @@
   },
   "dependencies": {
     "@mediafish/flv": "0.2.2",
-    "flvee": "0.0.1"
+    "flvee": "0.0.1",
+    "motion": "14.7.1",
+    "simple-liquid-glass": "5.4.0"
   },
   "devDependencies": {
     "@capacitor/android": "8.5.1",

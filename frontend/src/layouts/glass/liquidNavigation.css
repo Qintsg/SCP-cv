@@ -1,0 +1,27 @@
+/* 文件描述：手机和Pad底栏的玻璃材质、移动镜片及可访问交互层。项目：SCP-cv；文件：liquidNavigation.css；作者：Qintsg；日期：2026-10-28。 */
+.liquid-nav {
+  --glass-fill:color-mix(in srgb,var(--console-surface) 58%,transparent);
+  --glass-highlight:#ffffffad;--glass-shadow:#10224224;
+  --lens-x:0px;--lens-scale-x:1;--lens-scale-y:1;--lens-press:0;--lens-parallax:0px;
+  --lens-clip:inset(-12px 80% -12px 0 round 30px);--lens-left:0%;--lens-right:20%;
+  touch-action:none;user-select:none;-webkit-user-select:none;
+  transform:translateX(var(--lens-parallax));isolation:isolate;
+}
+:root[data-theme='dark'] .liquid-nav{--glass-fill:#152337a0;--glass-highlight:#c0d8f24d;--glass-shadow:#00000055}
+@media(prefers-color-scheme:dark){:root:not([data-theme='light']) .liquid-nav{--glass-fill:#152337a0;--glass-highlight:#c0d8f24d;--glass-shadow:#00000055}}
+.liquid-nav__track{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(160deg,#ffffff24,transparent 48%,#ffffff0a),var(--glass-fill);border:1px solid var(--glass-highlight);box-shadow:0 10px 32px var(--glass-shadow),inset 0 1px 1px #ffffff6b,inset 0 -1px 2px #12244212;backdrop-filter:blur(14px) saturate(1.45);-webkit-backdrop-filter:blur(14px) saturate(1.45)}
+.liquid-nav__icons{position:absolute;inset:6px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));pointer-events:none}
+.liquid-nav__visual{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;font-size:11px;line-height:1.3;white-space:nowrap}
+.liquid-nav__icons--base{z-index:2;color:var(--console-muted);mask-image:linear-gradient(90deg,#000 0%,#000 var(--lens-left),transparent var(--lens-left),transparent var(--lens-right),#000 var(--lens-right),#000 100%)}
+.liquid-nav__icons--color{z-index:3;clip-path:var(--lens-clip);color:var(--console-primary);font-weight:600}
+.liquid-nav__lens{position:absolute!important;z-index:1;left:6px;top:6px;width:calc((100% - 12px)/5);height:calc(100% - 12px);pointer-events:none;border-radius:30px;transform:translateX(var(--lens-x)) scale(var(--lens-scale-x),var(--lens-scale-y));will-change:transform;background:linear-gradient(145deg,#ffffff38,transparent 42%,#ffffff08);box-shadow:0 calc(1px + var(--lens-press)*5px) calc(5px + var(--lens-press)*12px) var(--glass-shadow),inset 0 1px 1px #ffffff8c,inset 0 -1px 1px #ffffff38}
+.liquid-nav__button{z-index:4;position:relative;border:0;background:transparent!important;box-shadow:none!important;cursor:pointer;padding:0;font:inherit;touch-action:none;-webkit-tap-highlight-color:transparent}
+.liquid-nav__button:focus-visible{outline:2px solid var(--console-primary);outline-offset:-4px}
+.liquid-nav__accessible{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
+.console-shell[data-touch-navigation='true'] .liquid-nav{background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:999px}
+.console-shell[data-touch-navigation='true'] .liquid-nav__button{border-radius:999px}
+.console-shell[data-tablet-controls='true'] .liquid-nav__icons{inset:7px}
+.console-shell[data-tablet-controls='true'] .liquid-nav__visual{font-size:13px;gap:6px}
+.console-shell[data-tablet-controls='true'] .liquid-nav__lens{left:7px;top:7px;width:calc((100% - 14px)/5);height:calc(100% - 14px)}
+@media(prefers-reduced-transparency:reduce){.liquid-nav__track{background:var(--console-surface);backdrop-filter:none;-webkit-backdrop-filter:none}.liquid-nav__lens{background:var(--console-brand-tint)}}
+@media(forced-colors:active){.liquid-nav__track{background:Canvas;border:1px solid CanvasText}.liquid-nav__lens{background:Highlight;forced-color-adjust:none}.liquid-nav__icons--color{color:HighlightText;forced-color-adjust:none}.liquid-nav__button{border:1px solid ButtonText}}

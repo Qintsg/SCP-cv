@@ -5,7 +5,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { RouterView, useRoute, useRouter } from 'vue-router';
+import { RouterView, useRoute } from 'vue-router';
 
 import AppNavigation from './AppNavigation.vue';
 import AppTopBar from './AppTopBar.vue';
@@ -23,7 +23,6 @@ import { useControlLayout } from '@/composables/useControlLayout';
 
 const { t } = useI18n();
 const route = useRoute();
-const router = useRouter();
 const runtime = useRuntimeStore();
 const { sizeClass, isLargeUp } = useWindowSizeClass();
 const { mobileControls, tabletControls, touchNavigation } = useControlLayout();
@@ -52,15 +51,6 @@ function isActive(path: string): boolean {
     return route.path.startsWith('/display/');
   }
   return route.path === path;
-}
-
-function onBottomClick(path: string, event: MouseEvent): void {
-  if (path === '/more') {
-    event.preventDefault();
-    moreOpen.value = true;
-    return;
-  }
-  void router.push(path);
 }
 
 function onMainScroll(): void {
@@ -106,7 +96,6 @@ onBeforeUnmount(() => {
         :nav-variant="navVariant"
         :primary-items="primaryItems"
         :is-active="isActive"
-        @bottom-click="onBottomClick"
       />
       <div v-if="isLargeUp" class="console-sider__footer">上海第二工业大学</div>
     </a-layout-sider>
@@ -127,7 +116,6 @@ onBeforeUnmount(() => {
       :nav-variant="navVariant"
       :primary-items="primaryItems"
       :is-active="isActive"
-      @bottom-click="onBottomClick"
       />
     </a-layout>
   </a-layout>

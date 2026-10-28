@@ -1,5 +1,7 @@
 # 直播预览新增依赖声明
 
+028滑动玻璃导航使用MIT许可的Motion 14.7.1与simple-liquid-glass 5.4.0，版权及其附带组件许可见[导航许可](../public/third-party-notices/liquid-navigation-LICENSE.txt)。文件随网页和Android/Electron应用一起分发。
+
 018网页构建使用以下开源组件，原许可证随仓库保留：
 
 - mpegts.js 1.8.2，Apache-2.0，[官方源码](https://github.com/xqq/mpegts.js)，许可证见[mpegts.js-LICENSE.txt](mpegts.js-LICENSE.txt)。

@@ -1,4 +1,4 @@
-// 文件描述：Android arm64-v8a客户端构建。项目：SCP-cv；文件：build.gradle；作者：Qintsg；日期：2026-10-27。
+// 文件描述：Android arm64-v8a客户端构建。项目：SCP-cv；文件：build.gradle；作者：Qintsg；日期：2026-10-28。
 apply plugin: 'com.android.application'
 
 android {
@@ -8,8 +8,8 @@ android {
         applicationId "cn.edu.sspu.scpcv.control"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 3
+        versionName "1.0.2"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

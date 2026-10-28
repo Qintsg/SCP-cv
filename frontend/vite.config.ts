@@ -38,7 +38,7 @@ export default defineConfig(({ mode, command }) => {
     // Electron 与 Capacitor 都消费相对路径的本地资源构建；网页继续部署在站点根路径。
     base: isPackagedApp ? './' : '/',
     envDir,
-    plugins: [vue(), tailwindcss(), ...(!isPackagedApp && command === 'serve' ? [dualProtocolPlugin(https, httpsPort)] : [])],
+    plugins: [vue({ template: { compilerOptions: { isCustomElement: tag => tag === 'liquid-glass' } } }), tailwindcss(), ...(!isPackagedApp && command === 'serve' ? [dualProtocolPlugin(https, httpsPort)] : [])],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
