@@ -2,7 +2,7 @@
 
 **Feature Branch**: `main`
 **Created**: 2026-10-28
-**Status**: Draft
+**Status**: Implemented
 **Input**: 手机和Pad使用类似Apple的滑动液态玻璃悬浮底栏，参考成熟Android实现进一步优化。
 
 ## User Scenarios & Testing *(mandatory)*

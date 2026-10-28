@@ -45,3 +45,5 @@
 两份为同一自适应应用，分别按手机、Pad命名，安装后根据尺寸与方向显示。大小均为4,606,992字节，SHA256均为`2B9F6CD93BFE2AD80555115CA4C63F6BD3B4EAF7F2AB7D3CCBE62910F09A6D0A`。
 
 本机完整制品检查：`.validation/glass-028/apk-integrity.json`、`signature.txt`、`build-apk.log`。签名私钥与口令保持本机私有存储。
+
+实现提交`d4dc0b09869ae5fd8737abdb82568be368709ce2`已推送GitHub和GitLab的main。只读页面检查所启动的本机ControlHost进程均已退出。

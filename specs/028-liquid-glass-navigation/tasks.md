@@ -21,6 +21,6 @@
 ## Phase 4: Delivery
 
 - [x] T008 更新docs/使用文档.md和docs/CHANGELOG.md，完成类型、Web及App构建和Spec Kit校验。
-- [ ] T009 更新frontend/android/app/build.gradle，生成并核验签名arm64-v8a APK，将手机与Pad文件放到桌面，推送两个仓库。
+- [x] T009 更新frontend/android/app/build.gradle，生成并核验签名arm64-v8a APK，将手机与Pad文件放到桌面，推送两个仓库。
 
 依赖顺序：T001→T002→T003→T004→T005→T006→T007→T008→T009。
