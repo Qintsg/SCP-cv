@@ -1,4 +1,4 @@
-/* Ant现场控制台：全局语义令牌、任务工作区几何和手机可达性。 */
+/* 文件描述：控制台令牌及桌面、手机和Pad布局。项目：SCP-cv；文件：console.css；作者：Qintsg；日期：2026-10-28。 */
 :root {
   --console-primary:#1677ff;
   --console-canvas:#f3f6fb;
@@ -123,14 +123,26 @@
 .app-shell__bottom { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); flex-shrink:0; border-top:1px solid var(--console-border); background:var(--console-surface); padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px)); z-index:100; }
 .app-shell__bottom-item { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; min-height:56px; color:var(--console-muted); font-size:11px; text-decoration:none; border-radius:6px; }
 .app-shell__bottom-item--active { color:var(--console-primary); background:var(--console-brand-tint); }
-.console-shell[data-mobile-controls='true'] .app-shell__content{padding:18px 12px calc(108px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
-.console-shell[data-mobile-controls='true'] .app-shell__bar{padding-top:max(8px,env(safe-area-inset-top,0px))}
-.console-shell[data-mobile-controls='true'] .app-shell__bottom,.ppt-focus.ppt-focus--mobile .ppt-focus__controls{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto;max-width:560px;margin:0 auto;min-height:72px;padding:6px;box-sizing:border-box;border-radius:28px;background:color-mix(in srgb,var(--console-surface) 74%,transparent);border:1px solid color-mix(in srgb,var(--console-surface) 75%,var(--console-border));box-shadow:0 12px 40px #09172e24,inset 0 1px 0 #ffffff70;-webkit-backdrop-filter:blur(24px) saturate(1.65);backdrop-filter:blur(24px) saturate(1.65);z-index:100}
-.console-shell[data-mobile-controls='true'] .app-shell__bottom-item{min-height:58px;border-radius:22px;font-size:11px;gap:4px;color:var(--console-muted)}
-.console-shell[data-mobile-controls='true'] .app-shell__bottom-item--active{color:var(--console-primary);background:color-mix(in srgb,var(--console-primary) 13%,transparent);box-shadow:inset 0 1px 0 #ffffff42}
-.ppt-focus--mobile .ppt-focus__controls{min-height:72px}.ppt-focus--mobile .ppt-focus__controls .presentation-navigation{gap:6px}.ppt-focus--mobile .ppt-focus__controls .ant-btn{min-height:58px;border-radius:22px}
-.ppt-focus--mobile .ppt-focus__topbar{padding-top:max(12px,env(safe-area-inset-top,0px))}
-@media(prefers-reduced-transparency:reduce){.console-shell[data-mobile-controls='true'] .app-shell__bottom,.ppt-focus--mobile .ppt-focus__controls{background:var(--console-surface);backdrop-filter:none;-webkit-backdrop-filter:none}}
+.console-shell[data-touch-navigation='true'] .app-shell__content{padding:18px 12px calc(108px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:calc(108px + env(safe-area-inset-bottom,0px))}
+.console-shell[data-touch-navigation='true'] .app-shell__bar{padding-top:max(8px,env(safe-area-inset-top,0px))}
+.console-shell[data-touch-navigation='true'] .app-shell__bottom,.ppt-focus.ppt-focus--touch .ppt-focus__controls{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));width:auto;max-width:560px;margin:0 auto;min-height:72px;padding:6px;box-sizing:border-box;border-radius:28px;background:color-mix(in srgb,var(--console-surface) 74%,transparent);border:1px solid color-mix(in srgb,var(--console-surface) 75%,var(--console-border));box-shadow:0 12px 40px #09172e24,inset 0 1px 0 #ffffff70;-webkit-backdrop-filter:blur(24px) saturate(1.65);backdrop-filter:blur(24px) saturate(1.65);z-index:100}
+.console-shell[data-touch-navigation='true'] .app-shell__bottom-item{min-height:58px;border-radius:22px;font-size:11px;gap:4px;color:var(--console-muted)}
+.console-shell[data-touch-navigation='true'] .app-shell__bottom-item--active{color:var(--console-primary);background:color-mix(in srgb,var(--console-primary) 13%,transparent);box-shadow:inset 0 1px 0 #ffffff42}
+.ppt-focus--touch .ppt-focus__controls{min-height:72px}.ppt-focus--touch .ppt-focus__controls .presentation-navigation{gap:6px}.ppt-focus--touch .ppt-focus__controls .ant-btn{min-height:58px;border-radius:22px}
+.ppt-focus--touch .ppt-focus__topbar{padding-top:max(12px,env(safe-area-inset-top,0px))}
+.console-shell[data-tablet-controls='true'] .app-shell__content{padding:24px 24px calc(128px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))}
+.console-shell[data-tablet-controls='true'] .app-shell__bottom,.ppt-focus.ppt-focus--tablet .ppt-focus__controls{inset-inline:24px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:720px;min-height:80px;padding:7px;border-radius:30px}
+.console-shell[data-tablet-controls='true'] .app-shell__bottom-item{min-height:64px;font-size:13px;gap:6px;border-radius:23px}
+.console-shell[data-tablet-controls='true'] .dashboard__main>.wall-map{order:0}
+.console-shell[data-tablet-controls='true'] .wall-map__actions{position:static}
+.console-shell[data-tablet-controls='true'] .dashboard__mute-row{min-height:44px}
+:where(.console-shell[data-tablet-controls='true'],.ppt-focus--tablet) .ant-btn{min-height:44px;min-width:44px;height:auto}
+.console-shell[data-tablet-controls='true'] :where(.ant-input,.ant-input-affix-wrapper,.ant-input-number,.ant-select-selector){min-height:44px;font-size:16px}
+.console-shell[data-tablet-controls='true'] .ant-select-single{height:44px}.console-shell[data-tablet-controls='true'] .ant-select-single .ant-select-selector{align-items:center}
+@media(any-pointer:coarse) and (min-width:600px) and (min-height:600px){:where(.ant-drawer,.ant-modal) .ant-btn{min-height:44px;min-width:44px;height:auto}.ant-drawer-close,.ant-modal-close{min-height:44px;min-width:44px}}
+@media(orientation:landscape){.console-shell[data-tablet-controls='true'] .dashboard-windows{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(orientation:portrait){.console-shell[data-tablet-controls='true'] .dashboard__side{grid-template-columns:repeat(2,minmax(0,1fr))}.console-shell[data-tablet-controls='true'] .dashboard__side>.ant-card:last-child{grid-column:1/-1}}
+@media(prefers-reduced-transparency:reduce){.console-shell[data-touch-navigation='true'] .app-shell__bottom,.ppt-focus--touch .ppt-focus__controls{background:var(--console-surface);backdrop-filter:none;-webkit-backdrop-filter:none}}
 .console-toast { overflow-wrap:anywhere; }
 [role='menu'] [role='menuitem']:focus-visible { outline:2px solid var(--console-primary); outline-offset:-2px; }
 /* 通知低于Modal/Drawer，菜单依照Ant自身弹层层级，持久错误不遮住新表单。 */

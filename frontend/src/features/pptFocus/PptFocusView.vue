@@ -7,7 +7,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import AButton from 'ant-design-vue/es/button';
 import FIcon from '@/design-system/FIcon.vue';
-import { useMobileControls } from '@/composables/useMobileControls';
+import { useControlLayout } from '@/composables/useControlLayout';
 import { useTheme } from '@/composables/useTheme';
 import { useToast } from '@/composables/useToast';
 import { useSessionStore } from '@/stores/sessions';
@@ -23,7 +23,7 @@ import PptSlideRail from './PptSlideRail.vue';
 import { sanitizeSpeakerNotes } from './speakerNotes';
 
 const route = useRoute(), router = useRouter(), sessions = useSessionStore(), sources = useSourceStore(), toast = useToast();
-const mobileControls = useMobileControls();
+const { mobileControls, tabletControls, touchNavigation } = useControlLayout();
 const { pushOverride, popOverride } = useTheme();
 const windowId = computed(() => Number(route.params.windowId));
 const session = computed(() => sessions.byWindowId(windowId.value));
@@ -81,7 +81,7 @@ onMounted(() => {
 onBeforeUnmount(() => { popOverride(); document.removeEventListener('keydown', keydown); document.removeEventListener('fullscreenchange', syncFullscreen); });
 </script>
 <template>
-  <div class="ppt-focus" :class="{ 'ppt-focus--mobile': mobileControls }">
+  <div class="ppt-focus" :class="{ 'ppt-focus--mobile': mobileControls, 'ppt-focus--tablet': tabletControls, 'ppt-focus--touch': touchNavigation }">
     <header class="ppt-focus__topbar">
       <a-button @click="router.push(`/display/${windowIdToSlug(windowId)}`)"><template #icon><FIcon name="arrow_left_24_regular" /></template>返回</a-button>
       <div class="ppt-focus__identity"><span>窗口 {{ windowId }}</span><h1>{{ title }}</h1></div>

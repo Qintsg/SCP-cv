@@ -13,3 +13,11 @@
 .ppt-focus--mobile .ppt-focus__topbar{gap:12px;padding:12px}.ppt-focus--mobile .ppt-focus__identity{display:block}.ppt-focus--mobile .ppt-focus__identity h1{font-size:14px}.ppt-focus--mobile .ppt-focus__identity>span{font-size:11px}.ppt-focus--mobile .ppt-focus__page{font-size:14px;min-width:64px}
 .ppt-focus--mobile .ppt-focus__stage{padding:0 12px calc(108px + env(safe-area-inset-bottom,0px))}.ppt-focus__layout--remote{grid-template-columns:minmax(0,1fr)}.ppt-focus--mobile .ppt-focus__notes p{font-size:20px}.ppt-focus--mobile .ppt-focus__status{height:28px}
 @media(max-width:1199px){.ppt-focus:not(.ppt-focus--mobile) .ppt-focus__layout{grid-template-columns:minmax(0,1fr) minmax(240px,300px)}.ppt-focus__slide-rail{display:none}}
+.ppt-focus--tablet .ppt-focus__stage{padding-bottom:calc(116px + env(safe-area-inset-bottom,0px))}.ppt-focus--tablet .ppt-focus__controls .ant-btn{min-height:64px;font-size:18px}
+@media(orientation:portrait){
+  .ppt-focus.ppt-focus--tablet .ppt-focus__layout{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(180px,.55fr);gap:16px}
+  .ppt-focus.ppt-focus--tablet .ppt-focus__slide-rail{display:none}
+  .ppt-focus--tablet .ppt-focus__side{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:16px}
+  .ppt-focus--tablet .ppt-focus__next img{min-height:0;flex:1;aspect-ratio:auto}.ppt-focus--tablet .ppt-focus__next .ppt-focus__placeholder{min-height:0;aspect-ratio:auto}
+  .ppt-focus--tablet .ppt-focus__notes header{padding:12px}.ppt-focus--tablet .ppt-focus__notes p{padding:16px;font-size:18px}
+}

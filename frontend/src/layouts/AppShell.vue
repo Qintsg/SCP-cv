@@ -1,13 +1,7 @@
 <script setup lang="ts">
 /**
- * Fluent 2 自适应应用外壳（DESIGN.md §2 Scale + §4 架构实现）。
- *  - Compact：底部导航栏（3–5 项，溢出走「更多」Sheet）；
- *  - Medium / Expanded：导航轨道（navigation rail，图标 + 短标签）；
- *  - Large / Extra-large：持久导航抽屉（navigation drawer，图标 + 标签）；
- *  - 选中目的地与 aria-current 随导航形态切换保持一致（N2 / N3）；
- *  - 顶部 App bar：唯一 <h1>、运行态 Tag、主题切换、应急菜单；
- *    内容滚动时由 0 级升至 2 级（E3）；
- *  - 首个可聚焦元素为「跳到主内容」（A4），landmark 完整（R14）。
+ * 文件描述：桌面侧栏与手机、Pad悬浮导航外壳。
+ * 项目：SCP-cv；文件：AppShell.vue；作者：Qintsg；日期：2026-10-28。
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -25,14 +19,14 @@ import {
 import type { NavItemDef } from './types';
 import { useWindowSizeClass } from '@/composables/useWindowSizeClass';
 import { useRuntimeStore } from '@/stores/runtime';
-import { useMobileControls } from '@/composables/useMobileControls';
+import { useControlLayout } from '@/composables/useControlLayout';
 
 const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const runtime = useRuntimeStore();
 const { sizeClass, isLargeUp } = useWindowSizeClass();
-const mobileControls = useMobileControls();
+const { mobileControls, tabletControls, touchNavigation } = useControlLayout();
 
 const moreOpen = ref(false);
 const scrolled = ref(false);
@@ -40,7 +34,7 @@ const mainRef = ref<HTMLElement | null>(null);
 
 /** 导航形态：compact 底栏 / rail 轨道 / drawer 抽屉。 */
 const navVariant = computed<'bottom' | 'rail' | 'drawer'>(() =>
-  mobileControls.value ? 'bottom' : isLargeUp.value ? 'drawer' : 'rail',
+  touchNavigation.value ? 'bottom' : isLargeUp.value ? 'drawer' : 'rail',
 );
 
 const primaryItems = computed<NavItemDef[]>(() =>
@@ -54,7 +48,7 @@ const primaryItems = computed<NavItemDef[]>(() =>
 
 function isActive(path: string): boolean {
   if (path === '/dashboard') return route.path === '/' || route.path === '/dashboard';
-  if (path === '/display/big-left' && mobileControls.value) {
+  if (path === '/display/big-left' && touchNavigation.value) {
     return route.path.startsWith('/display/');
   }
   return route.path === path;
@@ -101,8 +95,10 @@ onBeforeUnmount(() => {
     :data-size="sizeClass"
     :data-nav="navVariant"
     :data-mobile-controls="mobileControls"
+    :data-tablet-controls="tabletControls"
+    :data-touch-navigation="touchNavigation"
   >
-    <a-layout-sider v-if="!mobileControls" :width="228" :collapsed-width="76" :collapsed="!isLargeUp" class="console-sider" theme="dark">
+    <a-layout-sider v-if="!touchNavigation" :width="228" :collapsed-width="76" :collapsed="!isLargeUp" class="console-sider" theme="dark">
       <AppBrand :collapsed="!isLargeUp" />
       <AppNavigation
         v-model:more-open="moreOpen"
@@ -125,7 +121,7 @@ onBeforeUnmount(() => {
         <RouterView />
       </main>
       <AppNavigation
-      v-if="mobileControls"
+      v-if="touchNavigation"
       v-model:more-open="moreOpen"
       compact
       :nav-variant="navVariant"
