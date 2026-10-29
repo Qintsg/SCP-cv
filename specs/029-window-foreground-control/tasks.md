@@ -23,3 +23,10 @@
 - [x] T008 更新docs/openapi.yaml、使用/维护文档及known-pitfalls路径清单，完成构建和规范校验，记录verification.md。
 
 依赖：T001→T002→T003/T004/T005→T006→T007→T008。
+
+## Phase 5: Deployment
+
+- [x] T009 提交并推送两个仓库；按9f23702生成完整运行包及网页清单。
+- [x] T010 在D4协作停机、冷备数据库、切换已核验制品及启动入口，恢复原来源并验证实际隐藏／显示。
+- [x] T011 更新deployment.md及维护文档，核对双仓与D4源码、数据、显示配置及服务状态。
+- [x] T012 优化runtime-dotnet/scripts/start-desktop.ps1及D4桌面快捷方式，核验配置和重复启动保持进程身份。

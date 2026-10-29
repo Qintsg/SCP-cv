@@ -19,6 +19,7 @@ param(
     [switch]$NoPause
 )
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 $ProgressPreference = 'SilentlyContinue'
 $startupExit = 1
 $startupMutex = $null
