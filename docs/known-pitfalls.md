@@ -15,6 +15,7 @@
 
 | 能力 | 触发入口（HTTP） | 下游部件（Hardware） | Simulation 替身 | 验证位置 |
 |---|---|---|---|---|
+| 窗口隐藏及显示 | `POST /api/playback/window-foreground/` | RuntimeStateService→持久SET_WINDOW_FOREGROUND→认证管道→PlayerRuntimeHost→同HWND的Topmost及SetWindowPos；快照读取WS_EX_TOPMOST | 只入队，不声明实际窗口改变；未知观测拒绝操作 | WindowForegroundTests真实窗口及WindowForegroundRealTests真实Kestrel/Named Pipe/WPF；不修改系统显示模式 |
 | 两电视内容及逐输出预案去重 | `PUT /api/display-routing/televisions/{target}/`及预案激活；电源失效记账 | `DisplayRoutingService`→同VideoWallOperationGate→矩阵Controller→161/162:4830同连接6231+610D；门禁内持久dispatching/完成，失败不复用 | 显式SimulationTelevisionController，仍预检及记账 | Hardware装配解析、黄金包、Writer/本机TCP、SQLite提交故障及HTTP/DOM；020现场电视出画未验 |
 | Electron直连无声预览 | 受限Main IPC→固定native描述符API→私有app能力流 | 随包自包含ClientPreviewHost→挂独占Job后启动固定FFmpeg，完整票据/源/主机寿命与stdin短心跳 | Native注册表/假生产者，Web不调用IPC | 020真Electron44.2 RTSP/RTMP实际帧、H265兼容、父/helper死亡零残留；不连接D4 |
 | 拼接屏画面映射（视频墙） | 草稿PUT、应用POST、快捷预设及预案兼容入口 | Service→操作门禁/组合Planner→控制器→50节点4830；D4的63/64/81组合，未知输入/几何拒绝；被动回读仅诊断 | 相同预检与Planner，明确simulated | Planner/Protocol/Dispatch、SQLite/HTTP/DOM；现场抓包/出画另验，不把回环称实体通过 |
@@ -533,6 +534,12 @@
 
 - **根因**：Vue默认优先写入已有DOM属性；玻璃组件的reveal配置与内部方法同名，需要显式使用属性绑定。
 - **现状与检出方式**：reveal使用Vue的`.attr`修饰符。集成验收同时检查真实Vue页面异常、SVG滤镜及内部方法类型，单独HTML技术页不能代替该项。
+
+### 坑164 - 窗口维护意图与媒体观测分别处理（2026-10-29）
+
+- 窗口隐藏／显示属于播放器窗口的维护状态。媒体换源保留SET_WINDOW_FOREGROUND待执行命令，同类维护意图可以合并。
+- 实际置顶观测使用当前Worker的独立递增序列，在媒体代次检查之前更新；新所有者清空旧观测。缓存命令结果中的旧窗口快照不覆盖新状态。
+- 检出方式：真实SQLite队列、真实Kestrel/Named Pipe/WPF往返、旧观测重放及原生窗口顺序读回。只看HTTP受理或Topmost属性赋值不能证明窗口顺序已改变。
 
 ## 3. 相关沉淀点（不在这里重复）
 

@@ -1,11 +1,6 @@
 <script setup lang="ts">
-/**
- * 应急 Flyout：顶栏右侧入口。
- * 把不常用但关键的全局动作收纳到这里。
- *  - 重置全部窗口（无确认，因为本身就是兜底操作）
- *  - 显示窗口 ID（调试用，仅触发一次）
- *  - 系统关机（带 Dialog 二次确认 + Danger 主按钮）
- */
+// 文件描述：右上角维护菜单及实际窗口隐藏、显示控制。
+// 项目：SCP-cv；文件：EmergencyMenu.vue；作者：Qintsg；日期：2026-10-29。
 import type { DropdownOption } from '@/design-system/dropdownActions';
 
 import ActionMenu from '@/design-system/ActionMenu.vue';
@@ -20,12 +15,15 @@ import type { FluentIconName } from '@/design-system';
 import { useDialog } from '@/composables/useDialog';
 import { useToast } from '@/composables/useToast';
 import { useSessionStore } from '@/stores/sessions';
+import { useWindowForeground } from '@/composables/useWindowForeground';
 
 const { t } = useI18n();
 const session = useSessionStore();
 const dialog = useDialog();
 const toast = useToast();
 const systemActionPending = ref(false);
+const windowForeground = useWindowForeground();
+const busy = computed(() => systemActionPending.value || windowForeground.pending.value);
 
 /**
  * 重置全部播放窗口。
@@ -118,6 +116,8 @@ const options = computed<ActionDropdownOption[]>(() => [
     label: t('emergency.groupLabel'),
     key: 'group-main',
     children: [
+      { label: windowForeground.label.value, key: 'window-foreground', disabled: !windowForeground.available.value || busy.value,
+        icon: renderIcon('eye_24_regular'), action: windowForeground.toggle },
       { label: t('emergency.resetAll'), key: 'reset', icon: renderIcon('arrow_reset_24_regular'), action: onResetAll },
       { label: t('emergency.showIds'), key: 'show-ids', icon: renderIcon('eye_24_regular'), action: onShowWindowIds },
     ],
@@ -147,7 +147,7 @@ const options = computed<ActionDropdownOption[]>(() => [
  * :return: None
  */
 function handleSelect(_key: string | number, option: DropdownOption): void {
-  if (systemActionPending.value) return;
+  if (busy.value) return;
   runDropdownAction(option);
 }
 </script>
@@ -162,8 +162,8 @@ function handleSelect(_key: string | number, option: DropdownOption): void {
     <a-button
       type="text"
       shape="circle"
-      :loading="systemActionPending"
-      :disabled="systemActionPending"
+      :loading="busy"
+      :disabled="busy"
       :aria-label="t('emergency.triggerAria')"
     >
       <template #icon>

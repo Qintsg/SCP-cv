@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\src\ScpCv.ControlHost\ScpCv.ControlHost.csproj" />
     <ProjectReference Include="..\..\src\ScpCv.Domain\ScpCv.Domain.csproj" />
     <ProjectReference Include="..\..\src\ScpCv.Infrastructure\ScpCv.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ScpCv.PlayerWorker\ScpCv.PlayerWorker.csproj" />
     <ProjectReference Include="..\..\src\ScpCv.PowerPointHost\ScpCv.PowerPointHost.csproj" />
     <ProjectReference Include="..\..\src\ScpCv.Supervisor\ScpCv.Supervisor.csproj" />
   </ItemGroup>

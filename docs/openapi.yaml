@@ -219,6 +219,8 @@ paths:
     $ref: './paths/playback_{window_id}_mute_.yaml'
   /playback/show-ids/:
     $ref: './paths/playback_show-ids_.yaml'
+  /playback/window-foreground/:
+    $ref: './paths/playback_window-foreground_.yaml'
   /playback/reset-all/:
     $ref: './paths/playback_reset-all_.yaml'
   /playback/reset-ppt/:

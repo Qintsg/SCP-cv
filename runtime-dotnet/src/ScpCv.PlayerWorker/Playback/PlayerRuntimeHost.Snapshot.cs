@@ -1,4 +1,4 @@
-// 播放快照与原生 VLC 观测对齐；只有当前资源的不可变尝试可以向当前 generation 投影。
+// 文件描述：序列化实际媒体和有序窗口观测。项目：SCP-cv；文件：PlayerRuntimeHost.Snapshot.cs；作者：Qintsg；日期：2026-10-29。
 using System.Text.Json;
 using ScpCv.PlayerWorker.ScreenSharing;
 using VlcMediaPlayer = LibVLCSharp.Shared.MediaPlayer;
@@ -16,6 +16,8 @@ public sealed partial class PlayerRuntimeHost
         var playback = share is null ? ReadVlcPlaybackState() : ReadScreenSharePlaybackState();
         return JsonSerializer.SerializeToElement(new
         {
+            window_foreground = _window.WindowForeground,
+            window_observation_sequence = checked(++_windowObservationSequence),
             source_generation = _generation,
             source_id = _sourceId == 0 ? (long?)null : _sourceId,
             playback_state = playback.State,

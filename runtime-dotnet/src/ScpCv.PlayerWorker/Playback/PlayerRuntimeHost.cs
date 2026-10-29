@@ -1,4 +1,4 @@
-// 执行单窗口的媒体切换，保留旧画面直到新资源完成预备。
+// 文件描述：执行单窗口媒体与窗口维护命令。项目：SCP-cv；文件：PlayerRuntimeHost.cs；作者：Qintsg；日期：2026-10-29。
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -42,6 +42,7 @@ public sealed partial class PlayerRuntimeHost(
     private int _currentSlide;
     private int _totalSlides;
     private int _disposed;
+    private long _windowObservationSequence;
     private static readonly TimeSpan WebViewStageTimeout = TimeSpan.FromSeconds(15);
 
     public Task<WorkerExecutionResult> ExecuteAsync(
@@ -61,6 +62,11 @@ public sealed partial class PlayerRuntimeHost(
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             var command = lease.Command.Trim().ToUpperInvariant();
             var resultCode = "ok";
+            if (command == "SET_WINDOW_FOREGROUND")
+            {
+                _window.SetWindowForeground(lease.Args["foreground"].GetBoolean());
+                return new WorkerExecutionResult("completed", "ok", WindowSnapshot());
+            }
             if (_unconfirmedCandidates.Count > 0 && command is not ("CLOSE" or "RESET_PPT"))
                 throw new ScpCv.Contracts.Presentations.PresentationTransportException("候选资源清理未确认，普通播放命令已隔离。",
                     new InvalidOperationException("unconfirmed_presentation_candidate"));

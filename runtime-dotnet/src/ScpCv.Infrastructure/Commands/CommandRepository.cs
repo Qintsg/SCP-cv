@@ -1,4 +1,4 @@
-// 持久化命令入队、领取与完成状态管理。
+// 文件描述：持久命令入队、领取、完成及窗口意图合并。项目：SCP-cv；文件：CommandRepository.cs；作者：Qintsg；日期：2026-10-29。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
@@ -14,7 +14,7 @@ public sealed class CommandRepository(
         new(StringComparer.Ordinal) { "OPEN", "CLOSE", "RESET_PPT" };
 
     private static readonly HashSet<string> CoalescingCommands =
-        new(StringComparer.Ordinal) { "SEEK", "SET_LOOP", "SET_VOLUME", "SET_MUTE" };
+        new(StringComparer.Ordinal) { "SEEK", "SET_LOOP", "SET_VOLUME", "SET_MUTE", "SET_WINDOW_FOREGROUND" };
 
     public Task<CommandRecord> EnqueueAsync(
         EnqueueCommand request,
@@ -48,7 +48,7 @@ public sealed class CommandRepository(
                 IEnumerable<CommandRecord> superseded = [];
                 if (request.TargetKind == CommandTargetKind.Display && DisplayReplacementCommands.Contains(commandName))
                 {
-                    superseded = pending;
+                    superseded = pending.Where(command => command.Command != "SET_WINDOW_FOREGROUND");
                 }
                 else if (CoalescingCommands.Contains(commandName))
                 {

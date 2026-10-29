@@ -1,0 +1,45 @@
+post:
+  tags: [playback]
+  summary: 隐藏或显示两个输出窗口
+  description: 隐藏时取消置顶并移到其他窗口后方，显示时恢复置顶；保留播放、音量、位置及尺寸。受理结果通过各窗口命令回执和实际window_foreground观测确认。
+  operationId: setWindowsForeground
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required: [foreground]
+          properties:
+            foreground:
+              type: boolean
+              description: true恢复置顶，false移到后方。
+        examples:
+          hide:
+            value: { foreground: false }
+          show:
+            value: { foreground: true }
+  responses:
+    '202':
+      description: 两窗维护命令已入队，sessions分别携带submitted_command_id，实际窗口状态尚待执行确认。
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [success, sessions]
+            properties:
+              success: { type: boolean, enum: [true] }
+              sessions:
+                type: array
+                items:
+                  $ref: ../components/schemas/SessionSnapshot.yaml
+    '400':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '401':
+      $ref: ../components/responses/ErrorResponse.yaml
+    '409':
+      description: 输出窗口离线或尚未取得真实置顶观测。
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ErrorResponse.yaml

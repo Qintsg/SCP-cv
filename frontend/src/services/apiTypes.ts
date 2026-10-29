@@ -1,4 +1,4 @@
-/** 共享控制端的媒体、运行态与设备 REST 数据类型。 */
+// 文件描述：共享控制端媒体、窗口和设备REST类型。项目：SCP-cv；文件：apiTypes.ts；作者：Qintsg；日期：2026-10-29。
 export interface MediaFolderItem {
   id: number;
   name: string;
@@ -98,6 +98,8 @@ export interface SessionSnapshot {
   cleanup_pending?: boolean;
   pending_command: string;
   player_online: boolean;
+  /** 当前播放器实际置顶状态；离线或尚未观测时为null。 */
+  window_foreground?: boolean | null;
   player_last_seen_at: string;
   last_updated_at: string;
   volume: number;

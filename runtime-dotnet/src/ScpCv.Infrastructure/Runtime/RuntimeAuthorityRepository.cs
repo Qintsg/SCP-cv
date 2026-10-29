@@ -1,4 +1,4 @@
-// 持久化运行组代次与 Worker 所有权，确认停机后原子退役旧意图和兼容 pending 投影。
+// 文件描述：运行组与Worker所有权及当前窗口观测寿命。项目：SCP-cv；文件：RuntimeAuthorityRepository.cs；作者：Qintsg；日期：2026-10-29。
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Domain.Model;
 using ScpCv.Infrastructure.Persistence;
@@ -262,6 +262,15 @@ public sealed partial class RuntimeAuthorityRepository(
                 ownership.LastUiProgress = null;
                 ownership.CapabilitiesJson = request.CapabilitiesJson;
                 ownership.Status = WorkerOwnershipState.Online;
+                if (request.TargetKind == CommandTargetKind.Display)
+                {
+                    var session = await context.PlaybackSessions.SingleAsync(item => item.WindowId == request.TargetId, token).ConfigureAwait(false);
+                    session.WindowForeground = null;
+                    session.WindowObservationSequence = 0;
+                    session.PlayerLastSeenAt = null;
+                    var now = _timeProvider.GetUtcNow();
+                    session.LastUpdatedAt = now > session.LastUpdatedAt ? now : session.LastUpdatedAt.AddMilliseconds(1);
+                }
                 return ownership;
             },
             cancellationToken);

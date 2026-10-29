@@ -1,4 +1,4 @@
-// 当前身份与代次的实际播放投影。项目：SCP-cv；文件：RuntimeProjectionPublisher.cs；作者：Qintsg；日期：2026-10-21。
+// 文件描述：当前身份的实际媒体与独立窗口观测投影。项目：SCP-cv；文件：RuntimeProjectionPublisher.cs；作者：Qintsg；日期：2026-10-29。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Contracts.Ipc;
@@ -13,6 +13,7 @@ public sealed record StateReportAcceptance(bool Accepted, string Reason)
 {
     internal DateTimeOffset? UpdatedAt { get; init; }
     internal bool WorkerVerified { get; init; }
+    internal bool WindowObserved { get; init; }
 }
 
 /// <summary>只把通过 instance/epoch/generation fencing 的实际状态写入兼容 SSE 投影。</summary>
@@ -65,9 +66,9 @@ public sealed class RuntimeProjectionPublisher(
         if (targetKind == CommandTargetKind.Display && accepted.WorkerVerified)
             screenShareRegistry?.ObserveNativeRelease(targetId, workerInstanceId, ownerEpoch, report.State);
 
-        if (accepted.Accepted)
+        if (accepted.Accepted || accepted.WindowObserved)
         {
-            if (targetKind == CommandTargetKind.Display && accepted.UpdatedAt is { } updatedAt)
+            if (accepted.Accepted && targetKind == CommandTargetKind.Display && accepted.UpdatedAt is { } updatedAt)
                 screenSharePlayback?.Observe(targetId, workerInstanceId, ownerEpoch, report.SourceGeneration, report.State, updatedAt);
             events.PublishLatest();
         }
@@ -87,13 +88,21 @@ public sealed class RuntimeProjectionPublisher(
                 item => item.WindowId == targetId,
                 cancellationToken)
             .ConfigureAwait(false);
+        var state = report.State;
+        var windowObserved = WindowForegroundObservation.Apply(session, state);
+        if (windowObserved)
+        {
+            session.PlayerLastSeenAt = _timeProvider.GetUtcNow();
+            session.LastUpdatedAt = NextTimestamp(session.LastUpdatedAt);
+        }
+        if (state.ValueKind == JsonValueKind.Object && state.TryGetProperty("window_observation_only", out var only) && only.ValueKind == JsonValueKind.True)
+            return new StateReportAcceptance(false, "window_observation_only") { WindowObserved = windowObserved };
         if (report.SourceGeneration != session.DesiredGeneration ||
             report.SourceGeneration < session.ObservedGeneration)
         {
-            return new StateReportAcceptance(false, "stale_generation");
+            return new StateReportAcceptance(false, "stale_generation") { WindowObserved = windowObserved };
         }
 
-        var state = report.State;
         var previousSourceId = session.ActualSourceId;
         var previousAdapterKind = session.ActualAdapterKind;
         session.ObservedGeneration = report.SourceGeneration;

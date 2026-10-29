@@ -1,4 +1,6 @@
-// 管理真实播放器窗口的画面落位及预备资源；预备资源必须先进入可见窗口的视觉树。
+// 文件描述：管理播放器窗口落位、置顶状态及可见视觉树。项目：SCP-cv；文件：PlayerWindow.xaml.cs；作者：Qintsg；日期：2026-10-29。
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
@@ -38,15 +40,34 @@ public partial class PlayerWindow : Window
         if (_pendingBounds is not { } bounds) return;
         var handle = NativeHandle;
         if (handle == nint.Zero) return;
-        // HWND_TOPMOST(-1)：任务栏本身是置顶窗口，播放窗口必须同样置顶才能盖住它。
-        _ = SetWindowPos(handle, HwndTopmost, bounds.X, bounds.Y, bounds.Width, bounds.Height, SwpNoActivate);
+        if (!SetWindowPos(handle, Topmost ? HwndTopmost : HwndBottom, bounds.X, bounds.Y, bounds.Width, bounds.Height, SwpNoActivate))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+    }
+
+    /// <summary>原生窗口是否处于置顶显示状态；尚未创建HWND时未知。</summary>
+    public bool? WindowForeground => NativeHandle == 0 ? null : (GetWindowLong(NativeHandle, -20) & 0x0008) != 0;
+
+    /// <summary>:param foreground: true恢复置顶，false移到其他窗口后方。保持资源、位置及焦点。</summary>
+    public void SetWindowForeground(bool foreground)
+    {
+        Dispatcher.VerifyAccess();
+        var handle = NativeHandle;
+        if (handle == 0) throw new InvalidOperationException("播放器窗口尚未创建。");
+        Topmost = foreground;
+        if (!SetWindowPos(handle, foreground ? HwndTopmost : HwndBottom, 0, 0, 0, 0, SwpNoActivate | 0x0001 | 0x0002))
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        if (WindowForeground != foreground) throw new InvalidOperationException("播放器窗口置顶状态未生效。");
     }
 
     private const uint SwpNoActivate = 0x0010;
     private static readonly nint HwndTopmost = new(-1);
+    private static readonly nint HwndBottom = new(1);
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [DllImport("user32.dll", SetLastError = true)]
     private static extern bool SetWindowPos(nint hWnd, nint hWndInsertAfter, int x, int y, int cx, int cy, uint flags);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]
+    private static extern int GetWindowLong(nint window, int index);
 
     public void SetSurface(FrameworkElement surface)
     {

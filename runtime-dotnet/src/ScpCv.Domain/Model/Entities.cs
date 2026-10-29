@@ -1,4 +1,4 @@
-// 用户、媒体、播放、预案和运行组的持久化领域实体。
+// 文件描述：用户、媒体、播放、预案和运行组领域实体。项目：SCP-cv；文件：Entities.cs；作者：Qintsg；日期：2026-10-29。
 namespace ScpCv.Domain.Model;
 
 public sealed class UserAccount
@@ -92,6 +92,8 @@ public sealed class PlaybackSession
     public string ActualAdapterKind { get; set; } = string.Empty;
     public bool? ActualFitText { get; set; }
     public bool CleanupPending { get; set; }
+    public bool? WindowForeground { get; set; }
+    public long WindowObservationSequence { get; set; }
 }
 
 public sealed class RuntimeState

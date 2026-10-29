@@ -1,4 +1,4 @@
-// 控制端使用的播放、显示与大屏布局 HTTP 合同。
+// 文件描述：播放、窗口维护及大屏布局HTTP合同。项目：SCP-cv；文件：PlaybackDtos.cs；作者：Qintsg；日期：2026-10-29。
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -96,6 +96,9 @@ public sealed record PlaybackSessionDto
 
     [JsonPropertyName("player_online")]
     public bool PlayerOnline { get; init; }
+
+    [JsonPropertyName("window_foreground")]
+    public bool? WindowForeground { get; init; }
 
     [JsonPropertyName("player_last_seen_at")]
     public string PlayerLastSeenAt { get; init; } = string.Empty;

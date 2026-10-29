@@ -1,4 +1,4 @@
-// 运行态、声卡与墙面投影；外部动作完成和持久回执分开，不把逻辑记录当实体读回。
+// 文件描述：运行态、声卡、窗口与墙面实际投影。项目：SCP-cv；文件：RuntimeStateService.cs；作者：Qintsg；日期：2026-10-29。
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -367,6 +367,8 @@ public sealed partial class RuntimeStateService(
             CleanupPending = session.CleanupPending,
             PendingCommand = session.PendingCommand,
             PlayerOnline = session.PlayerLastSeenAt is not null && now - session.PlayerLastSeenAt.Value <= TimeSpan.FromSeconds(5),
+            WindowForeground = session.PlayerLastSeenAt is not null && now - session.PlayerLastSeenAt.Value <= TimeSpan.FromSeconds(5)
+                ? session.WindowForeground : null,
             PlayerLastSeenAt = session.PlayerLastSeenAt?.ToString("O") ?? string.Empty,
             LastUpdatedAt = session.LastUpdatedAt.ToString("O"),
             Volume = session.Volume,

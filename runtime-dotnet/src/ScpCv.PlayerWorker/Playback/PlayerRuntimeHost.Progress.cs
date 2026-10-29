@@ -1,4 +1,4 @@
-// 当前资源的实际观测在UI线程串行采样；LibreOffice只读查询不生成媒体时钟。
+// 文件描述：在UI线程采样实际媒体及窗口顺序。项目：SCP-cv；文件：PlayerRuntimeHost.Progress.cs；作者：Qintsg；日期：2026-10-29。
 using System.Windows.Threading;
 using System.IO;
 using LibVLCSharp.Shared;
@@ -26,7 +26,10 @@ public sealed partial class PlayerRuntimeHost
         if (!await _mediaGate.WaitAsync(0, token)) return null;
         try
         {
-            if ((_generation <= 0 && _releasedScreenShares.Count == 0) || Volatile.Read(ref _disposed) != 0 || _unconfirmedCandidates.Count > 0) return null;
+            if (Volatile.Read(ref _disposed) != 0) return null;
+            if (_generation <= 0 && _releasedScreenShares.Count == 0 && _window.NativeHandle == 0) return null;
+            if (_unconfirmedCandidates.Count > 0)
+                return _window.NativeHandle != 0 ? new WorkerStateSample(_generation, WindowSnapshot()) : null;
             if (_current?.Native is IPresentationSurface native)
             {
                 try
@@ -42,7 +45,7 @@ public sealed partial class PlayerRuntimeHost
                 return new WorkerStateSample(_generation, Snapshot());
             }
             // 空闲/旧图片也重复携带有界释放回执，避免一次结果回报丢失后永久占用服务端槽。
-            return _current?.Native is MediaPlayer or IScreenShareSurface || _releasedScreenShares.Count > 0
+            return _window.NativeHandle != 0 || _current?.Native is MediaPlayer or IScreenShareSurface || _releasedScreenShares.Count > 0
                 ? new WorkerStateSample(_generation, Snapshot()) : null;
         }
         finally { _mediaGate.Release(); }

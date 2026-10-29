@@ -139,6 +139,10 @@ properties:
   player_online:
     type: boolean
     description: 播放器窗口最近 5 秒内是否上报过心跳
+  window_foreground:
+    type: boolean
+    nullable: true
+    description: 当前播放器实际置顶状态；false表示移到其他窗口后方，离线或未取得观测时为null。
   player_last_seen_at:
     type: string
     format: date-time

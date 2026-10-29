@@ -1,4 +1,4 @@
-// 显控 REST 入口，统一将同步和异步服务错误转换为 HTTP 合同。
+// 文件描述：播放及窗口维护REST路由与错误合同。项目：SCP-cv；文件：PlaybackEndpoints.cs；作者：Qintsg；日期：2026-10-29。
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using ScpCv.Infrastructure.Persistence;
@@ -11,6 +11,7 @@ public static class PlaybackEndpoints
     public static IEndpointRouteBuilder MapPlaybackEndpoints(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapPlaybackCommandEndpoints();
+        endpoints.MapWindowForegroundEndpoints();
         var api = endpoints.MapGroup("/api").RequireSessionAndCsrf();
         api.MapGet("/sessions/", GetSessionsAsync);
         api.MapGet("/sessions/{windowId:int}/", GetSessionAsync);

@@ -1,4 +1,4 @@
-/** 共享控制端使用的 REST 合同与请求封装。 */
+// 文件描述：共享控制端REST合同与请求封装。项目：SCP-cv；文件：api.ts；作者：Qintsg；日期：2026-10-29。
 import { t } from '@/locales';
 import {
   clientConnection,
@@ -401,6 +401,7 @@ export const api = {
   setWindowVolume: (windowId: number, volume: number) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/volume/`, { method: 'PATCH', body: JSON.stringify({ volume }) }),
   setWindowMute: (windowId: number, muted: boolean) => requestJson<ApiStatePayload>(`/api/playback/${windowId}/mute/`, { method: 'PATCH', body: JSON.stringify({ muted }) }),
   showWindowIds: () => requestJson<ApiStatePayload>('/api/playback/show-ids/', { method: 'POST' }),
+  setWindowsForeground: (foreground: boolean) => requestJson<ApiStatePayload>('/api/playback/window-foreground/', { method: 'POST', body: JSON.stringify({ foreground }) }),
   listDisplays: () => requestJson<{ success: boolean; targets: DisplayTargetItem[] }>('/api/displays/'),
   selectDisplay: (payload: { window_id: number; display_mode: string; target_label: string }) => requestJson<ApiStatePayload>('/api/displays/select/', { method: 'POST', body: JSON.stringify(payload) }),
   listDevices: () => requestJson<{ success: boolean; devices: DeviceItem[] }>('/api/devices/'),
