@@ -21,12 +21,12 @@
 ## Phase 4：US3 提交与制品
 
 - [x] T008 [US3] 更新frontend/package.json、frontend/android/app/build.gradle到1.0.3/code4，更新文档并验证030。
-- [ ] T009 [US3] 将030及031实现、规范提交并推送两个现有远端，核对提交身份。
-- [ ] T010 [US3] 按固定提交构建Windows便携ZIP与Android签名包，更新桌面手机及Pad命名文件并核对内容、CA、签名。
+- [x] T009 [US3] 将030及031实现、规范提交并推送两个现有远端，核对提交身份。
+- [x] T010 [US3] 按固定提交构建Windows便携ZIP与Android签名包，更新桌面手机及Pad命名文件并核对内容、CA、签名。
 
 ## Phase 5：记录
 
-- [ ] T011 在specs/031-navigation-glass-client/verification.md及packages.md记录实际检查和制品。
+- [x] T011 在specs/031-navigation-glass-client/verification.md及packages.md记录实际检查和制品。
 
 ## Dependencies
 

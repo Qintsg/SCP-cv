@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-30
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: 网页使用左侧菜单，修复Pad竖屏底栏触摸位置，完善液态玻璃；完成后提交推送并更新桌面打包。
 

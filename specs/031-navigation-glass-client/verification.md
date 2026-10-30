@@ -31,3 +31,5 @@
 回环iframe的原CSP及X-Frame-Options原样保留；普通连接页没有悬浮底栏，未登录侧栏不计为通过。原PID76832正常退出0。证据：`.validation/navigation-031/electron-resources-TUWKTy/`；入口为`frontend/scripts/verify-electron-resources-031.mjs`，没有替换生产桥或协议。
 
 最终制品检查随[制品记录](packages.md)记录。打包不更新D4；030新增后端接口需要后续同步ControlHost和PlayerWorker后在D4使用。
+
+实现提交a278227已推送两个仓库。Windows109个代码文件、195个媒体资产及ZIP完整性通过；Android1.0.3/code4的Release、Lint、签名、16KiB排列、89个网页文件及公开CA均通过。三份桌面制品已更新，旧包存档，用户配置保持。
