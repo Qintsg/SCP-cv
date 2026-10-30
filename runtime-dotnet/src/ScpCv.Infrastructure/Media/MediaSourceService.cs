@@ -1,4 +1,4 @@
-// 媒体源上传、文件夹、移动和播放元数据管理。
+// 文件描述：媒体上传、目录、元数据及文件预览。项目：SCP-cv；文件：MediaSourceService.cs；作者：Qintsg；日期：2026-10-30。
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
@@ -236,9 +236,10 @@ public sealed partial class MediaSourceService(
     public async Task<MediaFileResult> GetPreviewAsync(long sourceId, CancellationToken cancellationToken = default)
     {
         var source = await GetSourceAsync(sourceId, cancellationToken).ConfigureAwait(false);
-        if (source.SourceType is not (MediaSourceType.Image or MediaSourceType.Video))
+        var isPdf = source.SourceType == MediaSourceType.Presentation && Path.GetExtension(source.Uri).Equals(".pdf", StringComparison.OrdinalIgnoreCase);
+        if (!isPdf && source.SourceType is not (MediaSourceType.Image or MediaSourceType.Video or MediaSourceType.Audio))
         {
-            throw new MediaServiceException("仅图片和视频源支持文件预览");
+            throw new MediaServiceException("当前来源不支持文件预览");
         }
 
         var path = ResolveAllowedFile(source.Uri);

@@ -1,8 +1,9 @@
 /**
- * 文件描述：手机、Pad和触摸导航的共享布局策略。
- * 项目：SCP-cv；文件：useControlLayout.ts；作者：Qintsg；日期：2026-10-28。
+ * 文件描述：内容尺寸与Web、Windows、Android导航布局策略。
+ * 项目：SCP-cv；文件：useControlLayout.ts；作者：Qintsg；日期：2026-10-30。
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { getClientBuildTarget } from '@/platform';
 
 export const MOBILE_CONTROL_QUERY = '(max-width: 767px), (pointer: coarse) and (max-height: 599px) and (max-width: 1023px)';
 export const TABLET_CONTROL_QUERY = '(min-width: 600px) and (min-height: 600px) and (any-pointer: coarse)';
@@ -13,7 +14,8 @@ export function useControlLayout() {
   const tabletMedia = typeof window === 'undefined' ? undefined : window.matchMedia(TABLET_CONTROL_QUERY);
   const tabletControls = ref(tabletMedia?.matches ?? false);
   const mobileControls = ref(Boolean(phoneMedia?.matches) && !tabletControls.value);
-  const touchNavigation = computed(() => mobileControls.value || tabletControls.value);
+  const androidNavigation = getClientBuildTarget() === 'app' && !window.scpCvElectron;
+  const touchNavigation = computed(() => androidNavigation && (mobileControls.value || tabletControls.value));
   /** :returns: 依据当前窗口更新布局，保留页面和媒体来源身份。 */
   const update = (): void => {
     tabletControls.value = tabletMedia?.matches ?? false;

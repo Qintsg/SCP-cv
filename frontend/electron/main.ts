@@ -1,4 +1,4 @@
-/** Electron安全入口：本地资源、受限平台桥及客户端专有预览生命周期。 */
+/** 文件描述：客户端资源、受限平台桥及媒体预览生命周期。项目：SCP-cv；文件：main.ts；作者：Qintsg；日期：2026-10-30。 */
 import { readFile, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
@@ -56,7 +56,8 @@ function assertTrustedCaller(event: IpcMainInvokeEvent): void {
 function contentType(path: string): string {
   switch (extname(path).toLowerCase()) {
     case '.html': return 'text/html; charset=utf-8';
-    case '.js': return 'text/javascript; charset=utf-8';
+    case '.js':
+    case '.mjs': return 'text/javascript; charset=utf-8';
     case '.css': return 'text/css; charset=utf-8';
     case '.json': return 'application/json; charset=utf-8';
     case '.svg': return 'image/svg+xml';
@@ -98,6 +99,11 @@ function setupSessionSecurity(): void {
   controlSession.setPermissionCheckHandler(() => false);
   controlSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   controlSession.webRequest.onHeadersReceived((details, callback) => {
+    // 内嵌网页保留自身CSP和X-Frame-Options，父文档继续限制可嵌入的来源。
+    if (details.resourceType === 'subFrame') {
+      callback({ responseHeaders: details.responseHeaders });
+      return;
+    }
     if (developmentUrl && new URL(details.url).origin === new URL(developmentUrl).origin) {
       callback({ responseHeaders: details.responseHeaders });
       return;

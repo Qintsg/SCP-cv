@@ -1,0 +1,6 @@
+{
+  "name": "scp-cv-electron-resources-031",
+  "version": "0.0.0",
+  "private": true,
+  "main": "../../../frontend/scripts/electron-resources-031/bootstrap.cjs"
+}

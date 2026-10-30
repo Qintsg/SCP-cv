@@ -21,6 +21,10 @@ ControlHost负责业务数据库写入、认证和命令协调。播放进程按
 
 浏览器预览由服务器按需转换并共享。Electron使用随包媒体组件从设备读取RTSP/RTMP。同一来源的多个预览共享传输和解码。
 
+媒体名称提供详情预览；网页播放支持绕过缓存刷新，屏幕共享可以跨控制视图持续。相关本机变更与验证见[030记录](specs/030-media-preview-sharing/verification.md)。
+
+网页与Windows客户端使用侧栏，安卓手机及Pad使用滑动玻璃底栏；Pad横竖屏按实时按钮位置选择，见[031验证](specs/031-navigation-glass-client/verification.md)。
+
 ## 环境要求
 
 - Windows10/11 x64交互桌面。

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 /**
+ * 文件描述：控制台根组件与应用共享生命周期。项目：SCP-cv；文件：App.vue；作者：Qintsg；日期：2026-10-30。
  * 应用根组件。
  *  - meta.focus = true：全屏专注内容（PPT 专注模式），替换整个外壳；
  *  - 其余路由：Ant Design现场工作台外壳；
@@ -24,12 +25,16 @@ import { useToast } from '@/composables/useToast';
 import { useAuthStore } from '@/stores/auth';
 import { useRuntimeStore } from '@/stores/runtime';
 import { watch } from 'vue';
+import { useScreenShareStore } from '@/features/screen-share/screenShareStore';
+import ScreenShareTray from '@/features/screen-share/ScreenShareTray.vue';
 
 const route = useRoute();
 const { t } = useI18n();
 const toast = useToast();
 const auth = useAuthStore();
 const runtime = useRuntimeStore();
+const shares = useScreenShareStore();
+window.addEventListener('pagehide', shares.disposeAll);
 
 const { dark: isDarkResolved } = useTheme();
 useReducedMotion();
@@ -72,7 +77,7 @@ watch(
   },
 );
 
-onBeforeUnmount(() => { active = false; });
+onBeforeUnmount(() => { active = false; window.removeEventListener('pagehide', shares.disposeAll); shares.disposeAll(); });
 onUnmounted(() => {
   unbindHeight?.();
   runtime.disconnectEvents();
@@ -84,6 +89,7 @@ onUnmounted(() => {
     <RouterView v-if="isFocusMode" />
     <AppShell v-else />
     <FDialogHost />
+    <ScreenShareTray />
     <FToastHost />
   </a-config-provider>
 </template>

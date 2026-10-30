@@ -1,4 +1,4 @@
-/** 打包客户端的路径、CSP和主机信任边界。 */
+/** 文件描述：客户端资源路径、CSP和主机信任边界。项目：SCP-cv；文件：security.ts；作者：Qintsg；日期：2026-10-30。 */
 import { isAbsolute, relative, resolve, sep } from 'node:path';
 
 export const APP_SCHEME = 'app';
@@ -16,7 +16,7 @@ export const PACKAGED_CSP = [
   "font-src 'self' data:",
   "object-src 'none'",
   "base-uri 'none'",
-  "frame-src 'none'",
+  "frame-src https: http://127.0.0.1:* http://localhost:*",
   "form-action 'self' https:",
 ].join('; ');
 

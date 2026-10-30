@@ -1,4 +1,4 @@
-/* 媒体源页布局、文件夹与列表交互样式。 */
+/* 文件描述：媒体目录、预览入口与列表样式。项目：SCP-cv；文件：SourcesView.css；作者：Qintsg；日期：2026-10-30。 */
 .sources-view__main{min-width:0;display:flex;flex-direction:column;gap:12px}
 .sources-view__filters,.sources-view__batch,.sources-view__row-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .sources-view__batch{padding:12px;border:1px solid var(--colorBrandStroke1);border-radius:var(--borderRadiusMedium);background:var(--colorBrandBackground2)}
@@ -342,6 +342,10 @@
   align-items: center;
   gap: var(--spacing-s);
 }
+
+.sources-view__preview-open{border:0;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:4px 0;min-height:44px;min-width:0}
+.sources-view__preview-open:hover{color:var(--colorBrandForeground1)}
+.sources-view__preview-open:focus-visible{outline:2px solid var(--colorBrandStroke1);outline-offset:4px;border-radius:4px}
 
 .sources-view__name {
   margin: 0;

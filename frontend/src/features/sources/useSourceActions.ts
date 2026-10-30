@@ -1,4 +1,4 @@
-/** 单源菜单与媒体库文件管理动作；内置配置不可写，声音源保持独立播放路径。SCP-cv 2026-10-12。 */
+/** 文件描述：媒体预览、编辑与文件操作菜单。项目：SCP-cv；文件：useSourceActions.ts；作者：Qintsg；日期：2026-10-30。 */
 import { h } from 'vue';
 import { useI18n } from 'vue-i18n';
 import FIcon from '@/design-system/FIcon.vue';
@@ -12,7 +12,7 @@ import { useSourceDownload } from './useSourceDownload';
 
 /** :param edit: 编辑入口。:param open: 打开到卡片。:param moves: 普通目录目标。:returns: 只有select执行的菜单。 */
 export function useSourceActions(edit: (source: MediaSourceItem) => void, open: (source: MediaSourceItem) => void,
-  moves: (source: MediaSourceItem) => ActionDropdownOption[]) {
+  moves: (source: MediaSourceItem) => ActionDropdownOption[], preview: (source: MediaSourceItem) => void) {
   const { t } = useI18n(), store = useSourceStore(), audio = useBackgroundAudioStore(), dialog = useDialog(), toast = useToast();
   const download = useSourceDownload();
   /** :param source: 普通源。:returns: 确认后删除，失败仍保留记录/反馈。 */
@@ -37,8 +37,9 @@ export function useSourceActions(edit: (source: MediaSourceItem) => void, open: 
       { label: t('sources.playAsBackgroundAudio'), key: 'play-background-audio', action: () => useAudio(source, true) },
       { label: t('sources.addToBackgroundAudio'), key: 'add-background-audio', action: () => useAudio(source, false) },
     ] : [{ label: '打开到…', key: 'open-to', disabled: !source.is_available, action: () => open(source) }];
-    if (source.is_protected) return playable;
-    return [...playable, { type: 'divider', key: 'divider-1' },
+    const actions = [{ label: '预览', key: 'preview', action: () => preview(source) }, ...playable];
+    if (source.is_protected) return actions;
+    return [...actions, { type: 'divider', key: 'divider-1' },
       { label: t('common.edit'), key: 'edit', icon: icon('edit_24_regular'), action: () => edit(source) },
       { label: t('sources.moveToFolder'), key: 'move-to', icon: icon('folder_24_regular'), children: moves(source) },
       { label: t('sources.download'), key: 'download', disabled: !source.file_size, action: () => { if (source.file_size) void download(source); } },

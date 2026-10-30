@@ -1,4 +1,4 @@
-<!-- 共享实时画布：可见引用才观看；1px边框表达实际帧状态，不展示冗余常驻说明。 -->
+<!-- 文件描述：可见引用共享实时画布，细边框表达连接状态。项目：SCP-cv；文件：ClientStreamPreview.vue；作者：Qintsg；日期：2026-10-30。 -->
 <script setup lang="ts">
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { VideoWallMappingItem } from '@/services/apiTypes';
@@ -13,7 +13,7 @@ import { capturePreviewScope } from './previewScope';
 import { useMobileControls } from '@/composables/useMobileControls';
 const mobileControls = useMobileControls();
 const props = withDefaults(defineProps<{ input?: VideoWallMappingItem['input']; sourceId?: number;
-  quality?: 'low' | 'high'; enabled?: boolean; label?: string }>(), { quality: 'low', enabled: true, label: '画面预览' });
+  quality?: 'low' | 'high'; enabled?: boolean; explicit?: boolean; label?: string }>(), { quality: 'low', enabled: true, explicit: false, label: '画面预览' });
 const auth = useAuthStore(), factory = inject(PREVIEW_PLAYER_FACTORY, createPreviewPlayer);
 const pool = inject(PREVIEW_POOL, undefined) ?? getPreviewPool(factory);
 const target = computed(() => previewTarget(props.input, props.sourceId, props.quality));
@@ -33,7 +33,7 @@ function stop(clear = false): void {
 /** :returns: 可见且已认证时接收共享帧；尺寸/比例/标签和quality提示改变不重新订阅。 */
 function start(): void {
   if (!mounted || !active) return;
-  if (mobileControls.value || !seen || !props.enabled || document.hidden || !target.value || !auth.user) { stop(); return; }
+  if (mobileControls.value && !props.explicit || !seen || !props.enabled || document.hidden || !target.value || !auth.user) { stop(); return; }
   if (release) return;
   release = pool.subscribe(target.value, {
     frame(video) { surface?.draw(video); hasFrame.value = true; },
@@ -41,7 +41,7 @@ function start(): void {
   }, capturePreviewScope());
 }
 // 清晰度是首次观看意图，不让自定义几何跨阈值时切换chn0/1；真正换来源才重取。
-watch(() => [props.sourceId, props.input?.kind, props.input?.ip_address, props.enabled, mobileControls.value], () => { stop(true); start(); });
+watch(() => [props.sourceId, props.input?.kind, props.input?.ip_address, props.enabled, props.explicit, mobileControls.value], () => { stop(true); start(); });
 /** :returns: 整页隐藏立即清需求，恢复后按可见引用重新接入。 */
 function visibility(): void { if (document.hidden) { stop(); pool.dispose(); } else start(); }
 onMounted(() => {

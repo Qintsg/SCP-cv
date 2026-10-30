@@ -1,5 +1,7 @@
 # 直播预览新增依赖声明
 
+030 PDF预览使用Mozilla Foundation的PDF.js（pdfjs-dist 6.4.299），Apache-2.0。版权声明保留在原分发代码中，完整许可见[PDF.js许可](../public/third-party-notices/pdfjs-LICENSE.txt)，随网页分发。
+
 028滑动玻璃导航使用MIT许可的Motion 14.7.1与simple-liquid-glass 5.4.0，版权及其附带组件许可见[导航许可](../public/third-party-notices/liquid-navigation-LICENSE.txt)。文件随网页和Android/Electron应用一起分发。
 
 018网页构建使用以下开源组件，原许可证随仓库保留：

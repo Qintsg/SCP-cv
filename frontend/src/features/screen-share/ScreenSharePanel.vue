@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** 紧凑网页共享入口：逻辑目标、真实接收与停止确认分层，不自播预览。SCP-cv 2026-10-11。 */
+/** 文件描述：共享采集授权及当前窗口状态控制。项目：SCP-cv；文件：ScreenSharePanel.vue；作者：Qintsg；日期：2026-10-30。 */
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import AButton from 'ant-design-vue/es/button';
@@ -18,7 +18,7 @@ const dialog = useDialogStore();
 const upgrading = ref(false), upgradeError = ref('');
 let upgradeController: AbortController | undefined;
 let ownDialog: typeof dialog.config;
-const { view, availability, active, upgradeAvailable, isCurrent, start, stop, refreshStop, setAudio } = useScreenShare(() => props.windowId, () => props.playerOnline);
+const { view, availability, active, upgradeAvailable, isCurrent, start, stop, refreshStop, setAudio } = useScreenShare(() => props.windowId);
 const reason = computed(() => upgradeError.value || view.value.errorCode || (!active.value ? availability.value : ''));
 const status = computed(() => reason.value ? t(`screenShare.errors.${reason.value}`) : t(`screenShare.phases.${view.value.phase}`));
 const canStop = computed(() => ['selecting', 'connecting', 'sharing'].includes(view.value.phase));

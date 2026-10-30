@@ -1,8 +1,9 @@
-/** 单个网页授权尝试的所有者：许可先于API、本地先停止、迟到结果不复活。SCP-cv 2026-10-11。 */
+/** 文件描述：独占共享采集、信令与心跳。项目：SCP-cv；文件：ScreenSharePublisher.ts；作者：Qintsg；日期：2026-10-30。 */
 import type { ScreenSharingApi, ScreenShareSnapshot, ScreenShareVideoPolicy } from '@/services/screenSharing';
 import type { ScreenSharePeer } from './rtcPeer';
 import { ScreenShareAudioController, type ScreenShareAudioView } from './ScreenShareAudioController';
 import { displayVideoConstraints, type ShareQuality } from './shareQuality';
+import { waitShareTick } from './shareClock';
 
 export interface ScreenShareView {
   phase: 'idle' | 'selecting' | 'connecting' | 'sharing' | 'stopping' | 'closed' | 'failed' | 'cancelled';
@@ -37,15 +38,6 @@ interface Attempt {
   qualityBusy?: boolean;
 }
 
-/** :param signal: 本次寿命。:returns: 一秒后继续，停止时立即清理监听和计时器。 */
-function nextPoll(signal: AbortSignal): Promise<void> {
-  signal.throwIfAborted();
-  return new Promise((resolve, reject) => {
-    const ended = (): void => { clearTimeout(timer); signal.removeEventListener('abort', ended); reject(new Error('share_cancelled')); };
-    const timer = setTimeout(() => { signal.removeEventListener('abort', ended); resolve(); }, 1000);
-    signal.addEventListener('abort', ended, { once: true });
-  });
-}
 /** :param error: 外部错误。:returns: 固定文案键，不把浏览器/信令异常详情写到页面。 */
 function errorCode(error: unknown): string {
   if (error instanceof Error) {
@@ -184,7 +176,7 @@ export class ScreenSharePublisher {
             if (this.live(attempt)) this.update({ quality });
           }).catch(() => { /* 不支持统计不结束有效共享。 */ }).finally(() => { attempt.qualityBusy = false; });
         }
-        if (!snapshot) { await nextPoll(attempt.abort.signal); continue; }
+        if (!snapshot) { await waitShareTick(attempt.abort.signal); continue; }
         if (snapshot.state === 'closed' || snapshot.state === 'failed') {
           this.release(attempt); this.attempt = undefined;
           this.update({ phase: snapshot.state, errorCode: snapshot.state === 'failed' ? 'share_ended' : '' }); return;
@@ -198,7 +190,7 @@ export class ScreenSharePublisher {
         if (Date.now() >= heartbeatAt) {
           await this.deps.api.heartbeat(snapshot.id, attempt.abort.signal); heartbeatAt = Date.now() + 8000;
         }
-        await nextPoll(attempt.abort.signal);
+        await waitShareTick(attempt.abort.signal);
       }
       if (this.attempt === attempt && !attempt.abort.signal.aborted) await this.stop('share_context_changed');
     } catch (error) {

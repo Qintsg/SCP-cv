@@ -1,47 +1,12 @@
-/** Vue只负责共享状态呈现与页面/账号寿命；媒体资源由独占发布者拥有。SCP-cv 2026-10-11。 */
-import { computed, onBeforeUnmount, shallowRef, watch } from 'vue';
-import { clientConnection } from '@/platform/connection';
-import { getClientBuildTarget } from '@/platform';
-import { useAuthStore } from '@/stores/auth';
-import { screenSharingApi } from '@/services/screenSharing';
-import { screenShareAvailability } from './availability';
-import { createScreenSharePeer } from './rtcPeer';
-import { ScreenSharePublisher } from './ScreenSharePublisher';
+/** 文件描述：控制面板订阅应用共享状态。项目：SCP-cv；文件：useScreenShare.ts；作者：Qintsg；日期：2026-10-30。 */
+import { computed } from 'vue';
+import { useScreenShareStore } from './screenShareStore';
 
-/** :param target: 当前逻辑窗口。:param online: 真实Player在线标识。:returns: 一页面实例的一次授权生命周期，离开即停采集。 */
-export function useScreenShare(target: () => number, online: () => boolean) {
-  const auth = useAuthStore();
-  const generation = clientConnection.captureGeneration();
-  const ownerId = auth.user?.id;
-  const expired = shallowRef(false);
-  const isCurrent = (): boolean => !expired.value && generation === clientConnection.captureGeneration() && auth.user?.id === ownerId;
-  const upgradeAvailable = computed(() => isCurrent() && getClientBuildTarget() === 'web'
-    && window.location.protocol === 'http:' && auth.isAuthenticated && online());
-  const availability = computed(() => expired.value ? 'share_context_changed' : screenShareAvailability({
-    secure: window.isSecureContext && window.location.protocol === 'https:', web: getClientBuildTarget() === 'web',
-    capture: typeof navigator.mediaDevices?.getDisplayMedia === 'function',
-    peer: typeof RTCPeerConnection === 'function', authenticated: auth.isAuthenticated, online: online(),
-  }));
-  const publisher = new ScreenSharePublisher({
-    windowId: target, availability: () => availability.value,
-    isCurrent,
-    capture: (options) => navigator.mediaDevices.getDisplayMedia(options), peer: createScreenSharePeer,
-    api: screenSharingApi, changed: (next) => { view.value = next; },
-  });
-  const view = shallowRef(publisher.view);
-  const active = computed(() => ['selecting', 'connecting', 'sharing', 'stopping'].includes(view.value.phase));
-  const stop = (): Promise<void> => publisher.stop();
-  const pageEnded = (): void => {
-    expired.value = true;
-    removeGenerationWatch();
-    void publisher.dispose();
-  };
-  const removeGenerationWatch = clientConnection.onGenerationChanged(pageEnded);
-  window.addEventListener('pagehide', pageEnded);
-  watch(() => auth.user?.id, pageEnded);
-  watch(target, pageEnded);
-  watch(online, (value) => { if (!value) void publisher.stop('share_player_offline'); });
-  onBeforeUnmount(() => { window.removeEventListener('pagehide', pageEnded); pageEnded(); });
-  return { view, availability, active, upgradeAvailable, isCurrent, start: (audio: boolean) => publisher.start(audio), stop, refreshStop: () => publisher.refreshStop(),
-    setAudio: (volume: number, muted: boolean) => publisher.setAudio(volume, muted) };
+/** :param target: 当前控制窗口。:returns: 页面卸载后仍由应用持有的共享操作，在线状态由应用会话提供。 */
+export function useScreenShare(target: () => number) {
+  const store = useScreenShareStore(), owner = computed(() => store.forWindow(target()));
+  return { view: computed(() => owner.value.view.value), availability: computed(() => owner.value.availability.value),
+    active: computed(() => owner.value.active.value), upgradeAvailable: computed(() => owner.value.upgradeAvailable.value),
+    isCurrent: () => owner.value.isCurrent(), start: (audio: boolean) => owner.value.start(audio), stop: () => owner.value.stop(),
+    refreshStop: () => owner.value.refreshStop(), setAudio: (volume: number, muted: boolean) => owner.value.setAudio(volume, muted) };
 }

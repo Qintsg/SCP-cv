@@ -1,10 +1,11 @@
-<!-- 文件描述：支持滑动镜片、折射和单次路由提交的悬浮底栏。项目：SCP-cv；文件：LiquidBottomNavigation.vue；作者：Qintsg；日期：2026-10-28。 -->
+<!-- 文件描述：按真实按钮坐标滑动的折射镜片与单次导航底栏。项目：SCP-cv；文件：LiquidBottomNavigation.vue；作者：Qintsg；日期：2026-10-30。 -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import 'simple-liquid-glass/web-component';
 import FIcon from '@/design-system/FIcon.vue';
 import type { NavItemDef } from '../types';
 import { createNavigationMotion, type NavigationFrame } from './navigationMotion';
+import { navigationPosition } from './navigationGeometry';
 import './liquidNavigation.css';
 
 const props = defineProps<{
@@ -14,7 +15,7 @@ const root = ref<HTMLElement>();
 let motion: ReturnType<typeof createNavigationMotion> | undefined;
 let observer: ResizeObserver | undefined;
 let pointer: number | undefined;
-let left = 0, width = 0, inset = 0;
+let width = 0;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const reducedTransparency = matchMedia('(prefers-reduced-transparency: reduce), (forced-colors: active)');
 const effectMode = ref(reducedTransparency.matches ? 'off' : 'svg');
@@ -30,7 +31,9 @@ function paint(frame: NavigationFrame): void {
   element.style.setProperty('--lens-scale-x', String(scaleX));
   element.style.setProperty('--lens-scale-y', String(scaleY));
   element.style.setProperty('--lens-press', String(frame.pressed));
-  element.style.setProperty('--lens-parallax', `${(frame.position / (props.items.length - 1) - .5) * frame.pressed * 5}px`);
+  const progress = frame.position / (props.items.length - 1);
+  element.style.setProperty('--glass-light-x', `${8 + progress * 84}%`);
+  element.style.setProperty('--glass-parallax', `${(progress - .5) * frame.pressed * 4}px`);
   const cutLeft = (frame.position * cell + cell * (1 - scaleX) / 2) / width * 100;
   const cutRight = 100 - cutLeft - scaleX / props.items.length * 100;
   element.style.setProperty('--lens-clip', `inset(-12px ${cutRight}% -12px ${cutLeft}% round 30px)`);
@@ -40,16 +43,22 @@ function paint(frame: NavigationFrame): void {
 /** :returns: 测量未变形布局并取消尺寸改变前的手势。 */
 function measure(): void {
   const element = root.value!;
-  inset = parseFloat(getComputedStyle(element).paddingLeft);
-  left = element.getBoundingClientRect().left;
-  width = element.clientWidth - inset * 2;
+  const style = getComputedStyle(element);
+  const inset = parseFloat(style.paddingLeft);
+  width = element.clientWidth - inset - parseFloat(style.paddingRight);
+  element.style.setProperty('--glass-inset', `${inset}px`);
+  element.style.setProperty('--nav-count', String(props.items.length));
   cancel(); motion?.paint();
 }
 /** :param clientX: 指针水平位置。:returns: 当前入口连续位置。 */
-function position(clientX: number): number { return (clientX - left - inset) / (width / props.items.length) - .5; }
+function position(clientX: number): number {
+  const slots = [...root.value!.querySelectorAll<HTMLButtonElement>('.liquid-nav__button')].map(button => button.getBoundingClientRect());
+  return navigationPosition(clientX, slots);
+}
 /** :param event: 原生主指针事件。 */
 function down(event: PointerEvent): void {
   if (!event.isPrimary || event.button !== 0 || pointer !== undefined) return;
+  measure();
   if (!motion?.begin(position(event.clientX), event.timeStamp)) return;
   pointer = event.pointerId;
   root.value!.setPointerCapture(pointer);
@@ -91,12 +100,20 @@ onMounted(() => {
   motion = createNavigationMotion({ count: props.items.length, activeIndex: () => props.activeIndex,
     reducedMotion: () => reducedMotion.matches, paint, select: index => props.select(index) });
   measure(); observer = new ResizeObserver(measure); observer.observe(root.value!);
+  window.addEventListener('resize', measure);
+  window.addEventListener('orientationchange', measure);
+  window.visualViewport?.addEventListener('resize', measure);
+  window.visualViewport?.addEventListener('scroll', measure);
   reducedMotion.addEventListener('change', preferenceChanged);
   reducedTransparency.addEventListener('change', preferenceChanged);
 });
 onBeforeUnmount(() => {
   observer?.disconnect(); reducedMotion.removeEventListener('change', preferenceChanged);
   reducedTransparency.removeEventListener('change', preferenceChanged);
+  window.removeEventListener('resize', measure);
+  window.removeEventListener('orientationchange', measure);
+  window.visualViewport?.removeEventListener('resize', measure);
+  window.visualViewport?.removeEventListener('scroll', measure);
   cancel(); motion?.destroy();
 });
 </script>
@@ -111,8 +128,8 @@ onBeforeUnmount(() => {
       </div>
     </div>
     <liquid-glass class="liquid-nav__lens" renderer="svg" :effect-mode="effectMode" :reveal.attr="'immediate'" radius="30" lens="rim"
-      lens-strength="0.45" scale="10" displace="1.5" blur="0.6" frost="0.04" saturation="140"
-      border-color="rgba(255,255,255,.25)" aria-hidden="true" />
+      lens-strength="0.7" scale="26" displace="1.2" blur="0.3" frost="0.015" saturation="155"
+      border-color="rgba(255,255,255,.6)" aria-hidden="true" />
     <div class="liquid-nav__icons liquid-nav__icons--color" aria-hidden="true">
       <div v-for="item in items" :key="item.path" class="liquid-nav__visual">
         <FIcon :name="item.iconSelected || item.icon" :size="22" /><span>{{ item.label }}</span>

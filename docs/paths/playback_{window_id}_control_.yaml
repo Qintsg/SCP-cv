@@ -4,6 +4,7 @@ post:
   tags:
     - playback
   summary: 播放控制
+  description: refresh仅用于网页来源，绕过当前WebView缓存重新导航；实际导航完成后命令才完成。
   operationId: controlPlayback
   requestBody:
     required: true

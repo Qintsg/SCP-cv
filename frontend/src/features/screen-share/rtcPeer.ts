@@ -1,4 +1,4 @@
-/** 发布者独占WebRTC；无外部STUN/TURN、不获取麦克风，不用连接状态冒充帧。SCP-cv 2026-10-11。 */
+/** 文件描述：共享WebRTC连接、质量参数及短暂断线恢复。项目：SCP-cv；文件：rtcPeer.ts；作者：Qintsg；日期：2026-10-30。 */
 import type { ScreenShareSdp, ScreenShareVideoPolicy } from '@/services/screenSharing';
 import { checkedVideoPolicy, configureVideoSender, preferTextDetail, qualitySampler, videoBitrateLimit, type ShareQuality } from './shareQuality';
 
@@ -32,6 +32,7 @@ export function createScreenSharePeer(stream: MediaStream, failed: () => void, s
   const policy = checkedVideoPolicy(suppliedPolicy);
   const peer = new RTCPeerConnection({ iceServers: [] });
   let closed = false;
+  let disconnectedTimer: ReturnType<typeof setTimeout> | undefined;
   let parameters = 'pending';
   const video = stream.getVideoTracks().find(track => track.readyState === 'live');
   if (video) preferTextDetail(video);
@@ -55,7 +56,12 @@ export function createScreenSharePeer(stream: MediaStream, failed: () => void, s
     try { await operation; } finally { if (configuring === operation) configuring = undefined; }
   }
   const connectionChanged = (): void => {
-    if (!closed && ['disconnected', 'failed', 'closed'].includes(peer.connectionState)) failed();
+    clearTimeout(disconnectedTimer); disconnectedTimer = undefined;
+    if (closed) return;
+    if (['failed', 'closed'].includes(peer.connectionState)) failed();
+    else if (peer.connectionState === 'disconnected') disconnectedTimer = setTimeout(() => {
+      if (!closed && peer.connectionState === 'disconnected') failed();
+    }, 12000);
   };
   peer.addEventListener('connectionstatechange', connectionChanged);
   try { for (const track of stream.getTracks()) if (track.readyState === 'live') peer.addTrack(track, stream); }
@@ -79,7 +85,7 @@ export function createScreenSharePeer(stream: MediaStream, failed: () => void, s
     quality: sample ? async () => { await configure(); return sample(); } : undefined,
     close() {
       if (closed) return;
-      closed = true; peer.removeEventListener('connectionstatechange', connectionChanged); peer.close();
+      closed = true; clearTimeout(disconnectedTimer); peer.removeEventListener('connectionstatechange', connectionChanged); peer.close();
     },
   };
 }

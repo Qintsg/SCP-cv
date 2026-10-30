@@ -70,7 +70,7 @@ public sealed partial class RuntimeStateService(
         CancellationToken cancellationToken = default)
     {
         var normalized = command.Trim().ToLowerInvariant();
-        if (normalized is not ("play" or "pause" or "stop" or "next_effect" or "previous_effect"))
+        if (normalized is not ("play" or "pause" or "stop" or "refresh" or "next_effect" or "previous_effect"))
         {
             throw new PlaybackServiceException($"无效的播放控制动作：{command}");
         }
@@ -85,6 +85,10 @@ public sealed partial class RuntimeStateService(
                 {
                     throw new PlaybackServiceException($"窗口 {windowId} 当前没有打开的媒体源");
                 }
+
+                if (normalized == "refresh" && !await database.MediaSources.AnyAsync(
+                    source => source.Id == session.MediaSourceId.Value && source.SourceType == MediaSourceType.Web, token).ConfigureAwait(false))
+                    throw new PlaybackServiceException("当前来源不支持网页刷新。", "invalid_refresh_source");
 
                 session.PendingCommand = command.Command;
                 command.SourceGeneration = session.DesiredGeneration;

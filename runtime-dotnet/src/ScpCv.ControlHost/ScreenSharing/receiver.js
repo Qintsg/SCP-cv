@@ -1,4 +1,4 @@
-/* 两窗WebRTC接收：真实后帧、内存授权、有限信令和明确释放。SCP-cv 2026-10-10。 */
+/* 文件描述：WebRTC接收、后帧上报及连接释放。项目：SCP-cv；文件：receiver.js；作者：Qintsg；日期：2026-10-30。 */
 (() => {
   'use strict';
   const parameters = new URLSearchParams(location.search);
@@ -23,6 +23,7 @@
   let reporting = false;
   let polling = false;
   let statusTimer = null;
+  let disconnectedTimer = null;
   let qualityPrevious = null;
   let qualitySample = null;
   let qualityCapturedAt = 0;
@@ -63,6 +64,7 @@
     qualitySample = null;
     lifetime.abort();
     clearInterval(statusTimer);
+    clearTimeout(disconnectedTimer);
     if (callbackId !== null) video.cancelVideoFrameCallback(callbackId);
     for (const controller of controllers) controller.abort();
     controllers.clear();
@@ -168,7 +170,12 @@
     event.track.addEventListener('ended', () => fail('share_remote_track_ended'), { once: true });
   });
   peer.addEventListener('connectionstatechange', () => {
-    if (peer.connectionState === 'failed' || peer.connectionState === 'disconnected') fail('share_peer_disconnected');
+    clearTimeout(disconnectedTimer); disconnectedTimer = null;
+    if (stopped) return;
+    if (peer.connectionState === 'failed' || peer.connectionState === 'closed') fail('share_peer_disconnected');
+    else if (peer.connectionState === 'disconnected') disconnectedTimer = setTimeout(() => {
+      if (!stopped && peer.connectionState === 'disconnected') fail('share_peer_disconnected');
+    }, 12000);
   });
   window.addEventListener('pagehide', stop, { once: true });
 

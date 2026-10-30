@@ -16,6 +16,8 @@ internal sealed class WindowForegroundHostFactory : WebApplicationFactory<Progra
     private readonly string _root = Path.Combine(Path.GetTempPath(), "scp-cv-window-foreground", Guid.NewGuid().ToString("N"));
     private string? _connection;
     internal string Password { get; } = Convert.ToHexString(RandomNumberGenerator.GetBytes(24));
+    internal string? ReceiverBaseUrl { get; init; }
+    internal string? Window1Display { get; init; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -27,6 +29,8 @@ internal sealed class WindowForegroundHostFactory : WebApplicationFactory<Progra
         builder.UseSetting("Authentication:DevelopmentAccount:IsSuperuser", "true");
         builder.UseSetting("StreamPreview:ApiBase", "http://127.0.0.1:1/");
         builder.UseSetting("Logging:LogLevel:Default", "Warning");
+        if (ReceiverBaseUrl is not null) builder.UseSetting("ScreenSharing:ReceiverBaseUrl", ReceiverBaseUrl);
+        if (Window1Display is not null) builder.UseSetting("BigScreenOutputs:Window1", Window1Display);
     }
 
     protected override IHost CreateHost(IHostBuilder builder)

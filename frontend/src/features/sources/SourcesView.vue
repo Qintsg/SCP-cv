@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** 目录优先的媒体文件管理：路径、类型筛选、多选结果与打开到小卡片。SCP-cv 2026-10-12。 */
+/** 文件描述：目录媒体管理、详情预览及打开到窗口。项目：SCP-cv；文件：SourcesView.vue；作者：Qintsg；日期：2026-10-30。 */
 import { selectAriaLabel as vSelectAriaLabel } from '@/design-system/selectAriaLabel';
 import { tagColor } from '@/design-system/tagColor';
 import type { DropdownOption } from '@/design-system/dropdownActions';
@@ -36,6 +36,7 @@ import EditSourceDrawer from './EditSourceDrawer.vue';
 import FolderDialogs from './FolderDialogs.vue';
 import SourceThumbnail from './SourceThumbnail.vue';
 import SourceOpenCard from './SourceOpenCard.vue';
+import SourcePreviewDrawer from './SourcePreviewDrawer.vue';
 import { sourceAvailabilityLabel, sourceCategoryLabel, sourceCategoryTone } from './sourcePresentation';
 import { useSourceFolders } from './useSourceFolders';
 import { useSourceActions } from './useSourceActions';
@@ -45,6 +46,7 @@ const { t } = useI18n(), sourceStore = useSourceStore(), sessions = useSessionSt
 const { isMobile } = useBreakpoint();
 const isLoading = ref(false), drawerOpen = ref(false), editDrawerOpen = ref(false), openCard = ref(false);
 const editingSource = ref<MediaSourceItem | null>(null), openingSource = ref<MediaSourceItem | null>(null);
+const previewOpen = ref(false), previewSource = ref<MediaSourceItem | null>(null);
 const path = computed(() => directoryPath(sourceStore.currentFolderId, sourceStore.folders));
 const protectedDirectory = computed(() => !!sourceStore.folders.find(folder => folder.id === sourceStore.currentFolderId)?.is_protected);
 const categoryModel = computed({ get: () => sourceStore.category, set: (value: SourceCategory) => sourceStore.setCategory(value) });
@@ -101,7 +103,12 @@ function folderRow(id: unknown) { return typeof id === 'number' && id < 0 ? visi
 function startEdit(source: MediaSourceItem): void { if (!source.is_protected) { editingSource.value = source; editDrawerOpen.value = true; } }
 /** :param source: 当前明确选择。:returns: 展示两目标卡片，不立即替换输出。 */
 function showOpen(source: MediaSourceItem): void { openingSource.value = source; openCard.value = true; }
-const buildRowMenu = useSourceActions(startEdit, showOpen, buildMoveToFolderOptions);
+/** :param source: 当前点击的真实媒体。:returns: 只打开控制端预览。 */
+function showPreview(source: MediaSourceItem): void { previewSource.value = source; previewOpen.value = true; }
+watch(() => previewSource.value && sourceStore.findById(previewSource.value.id), source => {
+  if (previewOpen.value && !source) { previewOpen.value = false; previewSource.value = null; }
+});
+const buildRowMenu = useSourceActions(startEdit, showOpen, buildMoveToFolderOptions, showPreview);
 /** :param _key: 菜单键。:param option: 语义动作。:returns: 只派发一次，不重复绑定DOM点击。 */
 function handleMenuSelect(_key: string | number, option: DropdownOption): void { runDropdownAction(option); }
 /** :param id: 源ID。:returns: 只有匹配代次的实际playing才标播出，不宣称人工确认。 */
@@ -167,9 +174,9 @@ watch(workstationDirectory, active => { if (active) void refresh(); }, {immediat
               </template></template>
               <template v-for="source in [mediaRow(record.id)]" :key="source?.id"><template v-if="source">
               <a-checkbox v-if="column.key === 'selection'" :checked="selected.includes(source.id)" :disabled="busy || source.is_protected" :aria-disabled="busy || !!source.is_protected" :aria-label="`选择 ${source.name}`" @update:checked="toggle(source.id,$event)" />
-              <div v-else-if="column.key === 'name'" class="sources-view__name-cell"><SourceThumbnail :source="source" size="comfortable" /><div>
-                <p class="sources-view__name">{{ source.name }}</p>
-              </div></div>
+              <button v-else-if="column.key === 'name'" type="button" class="sources-view__name-cell sources-view__preview-open" :aria-label="`预览 ${source.name}`" @click="showPreview(source)"><SourceThumbnail :source="source" size="comfortable" />
+                <span class="sources-view__name">{{ source.name }}</span>
+              </button>
               <template v-else-if="column.key === 'status'"><a-tag v-if="activeWindowLabel(source.id)" color="success">{{ activeWindowLabel(source.id) }}</a-tag><span v-else>—</span></template>
               <template v-else-if="column.key === 'category'"><a-tag :color="tagColor(sourceCategoryTone(source))" >{{ sourceCategoryLabel(source) }}</a-tag><a-tag v-if="source.is_protected" >内置</a-tag>
                 <p v-if="!source.is_available" class="sources-view__caption">{{ sourceAvailabilityLabel(source) }}</p></template>
@@ -185,7 +192,7 @@ watch(workstationDirectory, active => { if (active) void refresh(); }, {immediat
             <a-card v-for="folder in visibleFolders" :key="`f-${folder.id}`" size="small"><div class="sources-view__row-actions"><button type="button" class="sources-view__folder-open" @click="navigateToFolder(folder.id)"><FIcon name="folder_24_regular" :size="26" /><span>{{ folder.name }}</span><a-tag v-if="folder.is_protected">内置</a-tag></button>
               <ActionMenu v-if="!folder.is_protected" :options="buildFolderMenu(folder)" @select="handleMenuSelect"><a-button type="text" :aria-label="`目录 ${folder.name} 的操作`">更多</a-button></ActionMenu></div></a-card>
             <a-card v-for="source in sourceStore.filtered" :key="source.id" size="small">
-              <template #title><div class="sources-view__card-title"><a-checkbox :checked="selected.includes(source.id)" :disabled="busy || source.is_protected" :aria-disabled="busy || !!source.is_protected" :aria-label="`选择 ${source.name}`" @update:checked="toggle(source.id,$event)" /><SourceThumbnail :source="source" /><span>{{ source.name }}</span></div></template>
+              <template #title><div class="sources-view__card-title"><a-checkbox :checked="selected.includes(source.id)" :disabled="busy || source.is_protected" :aria-disabled="busy || !!source.is_protected" :aria-label="`选择 ${source.name}`" @update:checked="toggle(source.id,$event)" /><button type="button" class="sources-view__name-cell sources-view__preview-open" :aria-label="`预览 ${source.name}`" @click="showPreview(source)"><SourceThumbnail :source="source" /><span>{{ source.name }}</span></button></div></template>
               <a-tag v-if="activeWindowLabel(source.id)" color="success">{{ activeWindowLabel(source.id) }}</a-tag>
               <div class="sources-view__row-actions"><a-tag :color="tagColor(sourceCategoryTone(source))" >{{ sourceCategoryLabel(source) }}</a-tag>
                 <a-button v-if="source.source_type !== 'audio'" size="small" :disabled="!source.is_available" @click="showOpen(source)">打开到…</a-button>
@@ -205,6 +212,7 @@ watch(workstationDirectory, active => { if (active) void refresh(); }, {immediat
     <AddSourceDrawer v-model:open="drawerOpen" :folder-id="sourceStore.currentFolderId" @added="refresh" />
     <EditSourceDrawer v-model:open="editDrawerOpen" :source="editingSource" @updated="refresh" />
     <SourceOpenCard v-model:open="openCard" :source="openingSource" />
+    <SourcePreviewDrawer v-model:open="previewOpen" :source="previewSource" />
   </div>
 </template>
 <style scoped src="./SourcesView.css"></style>

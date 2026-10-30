@@ -1,6 +1,6 @@
 {
   "name": "scp-cv-frontend",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "SCP-cv 共享播放控制台",
   "author": "Qintsg (饶弘玮)",
   "private": true,
@@ -30,6 +30,7 @@
     "@mediafish/flv": "0.2.2",
     "flvee": "0.0.1",
     "motion": "14.7.1",
+    "pdfjs-dist": "6.4.299",
     "simple-liquid-glass": "5.4.0"
   },
   "devDependencies": {

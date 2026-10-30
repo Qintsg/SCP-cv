@@ -194,8 +194,7 @@ async function reopenCurrentSource(): Promise<void> {
 async function refreshWebSource(): Promise<void> {
   if (!props.session.source_id) return;
   try {
-    await sessionStore.control(props.session.window_id, 'play');
-    toast.info(t('playback.refreshOk'));
+    await sessionStore.control(props.session.window_id, category.value === 'web' ? 'refresh' : 'play');
   } catch (error) {
     toast.error(t('playback.refreshFail'), error instanceof Error ? error.message : t('common.retry'));
   }

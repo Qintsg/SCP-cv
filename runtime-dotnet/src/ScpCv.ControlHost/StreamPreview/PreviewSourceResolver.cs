@@ -1,4 +1,4 @@
-// 预览仅解析已登记媒体或明确设备输入；不接受任意URL、不向浏览器暴露凭据。
+// 文件描述：登记流与设备输入的预览解析。项目：SCP-cv；文件：PreviewSourceResolver.cs；作者：Qintsg；日期：2026-10-30。
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -23,11 +23,12 @@ public sealed class PreviewSource
     public PreviewSource(string uri, string quality, long? sourceId = null, long revision = 0)
     {
         if (string.IsNullOrWhiteSpace(uri) || uri.Length > 8192 || uri.Any(char.IsControl) ||
-            !Uri.TryCreate(uri, UriKind.Absolute, out var parsed) || parsed.Scheme is not ("rtsp" or "rtmp") ||
+            !Uri.TryCreate(uri, UriKind.Absolute, out var parsed) || parsed.Scheme is not ("rtsp" or "rtmp" or "srt" or "http" or "https" or "udp" or "rtp") ||
             parsed.Host.Length == 0 || parsed.Fragment.Length != 0 || quality is not ("low" or "high"))
             throw new PreviewException("此来源没有受支持的预览流", "preview_no_stream", 422);
         var builder = new UriBuilder(parsed);
-        if (builder.Port == -1) builder.Port = parsed.Scheme == "rtmp" ? 1935 : 554;
+        if (builder.Port == -1 && parsed.Scheme is "rtsp" or "rtmp") builder.Port = parsed.Scheme == "rtmp" ? 1935 : 554;
+        if (parsed.Scheme is "udp" or "rtp") builder.Scheme = parsed.Scheme == "udp" ? "udp+mpegts" : "udp+rtp";
         UpstreamUri = builder.Uri.AbsoluteUri; Quality = quality; SourceId = sourceId; SourceRevision = revision;
         Key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(UpstreamUri))).ToLowerInvariant();
     }
@@ -48,7 +49,7 @@ public sealed class PreviewSourceResolver(
         {
             await using var database = await contexts.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
             var source = await database.MediaSources.AsNoTracking().SingleOrDefaultAsync(item => item.Id == id, cancellationToken).ConfigureAwait(false);
-            if (source is null || source.SourceType is not (MediaSourceType.RtspStream or MediaSourceType.CustomStream))
+            if (source is null || source.SourceType is not (MediaSourceType.RtspStream or MediaSourceType.SrtStream or MediaSourceType.CustomStream))
                 throw new PreviewException("此来源没有预览流", "preview_no_stream", 422);
             return Snapshot(source, request.Quality);
         }

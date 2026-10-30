@@ -86,6 +86,7 @@ public sealed partial class PlayerRuntimeHost(
                 case "CLOSE":
                 case "RESET_PPT": await CloseAsync(lease, cancellationToken); break;
                 case "PLAY": await CurrentControlAsync(lease, "play", cancellationToken); break;
+                case "REFRESH": await RefreshWebAsync(lease, cancellationToken); break;
                 case "PAUSE": await CurrentControlAsync(lease, "pause", cancellationToken); break;
                 case "STOP": await CurrentControlAsync(lease, "stop", cancellationToken); break;
                 case "SEEK": await SeekAsync(Long(lease.Args, "position_ms"), cancellationToken); break;

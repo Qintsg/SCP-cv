@@ -3,11 +3,11 @@ parameters:
 get:
   tags:
     - sources
-  summary: 获取图片或视频源 inline 预览
+  summary: 获取图片、视频、音频或PDF源 inline 预览
   operationId: previewSource
   responses:
     '200':
-      description: 图片或视频文件流
+      description: 媒体文件流，支持Range；PPT页图使用slides接口，直播使用stream-previews接口。
       content:
         application/octet-stream:
           schema:
