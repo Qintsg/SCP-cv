@@ -1,4 +1,4 @@
-# 屏幕共享HTTP类型与有界信令；不包含接收凭据。SCP-cv 2026-10-10。
+# 文件描述：共享信令及 ICE 配置类型。项目：SCP-cv；文件：schemas.yaml；作者：Qintsg；日期：2026-11-05。
 ShareId:
   name: share_id
   in: path
@@ -43,6 +43,25 @@ Sdp:
       type: string
       maxLength: 65536
       description: 以v=0和CRLF开头，解码后的UTF-8字节数不超过65536；Unicode可能更早达到字节上限。
+IceServer:
+  type: object
+  required: [urls]
+  properties:
+    urls:
+      type: array
+      minItems: 1
+      maxItems: 4
+      items:
+        type: string
+        maxLength: 512
+      description: 主机配置的标准 stun、stuns、turn 或 turns 地址。
+    username:
+      type: string
+      maxLength: 256
+    credential:
+      type: string
+      maxLength: 512
+      description: 仅向授权连接提供的 ICE 服务凭据，不写入业务日志。
 VideoPolicy:
   type: object
   required: [full_hd_bitrate, qhd_bitrate, ultra_hd_bitrate, max_frame_rate]
@@ -71,6 +90,12 @@ Share:
   type: object
   required: [id, window_id, state, has_audio, receiver_has_audio, source_generation, expires_at, actual_frames, last_frame_at, answer, stop_reason, actual_volume, actual_muted]
   properties:
+    ice_servers:
+      type: array
+      maxItems: 4
+      items:
+        $ref: '#/IceServer'
+      description: 发布者建立实际连接时使用；空列表使用局域网直连。
     video_policy:
       $ref: '#/VideoPolicy'
     receiver_quality:

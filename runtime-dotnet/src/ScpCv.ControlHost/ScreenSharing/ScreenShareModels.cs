@@ -1,4 +1,4 @@
-// 分享会话快照与本机私有授权；快照不得包含接收token。SCP-cv 2026-10-10。
+// 文件描述：共享会话快照和本机私有授权。项目：SCP-cv；文件：ScreenShareModels.cs；作者：Qintsg；日期：2026-11-05。
 namespace ScpCv.ControlHost.ScreenSharing;
 
 public enum ScreenShareState
@@ -27,6 +27,7 @@ public sealed record ScreenShareSnapshot(
     string StopReason)
 {
     public ScreenShareVideoPolicy VideoPolicy { get; init; } = new();
+    public ScreenShareIceServer[] IceServers { get; init; } = [];
     public ReceiverQuality? ReceiverQuality { get; init; }
     public int? ActualVolume { get; init; }
     public bool? ActualMuted { get; init; }

@@ -1,4 +1,4 @@
-/** 文件描述：独占共享采集、信令与心跳。项目：SCP-cv；文件：ScreenSharePublisher.ts；作者：Qintsg；日期：2026-10-30。 */
+/** 文件描述：独占共享采集、信令与心跳。项目：SCP-cv；文件：ScreenSharePublisher.ts；作者：Qintsg；日期：2026-11-05。 */
 import type { ScreenSharingApi, ScreenShareSnapshot, ScreenShareVideoPolicy } from '@/services/screenSharing';
 import type { ScreenSharePeer } from './rtcPeer';
 import { ScreenShareAudioController, type ScreenShareAudioView } from './ScreenShareAudioController';
@@ -19,7 +19,7 @@ export interface PublisherDependencies {
   availability(): string;
   isCurrent(): boolean;
   capture(options: DisplayMediaStreamOptions): Promise<MediaStream>;
-  peer(stream: MediaStream, failed: () => void, policy?: ScreenShareVideoPolicy): ScreenSharePeer;
+  peer(stream: MediaStream, failed: () => void, policy?: ScreenShareVideoPolicy, iceServers?: RTCIceServer[]): ScreenSharePeer;
   api: ScreenSharingApi;
   changed(view: ScreenShareView): void;
 }
@@ -150,7 +150,7 @@ export class ScreenSharePublisher {
       }
       this.accept(attempt, allocated);
       if (!this.live(attempt)) { await this.stop(); return; }
-      attempt.peer = this.deps.peer(stream, () => { if (this.live(attempt)) void this.stop('share_peer_disconnected'); }, allocated.video_policy);
+      attempt.peer = this.deps.peer(stream, () => { if (this.live(attempt)) void this.stop('share_peer_disconnected'); }, allocated.video_policy, allocated.ice_servers);
       const offer = await attempt.peer.offer(attempt.abort.signal);
       if (!this.live(attempt)) return;
       const accepted = await this.deps.api.offer(allocated.id, offer, attempt.abort.signal);

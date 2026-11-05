@@ -1,4 +1,4 @@
-/** 文件描述：共享WebRTC连接、质量参数及短暂断线恢复。项目：SCP-cv；文件：rtcPeer.ts；作者：Qintsg；日期：2026-10-30。 */
+/** 文件描述：共享 WebRTC 连接、ICE 服务及质量参数。项目：SCP-cv；文件：rtcPeer.ts；作者：Qintsg；日期：2026-11-05。 */
 import type { ScreenShareSdp, ScreenShareVideoPolicy } from '@/services/screenSharing';
 import { checkedVideoPolicy, configureVideoSender, preferTextDetail, qualitySampler, videoBitrateLimit, type ShareQuality } from './shareQuality';
 
@@ -27,10 +27,10 @@ function gatherIce(peer: RTCPeerConnection, signal: AbortSignal): Promise<void> 
   });
 }
 
-/** :param stream: 用户本次授权的内容轨道。:param failed: 断线通知，只结束当前实例。:returns: 由发布者拥有并显式close的连接。 */
-export function createScreenSharePeer(stream: MediaStream, failed: () => void, suppliedPolicy?: ScreenShareVideoPolicy): ScreenSharePeer {
+/** :param stream: 用户授权的内容轨道。:param failed: 当前实例断线通知。:param suppliedPolicy: 主机画质策略。:param iceServers: 主机配置的标准地址发现服务。:returns: 发布者拥有的连接。 */
+export function createScreenSharePeer(stream: MediaStream, failed: () => void, suppliedPolicy?: ScreenShareVideoPolicy, iceServers: RTCIceServer[] = []): ScreenSharePeer {
   const policy = checkedVideoPolicy(suppliedPolicy);
-  const peer = new RTCPeerConnection({ iceServers: [] });
+  const peer = new RTCPeerConnection({ iceServers });
   let closed = false;
   let disconnectedTimer: ReturnType<typeof setTimeout> | undefined;
   let parameters = 'pending';

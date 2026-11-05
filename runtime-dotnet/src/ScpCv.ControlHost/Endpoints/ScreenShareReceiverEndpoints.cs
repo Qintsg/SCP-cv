@@ -1,4 +1,4 @@
-// 原生接收页私有端点：loopback与cap缺一不可，发布者cookie不能代替接收权限。SCP-cv 2026-10-10。
+// 文件描述：原生接收页面及其私有信令端点。项目：SCP-cv；文件：ScreenShareReceiverEndpoints.cs；作者：Qintsg；日期：2026-11-05。
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
@@ -29,12 +29,12 @@ public static class ScreenShareReceiverEndpoints
             return Task.FromResult<IResult>(Results.Content(ReceiverPage.Html, "text/html; charset=utf-8"));
         });
 
-    private static Task<IResult> OfferAsync(Guid id, HttpContext context, ScreenShareRegistry registry) =>
+    private static Task<IResult> OfferAsync(Guid id, HttpContext context, ScreenShareRegistry registry, ScreenShareOptions options) =>
         ScreenShareHttpSupport.ExecuteAsync(context, () =>
         {
             var grant = Authorize(id, context, registry);
             var offer = registry.ReadOffer(id, grant.WindowId, grant.SourceGeneration, grant.Token);
-            return Task.FromResult<IResult>(Results.Ok(new { type = offer.Type, sdp = offer.Sdp }));
+            return Task.FromResult<IResult>(Results.Ok(new { type = offer.Type, sdp = offer.Sdp, ice_servers = options.ForHost(options.ReceiverBaseUri.Host) }));
         });
 
     private static Task<IResult> StatusAsync(Guid id, HttpContext context, ScreenShareRegistry registry) =>

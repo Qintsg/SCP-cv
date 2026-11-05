@@ -1,4 +1,4 @@
-// 内存分享条目只能在Registry锁内访问，不能交给HTTP序列化。SCP-cv 2026-10-10。
+// 文件描述：仅在 Registry 锁内访问的共享条目。项目：SCP-cv；文件：ScreenShareEntry.cs；作者：Qintsg；日期：2026-11-05。
 namespace ScpCv.ControlHost.ScreenSharing;
 
 internal sealed class ScreenShareEntry
@@ -9,6 +9,7 @@ internal sealed class ScreenShareEntry
     internal int WindowId => Target.WindowId;
     internal required bool HasAudio { get; init; }
     internal ScreenShareVideoPolicy VideoPolicy { get; init; } = new();
+    internal ScreenShareIceServer[] IceServers { get; init; } = [];
     internal required DateTimeOffset CreatedAt { get; init; }
     internal required DateTimeOffset LastPublisherSeen { get; set; }
     internal required DateTimeOffset ExpiresAt { get; set; }
@@ -28,5 +29,5 @@ internal sealed class ScreenShareEntry
 
     internal ScreenShareSnapshot Snapshot() => new(
         Id, WindowId, State, HasAudio, ReceiverHasAudio, SourceGeneration,
-        ExpiresAt, ActualFrames, LastFrameAt, Answer, StopReason) { ReceiverQuality = Quality, VideoPolicy = VideoPolicy };
+        ExpiresAt, ActualFrames, LastFrameAt, Answer, StopReason) { ReceiverQuality = Quality, VideoPolicy = VideoPolicy, IceServers = IceServers };
 }

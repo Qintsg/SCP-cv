@@ -1203,11 +1203,11 @@ paths:
     get:
       tags:
         - sources
-      summary: 获取图片或视频源 inline 预览
+      summary: 获取图片、视频、音频或PDF源 inline 预览
       operationId: previewSource
       responses:
         '200':
-          description: 图片或视频文件流
+          description: 媒体文件流，支持Range；PPT页图使用slides接口，直播使用stream-previews接口。
           content:
             application/octet-stream:
               schema:
@@ -1603,7 +1603,15 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Sdp'
+                allOf:
+                  - $ref: '#/components/schemas/Sdp'
+                  - type: object
+                    properties:
+                      ice_servers:
+                        type: array
+                        maxItems: 4
+                        items:
+                          $ref: '#/components/schemas/IceServer'
         '404':
           $ref: '#/components/responses/ErrorResponse'
   /screen-share/receiver/{share_id}/status/:
@@ -2259,6 +2267,7 @@ paths:
       tags:
         - playback
       summary: 播放控制
+      description: refresh仅用于网页来源，绕过当前WebView缓存重新导航；实际导航完成后命令才完成。
       operationId: controlPlayback
       requestBody:
         required: true
@@ -2459,6 +2468,61 @@ paths:
                 $ref: '#/components/schemas/PlaybackStateResponse'
         '401':
           $ref: '#/components/responses/ErrorResponse'
+  /playback/window-foreground/:
+    post:
+      tags:
+        - playback
+      summary: 隐藏或显示两个输出窗口
+      description: 隐藏时取消置顶并移到其他窗口后方，显示时恢复置顶；保留播放、音量、位置及尺寸。受理结果通过各窗口命令回执和实际window_foreground观测确认。
+      operationId: setWindowsForeground
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - foreground
+              properties:
+                foreground:
+                  type: boolean
+                  description: true恢复置顶，false移到后方。
+            examples:
+              hide:
+                value:
+                  foreground: false
+              show:
+                value:
+                  foreground: true
+      responses:
+        '202':
+          description: 两窗维护命令已入队，sessions分别携带submitted_command_id，实际窗口状态尚待执行确认。
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - success
+                  - sessions
+                properties:
+                  success:
+                    type: boolean
+                    enum:
+                      - true
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SessionSnapshot'
+        '400':
+          $ref: '#/components/responses/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/ErrorResponse'
+        '409':
+          description: 输出窗口离线或尚未取得真实置顶观测。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /playback/reset-all/:
     post:
       tags:
@@ -4074,6 +4138,10 @@ components:
         player_online:
           type: boolean
           description: 播放器窗口最近 5 秒内是否上报过心跳
+        window_foreground:
+          type: boolean
+          nullable: true
+          description: 当前播放器实际置顶状态；false表示移到其他窗口后方，离线或未取得观测时为null。
         player_last_seen_at:
           type: string
           format: date-time
@@ -4104,6 +4172,54 @@ components:
           type: boolean
           default: false
           description: 原生采集实际返回内容音轨，不是希望获取麦克风。
+    IceServer:
+      type: object
+      required:
+        - urls
+      properties:
+        urls:
+          type: array
+          minItems: 1
+          maxItems: 4
+          items:
+            type: string
+            maxLength: 512
+          description: 主机配置的标准 stun、stuns、turn 或 turns 地址。
+        username:
+          type: string
+          maxLength: 256
+        credential:
+          type: string
+          maxLength: 512
+          description: 仅向授权连接提供的 ICE 服务凭据，不写入业务日志。
+    VideoPolicy:
+      type: object
+      required:
+        - full_hd_bitrate
+        - qhd_bitrate
+        - ultra_hd_bitrate
+        - max_frame_rate
+      properties:
+        full_hd_bitrate:
+          type: integer
+          minimum: 1000000
+          maximum: 200000000
+          default: 16000000
+        qhd_bitrate:
+          type: integer
+          minimum: 1000000
+          maximum: 200000000
+          default: 24000000
+        ultra_hd_bitrate:
+          type: integer
+          minimum: 1000000
+          maximum: 200000000
+          default: 48000000
+        max_frame_rate:
+          type: integer
+          minimum: 1
+          maximum: 30
+          default: 30
     ReceiverQuality:
       type: object
       nullable: true
@@ -4162,6 +4278,14 @@ components:
         - actual_volume
         - actual_muted
       properties:
+        ice_servers:
+          type: array
+          maxItems: 4
+          items:
+            $ref: '#/components/schemas/IceServer'
+          description: 发布者建立实际连接时使用；空列表使用局域网直连。
+        video_policy:
+          $ref: '#/components/schemas/VideoPolicy'
         receiver_quality:
           $ref: '#/components/schemas/ReceiverQuality'
         id:
@@ -4745,6 +4869,7 @@ components:
         - play
         - pause
         - stop
+        - refresh
         - next_effect
         - previous_effect
     PlaybackControlRequest:

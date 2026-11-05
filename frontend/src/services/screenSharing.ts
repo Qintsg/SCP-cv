@@ -1,10 +1,11 @@
-/** 临时共享发布者HTTP合同，复用登录/CSRF/主机代次；不公开接收凭据。SCP-cv 2026-10-11。 */
+/** 文件描述：共享发布者 HTTP 合同。项目：SCP-cv；文件：screenSharing.ts；作者：Qintsg；日期：2026-11-05。 */
 import { requestJson } from './api';
 import type { PlaybackCommandSnapshot } from './apiTypes';
 
 export interface ScreenShareSdp { type: 'offer' | 'answer'; sdp: string }
 export interface ScreenShareVideoPolicy { full_hd_bitrate: number; qhd_bitrate: number; ultra_hd_bitrate: number; max_frame_rate: number }
 export interface ScreenShareSnapshot {
+  ice_servers?: RTCIceServer[];
   video_policy?: ScreenShareVideoPolicy;
   receiver_quality?: { width: number | null; height: number | null; fps: number | null; bitrate_mbps: number | null } | null;
   id: string;

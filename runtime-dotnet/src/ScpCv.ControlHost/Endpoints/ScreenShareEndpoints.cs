@@ -1,4 +1,4 @@
-// 发布者共享入口：沿用会话/CSRF，预约和受理不冒称已经出画。SCP-cv 2026-10-10。
+// 文件描述：已认证发布者的共享预约和控制入口。项目：SCP-cv；文件：ScreenShareEndpoints.cs；作者：Qintsg；日期：2026-11-05。
 using System.Security.Claims;
 using System.Text.Json;
 using ScpCv.ControlHost.ScreenSharing;
@@ -25,7 +25,7 @@ public static class ScreenShareEndpoints
             var body = await ScreenShareHttpSupport.ReadBodyAsync(context.Request, cancellationToken).ConfigureAwait(false);
             if (!body.TryGetProperty("window_id", out var raw) || raw.ValueKind != JsonValueKind.Number || !raw.TryGetInt32(out var window))
                 throw ScreenShareHttpSupport.InvalidBody();
-            var share = await service.CreateAsync(Owner(context), window, ScreenShareHttpSupport.Boolean(body, "has_audio"), cancellationToken).ConfigureAwait(false);
+            var share = await service.CreateAsync(Owner(context), window, ScreenShareHttpSupport.Boolean(body, "has_audio"), context.Request.Host.Host, cancellationToken).ConfigureAwait(false);
             return ScreenShareHttpSupport.Response(share, 201);
         });
 

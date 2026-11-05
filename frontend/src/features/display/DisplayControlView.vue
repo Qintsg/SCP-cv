@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * 显示控制视图：单窗口源切换 + 播放控制。
- * 路由参数 :target 决定逻辑窗口；移动端使用原生单选组替代左侧导航，墙面布局不隐藏目标。
+ * 文件描述：窗口媒体、播放及屏幕共享控制。
+ * 项目：SCP-cv；文件：DisplayControlView.vue；作者：Qintsg；日期：2026-11-05。
  */
 import { tabsKeyboard as vTabsKeyboard } from '@/design-system/tabsKeyboard';
 
@@ -19,7 +19,7 @@ import FIcon from '@/design-system/FIcon.vue';
 import FPageHeader from '@/design-system/FPageHeader.vue';
 import PlaybackControl from './PlaybackControl.vue';
 import SourcePicker from './SourcePicker.vue';
-import ScreenSharePanel from '../screen-share/ScreenSharePanel.vue';
+import ScreenShareDisclosure from '../screen-share/ScreenShareDisclosure.vue';
 import { useMobileControls } from '@/composables/useMobileControls';
 import { DISPLAY_TARGETS, resolveDisplayTarget } from './displayTargets';
 import { useSessionStore } from '@/stores/sessions';
@@ -107,9 +107,7 @@ function handleSourceOpened(): void {
         <SourcePicker :window-id="currentSession.window_id" @opened="handleSourceOpened" />
       </div>
     </template>
-    <details v-if="!mobileControls && targetMeta && currentSession" class="display-view__sharing"><summary>屏幕共享</summary>
-      <ScreenSharePanel :key="targetMeta.windowId" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
-    </details>
+    <ScreenShareDisclosure v-if="targetMeta && currentSession" :window-id="targetMeta.windowId" :player-online="currentSession.player_online" />
   </div>
 </template>
 
@@ -121,7 +119,6 @@ function handleSourceOpened(): void {
   max-width: 1440px;
 }
 .display-view__status { min-width: 88px; max-width: 160px; min-height: 26px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.display-view__sharing summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}.display-view__sharing[open] summary{margin-bottom:12px}
 
 .display-view__targets {
   display: flex;

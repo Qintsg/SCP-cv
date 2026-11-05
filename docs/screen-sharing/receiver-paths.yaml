@@ -37,7 +37,15 @@ Offer:
         content:
           application/json:
             schema:
-              $ref: ./schemas.yaml#/Sdp
+              allOf:
+                - $ref: ./schemas.yaml#/Sdp
+                - type: object
+                  properties:
+                    ice_servers:
+                      type: array
+                      maxItems: 4
+                      items:
+                        $ref: ./schemas.yaml#/IceServer
       '404':
         $ref: ../components/responses/ErrorResponse.yaml
 Status:

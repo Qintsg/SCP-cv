@@ -1,4 +1,4 @@
-// 有界内存共享登记：所有权、窗口预约、短期cap与源代次围栏。SCP-cv 2026-10-10。
+// 文件描述：共享登记、窗口预约及接收授权寿命。项目：SCP-cv；文件：ScreenShareRegistry.cs；作者：Qintsg；日期：2026-11-05。
 using System.Security.Cryptography;
 using System.Text;
 using ScpCv.Infrastructure.Playback;
@@ -26,7 +26,7 @@ public sealed partial class ScreenShareRegistry(TimeProvider timeProvider, Scree
     }
 
     /// <summary>预约在线检查后的目标；此步没有任何播放器副作用。</summary>
-    public ScreenShareSnapshot Create(string ownerId, ScreenShareTargetIdentity target, bool hasAudio)
+    public ScreenShareSnapshot Create(string ownerId, ScreenShareTargetIdentity target, bool hasAudio, string? publisherHost = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(ownerId);
         ArgumentNullException.ThrowIfNull(target);
@@ -43,6 +43,7 @@ public sealed partial class ScreenShareRegistry(TimeProvider timeProvider, Scree
                 Id = Guid.NewGuid(), OwnerId = ownerId, Target = target, HasAudio = hasAudio,
                 CreatedAt = now, LastPublisherSeen = now, ExpiresAt = now + ReservationLifetime,
                 VideoPolicy = options?.Video ?? new(),
+                IceServers = options?.ForHost(publisherHost) ?? [],
             };
             _entries.Add(entry.Id, entry);
             return entry.Snapshot();

@@ -207,6 +207,7 @@
       throw new Error('invalid_receiver_identity');
     const offer = await request('offer/');
     if (stopped) return;
+    peer.setConfiguration({ iceServers: offer.ice_servers ?? [] });
     await peer.setRemoteDescription(offer);
     if (stopped) return;
     await peer.setLocalDescription(await peer.createAnswer());

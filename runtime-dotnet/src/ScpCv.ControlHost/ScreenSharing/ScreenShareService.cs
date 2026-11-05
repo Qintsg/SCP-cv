@@ -1,4 +1,4 @@
-// 分享编排沿用持久命令，预约无播放副作用，停止先撤销授权。SCP-cv 2026-10-10。
+// 文件描述：共享预约、播放命令和停止编排。项目：SCP-cv；文件：ScreenShareService.cs；作者：Qintsg；日期：2026-11-05。
 using ScpCv.Infrastructure.Playback;
 
 namespace ScpCv.ControlHost.ScreenSharing;
@@ -7,7 +7,12 @@ public sealed partial class ScreenShareService(ScreenShareRegistry registry, Run
 {
     private readonly SemaphoreSlim[] _windowGates = [new(1, 1), new(1, 1)];
 
-    public async Task<ScreenShareSnapshot> CreateAsync(string ownerId, int windowId, bool hasAudio, CancellationToken cancellationToken = default)
+    /// <summary>:returns: 使用显式 ICE 配置预约共享，保留既有调用合同。</summary>
+    public Task<ScreenShareSnapshot> CreateAsync(string ownerId, int windowId, bool hasAudio, CancellationToken cancellationToken = default)
+        => CreateAsync(ownerId, windowId, hasAudio, null, cancellationToken);
+
+    /// <summary>:param publisherHost: 已通过主机过滤的访问地址。:returns: 绑定访问网络的共享预约。</summary>
+    public async Task<ScreenShareSnapshot> CreateAsync(string ownerId, int windowId, bool hasAudio, string? publisherHost, CancellationToken cancellationToken = default)
     {
         var gate = Gate(windowId);
         await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -15,7 +20,7 @@ public sealed partial class ScreenShareService(ScreenShareRegistry registry, Run
         {
             var target = await runtime.GetScreenShareTargetAsync(windowId, cancellationToken).ConfigureAwait(false);
             processTracker?.Prune(id => registry.GetCleanupTarget(id) is not null);
-            var share = registry.Create(ownerId, target, hasAudio);
+            var share = registry.Create(ownerId, target, hasAudio, publisherHost);
             try
             {
                 if (processTracker is not null) await processTracker.TrackAsync(share.Id, target, cancellationToken).ConfigureAwait(false);
