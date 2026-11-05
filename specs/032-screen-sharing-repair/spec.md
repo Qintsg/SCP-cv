@@ -2,7 +2,7 @@
 
 **Feature Branch**: `main`
 **Created**: 2026-11-05
-**Status**: Draft
+**Status**: Implemented
 **Input**: 用户选择共享内容后无法出画；改善折叠入口；D4 仅通过 10.88.50.194 连接，不使用 computer use。
 
 ## User Scenarios & Testing
